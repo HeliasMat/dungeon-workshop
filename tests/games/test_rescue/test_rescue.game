@@ -1,0 +1,42 @@
+# A game of the tests only (Test Rescue): never offered by the Workshop.
+title: Test Rescue
+author: the tests
+team: chikorita totodile
+home: test_square south
+
+chapter 1 "Chapter 1"
+  play opening
+  go test_square south
+  on talk bibarel if not took_job
+    play job
+    set took_job
+  end
+  on talk marill if took_job
+    play to_the_woods
+    dungeon test_woods
+    if won
+      chapter 2
+    else
+      play back
+    end
+  end
+end
+
+chapter 2 "Chapter 2"
+  play found
+  recruit ursaring
+  play after
+  go test_square south
+  on talk bibarel
+    shop jobs
+  end
+  on talk marill if not thanked
+    play client_thanks
+    give 3 Oran Berry
+    set thanked
+  end
+  on talk noctowl
+    play ending
+    finish
+  end
+end

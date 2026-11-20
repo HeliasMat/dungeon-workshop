@@ -1,0 +1,11 @@
+# The Wiki's pages: the Story family, the logic of a story told (workshop/src/wiki/written.rs).
+
+== go
+> On to another moment of the film (go moment the offer), back or ahead, or to another scene from its start (go scene town). A moment of another scene: that scene opens, set as it is, then goes on from the moment. With seen(the_offer) in a test, how many times a moment was played.
+scene: beach pikachu piplup
+moment: the offer
+piplup: {if seen(the_offer) > 1: You again! | Hello!}
+if seen(the_offer) < 2
+  go moment the offer
+end
+pikachu: Bye!

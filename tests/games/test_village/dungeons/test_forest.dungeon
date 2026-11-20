@@ -1,0 +1,8 @@
+name: Test Forest
+floors: 3
+look: Apple Woods
+pokemon: Caterpie 3 x3 floors 1-2, Weedle 3 x3 floors 1-2, Pidgey 4 x2, Rattata 4 x2, Spearow 6 floor 3
+items: Apple x3, Oran Berry x3, Plain Seed floor 3
+recruiting: yes
+upward: yes
+fight: test_forest_boss

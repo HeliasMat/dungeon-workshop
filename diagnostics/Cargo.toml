@@ -1,0 +1,15 @@
+[package]
+name = "diagnostics"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "What is wrong, said one way by every block: where, why, how to fix it; words compared"
+readme = "../README.md"
+publish.workspace = true
+
+# The one shape of what is wrong (`Diagnostic`), and the words as they are
+# compared (`text`): at the bottom, so every block may say what is wrong
+# the same way. Each block keeps its own codes.
+[dependencies]

@@ -1,0 +1,6 @@
+0	Beach Cave
+1	Treasure Town
+2	Amp Plains
+3	Drenched Bluff
+4	Mt. Bristle
+5	Waterfall Cave

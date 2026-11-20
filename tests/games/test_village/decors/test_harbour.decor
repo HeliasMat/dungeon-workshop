@@ -1,0 +1,50 @@
+decor: test_harbour 640 384
+name Test Harbour
+like 11
+entrance 632 200 right
+entrance 8 200 left
+level 480
+ground sable_plage
+edge mer_plage 72
+edge mer_large top
+edge rivage_sud_plage bottom
+put e195_9 512 136
+put e323_24 408 184
+put o395 444 192
+put e323_24 176 192
+put e323_7 248 248
+scatter e11_2 3 zone 64 200 560 260
+
+[life]
+music 100
+departure
+exit 624 184 16 32 to 224
+
+resident krabby 440 232 right
+says if not got_apple: Said if not got_apple.
+says if got_apple: Said if got_apple.
+says Test line.
+
+resident corphish 480 232 left
+says Test line.
+says Test line.
+
+resident slowpoke 300 176 up
+says Test line.
+says Test line.
+
+resident wingull 380 168 right wanders 60
+says Test line.
+
+resident pelipper 560 208 left
+says Test line.
+
+resident marill 200 248 up
+says Test line.
+says Test line.
+
+exit 0 184 16 32 to test_market east
+on talk krabby if not got_apple
+  give Golden Apple
+  set got_apple
+end

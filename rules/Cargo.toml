@@ -1,0 +1,19 @@
+[package]
+name = "rules"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The rules of the dungeons, the fights and a run, with no window nor drawing"
+readme = "../README.md"
+publish.workspace = true
+
+# The game's rules and data, without the scene engine (the game on it:
+# scenes): the dungeon's rules, a run, the town, the
+# interface's words.
+[dependencies]
+diagnostics = { path = "../diagnostics" }
+serde.workspace = true
+bincode.workspace = true
+glam.workspace = true

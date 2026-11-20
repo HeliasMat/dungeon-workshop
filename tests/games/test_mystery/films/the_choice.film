@@ -1,0 +1,10 @@
+# A film of the tests' game test_mystery: only what its test needs.
+title: The choice
+scene: test_harbour riolu pachirisu sableye
+riolu: Test line.
+choice
+  option First
+    set accused_sableye
+  option Second
+    set heard_sableye
+end

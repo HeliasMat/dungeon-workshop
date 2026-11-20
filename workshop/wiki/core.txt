@@ -1,0 +1,22 @@
+# The Wiki's pages: words of the v2.1 core that had none written by hand yet (workshop/src/wiki/written.rs).
+
+== banner
+> A name on the screen, as the game shows them: banner chapter, a chapter's title typed alone on the dark; banner place, a place's name over the scene; banner dungeon, a dungeon's name on the dark as the team goes in.
+scene: beach pikachu piplup
+banner chapter A New Friend
+pikachu: Who are you?
+piplup: I'm Piplup!
+
+== jingle
+> A little tune of the game, by what it is for: item, treasure, reward, place, episode, news.
+scene: beach pikachu piplup
+pikachu (joyous): We found it!
+jingle treasure
+wait 2s
+
+== leaves
+> Someone leaves the place by the nearest way out on that side (right, left, or one of its entrances), and is gone once out; with run, running, scared.
+scene: beach pikachu piplup
+piplup: See you!
+piplup leaves right
+pikachu: Bye...

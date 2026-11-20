@@ -1,0 +1,491 @@
+# The Wiki's pages: nodes, tracks, the engine's own commands, the game's words
+# (workshop/src/wiki/written.rs).
+
+== prop
+> Sets properties of someone or of a node, several on one line: angle 45 scale 1.5 opacity 50%, a tint, a position…
+scene: beach pikachu piplup
+pikachu prop angle 20 scale 1.5
+piplup: You look taller.
+
+== node
+> A node of your own: a group (nothing but a place, to attach things to), or a picture from a file; node name off removes it.
+scene: beach pikachu piplup
+node moon image letter.png 200 60
+prop moon opacity 0.5
+
+== attach
+> Something hangs from a parent and follows it (turns and fades with it), at dx dy; inherit says what it takes.
+scene: beach pikachu piplup
+node raft group 200 180
+pikachu attach raft 0 -8
+prop raft x 300
+
+== detach
+> It no longer hangs from anything and stays where it is.
+scene: beach pikachu piplup
+node raft group 200 180
+pikachu attach raft 0 -8
+pikachu detach
+
+== arrives
+> Comes in from where the view does not go (or in smoke if there is no way), walking or running, to a point.
+scene: beach pikachu piplup
+piplup arrives walk - 300 180
+pikachu: Hi!
+
+== ask
+> The engine's question to the player; a film writes it for you with choice.
+!retired
+
+== answer
+> The engine's answer to a question; a film writes it for you with choice … option.
+!retired
+
+== anim
+> One of his sprite's animations, played by the engine (pose says it in a film).
+scene: beach pikachu piplup
+pikachu anim Attack
+pikachu: Take that!
+
+== credits
+> Credits rising from the bottom of the screen, the engine's.
+!retired
+
+== particles
+> Particles in sharp squares at a point of the place: dust, sparks, bubbles, drops, rings…
+scene: beach pikachu piplup
+particles sparks @ 300 180
+pikachu: Sparks!
+
+== shout
+> The engine's spiky bubble; a film writes it with who (shouting): text.
+!retired
+
+== thing
+> The engine's thing of the scenes; a film writes object put.
+!retired
+
+== untrack
+> The engine's tracks stopped; no word of the films starts them.
+!retired
+
+== asknumber
+> The player chooses a number, kept under a name.
+!retired
+
+== asktimer
+> Before a question: it waits only so long.
+!retired
+
+== attr
+> Raw flags of someone: 32 blinks, 64 transparent, 128 hidden, 8 on top (better: blink, opacity, layer).
+scene: beach pikachu piplup
+pikachu attr 64
+piplup: You look faded.
+
+== audience
+> Those named look at whoever speaks, at each line; audience off: no one does.
+scene: beach pikachu piplup eevee
+audience off
+pikachu: Nobody looks at me.
+
+== backdrop
+> Shows a place's backdrop in place of the scene's.
+!retired
+
+== blink
+> Someone blinks on and off, until blink a off.
+scene: beach pikachu piplup
+pikachu blink on
+wait 1s
+pikachu blink off
+
+== body
+> The size of a body on screen, in pixels, for the framings to fit it (the film does it for big ones).
+scene: beach pikachu piplup
+pikachu body 40 40
+frame pikachu piplup
+
+== bounds
+> They stay inside a rectangle (left top right bottom); bounds off frees them.
+scene: beach pikachu piplup
+bounds 100 100 400 250
+pikachu walk to right
+bounds off
+
+== boxside
+> The dialogue box at the top or at the bottom (box top in a film).
+scene: beach pikachu piplup
+boxside top
+pikachu: Up here.
+
+== calc
+> A calculation kept under a name: + - * / div % min max.
+scene: beach pikachu piplup
+calc apples 3 + 2
+pikachu: I have {apples} apples.
+
+== carry
+> A thing (or someone) carried above someone's head, following them everywhere; carry x off puts it down.
+scene: beach pikachu piplup
+piplup carry pikachu
+pikachu walk to right
+
+== color
+> colour, another spelling: someone tinted a colour (r g b), for so long.
+scene: beach pikachu piplup
+color pikachu 255 120 120 10f
+uncolor pikachu 10f
+
+== uncolor
+> uncolour, another spelling: someone's own colours back.
+scene: beach pikachu piplup
+color pikachu 120 120 255 10f
+uncolor pikachu 10f
+
+== crossfade
+> Another place's backdrop comes over in a cross-fade.
+!retired
+
+== cutaway
+> A picture in place of the scene, which goes on behind (cutaway off returns); a film's shot does it for you.
+!retired
+
+== dim
+> Darkens the light (a film's daytime or light does it).
+scene: beach pikachu piplup
+dim 0 0.5s 120 out of 256
+pikachu: It's getting dark.
+
+== door
+> While exploring, a door to another scene; the game's places do it.
+!retired
+
+== drawing
+> A picture of your own, given a number before it is put; a film's thing … image does it.
+!retired
+
+== each
+> A command for each of a group, $ standing for each one.
+scene: beach pikachu piplup
+each pikachu,piplup emote $ joy
+wait 1s
+
+== ease
+> How the camera's glides that follow slide: smooth, linear or out.
+scene: beach pikachu piplup
+ease linear
+glide to piplup
+
+== elif
+> In the engine's if blocks, the next case; a film writes else if.
+!retired
+
+== endif
+> Has become end: a film closes its if with end.
+!retired
+
+== entrances
+> A place's entrances (the film writes them from the place).
+!retired
+
+== every
+> A command again and again, every so long, beside the film; cease name stops it.
+scene: beach pikachu piplup
+every 1s as hops: pikachu jump
+wait 3s
+cease hops
+
+== facing
+> Puts into two numbers the free point at a distance in front of someone.
+!retired
+
+== find
+> Finds a free place for someone near a spot, in two numbers (find_place in a film).
+!retired
+
+== fishline
+> A fishing line from someone's rod to a thing (the fishing words do it).
+!retired
+
+== flip
+> Their picture flipped from left to right, or back.
+scene: beach pikachu piplup
+pikachu flip on
+wait 1s
+pikachu flip off
+
+== flock
+> A crowd goes to a spot, its middle there, each keeping their place (walk krabbys to … in a film).
+!retired
+
+== gathers
+> Finds a free place for each round a spot, in numbers.
+!retired
+
+== gauge
+> A bar under the words of a place of the screen, filled in proportion to a number.
+scene: beach pikachu piplup
+gauge left 3 10
+pikachu: Three out of ten.
+gauge left off
+
+== goes
+> Goes through these points, round walls and people, walking or running.
+scene: beach pikachu piplup
+pikachu goes walk - 300 180
+
+== gone
+> Takes someone (or something) out of the scene at once.
+scene: beach pikachu piplup
+gone piplup
+pikachu (surprised): Where did he go?
+
+== if
+> Plays the lines up to end only if a test is true (else for the other case).
+scene: beach pikachu piplup
+if chance(50)
+  pikachu: Lucky!
+end
+
+== keepframe
+> Keeps them all in view, wherever they go; keepframe off.
+scene: beach pikachu piplup
+keepframe pikachu piplup
+pikachu walk to right
+keepframe off
+
+== keeponly
+> All the others leave the scene at once.
+scene: beach pikachu piplup eevee
+keeponly pikachu
+pikachu: All alone.
+
+== large
+> A thing shown large and crisp above the scene; large off.
+scene: beach pikachu piplup
+large i109
+wait 1s
+large off
+
+== layer
+> Someone drawn over everyone, under, or among the others.
+scene: beach pikachu piplup
+layer pikachu over
+pikachu walk to piplup
+
+== light
+> The light of the scene: normal, dawn, evening, night, cave, storm, dream, fire.
+scene: beach pikachu piplup
+light evening 1s
+piplup: Sunset already.
+
+== listen
+> Enter and the arrows count without anyone being steered: a game of keys.
+scene: beach pikachu piplup
+listen on
+wait 1s
+listen off
+
+== mirror
+> Someone copies another like a reflection; mirror a off.
+scene: beach pikachu piplup
+piplup mirror pikachu
+pikachu walk to right
+piplup mirror off
+
+== mood
+> The face of someone's lines that give none.
+scene: beach pikachu piplup
+pikachu mood happy
+pikachu: Always smiling.
+
+== musicspeed
+> The music faster or slower, in percent.
+scene: beach pikachu piplup
+music peace
+musicspeed 120
+
+== note
+> A note: the click (or a sound) played higher, by so many semitones.
+scene: beach pikachu piplup
+note c
+note e
+note g
+
+== onhit
+> A sound at the next blow someone takes (sound x on a in a film).
+scene: beach pikachu piplup
+piplup onhit sound click
+pikachu attack Thunderbolt at piplup
+
+== return
+> In a recipe, gives back a value.
+!retired
+
+== ring
+> Put at once in a circle round a point, facing it.
+scene: beach pikachu piplup eevee
+ring 240 180 40 pikachu piplup eevee
+
+== roams
+> They stroll around, as wide as the ground allows (wander in a film).
+scene: beach pikachu piplup
+pikachu roams 40
+wait 2s
+
+== roundcheck
+> Says what is in the way of a round (orbit checks it).
+!retired
+
+== runstep
+> One running step (run does it).
+scene: beach pikachu piplup
+runstep pikachu -20 0
+
+== runto
+> Runs to a point (run does it).
+scene: beach pikachu piplup
+runto pikachu 300 180
+
+== say
+> The engine's line with a wait further on (a film's lines do it).
+!retired
+
+== seats
+> Each goes to a seat they can reach (dinner does it).
+!retired
+
+== sees
+> 1 if a watcher sees someone: close enough, in front, no wall between.
+scene: beach pikachu piplup
+sees spotted pikachu piplup
+pikachu: {spotted}
+
+== setspot
+> Names a place, found now (spot in a film).
+!retired
+
+== shake
+> The ground shakes, and the view with it, until shake off: soft or hard, or for so long (shake hard 1s).
+scene: beach pikachu piplup
+shake
+pikachu (surprised): An earthquake!
+shake off
+piplup: It stopped...
+
+== sheet
+> A character of your own from a sheet (character does it).
+!retired
+
+== shine
+> A little star of crisp pixels turns round a thing; shine x off.
+scene: beach pikachu piplup
+put object Apple right_of pikachu
+shine Apple on
+pikachu: Sparkly!
+
+== swapcontrol
+> The player switches from one to another with Tab, while exploring.
+scene: beach pikachu piplup
+swapcontrol pikachu piplup
+swapcontrol off
+
+== takeable
+> A thing can be picked up by the player, or not.
+scene: beach pikachu piplup
+put object Apple right_of pikachu
+takeable Apple
+
+== textspeed
+> The lines that follow type faster or slower (textspeed 0.4, textspeed normal); the engine's.
+!retired
+
+== timed
+> The previous line goes by on its own after so long (answer auto in a film).
+!retired
+
+== track
+> A track of keys for a property (keys in a film).
+!retired
+
+== trackpath
+> A node follows points (route and follow_route in a film).
+!retired
+
+== views
+> The only directions someone is drawn in; views a off.
+scene: beach pikachu piplup
+pikachu views down
+wait 1s
+pikachu views off
+
+== voice
+> The sound of someone's lines as they type.
+scene: beach pikachu piplup
+pikachu voice click
+pikachu: Click click click.
+
+== waittrack
+> Waits until a node's tracks end (wait in a film).
+!retired
+
+== waituntil
+> The scene waits until a test is true.
+scene: beach pikachu piplup
+calc ready 1 + 0
+waituntil ready == 1
+
+== wall
+> A wall of the place: they cannot go into it and slide along it; wall off.
+scene: beach pikachu piplup
+wall 250 100 270 300
+pikachu walk to right
+
+== while
+> Plays the lines again as long as a test is true.
+scene: beach pikachu piplup
+let hops = 0
+while hops < 3
+  pikachu jump
+  hops = hops + 1
+end
+
+== zoom
+> Brings the view closer (2: twice as big; 1: normal), over so long.
+scene: beach pikachu piplup
+zoom 2 30f
+pikachu: Close-up!
+
+== player
+> Only in a place's scene the game makes (a decor one walks about): the player steers him.
+!retired
+
+== dialogue
+> Only in a place's scene the game makes: what plays when the player talks to someone. Write it under a resident of the decor.
+!retired
+
+== explore
+> Only in a place's scene the game makes: the player explores.
+!retired
+
+== game
+> Only written by the game, in the scenes it makes of its places.
+!retired
+
+== way
+> Only written by the game, in the scenes it makes of its places: a way out.
+!retired
+
+== set
+> Raises a flag of the game, kept once the film ends: the story tests it later (if met_piplup). set flag off lowers it again; set flag 3 gives it that value.
+scene: beach pikachu piplup
+piplup: Nice to meet you!
+set met_piplup
+
+== turnby
+> Turns someone so many eighths from where they look, at once: counter-clockwise, clockwise below 0. The game turns heads so to look around or shake no (look around, shake_head).
+scene: beach pikachu piplup
+pikachu turnby 2
+pikachu: Hmm?
+pikachu turnby -2

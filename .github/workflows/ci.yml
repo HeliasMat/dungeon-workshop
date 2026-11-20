@@ -1,0 +1,41 @@
+# On each push and pull request, as tools/verify.sh does it: the rule of the
+# crates, the build, the tests, clippy, the format and the documentation,
+# without any game data (the tests that need data/ are marked #[ignore] and
+# told as ignored; verify.sh runs them where data/ is).
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Linux libraries (window, sound)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev
+      - name: The rule of the crates
+        shell: bash
+        run: sh tools/rule.sh
+      - name: Build
+        run: cargo build --workspace --all-targets
+      - name: Tests
+        run: cargo test --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Format
+        shell: bash
+        run: cargo fmt --check $(for package in $(sed -n 's/^formatted="\(.*\)"$/\1/p' tools/verify.sh); do printf -- '-p %s ' "$package"; done)
+      - name: Documentation
+        shell: bash
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps

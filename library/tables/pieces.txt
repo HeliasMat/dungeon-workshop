@@ -1,0 +1,40 @@
+# The grounds, edges and paths the cutting uses to recognise the ground of each place
+# (on=place: its colours, its shadows): backstage, the Workshop does not offer them.
+# The other pieces of before were removed on 2026-11-14; places are made of the elements
+# of the game's places (data/extra/game_pieces.txt, made at extraction: e<level>_<n>, r<level>).
+#
+#   name  kind  level  x0 y0 x1 y1  [option=value ...]  # what it is
+
+herbe_bourg          ground    323  320 32 328 40     shadow=b7af3f,afb72f,afd737,dfe75f,e7e76f,bfc757,d7df5f,cfd757,dfe767,dfe757,d7df4f,c7cf4f,afb737  # the town's grass, one tile; its shadows, and the light grass along the paths
+terre_bourg          path 323  72 168 128 240    also=224,168,288,240;304,232,424,392 inside=ffcf87,ffdf9f,ffd797,f7c77f,e7af6f,e79f67,efb777 flippable on=herbe_bourg  # the road of the square and its branch
+falaise_bourg        edge   323  552 432 608 504                 # the cliff at the bottom of the place, its lip of grass, to weave across
+herbe_village        ground    156  160 232 480 352   frequent=4 shadow=57872f,8fbf27,97cf27,a7d757,9fc74f,97bf47,afd75f,afdf5f,b7df67,b7df5f,b7e76f,bfe76f,bfe777,c7ef77,8fdf4f,8fdf47,87cf37  # the village's grass, its most common tiles; its shadow, and the light grass around the rocks and ponds
+mer_large            edge   11   0 0 792 72        # the open sea, its waves
+mer_plage            edge   11   240 72 568 168    # the sea, its waves, the foam, the wet sand
+rivage_sud_plage     edge   11   0 240 664 384     # the bottom of the beach: rocks, palm trees, bushes, grass
+sable_plage          ground    11   240 192 432 240   also=464,200,544,240 tints=232,176,560,232;296,280,328,304;576,272,640,304;704,208,792,264 shadow=cfb75f # the sand and its ripples
+haute_mer            ground    11   0 0 392 40     # the high sea, without land: the deep blue of the open sea and its long light waves
+terre_guilde         ground    195  200 232 288 336   frequent=10 shadow=f7b777,e7976f,e7af6f,c79f6f,efaf77,df9f67  # the beaten earth in front of the Guild
+herbe_foret          ground    52   0 232 504 432     frequent=60           # the tall dark grass of the wood
+sentier_foret        path 52   200 96 312 432    inside=@248,240,264,400 flippable on=herbe_foret  # the orange trail that crosses it
+fourre_foret         ground    52   0 0 504 96        frequent=12 wall=full   # the thicket, a wall
+sable_lac            ground    36   208 240 400 456   # the light sand at the lake's edge
+roche_lac            ground    36   0 216 120 584     wall=full                # the cave's rock, a wall
+herbe_cascades       ground    229  40 800 200 960    frequent=40 also=320,760,440,1000   # the dark thick grass of the valley
+falaise_cascades     edge   229  264 0 480 336                    # the high rock cliff, to weave across
+terre_ruines         ground    66   0 128 136 200   frequent=20   # the orange earth between the stones
+dalles_ruines        ground    66   160 168 352 352 frequent=40   # the great grey paving
+feuillage_ruines     edge   66   0 0 504 56                      # the edge of foliage, to weave across
+sol_grotte           ground    28   232 200 440 440 frequent=20   # the cave's beaten earth floor
+roche_grotte         ground    28   0 0 128 600     frequent=30 wall=full   # the wall of stalagmites, a wall
+sol_lave             ground    148  136 192 296 280 frequent=10 shadow=774747,6f3f3f   # the brown burnt earth
+sol_desert           ground    147  160 200 280 240   frequent=8 # the brown sand of the desert
+sol_nuages           ground    174  800 504 1200 800 frequent=12   # the ground of clouds
+sol_amphi            ground    240  200 240 440 440 frequent=20   # the grey gravel
+haut_amphi           edge   240  0 0 600 216                          # the top: the great rock, the pillars, the black forest
+plancher_cafe        ground    227  320 176 384 240 frequent=16 shadow=9f8f37,cf9f37,977727,c78f2f,af772f,9f5f0f,fff787   # the light wooden floor, its circles of light
+herbe_guilde         ground    203  216 280 296 304 frequent=30 also=280,224,336,280;120,224,192,248 shadow=afaf27,a79f17,bfc717,9f9717,9f9f17,575727   # the grass under the Guild, its tufts
+sol_crepuscule       ground    50   40 416 104 440    shadow=474747,4f4f4f   # the grey ground of Dusk Forest (to cut its fir trees out of it)
+foret_croisement     ground    225  0 296 432 432     wall=full            # the tall close trees around the Crossroads, a wall (to close off the places put together)
+foret_camp           ground    25   0 0 96 96         wall=full            # the Base Camp's forest, a tile that repeats without a seam (96 × 96, to the pixel): enough to fill a large stretch
+falaise_bourg_bas    edge   323  488 400 672 504                  # the cliff at the bottom of the Town and its trees, to weave across

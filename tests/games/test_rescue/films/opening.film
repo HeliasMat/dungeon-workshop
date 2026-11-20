@@ -1,0 +1,4 @@
+# A film of the tests' game test_rescue: only what its test needs.
+title: Opening
+scene: test_square chikorita totodile noctowl
+chikorita: Test line.

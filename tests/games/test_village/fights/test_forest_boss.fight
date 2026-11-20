@@ -1,0 +1,15 @@
+name: Test Forest Boss
+boss_look: Apple Woods
+boss: Butterfree 12
+boss_guards: Metapod 8, Kakuna 8
+boss_hp: x3
+boss_arena: 15x9
+boss_shape: pillars
+boss_says: Test line.
+boss_falls: Test line.
+boss_moves: Gust, Sleep Powder, Confusion, Stun Spore
+boss_phase: 60% | says Phase at 60%. | anger +2
+boss_phase: 40% | says Phase at 40%. | reinforcements Caterpie 6, Weedle 6 | weather rain
+boss_phase: 20% | says Phase at 20%. | heal 30% | moves Gust, Silver Wind, Psychic
+boss_recruit: yes
+boss_item: Golden Apple

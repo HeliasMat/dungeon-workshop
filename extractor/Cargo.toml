@@ -1,0 +1,23 @@
+[package]
+name = "extractor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pulls the resources out of your own copy of the cartridge into data/, once"
+readme = "../README.md"
+publish.workspace = true
+
+# The one reading of the ROM: `extractor <rom> [folder]` writes data/rom/,
+# once; the game then plays from those files alone.
+
+[dependencies]
+rules = { path = "../rules" }
+rom_formats = { path = "../rom_formats" }
+engine = { path = "../engine" }
+shell = { path = "../shell" }
+stage_view = { path = "../stage_view" }
+glam.workspace = true
+image.workspace = true
+bincode.workspace = true

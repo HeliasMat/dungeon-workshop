@@ -1,0 +1,22 @@
+[package]
+name = "shell"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Window, keyboard, sound played, a screen drawn by hand, the art kept"
+readme = "../README.md"
+publish.workspace = true
+
+# What a program of this project shows itself with: a window and its keys, a
+# picture drawn pixel by pixel, sounds, images read from files. It knows
+# neither the rules of the game nor a scene.
+[dependencies]
+assets = { path = "../assets" }
+media = { path = "../media" }
+glam.workspace = true
+bincode.workspace = true
+image.workspace = true
+minifb = "0.28"
+rodio = { version = "0.20", default-features = false }

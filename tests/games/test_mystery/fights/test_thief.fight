@@ -1,0 +1,15 @@
+name: Test Thief
+boss_look: Craggy Coast
+boss: Haunter 12
+boss_title: The Light Thief
+boss_cry: snicker
+boss_guards: Gastly 8, Gastly 8
+boss_hp: x2
+boss_arena: 13x9
+boss_shape: pillars
+boss_music: battle
+boss_says: Test line.
+boss_falls: Test line.
+boss_moves: Lick, Night Shade, Confuse Ray, Shadow Punch
+boss_phase: 60% | says Phase at 60%. | weather fog
+boss_phase: 30% | says Phase at 30%. | reinforcements Gastly 8 | shake

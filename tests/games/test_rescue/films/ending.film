@@ -1,0 +1,10 @@
+# A film of the tests' game test_rescue: only what its test needs.
+title: Ending
+scene: test_square chikorita totodile noctowl
+chikorita: Test line.
+choice
+  option First
+    chikorita: Test line.
+  option Second
+    chikorita: Test line.
+end

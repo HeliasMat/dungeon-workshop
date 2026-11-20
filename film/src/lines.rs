@@ -1,0 +1,449 @@
+//! A line said, in its parts. The lines the
+//! Workshop works on by their fields, read here once, by the crate that
+//! compiles them: a test sees that what one writes the other reads.
+
+use crate::doc::{Kind, kind_of};
+
+/// A line said, in its parts: its indent, who says it, what is in its
+/// brackets (a face, how it is said), what is said.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Said {
+    pub lead: String,
+    pub who: String,
+    pub marks: Vec<String>,
+    pub text: String,
+}
+
+impl Said {
+    /// A line said, read in its parts; none if it is not one.
+    pub fn read(line: &str) -> Option<Said> {
+        let Kind::Said { .. } = kind_of(line) else {
+            return None;
+        };
+        let lead: String = line.chars().take_while(|letter| letter.is_whitespace()).collect();
+        let rest = &line[lead.len()..];
+        let name_end = rest.find(|letter: char| !(letter.is_alphanumeric() || letter == '_' || letter == '-' || letter == '?')).unwrap_or(rest.len());
+        let who = rest[..name_end].to_string();
+        let mut after = rest[name_end..].trim_start();
+        let mut marks = Vec::new();
+        if let Some(inside) = after.strip_prefix('(')
+            && let Some((brackets, rest)) = inside.split_once(')')
+        {
+            marks = brackets.split(',').map(|mark| mark.trim().to_string()).filter(|mark| !mark.is_empty()).collect();
+            after = rest.trim_start();
+        }
+        let text = after.strip_prefix(':').unwrap_or(after).trim_start().to_string();
+        Some(Said { lead, who, marks, text })
+    }
+
+    /// The line it makes.
+    pub fn line(&self) -> String {
+        let marks = if self.marks.is_empty() { String::new() } else { format!(" ({})", self.marks.join(", ")) };
+        format!("{}{}{marks}: {}", self.lead, self.who, self.text)
+    }
+
+    /// Its face, if one of its marks is one.
+    pub fn face(&self) -> Option<&str> {
+        self.marks.iter().map(String::as_str).find(|mark| crate::words::FACES.iter().any(|(face, _)| face == mark))
+    }
+
+    /// The same, with that face (none: without one), its other marks kept.
+    pub fn with_face(&self, face: Option<&str>) -> Said {
+        let mut marks: Vec<String> = self.marks.iter().filter(|mark| Some(mark.as_str()) != self.face()).cloned().collect();
+        if let Some(face) = face {
+            marks.insert(0, face.to_string());
+        }
+        Said { marks, ..self.clone() }
+    }
+
+    /// The same, with that way of saying it there or not.
+    pub fn with_mark(&self, mark: &str, on: bool) -> Said {
+        let mut marks: Vec<String> = self.marks.iter().filter(|known| *known != mark).cloned().collect();
+        if on {
+            marks.push(mark.to_string());
+        }
+        Said { marks, ..self.clone() }
+    }
+}
+
+/// The places a film's scenes are in (`scene: beach pikachu`: `beach`).
+pub fn places_of(film: &str) -> Vec<String> {
+    let mut places: Vec<String> = film
+        .lines()
+        .filter_map(|line| match kind_of(line) {
+            Kind::Scene { place, .. } => Some(place),
+            _ => None,
+        })
+        .collect();
+    places.sort();
+    places.dedup();
+    places
+}
+
+/// A film's text with its scenes in one place now in another, if it has any.
+pub fn scenes_moved(film: &str, from: &str, to: &str) -> Option<String> {
+    let mut changed = false;
+    let mut lines: Vec<String> = film
+        .lines()
+        .map(|line| {
+            let Kind::Scene { place, .. } = kind_of(line) else {
+                return line.to_string();
+            };
+            let lead = &line[..line.len() - line.trim_start().len()];
+            let Some(rest) = line.trim_start().strip_prefix("scene:") else {
+                return line.to_string();
+            };
+            let mut words: Vec<&str> = rest.split_whitespace().collect();
+            if place != from || words.first() != Some(&from) {
+                return line.to_string();
+            }
+            changed = true;
+            words[0] = to;
+            format!("{lead}scene: {}", words.join(" "))
+        })
+        .collect();
+    if film.ends_with('\n') {
+        lines.push(String::new());
+    }
+    changed.then(|| lines.join("\n"))
+}
+
+/// A line anchored to what happens: its head (before the colon, if any), what
+/// follows the colon.
+pub(crate) fn anchor_parts(text: &str) -> (&str, &str) {
+    match text.split_once(':') {
+        Some((head, tail)) => (head.trim(), tail.trim()),
+        None => (text.trim(), ""),
+    }
+}
+
+/// `when a [b] arrives`: who.
+pub(crate) fn arrivals(head: &str) -> Option<Vec<&str>> {
+    let words: Vec<&str> = head.split_whitespace().collect();
+    match words.as_slice() {
+        ["when", who @ .., "arrives" | "arrive"] if !who.is_empty() => Some(who.to_vec()),
+        _ => None,
+    }
+}
+
+/// `at name [+ 2s]`: the mark, and so many frames after it.
+pub(crate) fn at_mark(head: &str) -> Option<(String, i32)> {
+    let rest = head.strip_prefix("at ")?.replace('+', " + ");
+    let words: Vec<&str> = rest.split_whitespace().collect();
+    let (name, after) = match words.as_slice() {
+        [name] => (name, 0),
+        [name, "+", time] => (name, crate::words::frames_of(time)?),
+        _ => return None,
+    };
+    (!crate::text::in_seconds(name) && !crate::words::digits(name)).then(|| (crate::words::plain(name), after))
+}
+
+/// `at 12s`, `at music 12s` (head of an anchored line): the clock it counts
+/// by (`ir::SCENE_CLOCK`, `ir::MUSIC_CLOCK`) and the frames.
+pub(crate) fn at_clock(head: &str) -> Option<(String, i32)> {
+    let words: Vec<&str> = head.strip_prefix("at ")?.split_whitespace().collect();
+    let (clock, time) = match words.as_slice() {
+        ["music", time] => (crate::ir::MUSIC_CLOCK, time),
+        [time] => (crate::ir::SCENE_CLOCK, time),
+        _ => return None,
+    };
+    (crate::text::in_seconds(time) || time.strip_suffix('f').is_some_and(crate::words::digits))
+        .then(|| crate::words::frames_of(time))
+        .flatten()
+        .map(|frames| (clock.to_string(), frames))
+}
+
+/// Seconds as a film writes them: `2s`, `1.5s`.
+pub fn seconds_said(seconds: f32) -> String {
+    let tenths = (seconds * 10.0).round() / 10.0;
+    if tenths.fract() == 0.0 { format!("{tenths:.0}s") } else { format!("{tenths:.1}s") }
+}
+
+/// The mark a line sets (`mark quarrel`), if it is one.
+pub fn mark_of(line: &str) -> Option<String> {
+    match line.split_whitespace().collect::<Vec<_>>().as_slice() {
+        ["mark", name] => Some(crate::words::plain(name.trim_end_matches(':'))),
+        _ => None,
+    }
+}
+
+/// The marks a text sets, each with its line, in order.
+pub fn marks(text: &str) -> Vec<(usize, String)> {
+    text.lines().enumerate().filter_map(|(at, line)| Some((at + 1, mark_of(line)?))).collect()
+}
+
+/// A name for a new mark, none of the text's: `m1`, `m2`...
+pub fn new_mark(text: &str) -> String {
+    let known: Vec<String> = marks(text).into_iter().map(|(_, name)| name).collect();
+    (1..).map(|at| format!("m{at}")).find(|name| !known.contains(name)).unwrap_or_default()
+}
+
+/// The text with a mark set just before that line (lines from 1), at its indent.
+pub fn with_mark_before(text: &str, number: usize, name: &str) -> String {
+    let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
+    let at = number.saturating_sub(1).min(lines.len());
+    let lead: String = lines.get(at).map(|line| line.chars().take_while(|letter| letter.is_whitespace()).collect()).unwrap_or_default();
+    lines.insert(at, format!("{lead}mark {name}"));
+    let mut made = lines.join("\n");
+    if text.ends_with('\n') {
+        made.push('\n');
+    }
+    made
+}
+
+/// A film's text with a name (someone, a mark, a spot) made another
+/// everywhere it names: its lines' words, who says a line, a scene's cast,
+/// `name = species`; not in the words said, nor in the comments.
+pub fn renamed(text: &str, old: &str, new: &str) -> String {
+    let old = crate::words::plain(old);
+    let swap = |word: &str| -> String {
+        let core = word.trim_end_matches([':', ',']);
+        if !core.is_empty() && crate::words::plain(core) == old { format!("{new}{}", &word[core.len()..]) } else { word.to_string() }
+    };
+    let swapped = |part: &str| -> String {
+        let mut out = String::new();
+        let mut word = String::new();
+        for letter in part.chars() {
+            if letter.is_whitespace() {
+                out.push_str(&swap(&word));
+                word.clear();
+                out.push(letter);
+            } else {
+                word.push(letter);
+            }
+        }
+        out.push_str(&swap(&word));
+        out
+    };
+    let said_by = |line: &str| match line.split_once(':') {
+        Some((who, said)) => format!("{}:{said}", swapped(who)),
+        None => line.to_string(),
+    };
+    let mut lines: Vec<String> = text
+        .lines()
+        .map(|line| {
+            if line.trim_start().starts_with('#') || line.trim_start().starts_with('>') {
+                return line.to_string();
+            }
+            if matches!(kind_of(line), Kind::Said { .. }) {
+                // (A line said: who says it, and its brackets; not its words.)
+                return said_by(line);
+            }
+            // (A line anchored, saying a line: the same, after its own colon.)
+            let body = crate::time::played_words(line);
+            let saying = body != line.trim() && !body.is_empty() && matches!(kind_of(&body), Kind::Said { .. });
+            match line.rfind(body.as_str()).filter(|_| saying) {
+                Some(at) => {
+                    let (head, rest) = line.split_at(at);
+                    let (body, tail) = rest.split_at(body.len());
+                    format!("{}{}{tail}", swapped(head), said_by(body))
+                }
+                None => swapped(line),
+            }
+        })
+        .collect();
+    if text.ends_with('\n') {
+        lines.push(String::new());
+    }
+    lines.join("\n")
+}
+
+/// A film's text with its blocks in step, as the language writes it
+/// (`language::format`): each line inside a block two spaces further in than
+/// the one that opens it, its `end` back with it; a scene's line at the
+/// margin; one blank line at most; the words of each line as they were.
+pub fn formatted(text: &str) -> String {
+    crate::text::front::formatted(text)
+}
+
+/// What a text can fold, each its first line and its last (lines from 1):
+/// a scene up to the next, a moment up to the next (or its scene's end), a
+/// block up to its `end`.
+pub fn folds(text: &str) -> Vec<(usize, usize)> {
+    crate::service::folds(text)
+}
+
+/// The lines of a text, and whether it ended its last one.
+fn split_lines(text: &str) -> (Vec<String>, bool) {
+    (text.lines().map(str::to_string).collect(), text.ends_with('\n'))
+}
+
+fn joined(lines: Vec<String>, ended: bool) -> String {
+    let mut made = lines.join("\n");
+    if ended {
+        made.push('\n');
+    }
+    made
+}
+
+/// The text with those lines (from 1, both included) inside a block: the
+/// opening line put before them at their indent, they two spaces further
+/// in, its `end` after them.
+pub fn wrapped(text: &str, from: usize, to: usize, opening: &str) -> String {
+    let (mut lines, ended) = split_lines(text);
+    let (from, to) = (from.max(1), to.min(lines.len()));
+    if from > to {
+        return text.to_string();
+    }
+    let lead: String = lines[from - 1].chars().take_while(|letter| letter.is_whitespace()).collect();
+    for line in &mut lines[from - 1..to] {
+        if !line.trim().is_empty() {
+            *line = format!("  {line}");
+        }
+    }
+    lines.insert(to, format!("{lead}end"));
+    lines.insert(from - 1, format!("{lead}{opening}"));
+    joined(lines, ended)
+}
+
+/// The text with those lines played beside the film (`&` at their end),
+/// or in its course again if they all were.
+pub fn beside(text: &str, from: usize, to: usize) -> String {
+    let (mut lines, ended) = split_lines(text);
+    let (from, to) = (from.max(1), to.min(lines.len()));
+    let playing = |line: &String| !line.trim().is_empty() && !line.trim_start().starts_with('#') && !line.trim_start().starts_with("scene:");
+    let with = |line: &String| line.trim_end().ends_with(" &");
+    let all = (from..=to).filter(|at| playing(&lines[at - 1])).all(|at| with(&lines[at - 1]));
+    for at in from..=to {
+        let line = &lines[at - 1];
+        if playing(line) {
+            lines[at - 1] = match (all, with(line)) {
+                (true, _) => line.trim_end().strip_suffix(" &").unwrap_or(line).trim_end().to_string(),
+                (false, false) => format!("{} &", line.trim_end()),
+                (false, true) => line.clone(),
+            };
+        }
+    }
+    joined(lines, ended)
+}
+
+/// The text with those lines made a recipe of that name (`define` …
+/// `end`, before the first scene), called where they were.
+pub fn extracted(text: &str, from: usize, to: usize, name: &str) -> String {
+    let (mut lines, ended) = split_lines(text);
+    let (from, to) = (from.max(1), to.min(lines.len()));
+    if from > to {
+        return text.to_string();
+    }
+    let lead: String = lines[from - 1].chars().take_while(|letter| letter.is_whitespace()).collect();
+    let taken: Vec<String> = lines.drain(from - 1..to).collect();
+    lines.insert(from - 1, format!("{lead}{name}"));
+    let first_scene = lines.iter().position(|line| line.trim_start().starts_with("scene:")).unwrap_or(0);
+    let mut recipe = vec![format!("define {name}")];
+    recipe.extend(taken.iter().map(|line| format!("  {}", line.trim_start())));
+    recipe.push("end".to_string());
+    recipe.push(String::new());
+    for (n, line) in recipe.into_iter().enumerate() {
+        lines.insert(first_scene + n, line);
+    }
+    joined(lines, ended)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_line_said_is_read_in_its_parts_and_made_again() {
+        let said = Said::read("  pikachu (joyous, fast): Hi, Eevee!").expect("said");
+        assert_eq!(
+            said,
+            Said { lead: "  ".to_string(), who: "pikachu".to_string(), marks: vec!["joyous".to_string(), "fast".to_string()], text: "Hi, Eevee!".to_string() }
+        );
+        assert_eq!(said.line(), "  pikachu (joyous, fast): Hi, Eevee!");
+        assert_eq!(said.face(), Some("joyous"));
+        assert_eq!(said.with_face(Some("sad")).line(), "  pikachu (sad, fast): Hi, Eevee!");
+        assert_eq!(said.with_face(None).with_mark("fast", false).line(), "  pikachu: Hi, Eevee!");
+        assert_eq!(Said::read("eevee: Yes").expect("said").with_mark("slow", true).line(), "eevee (slow): Yes");
+        assert_eq!(Said::read("pikachu walk to right"), None);
+    }
+
+    #[test]
+    fn the_lines_of_the_projects_films_are_read_and_made_again_as_they_are() {
+        // (Each line said of the project's films: read, then written as it was.)
+        let mut seen = 0;
+        for path in crate::tests::corpus() {
+            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            for line in text.lines() {
+                if let Some(said) = Said::read(line) {
+                    seen += 1;
+                    assert_eq!(Said::read(&said.line()), Some(said.clone()), "{}: {line}", path.display());
+                }
+            }
+        }
+        assert!(seen > 0, "no line said read");
+    }
+
+    #[test]
+    fn a_mark_is_set_before_a_line() {
+        let text = "scene: town krabby\n  krabby jump\nmark m1\n";
+        assert_eq!(new_mark(text), "m2");
+        assert_eq!(with_mark_before(text, 2, "m2"), "scene: town krabby\n  mark m2\n  krabby jump\nmark m1\n");
+        assert_eq!(marks(text), vec![(3, "m1".to_string())]);
+    }
+
+    #[test]
+    fn every_line_placed_by_the_workshop_is_played_with_no_problem() {
+        use crate::time::{Change, Clock, Placement};
+        for placement in [
+            Placement::After,
+            Placement::With,
+            Placement::When("krabby arrives".to_string()),
+            Placement::At { clock: Clock::Mark("m1".to_string()), offset: 90 },
+            Placement::At { clock: Clock::Here, offset: 60 },
+            Placement::At { clock: Clock::Scene, offset: 120 },
+        ] {
+            let before = "scene: town krabby piplup\nmark m1\nkrabby walk to right &\npiplup jump\npiplup: Right.\n";
+            let line = crate::time::replaced_line(before, 4, &Change::Placement(placement)).expect("placed");
+            let film = before.replace("piplup jump", &line);
+            let wrong: Vec<String> =
+                crate::tests::compile(&film).problems.iter().filter(|problem| !problem.is_remark()).map(|problem| problem.to_string()).collect();
+            assert!(wrong.is_empty(), "\"{line}\": {wrong:?}");
+        }
+    }
+
+    #[test]
+    fn a_name_is_made_another_where_it_names_not_in_what_is_said() {
+        let text = "pinchy = krabby\nscene: beach pinchy piplup\npinchy (joyous): Hi pinchy!\npinchy walk to piplup\nwhen pinchy arrives : piplup: There you are pinchy\n# pinchy here\nmark pinchy\n";
+        let made = renamed(text, "pinchy", "pincers");
+        assert_eq!(
+            made,
+            "pincers = krabby\nscene: beach pincers piplup\npincers (joyous): Hi pinchy!\npincers walk to piplup\nwhen pincers arrives : piplup: There you are pinchy\n# pinchy here\nmark pincers\n"
+        );
+        assert_eq!(renamed("pinchy jump &\n", "pinchy", "pincers"), "pincers jump &\n");
+    }
+
+    #[test]
+    fn a_films_blocks_are_put_in_step() {
+        let text = "scene: beach pikachu piplup\n    pikachu jump\ntogether\npikachu jump\n      piplup jump\n   end\nwhen pikachu arrives\nchoice\noption Yes\npikachu: Yes!\nend\nend\n\n# done\n";
+        assert_eq!(
+            formatted(text),
+            "scene: beach pikachu piplup\npikachu jump\ntogether\n  pikachu jump\n  piplup jump\nend\nwhen pikachu arrives\n  choice\n  option Yes\n    pikachu: Yes!\n  end\nend\n\n# done\n"
+        );
+        assert_eq!(formatted(&formatted(text)), formatted(text), "a second time: nothing changes");
+    }
+
+    #[test]
+    fn a_film_folds_its_scenes_moments_and_blocks() {
+        let text = "title: Trial\nscene: beach a\nmoment: one\ntogether\na jump\nend\nmoment: two\na jump\nscene: town a\na jump\n\n";
+        assert_eq!(folds(text), vec![(2, 8), (3, 6), (4, 6), (7, 8), (9, 10)]);
+    }
+
+    #[test]
+    fn lines_chosen_are_wrapped_put_beside_or_made_a_recipe() {
+        let text = "scene: beach pikachu piplup\npikachu jump\npiplup jump\npikachu: Done.\n";
+        assert_eq!(wrapped(text, 2, 3, "together"), "scene: beach pikachu piplup\ntogether\n  pikachu jump\n  piplup jump\nend\npikachu: Done.\n");
+        let beside_them = beside(text, 2, 3);
+        assert_eq!(beside_them, "scene: beach pikachu piplup\npikachu jump &\npiplup jump &\npikachu: Done.\n");
+        assert_eq!(beside(&beside_them, 2, 3), text, "again: in the film's course");
+        assert_eq!(
+            extracted(text, 2, 3, "hop_about"),
+            "define hop_about\n  pikachu jump\n  piplup jump\nend\n\nscene: beach pikachu piplup\nhop_about\npikachu: Done.\n"
+        );
+        for made in [wrapped(text, 2, 3, "together"), beside_them, extracted(text, 2, 3, "hop_about")] {
+            let wrong: Vec<String> =
+                crate::tests::compile(&made).problems.iter().filter(|problem| !problem.is_remark()).map(|problem| problem.to_string()).collect();
+            assert!(wrong.is_empty(), "{made}\n{wrong:?}");
+        }
+    }
+}

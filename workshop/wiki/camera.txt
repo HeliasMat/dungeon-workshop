@@ -1,0 +1,92 @@
+# The Wiki's pages: the view, pictures, time (workshop/src/wiki/written.rs).
+
+== frame
+> Frames those named (or a place, or both: frame pikachu piplup left) once, whole, above the dialogue box, the view gliding there; snap: at once, a cut; follows: keeps them framed as they move. One framing per moment, as in the game's scenes.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+frame pikachu piplup
+pikachu: Smile!
+
+== glide
+> A light move of the view, slow at its ends, to someone or a place: glide to piplup, glide to right in 2s.
+scene: beach pikachu piplup
+piplup put right
+pikachu: Is someone over there?
+glide to piplup in 2s
+piplup: Hi!
+
+== moment
+> Opens a moment of the scene, with its title, until the next one: one framing per moment, as in the game's scenes.
+scene: beach pikachu piplup
+moment: the arrival
+frame pikachu piplup
+pikachu: Hello!
+
+== memory
+> A memory, up to its end: in sepia between two white fades, as an old picture, then back to the present.
+scene: beach pikachu piplup
+pikachu: I remember that day...
+memory
+  piplup (happy): Let's be friends!
+end
+pikachu: Good times.
+
+== together
+> Starts the lines up to end at the same time; the film goes on once the longest is over.
+scene: beach pikachu piplup
+together
+  pikachu jump
+  piplup jump
+end
+pikachu: Again!
+
+== beside
+> Plays its lines one after the other alongside the film, which goes on; named, wait name waits for them.
+scene: beach pikachu piplup
+beside hops
+  pikachu jump
+  pikachu jump
+end
+piplup: Look at him go.
+wait hops
+
+== at
+> Plays a line at a moment: of the scene (at 2s), of a mark (at hello + 1s), or from here (at +2s). The film does not wait for it.
+scene: beach pikachu piplup
+at 2s: piplup jump
+pikachu: In two seconds, he jumps.
+wait 2s
+
+== mark
+> Marks this instant of the scene by a name, for at name + 2s.
+scene: beach pikachu piplup
+mark hello
+at hello + 1s: piplup jump
+pikachu: One, two...
+wait 2s
+
+== pace
+> The rhythm of what follows: pace slow or pace brisk makes the waits said after it (wait 2s) longer or shorter, pace 1.5 by so much, pace normal as written; a word's own time stays its own. pace lines 2s lets each line said go on by itself after two seconds; pace lines off waits for the reader again.
+scene: beach pikachu piplup
+pace slow
+pikachu: Shh... listen.
+wait 1s
+pace lines 2s
+piplup: The waves...
+pikachu: ...are singing.
+pace lines off
+pace normal
+piplup jump
+
+== when
+> Plays a line (or a block up to end) as soon as something happens: when pikachu arrives, when pikachu leaves… The film does not wait for it. Before a fight, when health(a) <= 50 plays lines once that much health is left.
+scene: beach pikachu piplup
+pikachu walk to right &
+when pikachu arrives: pikachu jump
+piplup: Go, go!
+wait pikachu
+
+== after
+> An old way of time: write at +2s : line (or wait 2s, then the line).
+!retired

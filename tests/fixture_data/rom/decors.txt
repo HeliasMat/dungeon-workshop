@@ -1,0 +1,5 @@
+test_harbour	480	324	196	Test Harbour	632,200,right;8,200,left
+test_garden	483	256	220	Test Garden	256,376,down
+test_square	484	416	376	Test Square	416,664,south;8,376,west;600,376,bridge
+test_market	477	288	240	Test Market	8,240,west;568,240,east;288,408,south
+test_plaza	478	384	300	Test Plaza

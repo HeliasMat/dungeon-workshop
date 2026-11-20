@@ -1,0 +1,125 @@
+# Recipes of line fishing: what the line does once cast (`pikachu cast at
+# offshore`), until it is reeled in: `bite` and `reel`.
+#
+# They start with `who _bobber`: the bobber of his line is then called
+# `bobber` (`jump bobber 2 6f`, `{bobber.x}`), and he keeps his eyes on the
+# water. The small gestures of the library's own, never written in a film:
+# `who _reel_in [broken]` (the line comes in, its bobber with it), `who
+# _shadow dives|flees` (the fish's shadow under the bobber), `who _haul
+# what` (what bit flies out of the water), `_spectators joy|sorrow` (those
+# watching react).
+
+# Only a nibble: the bobber quivers twice, he wonders (`bite nibble`).
+define _bite who:pokemon nibble
+  who _bobber
+  repeat 2
+    jump bobber 2 6f &
+    particles rings bobber 1
+    wait 18f
+  end
+  who emote question
+  wait 30f
+end
+
+# A strong bite: the bobber is yanked under, a big splash, the rod pulls him forward; he braces.
+define _bite who:pokemon strong
+  who _bobber
+  who _shadow dives
+  bobber anim 0 1
+  sound shock
+  shake soft 16f
+  particles drops bobber 36 blue
+  particles rings bobber 4
+  who anim Pull
+  who tremble
+  wait 30f
+  who tremble off
+  who emote shock
+  who jump 5 8f &
+  wait 50f
+end
+
+# A bite: the bobber dives, the water splashes, he starts.
+define _bite who:pokemon
+  who _bobber
+  who _shadow dives
+  bobber anim 0 1
+  sound startle
+  particles drops bobber 20 blue
+  particles rings bobber 3
+  who emote exclaim
+  who jump 5 8f &
+  wait 50f
+end
+
+# He reels in what bit: it flies out of the water and lands beside him.
+define reel who:pokemon catch what:word
+  who _haul what
+end
+
+# He reels in hard and the line snaps: it gives, he falls back, the bobber
+# stays alone a moment on the water, then sinks.
+define reel who:pokemon snap
+  who _bobber
+  who anim Pull
+  who tremble
+  particles rings bobber 2
+  _spectators sorrow
+  wait 1s
+  who tremble off
+  who _reel_in broken
+  sound shock
+  particles drops bobber 30 blue
+  particles rings bobber 3
+  who pose idle
+  who jump 6 10f &
+  who emote shock
+  wait 50f
+  bobber anim 0 1
+  particles bubbles bobber 6
+  gone bobber
+  who holdgaze off
+  wait 20f
+end
+
+# He reels in, and the fish gets away: the bobber springs up, its shadow darts off, the line comes back empty.
+define reel who:pokemon lose
+  who _bobber
+  who anim Pull
+  who tremble
+  sound hop
+  jump bobber 6 8f &
+  particles rings bobber 2
+  particles drops bobber 10 blue
+  who _shadow flees
+  _spectators sorrow
+  wait 30f
+  who tremble off
+  who _reel_in
+  who pose idle
+  who jump 3 8f &
+  who emote sweat
+  who holdgaze off
+  wait 40f
+end
+
+# The reel, a click a turn (n turns, 4 otherwise): the bobber comes back to him over the water, rings behind, then the line comes in.
+define reel who:pokemon n:number=4
+  who _bobber
+  who _shadow dives
+  bobber float 0 60f
+  bobber approach who {n * 14f} &
+  who anim Pull 1
+  who bubble Click, click...
+  repeat n
+    sound click
+    particles rings bobber 1
+    wait 14f
+  end
+  wait bobber
+  particles drops bobber 6 blue
+  who _reel_in
+  who pose idle
+  who holdgaze off
+  wait 10f
+end

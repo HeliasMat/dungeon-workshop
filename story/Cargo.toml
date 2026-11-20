@@ -1,0 +1,19 @@
+[package]
+name = "story"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The game's story (story.txt) read into engine lines"
+readme = "../README.md"
+publish.workspace = true
+
+# The game's story (`story.txt`, extracted from the ROM) read into the
+# engine's lines. What the game reads its story with, without the films
+# (`film/` uses it too).
+[dependencies]
+engine = { path = "../engine" }
+
+[dev-dependencies]
+scenes = { path = "../scenes" }

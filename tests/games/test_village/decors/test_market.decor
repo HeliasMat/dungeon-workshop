@@ -1,0 +1,58 @@
+decor: test_market 576 416
+name Test Market
+center 288 240
+like 324 323
+level 477
+ground herbe_bourg
+path terre_bourg from 0 240 to 576 240 width 40
+path terre_bourg from 288 416 to 288 240 width 32
+entrance 8 240 west
+entrance 568 240 east
+entrance 288 408 south
+
+put e324_4 132 72
+put e324_5 116 120
+put e323_16 432 136
+put e324_14 104 312, 224 320, 400 320
+put e323_24 32 184, 528 176
+put e323_23 344 192
+put e156_3 468 8, -4 -32, -16 300, 488 300
+
+
+[life]
+music 69
+departure
+exit 264 400 48 16 to 224
+
+resident meowth 250 208 down
+says Test line.
+says Test line.
+
+resident abra 100 250 right
+says Test line.
+says Test line.
+
+resident whismur 520 252 left
+says Test line.
+says Test line.
+
+resident clefairy 288 300 down wanders 48
+says Test line.
+
+resident kirlia 400 220 down
+says Test line.
+says Test line.
+
+resident kecleon 180 200 down
+says if not fireflies_back: Said if not fireflies_back.
+says if fireflies_back: Said if fireflies_back.
+talk shop
+
+resident duskull 470 200 left
+says Test line.
+talk bank
+
+resident pidgeot 100 200 right if not fireflies_back
+says Test line.
+
+exit 560 224 16 32 to test_harbour left

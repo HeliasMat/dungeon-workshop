@@ -1,0 +1,20 @@
+[package]
+name = "media"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pictures, letters, music and the files they are kept in: data, no window, no sound played"
+readme = "../README.md"
+publish.workspace = true
+
+# What is shown and heard, as data: pictures and the game's picture files,
+# tilesets and their template, the font, songs and banks and the
+# synthesizer making sound of them, the console's colours. No window, no
+# audio device, no program run, no network: the shell plays them.
+[dependencies]
+assets = { path = "../assets" }
+bincode.workspace = true
+image.workspace = true
+serde.workspace = true

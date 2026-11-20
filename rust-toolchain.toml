@@ -1,0 +1,5 @@
+# The stable toolchain the workspace builds with (`rust-version` in
+# Cargo.toml says the same).
+[toolchain]
+channel = "1.98.1"
+components = ["clippy", "rustfmt"]

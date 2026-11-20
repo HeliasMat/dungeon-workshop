@@ -1,0 +1,149 @@
+[workspace]
+resolver = "3"
+members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "engine", "film", "language", "dive", "scene_player", "preview", "game", "workshop", "decor", "rom_formats", "media", "shell", "spritecollab", "stage_view", "dungeon_lsp"]
+
+# What every crate's manifest says alike (each takes it with `x.workspace = true`).
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/HeliasMat/dungeon-workshop"
+publish = false
+# The toolchain it builds with (`rust-toolchain.toml` pins the same).
+rust-version = "1.98.1"
+
+# The outside crates more than one crate uses, at one version for all.
+[workspace.dependencies]
+bincode = "1.3"
+glam = "0.32"
+image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.dev]
+opt-level = 1
+# Enough for the names in a panic's trace; full debug info made the link
+# run out of memory.
+debug = "line-tables-only"
+
+# The shell draws each pixel itself: fast even in a plain build, where checking
+# each sum would stop the machine doing them by sixteens. The film player and
+# the game work out each frame the same way.
+[profile.dev.package.shell]
+opt-level = 3
+overflow-checks = false
+debug-assertions = false
+
+# (The pictures and the synthesizer, as fast: they were the shell's.)
+[profile.dev.package.media]
+opt-level = 3
+overflow-checks = false
+debug-assertions = false
+
+[profile.dev.package.stage_view]
+opt-level = 3
+overflow-checks = false
+debug-assertions = false
+
+[profile.dev.package.scene_player]
+opt-level = 3
+overflow-checks = false
+debug-assertions = false
+
+
+[profile.dev.package.dive]
+opt-level = 3
+
+
+[profile.dev.package.egui]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.epaint]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.emath]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.ecolor]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.eframe]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.egui_glow]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.egui-winit]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.egui_dock]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.glow]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.ab_glyph]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.ab_glyph_rasterizer]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.owned_ttf_parser]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.ttf-parser]
+opt-level = 3
+debug-assertions = false
+
+# The decors' tool, and the pictures it writes and the Workshop reads: built
+# as plainly, a large decor changed took ten seconds to be shown anew.
+[profile.dev.package.decor]
+opt-level = 3
+debug-assertions = false
+overflow-checks = false
+
+[profile.dev.package.image]
+opt-level = 3
+
+[profile.dev.package.png]
+opt-level = 3
+
+[profile.dev.package.fdeflate]
+opt-level = 3
+
+[profile.dev.package.miniz_oxide]
+opt-level = 3
+
+[profile.dev.package.crc32fast]
+opt-level = 3
+
+[profile.dev.package.flate2]
+opt-level = 3
+
+[profile.dev.package.simd-adler32]
+opt-level = 3
+
+[profile.dev.package.adler2]
+opt-level = 3
+
+# Dependencies: no debug info, it is what exhausted memory while compiling.
+[profile.dev.package."*"]
+opt-level = 1
+debug = false
+
+# The Workshop: drawn each frame.
+[profile.dev.package.workshop]
+opt-level = 3
+debug-assertions = false

@@ -1,0 +1,17 @@
+# The Wiki's pages: moving about, crowds (workshop/src/wiki/written.rs).
+
+== wait
+> Waits: so long (1s, 30f), until someone has arrived (wait pikachu), until what plays beside under that name ends, or until everything has stopped (wait all).
+scene: beach pikachu piplup
+pikachu walk to right &
+wait 1s
+piplup: Wait for me!
+wait pikachu
+
+== collisions
+> collisions on: walls, the ground and bodies stop people until the end of the scene (walks go round them); off: everyone goes straight through, as written.
+scene: beach pikachu piplup
+collisions on
+pikachu walk to right
+collisions off
+

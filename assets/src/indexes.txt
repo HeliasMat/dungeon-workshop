@@ -1,0 +1,7 @@
+monsters.txt	1
+dex.txt	1
+sprites.txt	2
+backdrops.txt	1
+town.txt	0
+ground.txt	1
+decors.txt	1

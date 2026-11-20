@@ -1,0 +1,49 @@
+# The Wiki's pages: the Presence family, who is on the stage and how they come and go (workshop/src/wiki/written.rs).
+
+== put
+> Sets someone in a place, turned that way (facing a side, someone or a spot). At the head of a scene they are simply there; later on, they walk in from the nearest edge. Also puts things down: put object chest front_of pikachu.
+scene: beach pikachu piplup
+pikachu put left facing right
+piplup put right facing pikachu
+pikachu: You're so far away!
+
+== spot
+> Names a place of your own (x y), to use like any spot afterwards: put, walk to, frame.
+spot rock 300 200
+scene: beach pikachu piplup
+pikachu walk to rock
+pikachu: My favourite rock.
+
+== enter
+> Someone comes in from outside the place, from a side or by an entrance, up to a spot (the middle without to). They are not there before this line; several come in one after the other.
+scene: beach pikachu piplup
+pikachu: Where is he?
+piplup enter from right to center
+piplup: Sorry I'm late!
+
+== exit
+> Someone leaves by the nearest way on that side (or by that entrance) and is gone once out. Several leave in single file; the film waits for the last one.
+scene: beach pikachu piplup
+piplup: See you tomorrow!
+piplup exit via right
+pikachu (sad): Bye...
+
+== appear
+> Someone appears where they are told, as the game shows it: in its puff of smoke (smoke, the default), fading in (fade), in a white flash (flash) or in a vision (vision). Not someone walking in: enter does that.
+scene: beach pikachu piplup
+pikachu: Where did he go?
+piplup appear left_of pikachu smoke
+pikachu (surprised): Whoa!
+
+== vanish
+> Someone disappears where they stand: fading away (fade, the default), in the game's puff of smoke (smoke), a white flash (flash) or a vision (vision). They are gone from the scene after it.
+scene: beach pikachu piplup
+piplup: Pikachu? Where are you going?
+pikachu vanish smoke
+piplup (surprised): He's gone!
+
+== crowd
+> Sets out a crowd of one species, so many of them, around a spot; the group gets a name (krabby makes krabbys). A shape, a side to come from, fast… may follow.
+scene: beach pikachu piplup
+crowd krabby 5 right
+pikachu (surprised): So many Krabby!

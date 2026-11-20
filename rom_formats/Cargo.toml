@@ -1,0 +1,15 @@
+[package]
+name = "rom_formats"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The cartridge's file formats, read for the extraction"
+readme = "../README.md"
+publish.workspace = true
+
+# The original game's files, read once: `extractor` (extractor/) is all that uses this.
+[dependencies]
+rules = { path = "../rules" }
+media = { path = "../media" }

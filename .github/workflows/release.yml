@@ -1,0 +1,46 @@
+# On a pushed tag v*: the ready-to-use programs built on Windows, Linux and
+# macOS (tools/release.sh), each zip attached to the tag's GitHub release.
+# No game data is built or packed: each user extracts their own cartridge.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Linux libraries (window, sound)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev zip
+      - name: Build and zip
+        shell: bash
+        run: sh tools/release.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dungeon-workshop-${{ matrix.os }}
+          path: dist/dungeon-workshop-*.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true

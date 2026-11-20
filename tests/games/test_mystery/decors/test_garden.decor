@@ -1,0 +1,33 @@
+decor: test_garden 512 384
+name Test Garden
+center 256 220
+like 156
+level 483
+ground herbe_village
+path terre_bourg from 256 384 to 256 232 to 120 232 width 32
+entrance 256 376 down
+water a156_2 352 176
+
+put e156_73 40 40, 400 24, 24 248
+put e156_74 40 40, 400 24, 24 248
+put e156_20 168 40, 440 264
+put e156_67 296 32, 120 296
+put e156_22 72 168, 136 168
+put e156_31 184 184, 304 280
+put e156_14 304 128
+put e156_15 216 152, 336 248, 120 120, 440 200
+
+scatter e156_9 10
+scatter e156_15 6
+
+[life]
+exit 240 380 32 4 to test_harbour left
+zone lamp_stairs 96 204 48 48
+
+resident mareep 320 270 left
+says if chapter = 2: Said if chapter = 2.
+says if chapter >= 3: Said if chapter >= 3.
+
+resident ampharos 200 200 down
+says if chapter = 2: Said if chapter = 2.
+says if chapter >= 3: Said if chapter >= 3.

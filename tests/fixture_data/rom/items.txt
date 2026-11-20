@@ -1,0 +1,30 @@
+0	Nothing
+10	Rare Fossil
+70	Oran Berry
+71	Sitrus Berry
+73	Reviver Seed
+87	Blast Seed
+109	Apple
+115	Golden Apple
+182	Key
+183	Poké
+193	Toxic
+194	Hail
+204	Protect
+210	Iron Tail
+211	Thunderbolt
+214	Return
+231	Rest
+233	Thief
+251	Explosion
+261	Dive
+262	Flash
+268	Stealth Rock
+272	Rock Slide
+285	Cut
+288	Strength
+290	Rock Smash
+291	Waterfall
+318	Luminous Orb
+326	Slumber Orb
+330	Escape Orb

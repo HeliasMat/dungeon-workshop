@@ -1,0 +1,24 @@
+# The Wiki's pages: the Emotions family, the game's emote balloons (workshop/src/wiki/written.rs).
+
+== emote
+> One of the game's emote balloons over someone, with its sound: exclaim, shock, sweat, joy, laugh, question, notice, anger, munch. silent leaves the sound out; emote off takes it away.
+scene: beach pikachu piplup
+piplup: Pikachu, behind you!
+pikachu emote exclaim
+pikachu: What?
+piplup emote laugh silent
+piplup (happy): Just kidding!
+
+== react
+> Someone reacts as the game's people do: the emote and its sound, then the hop. joy, surprise, anger, fear, doubt or relief.
+scene: beach pikachu piplup
+piplup: I found your scarf!
+pikachu react joy
+pikachu (joyous): Thank you!
+
+== sigh
+> Someone sighs: a deep breath, and a drop of sweat.
+scene: beach pikachu piplup
+piplup: The rain again...
+pikachu sigh
+pikachu (sad): We stay in today.

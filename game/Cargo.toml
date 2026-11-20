@@ -1,0 +1,29 @@
+[package]
+name = "game"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "A game of one's own: its story, its places, its dungeons, its screens, conducting the films"
+readme = "../README.md"
+publish.workspace = true
+
+# The game, apart from the films: its story and file, its places walked
+# about, its dungeons, its screens, its checks, its packs. The films are
+# played and drawn by `preview`, which the game uses, never the other way.
+[dependencies]
+assets = { path = "../assets" }
+decor = { path = "../decor" }
+rules = { path = "../rules" }
+dive = { path = "../dive" }
+scenes = { path = "../scenes" }
+film = { path = "../film" }
+language = { path = "../language" }
+preview = { path = "../preview" }
+engine = { path = "../engine" }
+shell = { path = "../shell" }
+stage_view = { path = "../stage_view" }
+glam.workspace = true
+bincode.workspace = true
+image.workspace = true

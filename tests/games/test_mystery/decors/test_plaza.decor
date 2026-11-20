@@ -1,0 +1,49 @@
+decor: test_plaza 768 576
+name Test Plaza
+center 384 300
+entrance 384 568 south
+entrance 8 300 west
+entrance 760 300 east
+like 323 324 156
+level 478
+ground herbe_bourg
+path terre_bourg from 384 576 to 384 300 width 40
+path terre_bourg from 0 300 to 768 300 width 40
+
+put e323_5 64 56
+put e324_7 336 64
+put e324_11 360 112
+put e324_12 336 136
+put e324_13 408 136
+put e323_16 584 80
+put e323_20 584 128
+put e323_21 640 128
+put e156_20 208 192
+
+
+put e323_7 264 496
+
+water a156_2 560 408
+put e156_31 480 440, 504 456
+put e156_22 528 360, 576 360
+put e156_14 680 400, 664 488
+put e156_67 576 488
+put e156_3 668 144
+
+put e156_73 0 176
+put e156_74 0 176
+
+scatter e156_15 6 zone 40 200 740 560
+
+[life]
+exit 0 284 16 32 to test_harbour right
+
+resident chatot 330 270 down
+says if chapter = 1: Said if chapter = 1.
+says if chapter >= 2: Said if chapter >= 2.
+
+resident kangaskhan 440 270 down
+says Test line.
+
+resident shuppet 520 330 left wanders 32
+says Test line.

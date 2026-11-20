@@ -1,0 +1,30 @@
+# The Wiki's pages: effects, light, weather (workshop/src/wiki/written.rs).
+
+== effect
+> A move's own effect of the game, by the move's name: on someone, at a place, or from one to another, flying.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+effect Thunderbolt from pikachu to piplup
+piplup (pain): Ouch!
+
+== flash
+> The screen flashes white (or in a colour said), with the game's own sound: a shock, a revelation.
+scene: beach pikachu piplup
+pikachu: I've got it!
+flash
+piplup (surprised): What was that?
+
+== daytime
+> The light of a time of day over the scene: morning, day, evening or night, changing in 2s (or as long as said); stars: the stars twinkle over it.
+scene: beach pikachu piplup
+daytime night stars
+pikachu: Look at the stars.
+
+== weather
+> The game's weather over the scene: rain, snow, sand, fog, hail or sun; heavy, under a storm's light. weather off: fair again.
+scene: beach pikachu piplup
+weather rain heavy
+pikachu (worried): A storm is coming.
+weather off
+

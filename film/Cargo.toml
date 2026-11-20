@@ -1,0 +1,21 @@
+[package]
+name = "film"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The language of the films: from the written text to the lines the engine plays"
+readme = "../README.md"
+publish.workspace = true
+
+# A film in plain English turned into what the engine plays. Only what the
+# words say is known here: what depends on the stage is found as it plays.
+[dependencies]
+assets = { path = "../assets" }
+language = { path = "../language" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+story = { path = "../story" }
+engine = { path = "../engine" }
+glam.workspace = true

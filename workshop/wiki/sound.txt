@@ -1,0 +1,17 @@
+# The Wiki's pages: sounds and music (workshop/src/wiki/written.rs).
+
+== sound
+> Plays a sound of the game (or a move's, or one of ours): on someone, when they are hit; loop, over and over, until sound name off.
+scene: beach pikachu piplup
+sound chirp loop
+pikachu: Listen... birds.
+sound chirp off
+
+== music
+> Plays a song of the game: fade 2s brings it in softly, volume 0.5 plays it softer; music off stops it, music off fade 2s lets it die away.
+scene: beach pikachu piplup
+music peace fade 2s
+pikachu: What a quiet evening.
+music off fade 2s
+wait 2s
+

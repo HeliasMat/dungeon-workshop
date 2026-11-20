@@ -1,0 +1,1469 @@
+# What our own eyes say of each element the Workshop offers (decor sort, decor::offered): its category,
+# a name one reads, a few tags to search by. Written by hand, by looking at the elements on the sheets
+# of `decor labels <folder>`; our words only: no picture, no text of the game's.
+#
+#   id | category | name | tags
+#
+# Categories: nature, water, buildings, furniture (furniture & props), animated, scene (scene objects), other.
+# The animated tiles (a...), the elements the game animates and the scenes' things (o...) go in Animated
+# and Scene objects whatever their line says. An element almost like another (set_aside.txt) goes by its line.
+# `cargo test -p decor -- --ignored every_element_and_place_is_labelled` says what lacks a line.
+e11_3 | nature | leafy bush | bush, green
+e11_4 | nature | red rock | rock, red
+e11_5 | nature | small red rock | rock, red
+e11_6 | nature | red boulders | rock, red, big
+e12_1 | nature | tall red rock | rock, red
+e12_2 | nature | red pebbles | rock, red, pebbles
+e12_3 | nature | leafy bush | bush, green
+e12_4 | nature | red rock | rock, red
+e12_6 | nature | red boulders | rock, red, big
+e14_1 | water | dark pond shore with stones | pond, stones, dark
+e14_2 | water | dark pond shore with stones | pond, stones, dark
+e14_3 | nature | mossy pebbles | rock, moss, pebbles
+e14_4 | nature | mossy pebbles | rock, moss, pebbles
+e14_5 | nature | mossy boulder | rock, moss
+e14_6 | nature | mossy rock with green crystal | rock, moss, crystal
+e14_7 | nature | mossy rock with green crystal | rock, moss, crystal
+e14_9 | nature | flat mossy rock | rock, moss
+e14_10 | nature | scattered mossy stones | rock, moss, pebbles
+e14_12 | nature | flat mossy stone | rock, moss
+e14_13 | nature | big mossy boulders | rock, moss, big
+e14_14 | nature | flat mossy stone | rock, moss
+e14_16 | nature | big mossy boulders | rock, moss, big
+e14_17 | nature | scattered mossy stones | rock, moss, pebbles
+e14_23 | nature | mossy rock | rock, moss
+e14_25 | nature | mossy rock with green crystal | rock, moss, crystal
+e14_27 | nature | scattered mossy stones | rock, moss, pebbles
+e15_1 | nature | rocks with green crystals | rock, crystal, cave
+e15_2 | nature | rocks with green crystals | rock, crystal, cave
+e15_3 | nature | green crystal rocks | rock, crystal, cave
+e15_4 | nature | dark fern tuft | grass, fern, tuft
+e15_5 | nature | dark fern tufts | grass, fern, tuft
+e15_6 | nature | green crystal rock | rock, crystal, cave
+e15_7 | nature | mossy outcrop with crystals | rock, crystal, moss, big
+e15_8 | nature | green crystal rock | rock, crystal, cave
+e15_9 | nature | green crystal rock | rock, crystal, cave
+e15_11 | nature | rocks with green crystals | rock, crystal, cave, big
+e15_12 | nature | rocks with green crystals | rock, crystal, cave
+e15_13 | nature | dark green bush | bush, dark
+e15_14 | nature | dark green bush | bush, dark
+e15_15 | nature | green crystal rock | rock, crystal, cave
+e15_16 | nature | dark leaves | leaves, dark
+e15_17 | nature | mossy stone steps | rock, moss, steps
+e15_18 | nature | rocks with green crystals | rock, crystal, cave
+e15_19 | nature | rocks with green crystals | rock, crystal, cave
+e16_1 | nature | grey stalagmite field | rock, stalagmite, grey, cave
+e16_2 | nature | grey stalagmite field | rock, stalagmite, grey, cave
+e16_3 | nature | small grey stone | rock, grey
+e16_7 | nature | tall grass tuft | grass, tuft
+e16_8 | nature | grey rock | rock, grey
+e16_9 | nature | grey boulder | rock, grey
+e16_16 | nature | tall grass tuft | grass, tuft
+e16_19 | nature | grey boulders | rock, grey
+e16_20 | nature | grey rock | rock, grey
+e16_22 | nature | small grey rock | rock, grey
+e16_23 | nature | grey boulders | rock, grey, big
+e16_25 | nature | grey stalagmites | rock, stalagmite, grey, cave
+e16_32 | nature | small grey stalagmites | rock, stalagmite, grey, cave
+e16_36 | nature | grey boulder | rock, grey
+e18_1 | nature | rock column with vines | rock, cliff, vines
+e18_2 | nature | rock column with vines | rock, cliff, vines
+e19_1 | other | glowing blue outline | light, blue, glow
+e19_2 | other | glowing blue outline | light, blue, glow
+e20_1 | water | dark water over a pit | water, dark, edge
+e20_2 | water | dark water over a pit | water, dark, edge
+e22_1 | nature | small purple flower bush | bush, flowers, purple
+e22_2 | nature | purple flower bush | bush, flowers, purple
+e22_3 | nature | small sand mound | sand, mound
+e22_4 | nature | sand mound | sand, mound, rock
+e22_7 | nature | grass patch | grass
+e22_9 | nature | bush sprigs | bush, green
+e22_10 | nature | two apple trees | tree, apple, fruit, big
+e22_11 | nature | two apple trees | tree, apple, fruit, big
+e22_12 | nature | sand mound | sand, mound, rock
+e22_14 | nature | grass patch | grass
+e22_15 | nature | apple tree, edge | tree, apple, fruit
+e22_17 | nature | small flower bush | bush, flowers
+e22_18 | nature | apple tree, edge | tree, apple, fruit
+e22_20 | nature | low sand mound | sand, mound
+e22_23 | nature | purple flower bush | bush, flowers, purple
+e22_24 | nature | purple flower bush | bush, flowers, purple
+e22_27 | nature | hedge row | bush, hedge
+e22_28 | nature | hedge row | bush, hedge
+e22_29 | nature | small flower bush | bush, flowers
+e22_30 | nature | flower bush | bush, flowers
+e22_31 | nature | leafy bush | bush, green
+e22_32 | nature | leafy bush | bush, green
+e25_1 | nature | pink flower bush | bush, flowers, pink
+e25_4 | buildings | pink tent | tent, camp, pink
+e25_5 | nature | rock | rock
+e25_6 | nature | small rock | rock
+e25_7 | nature | round green bush | bush, green
+e25_8 | nature | rock | rock
+e25_10 | buildings | pink tent | tent, camp, pink
+e25_11 | nature | grass patch | grass
+e25_14 | nature | sandy boulder | rock, sand
+e25_17 | nature | sandy rock | rock, sand
+e25_20 | nature | sandy boulders | rock, sand, big
+e25_21 | nature | grass patch | grass
+e25_22 | nature | sandy boulder | rock, sand
+e25_23 | nature | pink flower bush | bush, flowers, pink
+e25_24 | nature | grass field with bushes | grass, bush, field, big
+e25_25 | nature | grass field with bushes | grass, bush, field, big
+e25_26 | nature | small mossy pebble | rock, pebble
+e26_1 | water | pond with lily pads and trees | pond, lily pads, trees, big
+e26_2 | water | pond with lily pads and trees | pond, lily pads, trees, big
+e29_1 | nature | cracked grey rock | rock, grey, cracked
+e29_2 | nature | cracked grey rock | rock, grey, cracked
+e29_5 | nature | grey boulders | rock, grey
+e29_6 | nature | grey rock | rock, grey
+e29_7 | nature | small grey rock | rock, grey
+e29_8 | nature | crack in the ground | crack, ground, dark
+e29_10 | nature | flat grey stones | rock, grey, flat
+e29_11 | nature | flat grey stones | rock, grey, flat
+e29_14 | nature | grey boulder | rock, grey
+e29_15 | nature | grey boulder | rock, grey
+e29_17 | nature | flat grey stones | rock, grey, flat
+e29_18 | nature | flat grey stones | rock, grey, flat
+e29_19 | nature | crack in the ground | crack, ground, dark
+e29_20 | nature | grey boulders | rock, grey
+e29_21 | nature | flat grey rock | rock, grey, flat
+e29_22 | nature | big grey boulder | rock, grey, big
+e29_24 | nature | grey boulders | rock, grey
+e29_25 | nature | small grey rock | rock, grey
+e29_27 | nature | flat grey stones | rock, grey, flat
+e29_28 | nature | grey boulder pile | rock, grey
+e29_30 | nature | grey boulder pile | rock, grey
+e29_31 | nature | small grey rock | rock, grey
+e29_32 | nature | flat grey rock | rock, grey, flat
+e32_1 | nature | brown rock wall | rock, brown, cliff, big
+e32_2 | nature | brown rock wall | rock, brown, cliff, big
+e32_3 | nature | small brown rock | rock, brown
+e32_4 | nature | brown rocks | rock, brown
+e32_5 | nature | brown rock spire | rock, brown, spire
+e32_6 | nature | brown boulder | rock, brown
+e32_7 | nature | brown rocks | rock, brown
+e32_8 | nature | brown rock spire | rock, brown, spire
+e32_9 | nature | brown rocks | rock, brown
+e32_10 | nature | brown mushroom rock | rock, brown, pillar
+e32_13 | nature | brown mushroom rock | rock, brown, pillar
+e32_14 | nature | brown boulder | rock, brown
+e32_15 | nature | brown boulder | rock, brown
+e32_17 | nature | brown boulder | rock, brown
+e32_18 | nature | brown boulder | rock, brown
+e32_22 | nature | brown boulder | rock, brown
+e33_1 | nature | yellow sand ripple ring | sand, ring, yellow
+e33_2 | nature | small brown rocks | rock, brown
+e33_3 | nature | yellow sand ripple ring | sand, ring, yellow
+e33_4 | nature | brown pebbles | rock, brown, pebbles
+e33_5 | nature | brown rock pile | rock, brown
+e33_6 | nature | yellow sand ripple ring | sand, ring, yellow
+e33_7 | nature | brown rock pile | rock, brown
+e33_8 | nature | yellow sand ripple ring | sand, ring, yellow
+e33_11 | nature | yellow sand ripple ring | sand, ring, yellow
+e33_12 | nature | yellow sand ripple ring | sand, ring, yellow
+e33_14 | nature | brown rock pile | rock, brown
+e33_22 | nature | small brown rock | rock, brown
+e33_23 | nature | big brown boulder | rock, brown, big
+e33_24 | nature | brown boulder | rock, brown
+e33_27 | nature | brown rock ridge | rock, brown, cliff
+e33_29 | nature | brown rock ridge | rock, brown, cliff
+e33_30 | nature | brown rock | rock, brown
+e33_31 | nature | brown rocks | rock, brown
+e34_1 | other | falling sand stream | sand, falling
+e34_2 | other | falling sand stream | sand, falling
+e34_3 | other | falling sand stream | sand, falling
+e34_4 | other | falling sand streams | sand, falling
+e34_5 | nature | hanging rock root | rock, root, hanging
+e34_6 | nature | hanging rock root | rock, root, hanging
+e34_7 | other | hanging rock root | rock, root, hanging
+e34_8 | nature | hanging rock root | rock, root, hanging
+e34_9 | nature | brown stalagmite | rock, stalagmite, brown, cave
+e34_15 | nature | brown stalagmite | rock, stalagmite, brown, cave
+e34_17 | other | sand pouring into a pile | sand, falling
+e34_19 | nature | brown rock edge | rock, brown
+e34_20 | nature | brown stalagmites | rock, stalagmite, brown, cave
+e34_21 | nature | brown stalagmites | rock, stalagmite, brown, cave
+e34_22 | nature | small brown mound | rock, brown
+e34_23 | nature | brown stalagmite ridge | rock, stalagmite, brown, cave, big
+e34_24 | nature | big brown stalagmite | rock, stalagmite, brown, cave, big
+e34_27 | nature | brown stalagmite | rock, stalagmite, brown, cave
+e34_29 | nature | brown stalagmite | rock, stalagmite, brown, cave
+e34_30 | nature | brown stalagmites | rock, stalagmite, brown, cave
+e37_1 | nature | green fern bush | bush, fern, green
+e37_2 | nature | small tan rock | rock, tan
+e37_4 | nature | tan boulders | rock, tan
+e37_5 | nature | tan rock | rock, tan
+e37_6 | nature | layered tan rock | rock, tan, layered
+e37_9 | nature | layered tan rock | rock, tan, layered
+e37_11 | nature | layered tan rock | rock, tan, layered
+e37_15 | nature | layered tan rock | rock, tan, layered
+e37_20 | nature | tan boulder pile | rock, tan
+e38_1 | nature | dark cave wall | rock, dark, cave, wall
+e38_3 | nature | blue ice crystals | crystal, ice, blue
+e38_5 | nature | blue ice crystal | crystal, ice, blue
+e39_1 | nature | dark cave wall | rock, dark, cave, wall
+e39_3 | nature | big ice crystal arch | crystal, ice, blue, big
+e39_4 | nature | blue ice crystal | crystal, ice, blue
+e39_5 | nature | small ice crystals | crystal, ice, blue
+e39_7 | nature | small ice crystals | crystal, ice, blue
+e39_8 | nature | ice crystal cluster | crystal, ice, blue
+e39_13 | nature | ice crystal cluster | crystal, ice, blue
+e39_15 | nature | ice crystal cluster | crystal, ice, blue
+e39_17 | nature | small ice crystals | crystal, ice, blue
+e39_21 | nature | dark cave rock frame | rock, dark, cave, wall, big
+e39_22 | nature | dark cave rock frame | rock, dark, cave, wall, big
+e39_25 | nature | small ice crystals | crystal, ice, blue
+e40_1 | water | glittering blue water | water, blue, sparkle
+e40_3 | nature | small ice crystal | crystal, ice, blue
+e41_1 | nature | blue crystal cluster | crystal, blue
+e41_2 | nature | blue crystal cluster | crystal, blue
+e41_3 | nature | tall blue crystal spire | crystal, blue, big
+e41_4 | nature | blue crystal cluster | crystal, blue
+e41_5 | nature | blue crystal cluster | crystal, blue
+e41_6 | nature | small blue crystal | crystal, blue
+e41_7 | nature | small blue crystal | crystal, blue
+e42_1 | nature | blue crystal cluster | crystal, blue
+e42_2 | nature | blue crystal cluster | crystal, blue
+e42_4 | nature | blue crystal cluster | crystal, blue
+e42_5 | nature | blue crystal cluster | crystal, blue
+e42_6 | nature | blue crystal cluster | crystal, blue
+e42_7 | nature | blue crystal cluster | crystal, blue
+e42_9 | nature | blue crystal cluster | crystal, blue
+e43_1 | nature | ice blocks | ice, crystal, blue
+e43_2 | nature | small ice slab | ice, crystal, blue
+e43_3 | nature | ice blocks | ice, crystal, blue
+e43_4 | nature | ice pillar | ice, crystal, blue, pillar
+e43_5 | nature | ice pillar | ice, crystal, blue, pillar
+e43_6 | nature | ice slabs | ice, crystal, blue
+e43_7 | nature | flat ice slab | ice, crystal, blue
+e43_8 | nature | ice block | ice, crystal, blue
+e43_9 | nature | ice block | ice, crystal, blue
+e43_10 | nature | tall ice pillar | ice, crystal, blue, pillar
+e43_11 | nature | tall ice pillar | ice, crystal, blue, pillar
+e43_12 | nature | ice slabs | ice, crystal, blue
+e43_13 | nature | ice slabs | ice, crystal, blue
+e43_14 | nature | blue crystal fan | crystal, blue
+e43_15 | nature | blue crystal fan | crystal, blue
+e45_1 | nature | small dark stone | rock, dark
+e45_3 | nature | tall dark stone | rock, dark
+e45_7 | nature | dark boulder | rock, dark
+e45_9 | nature | tall dark stone | rock, dark
+e46_1 | water | small waterfall onto stones | waterfall, water, stones
+e46_7 | nature | dark stone | rock, dark
+e46_8 | nature | small dark stone | rock, dark
+e46_11 | nature | dark stones | rock, dark
+e46_14 | nature | crack in the ground | crack, ground, dark
+e46_16 | nature | crack in the ground | crack, ground, dark
+e46_18 | nature | dark pebbles | rock, dark, pebbles
+e46_19 | nature | dark pebbles | rock, dark, pebbles
+e46_25 | nature | dark boulder | rock, dark
+e46_26 | nature | crack in the ground | crack, ground, dark
+e46_27 | nature | dark rocks | rock, dark
+e46_30 | nature | dark stone | rock, dark
+e46_32 | nature | small dark stone | rock, dark
+e46_33 | nature | dark stone | rock, dark
+e46_34 | nature | dark stones | rock, dark
+e46_35 | nature | dark stones | rock, dark
+e47_1 | buildings | stone cave entrance | cave, entrance, stone, door
+e47_2 | nature | grey rock wall | rock, grey, wall, cliff
+e50_5 | nature | grey stone | rock, grey
+e50_10 | nature | grey grass tuft | grass, grey, tuft
+e50_11 | nature | grey rocks | rock, grey
+e50_14 | nature | grey tree stump | stump, tree, grey
+e50_22 | nature | grey bush | bush, grey
+e50_23 | nature | grey bush | bush, grey
+e51_1 | nature | grey boulder | rock, grey
+e51_2 | nature | grey stones | rock, grey
+e51_5 | nature | small grey stone | rock, grey
+e51_8 | nature | small grey stone | rock, grey
+e51_9 | nature | grey stone | rock, grey
+e51_10 | nature | grey stones | rock, grey
+e51_18 | nature | grey stone | rock, grey
+e51_20 | nature | small grey stone | rock, grey
+e51_21 | nature | grey stone | rock, grey
+e51_22 | nature | grey stones | rock, grey
+e51_31 | nature | small grey stone | rock, grey
+e52_1 | nature | twisted trees with roots | tree, roots, green, big
+e52_2 | nature | twisted trees with roots | tree, roots, green, big
+e52_3 | nature | twisted root | root, tree
+e52_4 | nature | big twisted tree | tree, roots, green, big
+e52_5 | nature | twisted tree | tree, roots, green
+e53_3 | nature | orange flower bush | bush, flowers, orange
+e53_5 | nature | small green bush | bush, green
+e54_1 | nature | twisted branch | root, branch
+e54_2 | nature | white flower bush | bush, flowers, white
+e54_5 | nature | dark green bush | bush, dark
+e55_1 | nature | reddish rock column | rock, red, cliff
+e55_2 | nature | reddish rock column | rock, red, cliff
+e55_3 | nature | reddish rocks | rock, red
+e55_4 | nature | reddish rock streak | rock, red, flat
+e55_5 | nature | reddish rock streak | rock, red, flat
+e55_6 | nature | reddish rock streak | rock, red, flat
+e55_9 | nature | reddish rock streak | rock, red, flat
+e55_10 | nature | small reddish rocks | rock, red
+e55_13 | nature | reddish boulder | rock, red
+e55_14 | nature | flat reddish rock | rock, red
+e57_1 | water | small dark pool | water, pool, dark
+e57_3 | nature | reddish boulder pile | rock, red, big
+e57_4 | water | small dark pool | water, pool, dark
+e57_6 | water | small dark pool | water, pool, dark
+e59_3 | nature | pink flowers | flowers, pink
+e59_15 | nature | mossy tan boulder | rock, tan, moss
+e59_24 | nature | brown rock | rock, brown
+e59_25 | nature | flat brown rock | rock, brown, flat
+e59_27 | nature | brown rock stack | rock, brown, spire
+e59_28 | nature | brown rock stack | rock, brown, spire
+e59_29 | nature | brown rock | rock, brown
+e59_30 | nature | tall brown rock | rock, brown
+e59_31 | nature | flat brown rock | rock, brown, flat
+e59_32 | nature | tall brown rock | rock, brown
+e61_1 | furniture | ancient mural, sun | mural, ruins, wall, carving
+e61_2 | furniture | ancient mural, creatures | mural, ruins, wall, carving
+e61_3 | furniture | ancient mural, birds | mural, ruins, wall, carving
+e61_4 | furniture | golden rubble | ruins, gold, rubble
+e61_5 | furniture | golden rubble | ruins, gold, rubble
+e61_6 | furniture | golden rubble | ruins, gold, rubble
+e61_8 | nature | brown stones | rock, brown
+e62_1 | buildings | stone bench ruin | ruins, stone, bench
+e62_3 | furniture | broken stone dome | ruins, stone, rubble
+e62_5 | furniture | stone statue base | ruins, stone, statue
+e62_6 | furniture | stone statue base and dome | ruins, stone, statue
+e62_7 | buildings | crumbling ruin wall with doorway | ruins, wall, door, big
+e62_10 | nature | crack in the floor | crack, ruins
+e64_1 | furniture | small stone marker | ruins, stone, statue
+e64_4 | furniture | small stone statue | ruins, stone, statue
+e64_7 | furniture | stone altar | ruins, stone, altar
+e64_17 | furniture | thin stone pillar | ruins, stone, pillar
+e65_1 | furniture | short stone post | ruins, stone, pillar
+e65_5 | buildings | stone bench ruin | ruins, stone, bench
+e65_7 | buildings | broken stone bench ruin | ruins, stone, bench
+e65_8 | buildings | stone bench ruin | ruins, stone, bench
+e65_9 | nature | tall grey rock | rock, grey
+e65_12 | nature | grey rock | rock, grey
+e65_14 | nature | tall grey rock | rock, grey
+e65_21 | buildings | stone bench ruin | ruins, stone, bench
+e65_23 | buildings | stone bench ruin | ruins, stone, bench
+e65_24 | furniture | broken stone dome | ruins, stone, rubble
+e67_1 | other | red lightning crack | crack, red, glow
+e67_3 | other | red lightning crack | crack, red, glow
+e67_7 | other | red lightning crack | crack, red, glow
+e67_8 | other | red lightning crack | crack, red, glow
+e67_11 | other | red lightning crack | crack, red, glow
+e67_12 | other | red crystal shard | crystal, red, glow
+e67_19 | other | red and blue thorn spires | crystal, red, blue, glow, big
+e67_20 | other | red thorn spires | crystal, red, glow, big
+e67_22 | other | red cracks in the ground | crack, red, glow, big
+e67_23 | other | blue and red crack | crack, red, blue, glow
+e67_24 | other | red cracks in the ground | crack, red, glow, big
+e67_25 | other | blue and red crack | crack, red, blue, glow
+e67_26 | other | red cracks in the ground | crack, red, glow
+e67_27 | nature | tan boulder | rock, tan
+e67_28 | other | red crack | crack, red, glow
+e67_29 | nature | tan rock | rock, tan
+e67_30 | nature | tan rock | rock, tan
+e67_31 | nature | small tan rock | rock, tan
+e67_32 | nature | tan boulder | rock, tan
+e67_34 | nature | tan rock | rock, tan
+e69_1 | buildings | dark gate with green lights | gate, tower, door, dark
+e70_2 | buildings | broken brick wall rubble | ruins, brick, rubble
+e70_3 | buildings | broken brick wall with pillar | ruins, brick, wall, pillar
+e71_1 | buildings | crumbling brick wall | ruins, brick, wall
+e71_2 | buildings | crumbling brick wall | ruins, brick, wall
+e71_3 | buildings | crumbling brick wall | ruins, brick, wall
+e71_4 | buildings | crumbling brick wall | ruins, brick, wall, big
+e74_1 | nature | dark green tree canopy | tree, canopy, dark, big
+e74_2 | nature | dark green tree canopy | tree, canopy, dark, big
+e74_3 | nature | small pale boulder | rock, pale
+e74_4 | nature | small pale boulder | rock, pale
+e74_5 | nature | big mossy boulder | rock, moss, big
+e74_6 | nature | mossy boulder | rock, moss
+e74_7 | nature | dark green tree | tree, dark, big
+e74_8 | nature | dark green tree | tree, dark, big
+e74_9 | nature | pale boulder | rock, pale
+e74_11 | nature | pale boulder | rock, pale
+e75_1 | nature | pale boulders with grass | rock, pale, grass
+e75_2 | nature | grass patch with hole | grass, hole
+e80_1 | nature | leafy branch | leaves, green, branch
+e80_3 | nature | leafy branch | leaves, green, branch
+e80_4 | nature | brown rock slope | rock, brown, cliff, big
+e80_5 | nature | leafy branch | leaves, green, branch
+e80_6 | nature | leafy branch | leaves, green, branch
+e80_7 | nature | leafy sprig | leaves, green
+e80_9 | nature | leafy branch | leaves, green, branch
+e80_15 | nature | green bush | bush, green
+e80_17 | nature | small brown rock | rock, brown
+e80_25 | nature | leafy branch | leaves, green, branch
+e80_27 | nature | leafy branch | leaves, green, branch
+e80_40 | nature | leafy sprig | leaves, green
+e80_46 | nature | small green bush | bush, green
+e93_1 | nature | sandy rock ledge | rock, sand, ledge
+e93_3 | nature | sandy rock ledge | rock, sand, ledge, big
+e93_4 | nature | dry yellow grass tuft | grass, dry, tuft
+e93_5 | nature | dry yellow grass tuft | grass, dry, tuft
+e93_7 | nature | dry yellow grass tuft | grass, dry, tuft
+e101_3 | nature | orange lava splash | lava, orange
+e101_5 | nature | orange lava blob | lava, orange
+e105_1 | buildings | blue cave hole | cave, hole, blue, entrance
+e105_2 | nature | blue crystal boulder | rock, crystal, blue
+e105_3 | nature | blue crystal boulder | rock, crystal, blue
+e109_1 | furniture | wooden pole with branches | wood, pole
+e109_2 | furniture | wooden pole with branches | wood, pole
+e109_5 | buildings | star cave altar with red eye | altar, star, cave, stone, big
+e109_6 | buildings | round green star cave door | door, stone, star, cave
+e109_7 | furniture | fire bowl | fire, brazier, stone
+e109_8 | furniture | fire bowl | fire, brazier, stone
+e109_11 | furniture | green rock with tan rubble | rock, green, rubble
+e109_12 | nature | green rock | rock, green
+e109_13 | furniture | green rock with tan rubble | rock, green, rubble
+e109_14 | nature | tan stones | rock, tan
+e109_15 | nature | tan stone | rock, tan
+e109_16 | furniture | blue crystal on a stand | crystal, blue, stand, pedestal
+e109_17 | furniture | orange star seal | seal, star, orange, stone
+e109_18 | furniture | blue crystal on a stand | crystal, blue, stand, pedestal
+e109_22 | furniture | orange carved post | pillar, carved, orange
+e109_24 | furniture | orange carved wall corner | wall, carved, orange
+e109_26 | furniture | orange carved block | carved, orange, stone
+e111_1 | nature | blue rock ledge | rock, blue, ledge
+e111_3 | buildings | blue stone shrine | shrine, stone, blue, big
+e111_4 | buildings | blue stone shrine with door | shrine, stone, blue, door, big
+e111_5 | nature | blue rock wall corner | rock, blue, wall
+e111_6 | nature | blue rock wall corner | rock, blue, wall
+e113_2 | nature | dark boulder | rock, dark
+e113_5 | nature | dark stone | rock, dark
+e113_7 | nature | dark stone | rock, dark
+e113_8 | nature | dead black tree | tree, dead, dark
+e113_9 | nature | small dark stone | rock, dark
+e113_10 | nature | dark boulder | rock, dark
+e113_12 | nature | small dark stone | rock, dark
+e117_1 | nature | small dark stone | rock, dark
+e117_2 | nature | small dark stone | rock, dark
+e117_3 | nature | small dark stone | rock, dark
+e117_8 | nature | dark boulder | rock, dark
+e117_15 | nature | small dark stone | rock, dark
+e117_19 | nature | dark stones | rock, dark
+e117_21 | nature | dark boulders | rock, dark
+e117_24 | nature | low dark rocks | rock, dark
+e117_29 | nature | small dark stone | rock, dark
+e118_1 | nature | black stone | rock, dark
+e118_6 | nature | black boulder with pebbles | rock, dark
+e118_7 | nature | black stone | rock, dark
+e118_10 | nature | black boulder | rock, dark
+e118_11 | nature | black boulder with pebbles | rock, dark
+e118_12 | nature | black boulder | rock, dark
+e118_13 | nature | black boulder with pebbles | rock, dark
+e118_16 | nature | black slab | rock, dark
+e121_3 | nature | small dark stone | rock, dark
+e121_5 | nature | dark boulder with pebbles | rock, dark
+e121_8 | nature | small dark stone | rock, dark
+e121_10 | nature | small dark stone | rock, dark
+e121_13 | nature | dark boulder | rock, dark
+e121_16 | nature | small dark stone | rock, dark
+e121_17 | nature | black stone with pebble | rock, dark
+e121_19 | nature | dark boulder | rock, dark
+e121_23 | nature | small dark stone | rock, dark
+e122_1 | nature | small snowy rock | rock, snow, ice
+e122_2 | nature | small snowball | snow, ice
+e122_5 | nature | snowy rock | rock, snow, ice
+e122_6 | nature | small snowball | snow, ice
+e122_7 | nature | snowy rock with pebbles | rock, snow, ice
+e122_8 | nature | small snowball | snow, ice
+e122_9 | nature | small snowball | snow, ice
+e122_12 | nature | small snowball | snow, ice
+e122_14 | nature | snowy rock | rock, snow, ice
+e122_15 | nature | snowy rock | rock, snow, ice
+e122_16 | nature | small snowball | snow, ice
+e122_21 | nature | small snowball | snow, ice
+e122_23 | nature | snowy rock | rock, snow, ice
+e122_26 | nature | small snowball | snow, ice
+e122_29 | nature | small snowball | snow, ice
+e122_31 | nature | snowy rock | rock, snow, ice
+e122_32 | nature | small snowball | snow, ice
+e122_33 | nature | big snowy boulder | rock, snow, ice, big
+e122_34 | nature | snowy rock | rock, snow, ice
+e122_35 | nature | snowy rock | rock, snow, ice
+e122_37 | nature | small snowy rock | rock, snow, ice
+e122_39 | nature | small snowball | snow, ice
+e122_42 | nature | small snowball | snow, ice
+e122_44 | nature | small snowball | snow, ice
+e122_48 | nature | snowy rock | rock, snow, ice
+e122_53 | nature | snowy rock | rock, snow, ice
+e122_54 | nature | snowy rock with pebble | rock, snow, ice
+e122_57 | nature | small snowball | snow, ice
+e122_59 | nature | small snowball | snow, ice
+e125_1 | nature | icy boulder | rock, ice, snow
+e125_2 | nature | icy boulder | rock, ice, snow
+e125_3 | nature | icy rock | rock, ice, snow
+e125_4 | nature | icy rock | rock, ice, snow
+e125_5 | nature | small snowball | snow, ice
+e125_6 | nature | icy rock | rock, ice, snow
+e125_8 | nature | snowballs | snow, ice
+e125_11 | nature | small snowball | snow, ice
+e125_14 | nature | snowballs | snow, ice
+e125_16 | nature | icy rock | rock, ice, snow
+e125_18 | nature | icy boulder | rock, ice, snow
+e125_23 | nature | small icy rock | rock, ice, snow
+e125_24 | nature | icy rock | rock, ice, snow
+e125_34 | nature | icy rock | rock, ice, snow
+e125_37 | nature | big icy boulder | rock, ice, snow, big
+e127_2 | nature | icy rock | rock, ice, snow
+e127_4 | nature | big icy boulder | rock, ice, snow, big
+e127_5 | nature | small icy rock | rock, ice, snow
+e127_6 | nature | small icy rock | rock, ice, snow
+e127_7 | nature | icy boulder | rock, ice, snow
+e127_8 | nature | small icy rock | rock, ice, snow
+e127_9 | nature | icy boulder | rock, ice, snow
+e127_10 | nature | icy rock | rock, ice, snow
+e128_1 | nature | icy rock | rock, ice, snow
+e128_2 | nature | icy boulder | rock, ice, snow
+e128_3 | nature | icy rock | rock, ice, snow
+e128_4 | nature | big icy boulder | rock, ice, snow, big
+e128_5 | nature | icy rock | rock, ice, snow
+e128_6 | nature | tall icy rock | rock, ice, snow
+e128_7 | water | frozen wave | ice, wave, frozen, big
+e128_8 | water | frozen wave | ice, wave, frozen
+e128_9 | nature | big icy boulder | rock, ice, snow, big
+e128_10 | nature | icy rock | rock, ice, snow
+e128_11 | nature | icy boulder | rock, ice, snow
+e128_12 | water | frozen wave | ice, wave, frozen
+e128_13 | water | frozen wave | ice, wave, frozen, big
+e128_14 | nature | small icy rock | rock, ice, snow
+e128_18 | nature | icy rock | rock, ice, snow
+e128_19 | nature | tall icy rock | rock, ice, snow
+e129_1 | nature | grey rock with pebbles | rock, grey
+e129_2 | nature | grey rock with pebbles | rock, grey
+e129_3 | nature | small grey stone | rock, grey
+e129_4 | nature | grey stone | rock, grey
+e129_5 | nature | grey boulder | rock, grey
+e129_9 | nature | grey stones | rock, grey
+e129_10 | nature | grey boulder | rock, grey
+e129_12 | nature | grey boulder | rock, grey
+e129_13 | nature | grey boulder | rock, grey
+e130_1 | nature | blue ice rock | rock, ice, blue
+e135_1 | nature | fern | fern, plant, green
+e135_2 | nature | low fern | fern, plant, green
+e135_3 | nature | mossy boulder | rock, moss
+e135_4 | nature | low fern sprigs | fern, plant, green
+e135_5 | nature | fern | fern, plant, green
+e135_6 | nature | fern | fern, plant, green
+e135_7 | nature | dirt patch in grass | grass, dirt
+e135_9 | nature | dark green bush | bush, dark
+e135_10 | nature | dark green bush | bush, dark
+e135_11 | nature | dirt patch in grass | grass, dirt
+e135_12 | nature | low fern | fern, plant, green
+e135_16 | nature | small mossy rock | rock, moss
+e135_18 | nature | mossy boulder | rock, moss
+e136_1 | nature | palm fronds | palm, plant, jungle
+e136_3 | nature | jungle vines and plants | plant, vines, jungle
+e136_4 | nature | fan palm | palm, plant, jungle
+e136_7 | nature | dark green bush | bush, dark
+e136_9 | nature | low fern | fern, plant, green
+e136_15 | nature | grass tuft | grass, tuft
+e137_1 | nature | palm cluster | palm, plant, jungle, big
+e137_2 | nature | palm cluster | palm, plant, jungle
+e137_3 | nature | palm cluster | palm, plant, jungle
+e137_4 | nature | small palm | palm, plant, jungle
+e137_5 | nature | palm cluster | palm, plant, jungle
+e137_6 | nature | low jungle plant | plant, jungle
+e137_7 | nature | mossy mound | rock, moss
+e137_8 | nature | fern on dirt | fern, plant
+e137_10 | nature | fern on dirt | fern, plant
+e137_11 | nature | yellow-green bush | bush, yellow
+e137_17 | nature | small yellow-green bush | bush, yellow
+e137_28 | nature | palm cluster | palm, plant, jungle
+e137_29 | nature | palm cluster | palm, plant, jungle, big
+e138_1 | nature | orange rock | rock, orange
+e138_2 | nature | desert shrub | shrub, desert, dry
+e138_3 | nature | orange rocks on sand | rock, orange, sand, desert, big
+e138_4 | nature | desert shrub | shrub, desert, dry
+e138_5 | nature | small orange rock | rock, orange
+e138_6 | nature | desert shrub | shrub, desert, dry
+e138_7 | nature | desert shrub | shrub, desert, dry
+e138_8 | nature | big orange boulders | rock, orange, desert, big
+e138_10 | nature | desert shrub | shrub, desert, dry
+e138_11 | nature | sand patch | sand, desert
+e138_12 | nature | desert shrub | shrub, desert, dry
+e138_13 | nature | orange rock on sand | rock, orange, sand, desert
+e138_14 | nature | desert shrub | shrub, desert, dry
+e138_15 | nature | orange rocks on sand | rock, orange, sand, desert, big
+e138_16 | nature | orange boulder on sand | rock, orange, sand, desert
+e138_17 | nature | desert shrub | shrub, desert, dry
+e138_18 | nature | orange rock on sand | rock, orange, sand, desert
+e138_19 | nature | desert shrub | shrub, desert, dry
+e138_20 | nature | desert shrubs | shrub, desert, dry
+e141_1 | nature | purple crystal rocks | rock, crystal, purple
+e141_2 | nature | purple crystal floor | crystal, purple, floor
+e141_3 | nature | purple crystal floor | crystal, purple, floor
+e141_4 | nature | purple crystal rocks | rock, crystal, purple
+e141_5 | nature | purple crystal floor | crystal, purple, floor
+e141_6 | nature | purple crystal floor | crystal, purple, floor
+e141_7 | nature | purple crystal rock | rock, crystal, purple
+e141_9 | nature | purple crystal rocks | rock, crystal, purple
+e141_10 | nature | purple crystal rocks | rock, crystal, purple
+e141_11 | nature | purple crystal floor | crystal, purple, floor
+e141_12 | nature | big purple crystal | rock, crystal, purple, big
+e141_14 | nature | purple crystal floor | crystal, purple, floor
+e142_1 | nature | root fringe | roots, edge
+e142_2 | nature | teal crystal leaf | crystal, teal
+e142_3 | nature | teal crystal leaf | crystal, teal
+e142_6 | nature | teal crystal leaf | crystal, teal
+e142_7 | nature | teal crystal leaf | crystal, teal
+e142_10 | nature | teal crystal leaf | crystal, teal
+e142_12 | nature | teal crystal leaf | crystal, teal
+e142_16 | nature | teal crystal leaf | crystal, teal
+e156_1 | nature | grass edge strip | grass, edge
+e156_2 | nature | grass edge strip | grass, edge
+e156_3 | nature | small leafy tree | tree, green
+e156_4 | nature | small round bush | bush, green
+e156_5 | buildings | leafy hut with flowers | hut, house, leaves, flowers
+e156_7 | nature | mossy rock | rock, moss
+e156_8 | furniture | yellow wooden signpost | sign, wood, yellow
+e156_9 | nature | round green bush | bush, green
+e156_10 | nature | pink flowers over a bush | flowers, pink, bush
+e156_11 | nature | pink flower bush | bush, flowers, pink
+e156_14 | nature | two mossy boulders | rock, moss
+e156_15 | nature | pink flower bush | bush, flowers, pink
+e156_16 | nature | pink flower bush | bush, flowers, pink
+e156_17 | buildings | leafy hut with flowers | hut, house, leaves, flowers
+e156_18 | buildings | leafy hut with flowers | hut, house, leaves, flowers
+e156_22 | furniture | wooden fence, 3 posts | fence, wood, yellow
+e156_29 | nature | mossy rock | rock, moss
+e156_31 | furniture | two clay pots | pots, clay, jar
+e156_32 | buildings | leafy hut with flowers | hut, house, leaves, flowers
+e156_34 | nature | pink flower bush | bush, flowers, pink
+e156_35 | furniture | wooden fence, 3 posts | fence, wood, yellow
+e156_36 | furniture | two clay pots | pots, clay, jar
+e156_39 | nature | mossy stone | rock, moss
+e156_40 | nature | small mossy stone | rock, moss
+e156_41 | nature | mossy stones | rock, moss
+e156_42 | nature | flat mossy stone | rock, moss
+e156_43 | nature | bush with pink flowers | bush, flowers, pink
+e156_44 | nature | pink flower bushes | bush, flowers, pink
+e156_46 | nature | mossy rock | rock, moss
+e156_47 | nature | flat mossy stone | rock, moss
+e156_48 | nature | flat mossy stone | rock, moss
+e156_52 | nature | small mossy stone | rock, moss
+e156_53 | nature | small mossy stone | rock, moss
+e156_60 | nature | mossy boulders | rock, moss
+e156_65 | furniture | two clay pots | pots, clay, jar
+e156_69 | nature | mossy stones | rock, moss
+e156_71 | nature | mossy rock | rock, moss
+e156_72 | nature | small leafy tree | tree, green
+e156_73 | nature | light grass patch | grass
+e156_75 | nature | mossy stones | rock, moss
+e156_77 | buildings | leafy hut with flowers | hut, house, leaves, flowers
+e156_82 | furniture | three clay pots | pots, clay, jar
+e156_87 | nature | mossy rock | rock, moss
+e156_96 | nature | big round bush | bush, green, big
+e156_97 | nature | mossy stones | rock, moss
+e156_98 | nature | round green bush | bush, green
+e156_101 | nature | mossy boulders | rock, moss
+e156_102 | nature | low bush | bush, green
+e164_1 | nature | leafy sprig | leaves, green
+e164_2 | nature | small grey stone | rock, grey
+e164_3 | nature | leafy sprig | leaves, green
+e164_4 | furniture | stacked wooden crates | crates, boxes, wood
+e164_5 | nature | grey stone | rock, grey
+e164_6 | nature | leafy sprig | leaves, green
+e164_7 | water | water spout splash | water, splash, fountain
+e164_8 | furniture | wooden logs | logs, wood
+e164_9 | nature | grey stone | rock, grey
+e164_10 | nature | flat grey stone | rock, grey
+e164_11 | furniture | two clay pots | pots, clay, jar
+e164_12 | nature | leafy sprig | leaves, green
+e164_13 | nature | grey mushroom rock | rock, grey
+e164_14 | nature | leafy sprig | leaves, green
+e164_15 | nature | leafy sprig | leaves, green
+e164_16 | furniture | two clay pots | pots, clay, jar
+e164_17 | furniture | stone fire ring | fire, ring, stones, camp
+e164_18 | furniture | straw mat | straw, mat, round
+e164_19 | nature | leafy sprig | leaves, green
+e164_20 | nature | leafy bush | bush, green
+e164_21 | furniture | crate of red apples | crate, apples, fruit, food
+e164_22 | furniture | stacked logs | logs, wood
+e164_23 | nature | leafy sprig | leaves, green
+e164_24 | nature | leafy sprig | leaves, green
+e164_25 | nature | leafy sprig | leaves, green
+e196_2 | furniture | iron cauldron on a tripod | cauldron, pot, tripod
+e198_1 | furniture | Wigglytuff mask torches | guild, mask, torch, fire
+e198_2 | furniture | torch | torch, fire, guild
+e200_1 | furniture | Wigglytuff mask torches | guild, mask, torch, fire
+e200_4 | furniture | guild banner | banner, flag, guild
+e200_5 | furniture | guild banner | banner, flag, guild
+e201_1 | furniture | bow-shaped rope | rope
+e201_3 | nature | dry grass tuft | grass, dry
+e201_5 | furniture | short wooden totem post | post, wood, guild
+e201_6 | furniture | wooden notice board | board, sign, wood, guild
+e201_7 | furniture | wooden arrow sign | sign, arrow, wood
+e201_8 | nature | dry grass tuft | grass, dry
+e202_1 | furniture | tall wooden ladder | ladder, wood
+e202_2 | nature | sprouting vine | vine, plant, green
+e202_3 | nature | sprouting vine | vine, plant, green
+e202_4 | nature | dry grass tuft | grass, dry
+e202_6 | nature | sprouting vine | vine, plant, green
+e202_7 | nature | dry grass tuft | grass, dry
+e202_9 | nature | sprouting vine | vine, plant, green
+e202_10 | nature | sprouting vine | vine, plant, green
+e202_11 | furniture | short wooden totem post | post, wood, guild
+e202_13 | nature | sprouting vine | vine, plant, green
+e202_16 | nature | dry grass bush | grass, dry, bush
+e202_17 | nature | dry grass bush | grass, dry, bush
+e202_18 | nature | dry grass bush | grass, dry, bush
+e202_19 | furniture | wooden arrow signs | sign, arrow, wood
+e202_20 | nature | flower bed | flowers, bed, colourful
+e202_21 | nature | sprouting vine | vine, plant, green
+e202_22 | furniture | notice board with vines | board, sign, wood, guild
+e202_25 | furniture | stone ledge | stone, ledge
+e202_30 | nature | dry grass bush | grass, dry, bush
+e205_2 | buildings | brick archway | arch, brick, door, guild
+e206_1 | furniture | tall wooden ladder | ladder, wood
+e206_2 | buildings | brick arch with round door | arch, brick, door, guild
+e206_3 | furniture | golden Wigglytuff throne | throne, gold, guild, statue
+e206_4 | nature | colourful flower bed | flowers, bed, colourful
+e206_9 | furniture | red rug | rug, carpet, red
+e206_11 | nature | colourful flower bed | flowers, bed, colourful
+e206_13 | nature | colourful flower bed | flowers, bed, colourful
+e206_15 | nature | small green bush | bush, green
+e207_1 | furniture | iron cauldron on a tripod | cauldron, pot, tripod
+e208_1 | furniture | torch | torch, fire, guild
+e208_3 | furniture | treasure chest full of apples | chest, treasure, apples, food
+e208_4 | furniture | treasure chest full of apples | chest, treasure, apples, food
+e210_1 | nature | dry grass bush | grass, dry, bush
+e210_2 | nature | dry grass bush | grass, dry, bush
+e210_3 | nature | sprouting vine | vine, plant, green
+e210_4 | nature | sprouting vine | vine, plant, green
+e210_5 | nature | sprouting vine | vine, plant, green
+e210_6 | nature | sprouting vine | vine, plant, green
+e210_8 | water | water spout splash | water, splash, fountain
+e210_9 | furniture | baskets of fruit | basket, fruit, food
+e210_10 | nature | colourful flower bed | flowers, bed, colourful
+e210_11 | furniture | baskets of fruit | basket, fruit, food
+e210_12 | furniture | baskets of fruit | basket, fruit, food
+e210_13 | furniture | long wooden bench | bench, wood, table
+e210_15 | nature | flower bed | flowers, bed, colourful
+e221_1 | nature | cliff top seen from above | cliff, grass, sea, big
+e221_2 | nature | dark green hedge | bush, hedge, dark
+e225_1 | nature | small sand rock | rock, sand
+e225_2 | nature | big sand boulder | rock, sand, big
+e225_3 | nature | sand rock | rock, sand
+e225_4 | nature | sand rock with flowers | rock, sand, flowers
+e225_5 | nature | flower bed | flowers, bed
+e225_9 | nature | sand rock | rock, sand
+e226_1 | nature | square green bush | bush, green
+e226_3 | furniture | wooden well | well, water, wood, town
+e226_4 | furniture | wooden arrow signs | sign, arrow, wood
+e226_5 | nature | flower bed | flowers, bed
+e226_6 | furniture | yellow signpost with a swirl | sign, yellow, wood, town
+e226_7 | furniture | wooden fence | fence, wood
+e226_8 | nature | hedge with flowers | bush, hedge, flowers
+e226_9 | furniture | round stone pit | pit, stone, hole
+e226_10 | furniture | wooden scaffold | scaffold, wood
+e226_11 | nature | white flowers | flowers, white
+e226_14 | nature | small flower bush | bush, flowers, yellow
+e226_15 | nature | small flower bush | bush, flowers, yellow
+e227_1 | furniture | paper notes on the wall | notes, paper, board
+e227_2 | furniture | paper note | notes, paper
+e227_3 | furniture | juice barrels | barrel, juice, cafe, drinks
+e227_4 | furniture | juice barrels | barrel, juice, cafe, drinks
+e227_5 | furniture | red cafe counter | counter, cafe, red
+e227_6 | furniture | round yellow table | table, cafe, round
+e227_7 | furniture | round yellow table | table, cafe, round
+e227_10 | nature | potted plant | plant, pot, leaves
+e228_1 | nature | small tree | tree, green
+e228_2 | nature | spreading tree | tree, green, big
+e228_3 | nature | spreading tree | tree, green, big
+e228_4 | nature | leafy tree, edge | tree, green, big
+e228_5 | water | clay hot spring basin | water, spring, basin, stone
+e228_6 | other | golden chain outline | chain, gold, outline
+e228_7 | nature | fallen leaves | leaves, autumn
+e228_8 | nature | fallen leaves | leaves, autumn
+e228_11 | nature | fallen leaves | leaves, autumn
+e228_12 | nature | fallen leaves | leaves, autumn
+e228_13 | nature | scattered yellow leaves | leaves, autumn, yellow
+e228_19 | nature | knotty vine column | vine, root, wall
+e228_20 | nature | knotty vine column | vine, root, wall
+e230_1 | nature | brown rock edge | rock, brown, edge
+e230_2 | nature | brown rock edge | rock, brown, edge
+e230_3 | nature | brown rock corner | rock, brown, edge
+e230_4 | nature | brown rock corner | rock, brown, edge
+e230_6 | nature | brown rock edge | rock, brown, edge
+e230_7 | nature | brown rock edge | rock, brown, edge
+e230_8 | nature | flat tan rock | rock, tan, flat
+e230_9 | nature | flat tan rock | rock, tan, flat
+e230_10 | nature | grassy rock edge | rock, grass, edge
+e230_11 | water | small dark blue pool | water, pool, blue
+e230_13 | nature | grassy rock edge | rock, grass, edge
+e231_1 | nature | scattered white pebbles | pebbles, white
+e232_1 | nature | small dark stone | rock, dark
+e232_2 | nature | tall dark stone | rock, dark
+e232_3 | nature | dark pebbles | rock, dark, pebbles
+e232_8 | nature | big dark boulder | rock, dark, big
+e232_11 | nature | small dark stone | rock, dark
+e233_1 | buildings | iron jail gate | gate, jail, iron, door
+e234_1 | buildings | iron gate leaf | gate, jail, iron, door
+e234_2 | buildings | iron gate leaf | gate, jail, iron, door
+e236_1 | buildings | dark stone wall with doorway | wall, stone, door, dark, cave, big
+e236_2 | nature | dead tree with stone | tree, dead, dark
+e236_3 | nature | dark stone | rock, dark
+e236_4 | nature | tall dark stone | rock, dark
+e236_5 | nature | dark stone | rock, dark
+e236_6 | nature | tall dark stone | rock, dark
+e236_7 | nature | tall dark stone | rock, dark
+e236_8 | nature | tall dark stone | rock, dark
+e236_10 | nature | dark stone | rock, dark
+e236_11 | nature | dark stone | rock, dark
+e236_16 | nature | dark boulder | rock, dark
+e237_1 | nature | dead black tree | tree, dead, dark
+e237_2 | nature | dead black tree | tree, dead, dark
+e237_3 | nature | small dark stone | rock, dark
+e237_4 | nature | big dark boulder | rock, dark, big
+e237_5 | nature | small dark stone | rock, dark
+e237_6 | nature | small dark stone | rock, dark
+e237_7 | nature | dark rubble strip | rock, dark, rubble
+e237_8 | nature | dark stone | rock, dark
+e237_9 | nature | dark stone with pebble | rock, dark
+e237_10 | nature | dark boulder | rock, dark
+e237_11 | nature | big dark boulder | rock, dark, big
+e237_14 | nature | small dark stone | rock, dark
+e237_15 | nature | small dark stone | rock, dark
+e237_16 | nature | dark stone | rock, dark
+e238_1 | nature | dark stone | rock, dark
+e238_2 | nature | dark stone | rock, dark
+e238_4 | nature | dark stone | rock, dark
+e238_5 | nature | dark boulder | rock, dark
+e238_6 | nature | dark stone | rock, dark
+e238_7 | nature | dark boulder | rock, dark
+e238_12 | nature | small dark stone | rock, dark
+e238_13 | nature | dark rubble strip | rock, dark, rubble, big
+e238_16 | nature | dark boulder | rock, dark
+e238_17 | nature | dark rubble strip | rock, dark, rubble, big
+e238_18 | nature | dark rubble strip | rock, dark, rubble, big
+e239_1 | nature | big grey boulder | rock, grey, big
+e239_2 | nature | grey stone | rock, grey
+e239_3 | nature | grey boulder | rock, grey
+e239_4 | nature | small grey stone | rock, grey
+e239_5 | nature | small grey stone | rock, grey
+e239_6 | nature | small grey stone | rock, grey
+e239_7 | nature | small grey stone | rock, grey
+e239_8 | nature | small grey stone | rock, grey
+e239_14 | nature | small grey stone | rock, grey
+e239_19 | nature | grey rock ledge | rock, grey
+e240_3 | nature | rocky frame | rock, grey, frame
+e240_5 | nature | rocky frame | rock, grey, frame
+e241_1 | water | deep blue water | water, blue, sea, big
+e241_2 | nature | blue rock in water | rock, blue, water
+e242_1 | nature | scattered brown twigs | twigs, leaves, brown
+e242_3 | nature | reddish brown boulders | rock, brown
+e242_4 | nature | reddish brown rocks | rock, brown
+e242_6 | nature | dark rock with green moss | rock, dark, moss
+e243_1 | other | rainbow beam | rainbow, light, beam
+e244_1 | nature | tan rock column | rock, tan, cliff
+e245_1 | nature | tan boulder | rock, tan
+e245_2 | nature | tan rock | rock, tan
+e245_3 | nature | tan rock column | rock, tan, cliff
+e245_5 | nature | tan boulder | rock, tan
+e245_8 | nature | tan rock | rock, tan
+e245_13 | nature | tan boulder | rock, tan
+e245_14 | nature | big tan boulder | rock, tan, big
+e245_15 | nature | tan rock | rock, tan
+e245_18 | nature | tan boulder | rock, tan
+e245_20 | nature | tan rock column | rock, tan, cliff
+e246_1 | water | glowing spring light | light, water, glow, spring
+e247_1 | water | glowing stream | water, stream, glow
+e247_2 | water | glowing spring fountain | water, fountain, glow, spring
+e247_4 | water | teal stream bit | water, stream, glow
+e247_6 | water | teal stream | water, stream, glow
+e247_8 | water | teal stream | water, stream, glow
+e247_9 | water | teal stream | water, stream, glow
+e248_1 | nature | pile of sticks | sticks, wood, nest
+e248_2 | nature | pale boulder | rock, pale
+e248_3 | furniture | crossed bones | bones, sticks
+e248_4 | nature | pale stone | rock, pale
+e248_5 | furniture | fallen log | log, wood
+e249_5 | nature | small grey stones | rock, grey
+e250_1 | buildings | Igglybuff's cottage | house, cottage, red roof
+e250_2 | nature | leafy bush, edge | bush, green
+e250_3 | nature | round green bush | bush, green
+e250_4 | nature | round light green bush | bush, green
+e250_6 | nature | tree stump | stump, tree, wood
+e250_7 | nature | grey stones | rock, grey
+e250_8 | nature | round leafy tree | tree, green, big
+e250_9 | nature | flat grey stone | rock, grey
+e251_6 | furniture | stacked logs | logs, wood
+e252_1 | furniture | stone stove with fire | stove, fire, chimney, house
+e252_2 | furniture | clay pots | pots, clay, jar
+e252_3 | furniture | clay pots | pots, clay, jar
+e252_4 | nature | potted plant | plant, pot, leaves
+e252_5 | furniture | clay pot | pot, clay, jar
+e252_6 | furniture | stacked logs | logs, wood
+e252_7 | furniture | clay pot on its side | pot, clay, jar
+e252_8 | furniture | round rug | rug, carpet, round
+e252_9 | furniture | round table on a rug | table, rug, round
+e252_11 | furniture | bowl of berries | bowl, berries, food
+e252_13 | nature | leafy plant | plant, leaves
+e252_14 | nature | potted flowering plant | plant, pot, flowers
+e252_15 | furniture | stone basin with water | basin, water, stone
+e252_16 | furniture | orange rug with a shell | rug, carpet, orange
+e255_1 | furniture | bone pile | bones, rubble
+e255_3 | furniture | round woven basket | basket, wood, round
+e255_5 | furniture | scattered pebbles and bones | bones, pebbles
+e255_7 | furniture | bones and shells | bones, shells
+e255_8 | furniture | broken wooden crate | crate, wood, broken
+e256_1 | furniture | purple stone column | pillar, column, purple, stone
+e257_1 | nature | mossy tan stones | rock, tan, moss
+e257_2 | nature | round leafy tree | tree, green, big
+e257_3 | nature | leafy vine bit | vine, leaves, green
+e257_4 | buildings | golden arch gate | gate, arch, gold
+e257_5 | nature | leafy vine bit | vine, leaves, green
+e257_6 | nature | round leafy tree | tree, green, big
+e257_7 | nature | mossy tan rock | rock, tan, moss
+e257_8 | nature | mossy tan rock | rock, tan, moss
+e257_9 | nature | mossy tan rock | rock, tan, moss
+e257_10 | nature | mossy tan stones | rock, tan, moss
+e257_11 | nature | mossy tan boulder | rock, tan, moss
+e257_12 | nature | mossy tan boulder | rock, tan, moss
+e258_1 | buildings | striped shop stall | shop, stall, market, awning
+e258_10 | buildings | striped shop stall | shop, stall, market, awning
+e258_11 | buildings | small striped stalls | shop, stall, market, awning
+e258_12 | buildings | small striped stalls | shop, stall, market, awning
+e258_18 | buildings | striped shop stall | shop, stall, market, awning
+e258_19 | furniture | golden totem statue | statue, totem, gold
+e258_21 | furniture | tall carved wooden post | post, wood, carved
+e259_1 | nature | hedge strip | bush, hedge, big
+e259_2 | nature | grey boulders with moss | rock, grey, moss
+e261_1 | nature | black boulder | rock, dark
+e261_2 | nature | black stones | rock, dark
+e261_3 | nature | small black stone | rock, dark
+e261_4 | nature | black boulder with pebbles | rock, dark
+e261_6 | nature | black stone | rock, dark
+e261_7 | nature | small black stone | rock, dark
+e261_10 | nature | big black boulder | rock, dark
+e261_14 | nature | black stone | rock, dark
+e261_15 | nature | small black stone | rock, dark
+e261_16 | nature | small black stone | rock, dark
+e261_18 | nature | small black stone | rock, dark
+e261_23 | nature | black boulder | rock, dark
+e261_25 | nature | small black stone | rock, dark
+e261_26 | nature | black stones | rock, dark
+e261_27 | nature | dead black tree | tree, dead, dark
+e261_28 | nature | black boulder | rock, dark
+e261_29 | nature | small black stone | rock, dark
+e261_30 | nature | small black stone | rock, dark
+e261_31 | nature | black stone | rock, dark
+e261_32 | nature | black stone | rock, dark
+e262_3 | nature | black stone | rock, dark
+e262_5 | nature | dark forest edge | tree, forest, dark, big
+e262_6 | nature | dark stone | rock, dark
+e262_8 | nature | dark stone | rock, dark
+e262_16 | nature | dark stone | rock, dark
+e262_17 | nature | dark rubble strip | rock, dark, rubble, big
+e263_1 | nature | dark grey tree | tree, dark, grey
+e263_3 | nature | flat dark stone | rock, dark
+e263_4 | nature | dark grey fern | fern, dark, grey
+e263_5 | nature | dark grey tree, edge | tree, dark, grey
+e263_6 | nature | dark grey boulder | rock, dark, grey
+e263_7 | nature | dark grey tree, edge | tree, dark, grey
+e263_8 | nature | small dark stone | rock, dark
+e263_9 | nature | small dark stone | rock, dark
+e263_10 | nature | dark stones | rock, dark
+e263_11 | nature | dark boulder | rock, dark
+e263_12 | nature | dark stone | rock, dark
+e263_13 | nature | small dark stone | rock, dark
+e263_14 | nature | small dark stone | rock, dark
+e263_15 | nature | small dark stone | rock, dark
+e263_17 | nature | small dark stone | rock, dark
+e263_18 | nature | dark grey tree | tree, dark, grey
+e263_20 | nature | dark boulder | rock, dark
+e263_23 | nature | small dark stone | rock, dark
+e263_24 | nature | small dark stone | rock, dark
+e263_25 | nature | flat dark boulder | rock, dark
+e263_27 | nature | flat dark stone | rock, dark
+e263_28 | nature | flat dark stones | rock, dark
+e263_29 | nature | small dark stone | rock, dark
+e263_31 | nature | dark boulder | rock, dark
+e263_32 | nature | small dark stone | rock, dark
+e263_33 | nature | dark stone | rock, dark
+e263_34 | nature | dark pebbles | rock, dark, pebbles
+e263_36 | nature | dark boulders | rock, dark
+e263_37 | nature | dark stone block | rock, dark, block
+e263_39 | nature | dark rock column | rock, dark, cliff
+e263_42 | nature | dark rock column | rock, dark, cliff
+e263_46 | nature | dark boulders | rock, dark
+e263_47 | nature | dark stone | rock, dark
+e263_48 | nature | small dark stone | rock, dark
+e263_49 | nature | dark stone block | rock, dark, block
+e263_52 | nature | dark stone block | rock, dark, block
+e263_55 | nature | dark stone block | rock, dark, block
+e264_1 | nature | snowy rock | rock, snow, ice
+e264_2 | nature | big snowy boulder | rock, snow, ice, big
+e264_3 | nature | small snowball | snow, ice
+e264_4 | nature | snowy rock | rock, snow, ice
+e264_5 | nature | big snowy boulder | rock, snow, ice, big
+e264_6 | nature | small snowy rock | rock, snow, ice
+e264_7 | nature | snowy boulder | rock, snow, ice
+e264_8 | nature | big snowy boulder | rock, snow, ice, big
+e264_9 | nature | snowy rock | rock, snow, ice
+e264_10 | nature | snowy rock | rock, snow, ice
+e264_11 | nature | small snowy rock | rock, snow, ice
+e264_12 | nature | snowy rock | rock, snow, ice
+e264_13 | nature | snowy rock with pebbles | rock, snow, ice
+e264_14 | nature | snowy rock | rock, snow, ice
+e264_15 | nature | snowy cliff edge | snow, cliff, ice, big
+e265_1 | nature | small brown stone | rock, brown
+e265_2 | nature | brown stone | rock, brown
+e265_3 | nature | brown stone | rock, brown
+e265_4 | nature | small dark bush | bush, dark
+e265_5 | furniture | octagonal stone pedestal | pedestal, stone, altar
+e265_6 | nature | small dark bush | bush, dark
+e265_9 | furniture | stone pillar | pillar, stone, column
+e265_10 | furniture | stone steps | steps, stone, stairs
+e265_11 | furniture | stone pillar | pillar, stone, column
+e265_13 | nature | small dark bush | bush, dark
+e266_1 | nature | earth mound | mound, dirt, hill, big
+e267_1 | buildings | vine-covered stone frame | frame, vines, stone, ruins, big
+e267_2 | furniture | stone with green crystal | stone, crystal, green
+e267_3 | furniture | stone with green crystal | stone, crystal, green
+e267_4 | furniture | golden key-shaped totem | totem, key, gold
+e267_5 | furniture | tall stones with crystals | stone, crystal, green
+e267_6 | furniture | tall stones with crystals | stone, crystal, green
+e268_1 | nature | sand patch | sand, beach, big
+e268_2 | nature | sand patch | sand, beach, big
+e271_1 | nature | red, yellow and blue flowers | flowers, colourful
+e271_2 | nature | red and yellow flowers | flowers, colourful
+e271_4 | nature | yellow and blue flowers | flowers, colourful
+e271_12 | nature | red and yellow flowers | flowers, colourful
+e271_14 | nature | pink and red flowers | flowers, colourful
+e271_15 | nature | small sandy stone | rock, sand
+e271_16 | nature | small sandy stone | rock, sand
+e271_17 | nature | small green bush | bush, green
+e271_18 | nature | sand patch | sand, beach
+e271_19 | nature | sand patch | sand, beach
+e271_21 | nature | red and yellow flowers | flowers, colourful
+e271_22 | nature | sand patch | sand, beach
+e271_23 | nature | sand patch | sand, beach
+e271_25 | nature | small sand patch | sand, beach
+e271_29 | nature | sand patches | sand, beach
+e271_33 | nature | red and yellow flowers | flowers, colourful
+e271_34 | nature | sand patch | sand, beach
+e271_35 | nature | sand patch | sand, beach
+e271_38 | nature | red, yellow and blue flowers | flowers, colourful
+e271_41 | nature | sand patch | sand, beach
+e271_42 | nature | small green bush | bush, green
+e271_43 | nature | small sand patch | sand, beach
+e271_46 | nature | sand patches | sand, beach
+e271_48 | furniture | wooden arrow signpost | sign, arrow, wood
+e271_57 | nature | small sand patch | sand, beach
+e272_1 | nature | jungle treetops with a shape | tree, jungle, big
+e273_1 | other | red zigzag band | red, zigzag, effect
+e285_1 | other | title logo | logo, title, menu
+e286_1 | other | title logo | logo, title, menu
+e286_5 | other | title subtitle | logo, title, menu
+e287_1 | other | title logo | logo, title, menu
+e287_5 | other | title subtitle | logo, title, menu
+e288_1 | other | title logo | logo, title, menu
+e289_1 | other | title logo | logo, title, menu
+e289_2 | other | small credit text | text, title, menu
+e289_3 | other | credit text | text, title, menu
+e289_4 | other | credit text | text, title, menu
+e290_1 | other | white cloud shape | cloud, white
+e291_1 | other | white cloud shape | cloud, white
+e293_1 | other | white cloud shape | cloud, white
+e294_1 | other | white cloud shape | cloud, white
+e295_1 | other | title logo | logo, title, menu
+e300_1 | other | blue sky with clouds | sky, clouds, blue, big
+e301_1 | water | blue sea | water, sea, blue, big
+e302_1 | furniture | treasure chest full of gold | chest, treasure, gold
+e302_2 | furniture | gold coin | coin, gold, money
+e302_3 | furniture | gold coins | coin, gold, money
+e302_4 | furniture | letter with a seal | letter, mail, envelope
+e302_5 | furniture | gold coin | coin, gold, money
+e302_6 | furniture | gold coin | coin, gold, money
+e303_1 | furniture | treasure map scroll | map, scroll, paper
+e303_2 | furniture | explorer's bag | bag, satchel
+e303_3 | furniture | winged badge | badge, wings
+e303_4 | furniture | grey rock fragment | rock, fragment, grey
+e304_1 | other | dark green spiral vine | vine, spiral, dark
+e304_2 | other | dark green spiral vine | vine, spiral, dark
+e304_3 | nature | dark thorny pit with roots | pit, roots, dark, big
+e305_1 | nature | grassy strip with tiny trees | grass, trees, distant
+e306_1 | nature | dark misty forest | forest, dark, mist, big
+e306_2 | nature | dark teal rock | rock, teal, dark
+e306_3 | nature | dark teal rock | rock, teal, dark
+e306_4 | nature | dark teal rock | rock, teal, dark
+e306_5 | nature | dark teal rocks | rock, teal, dark
+e306_6 | nature | dark teal rock | rock, teal, dark
+e308_1 | nature | green hilltop | hill, grass, big
+e310_1 | other | thin orange line | line, orange
+e310_2 | furniture | orange compass rose | compass, map, orange
+e310_3 | nature | golden rock pile | rock, gold, map
+e310_4 | nature | small golden tree | tree, gold, map
+e310_5 | nature | small golden bush | bush, gold, map
+e310_6 | nature | golden tree stump | stump, gold, map
+e310_7 | nature | golden tree stump | stump, gold, map
+e310_8 | nature | golden forest patch | forest, gold, map
+e310_12 | nature | golden mountain | mountain, gold, map
+e310_13 | nature | golden tree stump | stump, gold, map
+e310_17 | nature | small golden tree | tree, gold, map
+e310_18 | buildings | small orange house | house, orange roof, map
+e310_19 | nature | small golden tree | tree, gold, map
+e310_21 | nature | golden tree stump | stump, gold, map
+e310_22 | nature | golden rock pile | rock, gold, map
+e310_23 | nature | golden forest patch | forest, gold, map
+e310_25 | nature | golden tree stump | stump, gold, map
+e310_28 | nature | golden tree stump | stump, gold, map
+e310_29 | other | orange speckles | speckles, orange, map
+e310_30 | nature | small golden tree | tree, gold, map
+e310_31 | other | thin orange line | line, orange, map
+e313_1 | nature | sandy cliff strip | sand, cliff, map, big
+e323_4 | buildings | yellow face shop roof | shop, roof, yellow, town
+e323_5 | buildings | ghostly bank shop | shop, bank, ghost, town
+e323_7 | furniture | round wooden tub | tub, basin, wood
+e323_8 | furniture | three clay pots on grass | pots, clay, jar, town
+e323_9 | furniture | low wooden fence | fence, wood, town
+e323_10 | furniture | small wooden post | post, wood
+e323_12 | buildings | red winged shop sign | shop, sign, red, wings, town
+e323_16 | buildings | pink shell shop roof | shop, roof, pink, town
+e323_17 | furniture | red banner post | banner, post, red
+e323_20 | furniture | pale egg | egg, yellow
+e324_1 | nature | big leafy flower plant | plant, flowers, leaves, town
+e324_2 | nature | big leafy flower plant | plant, flowers, leaves, town
+e324_3 | buildings | dojo entrance | dojo, door, entrance, town
+e324_4 | buildings | Kecleon shop head | shop, Kecleon, green, town
+e324_5 | furniture | small colourful bunting | bunting, flags, decoration
+e324_6 | nature | big leafy flower plant | plant, flowers, leaves, town
+e324_7 | buildings | green bird shop head | shop, bird, green, town
+e324_8 | furniture | clay pot on grass | pot, clay, jar, town
+e324_11 | buildings | purple tent roof | tent, roof, purple
+e324_12 | nature | tree stump | stump, tree, wood
+e324_13 | nature | tree stump | stump, tree, wood
+e324_15 | furniture | row of round stones | stones, row, border
+e324_16 | furniture | three clay pots on grass | pots, clay, jar, town
+e325_5 | furniture | bone | bone, dojo
+e326_1 | buildings | cave door with blue light | cave, door, entrance, dojo
+e326_2 | furniture | bone torch | torch, fire, bone, dojo
+e326_3 | buildings | bone gate | gate, bones, door, dojo
+e326_4 | furniture | bone torch | torch, fire, bone, dojo
+e326_6 | nature | small potted plant | plant, pot
+e326_7 | nature | tan rock | rock, tan
+e326_8 | nature | bumpy tan rock column | rock, tan, cliff
+e326_9 | furniture | bone torch | torch, fire, bone, dojo
+e326_11 | water | small blue pool in rocks | water, pool, blue, rocks
+e326_12 | nature | small tan rock | rock, tan
+e326_14 | furniture | stacked logs | logs, wood
+e326_16 | furniture | clay pots with blue water | pots, clay, water, jar
+e326_17 | furniture | wooden logs | logs, wood
+e327_1 | nature | dark rubble | rock, dark, rubble
+e327_2 | nature | gnarled root | root, branch, dark
+e327_3 | nature | blue crystal root | crystal, root, blue
+e327_4 | nature | dark brown stones | rock, brown, dark
+e327_5 | nature | dark brown rock column | rock, brown, dark
+e327_6 | nature | dark brown stone | rock, brown, dark
+e327_7 | nature | dark brown boulder | rock, brown, dark
+e327_8 | nature | dark brown stones | rock, brown, dark
+e327_9 | nature | dark brown stone | rock, brown, dark
+e327_10 | nature | dark brown stone | rock, brown, dark
+e327_11 | nature | dark brown stone | rock, brown, dark
+e455_1 | other | title logo | logo, title, menu
+e457_1 | other | title logo | logo, title, menu
+e458_1 | other | title logo | logo, title, menu
+a1_1 | animated | swaying red flowers | flowers, red, grass
+a1_2 | animated | swaying yellow flowers | flowers, yellow, grass
+a1_10 | animated | swaying flowers, row | flowers, grass
+a1_16 | animated | swaying flowers, row | flowers, grass
+a1_18 | animated | swaying yellow flowers | flowers, yellow, grass
+a1_25 | animated | swaying flowers, row | flowers, grass
+a15_1 | animated | shimmering green crest | crest, green, glow
+a23_1 | animated | waterfall | waterfall, water, blue, big
+a40_1 | animated | rippling water | water, ripples, blue, big
+a40_3 | animated | water tile | water, blue
+a43_1 | animated | water tile | water, blue
+a156_1 | animated | bubbling round pool | water, pool, spring
+a156_2 | animated | bubbling round pool | water, pool, spring
+a217_1 | animated | dark pool ripple | water, pool, dark
+a221_1 | animated | sea shore waves | sea, waves, shore, water, big
+a222_1 | animated | sea shore waves | sea, waves, shore, water, big
+a231_1 | animated | dark waves on rocks | sea, waves, dark
+a241_1 | animated | dark water strip | water, dark, stream
+a241_2 | animated | dark water strip | water, dark, stream
+a241_3 | animated | dark water strip | water, dark, stream
+a241_4 | animated | dark water strip | water, dark, stream
+a241_5 | animated | dark water strip | water, dark, stream
+a241_6 | animated | dark water corner | water, dark
+a242_1 | animated | glinting light streak | light, glint
+a242_2 | animated | grey rock tile | rock, grey
+a242_3 | animated | stone ledge tile | stone, ledge
+a248_1 | animated | ice water edge | ice, water, edge
+a248_2 | animated | ice water edge | ice, water, edge
+a248_3 | animated | ice water edge | ice, water, edge
+a248_4 | animated | ice water edge | ice, water, edge
+a248_5 | animated | ice water edge | ice, water, edge
+a248_6 | animated | ice water edge | ice, water, edge
+a248_7 | animated | ice water edge | ice, water, edge
+a248_8 | animated | ice water edge | ice, water, edge
+a301_1 | animated | sea surface strip | sea, water, blue
+a301_2 | animated | sea surface strip | sea, water, blue
+a307_1 | animated | dark whirlpool | water, whirlpool, dark
+a307_2 | animated | dark whirlpool | water, whirlpool, dark
+a307_3 | animated | dark whirlpool | water, whirlpool, dark
+a323_1 | animated | stream | stream, water, river
+a323_2 | animated | stream | stream, water, river
+a323_3 | animated | swaying flower bushes | flowers, bush, town
+a323_6 | animated | winding stream with a fall | stream, water, river, waterfall, big
+a323_7 | animated | swaying flower bushes | flowers, bush, town
+a323_8 | animated | swaying flower bushes | flowers, bush, town
+a323_9 | animated | flower bed with flowers | flowers, bed, town
+a323_16 | animated | swaying flower bushes | flowers, bush, town
+a324_1 | animated | stream | stream, water, river
+a324_2 | animated | stream | stream, water, river
+a324_3 | animated | swaying flower bush | flowers, bush, town
+a324_4 | animated | swaying flower bush | flowers, bush, town
+a324_5 | animated | swaying flower bush | flowers, bush, town
+a324_6 | animated | swaying flower bushes | flowers, bush, town
+a324_7 | animated | swaying flower bush | flowers, bush, town
+a324_8 | animated | stream bend | stream, water, river
+a324_9 | animated | flower bed with flowers | flowers, bed, town
+a324_11 | animated | stream bank | stream, water, river
+a324_14 | animated | glittering water | water, sparkle
+a324_15 | animated | swaying flower bushes | flowers, bush, town
+a324_19 | animated | swaying flower bushes | flowers, bush, town
+o11 | scene | small yellow glow | glow, light, yellow
+o16 | scene | yellow light ring | light, ring, yellow
+o18 | scene | blue sparkle burst | sparkle, blue, light
+o20 | scene | leafy shrubs | bush, shrubs, green
+o23 | scene | ruby | gem, ruby, red
+o24 | scene | small cloud puff | cloud, smoke, white
+o29 | scene | bubbles | bubbles, water
+o32 | scene | sparkling ring | sparkle, ring, light
+o33 | scene | pendant | pendant, jewel
+o34 | scene | tall blue light | light, blue, beam
+o58 | scene | faint grey patch | shadow, grey
+o61 | scene | pink scribble mark | mark, pink, drawing
+o64 | scene | small grey ball | ball, grey
+o65 | scene | stone wall strip | wall, stone
+o66 | scene | round carved stone slab | slab, stone, carved, round
+o69 | scene | dark stone plate | plate, stone, dark
+o70 | scene | stele | stele, stone, tablet
+o71 | scene | stone ledge | ledge, stone
+o72 | scene | blue energy arc | energy, arc, blue
+o73 | scene | blue energy arc | energy, arc, blue
+o75 | scene | dark blue gem | gem, dark, blue
+o78 | scene | purple light pillar | light, beam, purple
+o81 | scene | round bush | bush, green
+o82 | scene | grey stone steps | steps, stone, stairs
+o83 | scene | brown rock cliff | rock, cliff, brown, big
+o84 | scene | stone seat | seat, stone, throne
+o85 | scene | red throne | throne, seat, red
+o86 | scene | blue ice golem statue | statue, golem, blue
+o87 | scene | rock golem statue | statue, golem, rock
+o88 | scene | steel golem statue | statue, golem, steel
+o89 | scene | medallion | medallion, jewel
+o91 | scene | figure frozen in ice | ice, frozen, figure
+o93 | scene | small grey stone | stone, grey
+o94 | scene | paper | paper, note
+o95 | scene | iron gate | gate, iron, bars
+o96 | scene | carved totem | totem, carved
+o97 | scene | carved totem | totem, carved
+o98 | scene | carved totem | totem, carved
+o99 | scene | carved totem | totem, carved
+o100 | scene | flat crate | crate, wood, flat
+o104 | scene | purple flame | flame, purple
+o106 | scene | gold ingot | ingot, gold
+o107 | scene | flower strip | flowers, strip
+o111 | scene | grasses | grass, tuft, green
+o115 | scene | hay | hay, straw, green
+o116 | scene | fire | fire, flame, campfire
+o119 | scene | big white light | light, white, glow, big
+o120 | scene | two sparkles | sparkle, light
+o122 | scene | wooden sign | sign, wood
+o127 | scene | broken stone machine | ruins, stone, machine
+o128 | scene | apple | apple, fruit, food
+o134 | scene | black spiky shadow | shadow, spiky, dark
+o135 | scene | dark coiled shell | shell, coil, dark
+o141 | scene | glowing arch | arch, glow, cyan
+o145 | scene | purple sparkle | sparkle, purple
+o147 | scene | logs | logs, wood
+o153 | scene | faint sparkle strip | sparkle, faint
+o154 | scene | dust cloud | smoke, dust, cloud
+o165 | scene | title banner | logo, title, menu
+o166 | scene | title banner | logo, title, menu
+o167 | scene | title banner | logo, title, menu
+o168 | scene | title banner | logo, title, menu
+o169 | scene | title banner | logo, title, menu
+o170 | scene | press start text | text, title, menu
+o171 | scene | small text | text, title, menu
+o172 | scene | press start text | text, title, menu
+o175 | scene | demo label | text, demo, menu
+o176 | scene | demo label | text, demo, menu
+o180 | scene | end text | text, end, menu
+o181 | scene | end text | text, end, menu
+o182 | scene | end text | text, end, menu
+o183 | scene | end text | text, end, menu
+o185 | scene | blue chest | chest, treasure, blue
+o187 | scene | ice crystal flower | crystal, ice, flower
+o189 | scene | yellow corner frame | frame, yellow
+o194 | scene | dark portal | portal, dark, hole
+o196 | scene | rainbow crystal pod | crystal, rainbow, pod
+o198 | scene | bubble | bubble, rainbow
+o207 | scene | dark smoke clouds | smoke, dark, clouds, big
+o209 | scene | thin bamboo pole | pole, bamboo
+o211 | scene | dark brown mound | mound, dirt, dark
+o212 | scene | teal gear flower | flower, gear, teal
+o216 | scene | green sparkle ring | sparkle, ring, green
+o220 | scene | grey shard | shard, rock, grey
+o221 | scene | clock | clock, time
+o222 | scene | chain with a ring | chain, ring
+o223 | scene | ice crystal burst | crystal, ice, burst
+o243 | scene | blue energy wave | energy, wave, blue
+o244 | scene | golden spark | spark, gold, energy
+o245 | scene | golden spark | spark, gold, energy
+o246 | scene | golden spark | spark, gold, energy
+o247 | scene | golden spark | spark, gold, energy
+o248 | scene | golden spark | spark, gold, energy
+o249 | scene | small golden spark | spark, gold, energy
+o250 | scene | small golden spark | spark, gold, energy
+o251 | scene | small golden spark | spark, gold, energy
+o252 | scene | blue wall of light | light, blue, wall, big
+o253 | scene | green sparkle trail | sparkle, green, trail
+o256 | scene | blue crystal shards | crystal, blue, shards
+o262 | scene | small blue crystal shards | crystal, blue, shards
+o268 | scene | purple sparkle burst | sparkle, purple, light
+o280 | scene | faint pink lines | lines, pink, faint
+o281 | scene | blue dragon figure | figure, dragon, blue
+o284 | scene | red hexagon gem | gem, red, hexagon
+o285 | scene | white shard | shard, white
+o288 | scene | big white glow | light, white, glow
+o289 | scene | sea creature in waves | sea, creature, waves
+o290 | scene | sea creature with a shell | sea, creature, shell
+o294 | scene | wave streak | sea, wave
+o295 | scene | dark waves | sea, waves, dark
+o296 | scene | sea creature silhouette | sea, creature, shadow
+o297 | scene | blue light beam | light, beam, blue
+o303 | scene | sea creature with a shell | sea, creature, shell, big
+o306 | scene | wake | wake, water, waves
+o307 | scene | small green figure in the distance | figure, green, distant
+o311 | scene | splash | splash, water
+o313 | scene | foam | foam, water, waves
+o315 | scene | sea shadow | shadow, sea, dark
+o316 | scene | sparkle strip | sparkle, light
+o317 | scene | light beam | light, beam, tan
+o318 | scene | dark island | island, dark
+o319 | scene | sea creature in the sky | sea, creature, sky, big
+o320 | scene | geyser | geyser, water, spray
+o321 | scene | pink arc | arc, pink, light
+o323 | scene | pink arc | arc, pink, light
+o325 | scene | pink arc | arc, pink, light
+o327 | scene | small blue figure | figure, blue
+o329 | scene | teal gear flower | flower, gear, teal
+o339 | scene | scattered clouds and logs | clouds, logs, big
+o342 | scene | scattered clouds | clouds, sky, big
+o348 | scene | blue winged figure | figure, wings, blue
+o353 | scene | blue dots | dots, blue
+o354 | scene | small green bug | bug, green
+o355 | scene | white bird with a shell | bird, white, shell
+o365 | scene | sea creature swimming | sea, creature, swimming
+o367 | scene | dark leafy shadows | leaves, shadow, dark, big
+o371 | scene | scroll | scroll, paper
+o372 | scene | coin | coin, gold, money
+o373 | scene | red chest | chest, treasure, red
+o375 | scene | olive chest | chest, treasure, olive
+o376 | scene | brazier | brazier, fire, stone
+o380 | scene | blue stone pillar | pillar, stone, blue
+o381 | scene | dark stones | rocks, dark
+o382 | scene | dark stones | rocks, dark
+o383 | scene | dark round boulder | rock, dark, round
+o385 | scene | flame | flame, fire
+o386 | scene | torch stand | torch, fire, stand
+o387 | scene | small blue box | box, blue
+o388 | scene | grass tuft on a pole | grass, tuft, green
+o390 | scene | rocks | rocks, grey
+o391 | scene | pale rock spire | rock, pale
+o393 | scene | broken crate with apples | crate, apples, broken
+o394 | scene | crate | crate, wood, box
+o395 | scene | barrel | barrel, wood
+o396 | scene | cooking pot | pot, cooking, stones
+o397 | scene | door | door, wood, round
+o398 | scene | white flower cluster | flowers, white
+o399 | scene | white puff cloud | cloud, white, puff
+o402 | scene | blue arrow | arrow, blue, sign
+o406 | scene | red rug | rug, carpet, red
+o410 | scene | small yellow shrine | shrine, yellow
+o411 | scene | blue gem | gem, blue
+o412 | scene | dark rock column | rock, dark, cliff
+o414 | scene | white light orb | light, orb, white
+o417 | scene | small purple shell | shell, purple
+o418 | scene | small green figure | figure, green
+o419 | scene | small ice shard | ice, shard
+o422 | scene | grey cloud | cloud, grey
+o423 | scene | crystal | crystal, ice, big
+o424 | scene | dark shadow ring | shadow, ring, dark
+o426 | scene | pink glowing figure | figure, pink, glow
+o429 | scene | pink glowing figure | figure, pink, glow
+o431 | scene | pink sparkle trail | sparkle, pink, trail
+o435 | scene | grey statue figure | statue, figure, grey
+o436 | scene | grey statue figure | statue, figure, grey
+o437 | scene | grey statue figure | statue, figure, grey
+o450 | scene | dark glow at the bottom | glow, dark, shadow
+o451 | scene | pink sparkle lines | sparkle, pink, lines
+o455 | scene | yellow light orb | light, orb, yellow
+o456 | scene | fire spark | spark, fire
+o459 | scene | blue figure with fire | figure, blue, fire
+o460 | scene | pink sparkle trail | sparkle, pink, trail
+o461 | scene | pink sparkle trail | sparkle, pink, trail, big
+o462 | scene | pink sparkle trail | sparkle, pink, trail, big
+o465 | scene | reddish rock face | rock, red, cliff
+o467 | scene | white bow | bow, ribbon, white
+o475 | scene | blue bow | bow, ribbon, blue
+o484 | scene | note | note, music
+o485 | scene | black silhouette | silhouette, black
+o486 | scene | black silhouette | silhouette, black
+o487 | scene | black silhouette | silhouette, black
+o488 | scene | grey smoke cloud | smoke, cloud, grey, big
+o489 | scene | grey smoke cloud | smoke, cloud, grey
+o490 | scene | grey smoke cloud | smoke, cloud, grey
+o491 | scene | grey smoke cloud | smoke, cloud, grey
+o492 | scene | grey smoke cloud | smoke, cloud, grey
+o493 | scene | small grey smoke cloud | smoke, cloud, grey
+o494 | scene | small grey smoke cloud | smoke, cloud, grey
+o495 | scene | small grey smoke cloud | smoke, cloud, grey
+o496 | scene | small grey smoke cloud | smoke, cloud, grey
+o497 | scene | small grey rubble | rubble, rock, grey
+o498 | scene | small grey rubble | rubble, rock, grey
+o500 | scene | small grey rubble | rubble, rock, grey
+o501 | scene | dark scaly boulder | rock, dark, big
+o502 | scene | dark falling rock | rock, dark, falling
+o503 | scene | dark falling rock | rock, dark, falling
+o504 | scene | pale falling rock | rock, pale, falling
+o505 | scene | pale falling rock | rock, pale, falling
+o506 | scene | pale falling rock | rock, pale, falling
+o507 | scene | small falling rock | rock, falling
+o508 | scene | small falling rock | rock, falling
+o509 | scene | small falling rock | rock, falling
+o510 | scene | small falling rock | rock, falling
+o511 | scene | small falling rock | rock, falling
+o513 | scene | tiny falling rock | rock, falling
+o516 | scene | grey falling rock | rock, grey, falling
+o517 | scene | grey falling rock | rock, grey, falling
+o518 | scene | grey falling rock | rock, grey, falling
+o519 | scene | grey falling rocks | rock, grey, falling
+o520 | scene | grey falling rocks | rock, grey, falling
+o521 | scene | scattered grey pebbles | pebbles, grey
+o522 | scene | grey stones | rock, grey
+o523 | scene | grey stones | rock, grey
+o524 | scene | grey stones | rock, grey
+o525 | scene | thin white line | line, white
+o526 | scene | thin white line | line, white
+o527 | scene | thin golden line | line, gold
+o531 | scene | distant stone tower | tower, stone, distant
+o533 | scene | pink figure with an apple | figure, pink, apple
+o534 | scene | purple bubbly mass | bubbles, purple, goo
+o539 | scene | falling brown pebbles | pebbles, brown, falling
+o548 | scene | blue sparkle corners | sparkle, blue, frame
+o550 | scene | brown seed | seed, brown
+o554 | scene | orange flame | flame, orange, fire
+o558 | scene | green leafy figure | figure, green, leaves
+o562 | scene | small red box | box, red
+o563 | scene | small blue box | box, blue
+o565 | scene | stone statue on a brick base | statue, stone, brick
+o566 | scene | pearl | pearl, white
+o567 | scene | two yellow lights | light, yellow
+o568 | scene | blue snowflake dots | snowflakes, blue, dots

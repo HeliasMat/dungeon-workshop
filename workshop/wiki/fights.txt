@@ -1,0 +1,27 @@
+# The Wiki's pages: fights (workshop/src/wiki/written.rs).
+
+== fight
+> A fight, played by the fights' own rules, with the game's moves, bars and log: who... vs who...; a duel by default, double for two against two; boss, the foe looms first; level n. fight directed … end tells one by one, turn by turn.
+scene: beach pikachu piplup
+fight pikachu vs piplup level 10
+pikachu: Good fight!
+
+== join
+> Someone joins the team: the game's sentence, a hop.
+scene: beach pikachu piplup
+piplup join team
+pikachu: Welcome aboard!
+
+== evolve
+> Someone evolves into another species: the white light, the pulsing silhouette, the new form and its sentence. Their lines then show the new name and portrait.
+scene: beach eevee piplup
+eevee evolve umbreon
+piplup (surprised): Wow!
+
+== attack
+> Someone uses a move of the game, by its name, as the game shows it: their own animation, the move's effects and sound, the target knocked back and hurt. No bars, no numbers: fight does those.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu attack Thunderbolt at piplup
+piplup (pain): Ouch!

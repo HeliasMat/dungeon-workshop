@@ -1,0 +1,1 @@
+Our own sounds for films: one `.wav` file (PCM 8, 16, 24 or 32 bits, or floats, mono or stereo, any rate) per sound, played by its name like the game's: `sound name`, `ambient name`, `music name` (see film/FILMS.md, "Sounds of our own"). The `test_*` ones are only for trials.

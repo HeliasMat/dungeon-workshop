@@ -1,0 +1,16 @@
+[package]
+name = "language"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The language of the films and the scenes, read once: the tree, the errors, the formatting"
+readme = "../README.md"
+publish.workspace = true
+
+# The one language of the scenes: its text read once, into a tree where each
+# piece knows where it was written, what is wrong said with its place and its
+# fixes, and the text written back in order. Nothing here knows the game.
+[dependencies]
+diagnostics = { path = "../diagnostics" }

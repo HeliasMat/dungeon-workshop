@@ -1,0 +1,2657 @@
+# The pieces the Workshop does not offer, and why: decor sort writes them, nothing is written by hand.
+# They stay in the catalogue: a decor lays them by their name, a place of the game is made again of all of them.
+e456_1  duplicate of e457_1
+e454_1  from a screen of the game, not a place (menu, vision)
+e454_2  from a screen of the game, not a place (menu, vision)
+e454_3  from a screen of the game, not a place (menu, vision)
+e453_1  from a screen of the game, not a place (menu, vision)
+e453_2  from a screen of the game, not a place (menu, vision)
+e453_3  from a screen of the game, not a place (menu, vision)
+e453_4  from a screen of the game, not a place (menu, vision)
+e452_1  from a screen of the game, not a place (menu, vision)
+e452_2  from a screen of the game, not a place (menu, vision)
+e452_3  from a screen of the game, not a place (menu, vision)
+e452_4  from a screen of the game, not a place (menu, vision)
+e451_1  from a screen of the game, not a place (menu, vision)
+e451_2  from a screen of the game, not a place (menu, vision)
+e446_1  from a screen of the game, not a place (menu, vision)
+e445_1  from a screen of the game, not a place (menu, vision)
+e444_1  from a screen of the game, not a place (menu, vision)
+e441_1  from a screen of the game, not a place (menu, vision)
+e440_1  from a screen of the game, not a place (menu, vision)
+e439_1  from a screen of the game, not a place (menu, vision)
+e438_1  from a screen of the game, not a place (menu, vision)
+e438_2  from a screen of the game, not a place (menu, vision)
+e437_1  from a screen of the game, not a place (menu, vision)
+e437_2  from a screen of the game, not a place (menu, vision)
+e437_3  from a screen of the game, not a place (menu, vision)
+e437_4  from a screen of the game, not a place (menu, vision)
+e437_5  from a screen of the game, not a place (menu, vision)
+e436_1  from a screen of the game, not a place (menu, vision)
+e436_2  from a screen of the game, not a place (menu, vision)
+e436_3  from a screen of the game, not a place (menu, vision)
+e436_4  from a screen of the game, not a place (menu, vision)
+e436_5  from a screen of the game, not a place (menu, vision)
+e436_6  from a screen of the game, not a place (menu, vision)
+e436_7  from a screen of the game, not a place (menu, vision)
+e436_8  from a screen of the game, not a place (menu, vision)
+e436_9  from a screen of the game, not a place (menu, vision)
+e435_1  from a screen of the game, not a place (menu, vision)
+e434_1  from a screen of the game, not a place (menu, vision)
+e433_1  from a screen of the game, not a place (menu, vision)
+e433_2  from a screen of the game, not a place (menu, vision)
+e433_3  from a screen of the game, not a place (menu, vision)
+e433_4  from a screen of the game, not a place (menu, vision)
+e433_5  from a screen of the game, not a place (menu, vision)
+e433_6  from a screen of the game, not a place (menu, vision)
+e433_7  from a screen of the game, not a place (menu, vision)
+e433_8  from a screen of the game, not a place (menu, vision)
+e433_9  from a screen of the game, not a place (menu, vision)
+e433_10  from a screen of the game, not a place (menu, vision)
+e433_11  from a screen of the game, not a place (menu, vision)
+e433_12  from a screen of the game, not a place (menu, vision)
+e433_13  from a screen of the game, not a place (menu, vision)
+e433_14  from a screen of the game, not a place (menu, vision)
+e433_15  from a screen of the game, not a place (menu, vision)
+e433_16  from a screen of the game, not a place (menu, vision)
+e433_17  from a screen of the game, not a place (menu, vision)
+e433_18  from a screen of the game, not a place (menu, vision)
+e433_19  from a screen of the game, not a place (menu, vision)
+e433_20  from a screen of the game, not a place (menu, vision)
+e433_21  from a screen of the game, not a place (menu, vision)
+e433_22  from a screen of the game, not a place (menu, vision)
+e433_23  from a screen of the game, not a place (menu, vision)
+e433_24  from a screen of the game, not a place (menu, vision)
+e432_1  from a screen of the game, not a place (menu, vision)
+e432_2  from a screen of the game, not a place (menu, vision)
+e432_3  from a screen of the game, not a place (menu, vision)
+e432_4  from a screen of the game, not a place (menu, vision)
+e432_5  from a screen of the game, not a place (menu, vision)
+e432_6  from a screen of the game, not a place (menu, vision)
+e432_7  from a screen of the game, not a place (menu, vision)
+e432_8  from a screen of the game, not a place (menu, vision)
+e432_9  from a screen of the game, not a place (menu, vision)
+e432_10  from a screen of the game, not a place (menu, vision)
+e432_11  from a screen of the game, not a place (menu, vision)
+e431_1  from a screen of the game, not a place (menu, vision)
+e431_2  from a screen of the game, not a place (menu, vision)
+e431_3  from a screen of the game, not a place (menu, vision)
+e431_4  from a screen of the game, not a place (menu, vision)
+e431_5  from a screen of the game, not a place (menu, vision)
+e431_6  from a screen of the game, not a place (menu, vision)
+e431_7  from a screen of the game, not a place (menu, vision)
+e431_8  from a screen of the game, not a place (menu, vision)
+e431_9  from a screen of the game, not a place (menu, vision)
+e431_10  from a screen of the game, not a place (menu, vision)
+e431_11  from a screen of the game, not a place (menu, vision)
+e431_12  from a screen of the game, not a place (menu, vision)
+e431_13  from a screen of the game, not a place (menu, vision)
+e431_14  from a screen of the game, not a place (menu, vision)
+e431_15  from a screen of the game, not a place (menu, vision)
+e431_16  from a screen of the game, not a place (menu, vision)
+e431_17  from a screen of the game, not a place (menu, vision)
+e431_18  from a screen of the game, not a place (menu, vision)
+e431_19  from a screen of the game, not a place (menu, vision)
+e431_20  from a screen of the game, not a place (menu, vision)
+e431_21  from a screen of the game, not a place (menu, vision)
+e431_22  from a screen of the game, not a place (menu, vision)
+e431_23  from a screen of the game, not a place (menu, vision)
+e431_24  from a screen of the game, not a place (menu, vision)
+e431_25  from a screen of the game, not a place (menu, vision)
+e431_26  from a screen of the game, not a place (menu, vision)
+e431_27  from a screen of the game, not a place (menu, vision)
+e431_28  from a screen of the game, not a place (menu, vision)
+e431_29  from a screen of the game, not a place (menu, vision)
+e431_30  from a screen of the game, not a place (menu, vision)
+e431_31  from a screen of the game, not a place (menu, vision)
+e431_32  from a screen of the game, not a place (menu, vision)
+e431_33  from a screen of the game, not a place (menu, vision)
+e431_34  from a screen of the game, not a place (menu, vision)
+e430_1  from a screen of the game, not a place (menu, vision)
+e430_2  from a screen of the game, not a place (menu, vision)
+e430_3  from a screen of the game, not a place (menu, vision)
+e430_4  from a screen of the game, not a place (menu, vision)
+e429_1  from a screen of the game, not a place (menu, vision)
+e429_2  from a screen of the game, not a place (menu, vision)
+e429_3  from a screen of the game, not a place (menu, vision)
+e428_1  from a screen of the game, not a place (menu, vision)
+e428_2  from a screen of the game, not a place (menu, vision)
+e427_1  from a screen of the game, not a place (menu, vision)
+e427_2  from a screen of the game, not a place (menu, vision)
+e426_1  from a screen of the game, not a place (menu, vision)
+e425_1  from a screen of the game, not a place (menu, vision)
+e425_2  from a screen of the game, not a place (menu, vision)
+e423_1  from a screen of the game, not a place (menu, vision)
+e423_2  from a screen of the game, not a place (menu, vision)
+e423_3  from a screen of the game, not a place (menu, vision)
+e422_1  from a screen of the game, not a place (menu, vision)
+e416_1  from a screen of the game, not a place (menu, vision)
+e416_2  from a screen of the game, not a place (menu, vision)
+e416_3  from a screen of the game, not a place (menu, vision)
+e415_1  from a screen of the game, not a place (menu, vision)
+e415_2  from a screen of the game, not a place (menu, vision)
+e415_3  from a screen of the game, not a place (menu, vision)
+e415_4  from a screen of the game, not a place (menu, vision)
+e415_5  from a screen of the game, not a place (menu, vision)
+e415_6  from a screen of the game, not a place (menu, vision)
+e415_7  from a screen of the game, not a place (menu, vision)
+e415_8  from a screen of the game, not a place (menu, vision)
+e413_1  from a screen of the game, not a place (menu, vision)
+e412_1  from a screen of the game, not a place (menu, vision)
+e412_2  from a screen of the game, not a place (menu, vision)
+e412_3  from a screen of the game, not a place (menu, vision)
+e412_4  from a screen of the game, not a place (menu, vision)
+e412_5  from a screen of the game, not a place (menu, vision)
+e412_6  from a screen of the game, not a place (menu, vision)
+e412_7  from a screen of the game, not a place (menu, vision)
+e412_8  from a screen of the game, not a place (menu, vision)
+e412_9  from a screen of the game, not a place (menu, vision)
+e412_10  from a screen of the game, not a place (menu, vision)
+e412_11  from a screen of the game, not a place (menu, vision)
+e412_12  from a screen of the game, not a place (menu, vision)
+e412_13  from a screen of the game, not a place (menu, vision)
+e412_14  from a screen of the game, not a place (menu, vision)
+e412_15  from a screen of the game, not a place (menu, vision)
+e412_16  from a screen of the game, not a place (menu, vision)
+e412_17  from a screen of the game, not a place (menu, vision)
+e412_18  from a screen of the game, not a place (menu, vision)
+e412_19  from a screen of the game, not a place (menu, vision)
+e412_20  from a screen of the game, not a place (menu, vision)
+e412_21  from a screen of the game, not a place (menu, vision)
+e412_22  from a screen of the game, not a place (menu, vision)
+e412_23  from a screen of the game, not a place (menu, vision)
+e412_24  from a screen of the game, not a place (menu, vision)
+e412_25  from a screen of the game, not a place (menu, vision)
+e412_26  from a screen of the game, not a place (menu, vision)
+e412_27  from a screen of the game, not a place (menu, vision)
+e412_28  from a screen of the game, not a place (menu, vision)
+e412_29  from a screen of the game, not a place (menu, vision)
+e412_30  from a screen of the game, not a place (menu, vision)
+e412_31  from a screen of the game, not a place (menu, vision)
+e412_32  from a screen of the game, not a place (menu, vision)
+e412_33  from a screen of the game, not a place (menu, vision)
+e412_34  from a screen of the game, not a place (menu, vision)
+e412_35  from a screen of the game, not a place (menu, vision)
+e412_36  from a screen of the game, not a place (menu, vision)
+e412_37  from a screen of the game, not a place (menu, vision)
+e412_38  from a screen of the game, not a place (menu, vision)
+e412_39  from a screen of the game, not a place (menu, vision)
+e412_40  from a screen of the game, not a place (menu, vision)
+e412_41  from a screen of the game, not a place (menu, vision)
+e412_42  from a screen of the game, not a place (menu, vision)
+e412_43  from a screen of the game, not a place (menu, vision)
+e412_44  from a screen of the game, not a place (menu, vision)
+e412_45  from a screen of the game, not a place (menu, vision)
+e412_46  from a screen of the game, not a place (menu, vision)
+e412_47  from a screen of the game, not a place (menu, vision)
+e412_48  from a screen of the game, not a place (menu, vision)
+e412_49  from a screen of the game, not a place (menu, vision)
+e412_50  from a screen of the game, not a place (menu, vision)
+e412_51  from a screen of the game, not a place (menu, vision)
+e412_52  from a screen of the game, not a place (menu, vision)
+e412_53  from a screen of the game, not a place (menu, vision)
+e412_54  from a screen of the game, not a place (menu, vision)
+e412_55  from a screen of the game, not a place (menu, vision)
+e412_56  from a screen of the game, not a place (menu, vision)
+e412_57  from a screen of the game, not a place (menu, vision)
+e412_58  from a screen of the game, not a place (menu, vision)
+e412_59  from a screen of the game, not a place (menu, vision)
+e412_60  from a screen of the game, not a place (menu, vision)
+e412_61  from a screen of the game, not a place (menu, vision)
+e412_62  from a screen of the game, not a place (menu, vision)
+e412_63  from a screen of the game, not a place (menu, vision)
+e412_64  from a screen of the game, not a place (menu, vision)
+e412_65  from a screen of the game, not a place (menu, vision)
+e412_66  from a screen of the game, not a place (menu, vision)
+e412_67  from a screen of the game, not a place (menu, vision)
+e412_68  from a screen of the game, not a place (menu, vision)
+e412_69  from a screen of the game, not a place (menu, vision)
+e412_70  from a screen of the game, not a place (menu, vision)
+e412_71  from a screen of the game, not a place (menu, vision)
+e412_72  from a screen of the game, not a place (menu, vision)
+e412_73  from a screen of the game, not a place (menu, vision)
+e412_74  from a screen of the game, not a place (menu, vision)
+e412_75  from a screen of the game, not a place (menu, vision)
+e412_76  from a screen of the game, not a place (menu, vision)
+e412_77  from a screen of the game, not a place (menu, vision)
+e412_78  from a screen of the game, not a place (menu, vision)
+e412_79  from a screen of the game, not a place (menu, vision)
+e412_80  from a screen of the game, not a place (menu, vision)
+e412_81  from a screen of the game, not a place (menu, vision)
+e412_82  from a screen of the game, not a place (menu, vision)
+e412_83  from a screen of the game, not a place (menu, vision)
+e412_84  from a screen of the game, not a place (menu, vision)
+e412_85  from a screen of the game, not a place (menu, vision)
+e412_86  from a screen of the game, not a place (menu, vision)
+e412_87  from a screen of the game, not a place (menu, vision)
+e412_88  from a screen of the game, not a place (menu, vision)
+e412_89  from a screen of the game, not a place (menu, vision)
+e412_90  from a screen of the game, not a place (menu, vision)
+e412_91  from a screen of the game, not a place (menu, vision)
+e412_92  from a screen of the game, not a place (menu, vision)
+e412_93  from a screen of the game, not a place (menu, vision)
+e412_94  from a screen of the game, not a place (menu, vision)
+e412_95  from a screen of the game, not a place (menu, vision)
+e412_96  from a screen of the game, not a place (menu, vision)
+e412_97  from a screen of the game, not a place (menu, vision)
+e412_98  from a screen of the game, not a place (menu, vision)
+e412_99  from a screen of the game, not a place (menu, vision)
+e412_100  from a screen of the game, not a place (menu, vision)
+e412_101  from a screen of the game, not a place (menu, vision)
+e412_102  from a screen of the game, not a place (menu, vision)
+e412_103  from a screen of the game, not a place (menu, vision)
+e412_104  from a screen of the game, not a place (menu, vision)
+e412_105  from a screen of the game, not a place (menu, vision)
+e412_106  from a screen of the game, not a place (menu, vision)
+e412_107  from a screen of the game, not a place (menu, vision)
+e412_108  from a screen of the game, not a place (menu, vision)
+e412_109  from a screen of the game, not a place (menu, vision)
+e412_110  from a screen of the game, not a place (menu, vision)
+e412_111  from a screen of the game, not a place (menu, vision)
+e412_112  from a screen of the game, not a place (menu, vision)
+e412_113  from a screen of the game, not a place (menu, vision)
+e412_114  from a screen of the game, not a place (menu, vision)
+e412_115  from a screen of the game, not a place (menu, vision)
+e412_116  from a screen of the game, not a place (menu, vision)
+e412_117  from a screen of the game, not a place (menu, vision)
+e412_118  from a screen of the game, not a place (menu, vision)
+e412_119  from a screen of the game, not a place (menu, vision)
+e412_120  from a screen of the game, not a place (menu, vision)
+e412_121  from a screen of the game, not a place (menu, vision)
+e412_122  from a screen of the game, not a place (menu, vision)
+e412_123  from a screen of the game, not a place (menu, vision)
+e412_124  from a screen of the game, not a place (menu, vision)
+e412_125  from a screen of the game, not a place (menu, vision)
+e412_126  from a screen of the game, not a place (menu, vision)
+e412_127  from a screen of the game, not a place (menu, vision)
+e412_128  from a screen of the game, not a place (menu, vision)
+e412_129  from a screen of the game, not a place (menu, vision)
+e412_130  from a screen of the game, not a place (menu, vision)
+e412_131  from a screen of the game, not a place (menu, vision)
+e412_132  from a screen of the game, not a place (menu, vision)
+e412_133  from a screen of the game, not a place (menu, vision)
+e412_134  from a screen of the game, not a place (menu, vision)
+e412_135  from a screen of the game, not a place (menu, vision)
+e412_136  from a screen of the game, not a place (menu, vision)
+e412_137  from a screen of the game, not a place (menu, vision)
+e412_138  from a screen of the game, not a place (menu, vision)
+e412_139  from a screen of the game, not a place (menu, vision)
+e412_140  from a screen of the game, not a place (menu, vision)
+e412_141  from a screen of the game, not a place (menu, vision)
+e412_142  from a screen of the game, not a place (menu, vision)
+e412_143  from a screen of the game, not a place (menu, vision)
+e412_144  from a screen of the game, not a place (menu, vision)
+e412_145  from a screen of the game, not a place (menu, vision)
+e412_146  from a screen of the game, not a place (menu, vision)
+e412_147  from a screen of the game, not a place (menu, vision)
+e412_148  from a screen of the game, not a place (menu, vision)
+e412_149  from a screen of the game, not a place (menu, vision)
+e412_150  from a screen of the game, not a place (menu, vision)
+e412_151  from a screen of the game, not a place (menu, vision)
+e412_152  from a screen of the game, not a place (menu, vision)
+e411_1  from a screen of the game, not a place (menu, vision)
+e411_2  from a screen of the game, not a place (menu, vision)
+e411_3  from a screen of the game, not a place (menu, vision)
+e410_1  from a screen of the game, not a place (menu, vision)
+e410_2  from a screen of the game, not a place (menu, vision)
+e410_3  from a screen of the game, not a place (menu, vision)
+e410_4  from a screen of the game, not a place (menu, vision)
+e410_5  from a screen of the game, not a place (menu, vision)
+e409_1  from a screen of the game, not a place (menu, vision)
+e409_2  from a screen of the game, not a place (menu, vision)
+e409_3  from a screen of the game, not a place (menu, vision)
+e409_4  from a screen of the game, not a place (menu, vision)
+e409_5  from a screen of the game, not a place (menu, vision)
+e409_6  from a screen of the game, not a place (menu, vision)
+e409_7  from a screen of the game, not a place (menu, vision)
+e409_8  from a screen of the game, not a place (menu, vision)
+e409_9  from a screen of the game, not a place (menu, vision)
+e409_10  from a screen of the game, not a place (menu, vision)
+e409_11  from a screen of the game, not a place (menu, vision)
+e409_12  from a screen of the game, not a place (menu, vision)
+e409_13  from a screen of the game, not a place (menu, vision)
+e409_14  from a screen of the game, not a place (menu, vision)
+e409_15  from a screen of the game, not a place (menu, vision)
+e408_1  from a screen of the game, not a place (menu, vision)
+e408_2  from a screen of the game, not a place (menu, vision)
+e408_3  from a screen of the game, not a place (menu, vision)
+e408_4  from a screen of the game, not a place (menu, vision)
+e408_5  from a screen of the game, not a place (menu, vision)
+e408_6  from a screen of the game, not a place (menu, vision)
+e408_7  from a screen of the game, not a place (menu, vision)
+e408_8  from a screen of the game, not a place (menu, vision)
+e408_9  from a screen of the game, not a place (menu, vision)
+e408_10  from a screen of the game, not a place (menu, vision)
+e408_11  from a screen of the game, not a place (menu, vision)
+e408_12  from a screen of the game, not a place (menu, vision)
+e408_13  from a screen of the game, not a place (menu, vision)
+e408_14  from a screen of the game, not a place (menu, vision)
+e408_15  from a screen of the game, not a place (menu, vision)
+e408_16  from a screen of the game, not a place (menu, vision)
+e407_1  from a screen of the game, not a place (menu, vision)
+e407_2  from a screen of the game, not a place (menu, vision)
+e407_3  from a screen of the game, not a place (menu, vision)
+e407_4  from a screen of the game, not a place (menu, vision)
+e407_5  from a screen of the game, not a place (menu, vision)
+e407_6  from a screen of the game, not a place (menu, vision)
+e407_7  from a screen of the game, not a place (menu, vision)
+e407_8  from a screen of the game, not a place (menu, vision)
+e407_9  from a screen of the game, not a place (menu, vision)
+e407_10  from a screen of the game, not a place (menu, vision)
+e407_11  from a screen of the game, not a place (menu, vision)
+e407_12  from a screen of the game, not a place (menu, vision)
+e407_13  from a screen of the game, not a place (menu, vision)
+e407_14  from a screen of the game, not a place (menu, vision)
+e407_15  from a screen of the game, not a place (menu, vision)
+e407_16  from a screen of the game, not a place (menu, vision)
+e407_17  from a screen of the game, not a place (menu, vision)
+e407_18  from a screen of the game, not a place (menu, vision)
+e405_1  from a screen of the game, not a place (menu, vision)
+e405_2  from a screen of the game, not a place (menu, vision)
+e405_3  from a screen of the game, not a place (menu, vision)
+e404_1  from a screen of the game, not a place (menu, vision)
+e404_2  from a screen of the game, not a place (menu, vision)
+e404_3  from a screen of the game, not a place (menu, vision)
+e404_4  from a screen of the game, not a place (menu, vision)
+e404_5  from a screen of the game, not a place (menu, vision)
+e404_6  from a screen of the game, not a place (menu, vision)
+e404_7  from a screen of the game, not a place (menu, vision)
+e404_8  from a screen of the game, not a place (menu, vision)
+e404_9  from a screen of the game, not a place (menu, vision)
+e403_1  from a screen of the game, not a place (menu, vision)
+e403_2  from a screen of the game, not a place (menu, vision)
+e402_1  from a screen of the game, not a place (menu, vision)
+e402_2  from a screen of the game, not a place (menu, vision)
+e402_3  from a screen of the game, not a place (menu, vision)
+e401_1  from a screen of the game, not a place (menu, vision)
+e401_2  from a screen of the game, not a place (menu, vision)
+e401_3  from a screen of the game, not a place (menu, vision)
+e401_4  from a screen of the game, not a place (menu, vision)
+e401_5  from a screen of the game, not a place (menu, vision)
+e400_1  from a screen of the game, not a place (menu, vision)
+e400_2  from a screen of the game, not a place (menu, vision)
+e400_3  from a screen of the game, not a place (menu, vision)
+e400_4  from a screen of the game, not a place (menu, vision)
+e398_1  from a screen of the game, not a place (menu, vision)
+e397_1  from a screen of the game, not a place (menu, vision)
+e397_2  from a screen of the game, not a place (menu, vision)
+e397_3  from a screen of the game, not a place (menu, vision)
+e397_4  from a screen of the game, not a place (menu, vision)
+e397_5  from a screen of the game, not a place (menu, vision)
+e397_6  from a screen of the game, not a place (menu, vision)
+e397_7  from a screen of the game, not a place (menu, vision)
+e397_8  from a screen of the game, not a place (menu, vision)
+e397_9  from a screen of the game, not a place (menu, vision)
+e396_1  from a screen of the game, not a place (menu, vision)
+e395_1  from a screen of the game, not a place (menu, vision)
+e395_2  from a screen of the game, not a place (menu, vision)
+e395_3  from a screen of the game, not a place (menu, vision)
+e394_1  from a screen of the game, not a place (menu, vision)
+e393_1  from a screen of the game, not a place (menu, vision)
+e393_2  from a screen of the game, not a place (menu, vision)
+e392_1  from a screen of the game, not a place (menu, vision)
+e392_2  from a screen of the game, not a place (menu, vision)
+e391_1  from a screen of the game, not a place (menu, vision)
+e391_2  from a screen of the game, not a place (menu, vision)
+e391_3  from a screen of the game, not a place (menu, vision)
+e391_4  from a screen of the game, not a place (menu, vision)
+e391_5  from a screen of the game, not a place (menu, vision)
+e390_1  from a screen of the game, not a place (menu, vision)
+e389_1  from a screen of the game, not a place (menu, vision)
+e389_2  from a screen of the game, not a place (menu, vision)
+e389_3  from a screen of the game, not a place (menu, vision)
+e389_4  from a screen of the game, not a place (menu, vision)
+e388_1  from a screen of the game, not a place (menu, vision)
+e388_2  from a screen of the game, not a place (menu, vision)
+e388_3  from a screen of the game, not a place (menu, vision)
+e388_4  from a screen of the game, not a place (menu, vision)
+e387_1  from a screen of the game, not a place (menu, vision)
+e387_2  from a screen of the game, not a place (menu, vision)
+e387_3  from a screen of the game, not a place (menu, vision)
+e387_4  from a screen of the game, not a place (menu, vision)
+e386_1  from a screen of the game, not a place (menu, vision)
+e384_1  from a screen of the game, not a place (menu, vision)
+e383_1  from a screen of the game, not a place (menu, vision)
+e382_1  from a screen of the game, not a place (menu, vision)
+e382_2  from a screen of the game, not a place (menu, vision)
+e382_3  from a screen of the game, not a place (menu, vision)
+e382_4  from a screen of the game, not a place (menu, vision)
+e382_5  from a screen of the game, not a place (menu, vision)
+e382_6  from a screen of the game, not a place (menu, vision)
+e382_7  from a screen of the game, not a place (menu, vision)
+e382_8  from a screen of the game, not a place (menu, vision)
+e382_9  from a screen of the game, not a place (menu, vision)
+e382_10  from a screen of the game, not a place (menu, vision)
+e382_11  from a screen of the game, not a place (menu, vision)
+e382_12  from a screen of the game, not a place (menu, vision)
+e382_13  from a screen of the game, not a place (menu, vision)
+e382_14  from a screen of the game, not a place (menu, vision)
+e382_15  from a screen of the game, not a place (menu, vision)
+e382_16  from a screen of the game, not a place (menu, vision)
+e379_1  from a screen of the game, not a place (menu, vision)
+e379_2  from a screen of the game, not a place (menu, vision)
+e379_3  from a screen of the game, not a place (menu, vision)
+e379_4  from a screen of the game, not a place (menu, vision)
+e379_5  from a screen of the game, not a place (menu, vision)
+e379_6  from a screen of the game, not a place (menu, vision)
+e379_7  from a screen of the game, not a place (menu, vision)
+e379_8  from a screen of the game, not a place (menu, vision)
+e379_9  from a screen of the game, not a place (menu, vision)
+e379_10  from a screen of the game, not a place (menu, vision)
+e379_11  from a screen of the game, not a place (menu, vision)
+e379_12  from a screen of the game, not a place (menu, vision)
+e379_13  from a screen of the game, not a place (menu, vision)
+e379_14  from a screen of the game, not a place (menu, vision)
+e379_15  from a screen of the game, not a place (menu, vision)
+e379_16  from a screen of the game, not a place (menu, vision)
+e378_1  from a screen of the game, not a place (menu, vision)
+e378_2  from a screen of the game, not a place (menu, vision)
+e378_3  from a screen of the game, not a place (menu, vision)
+e378_4  from a screen of the game, not a place (menu, vision)
+e378_5  from a screen of the game, not a place (menu, vision)
+e378_6  from a screen of the game, not a place (menu, vision)
+e378_7  from a screen of the game, not a place (menu, vision)
+e378_8  from a screen of the game, not a place (menu, vision)
+e378_9  from a screen of the game, not a place (menu, vision)
+e378_10  from a screen of the game, not a place (menu, vision)
+e378_11  from a screen of the game, not a place (menu, vision)
+e378_12  from a screen of the game, not a place (menu, vision)
+e378_13  from a screen of the game, not a place (menu, vision)
+e378_14  from a screen of the game, not a place (menu, vision)
+e378_15  from a screen of the game, not a place (menu, vision)
+e378_16  from a screen of the game, not a place (menu, vision)
+e378_17  from a screen of the game, not a place (menu, vision)
+e378_18  from a screen of the game, not a place (menu, vision)
+e376_1  from a screen of the game, not a place (menu, vision)
+e376_2  from a screen of the game, not a place (menu, vision)
+e376_3  from a screen of the game, not a place (menu, vision)
+e376_4  from a screen of the game, not a place (menu, vision)
+e376_5  from a screen of the game, not a place (menu, vision)
+e376_6  from a screen of the game, not a place (menu, vision)
+e376_7  from a screen of the game, not a place (menu, vision)
+e376_8  from a screen of the game, not a place (menu, vision)
+e376_9  from a screen of the game, not a place (menu, vision)
+e376_10  from a screen of the game, not a place (menu, vision)
+e376_11  from a screen of the game, not a place (menu, vision)
+e376_12  from a screen of the game, not a place (menu, vision)
+e375_1  from a screen of the game, not a place (menu, vision)
+e374_1  from a screen of the game, not a place (menu, vision)
+e373_1  from a screen of the game, not a place (menu, vision)
+e369_1  from a screen of the game, not a place (menu, vision)
+e368_1  from a screen of the game, not a place (menu, vision)
+e368_2  from a screen of the game, not a place (menu, vision)
+e368_3  from a screen of the game, not a place (menu, vision)
+e368_4  from a screen of the game, not a place (menu, vision)
+e368_5  from a screen of the game, not a place (menu, vision)
+e368_6  from a screen of the game, not a place (menu, vision)
+e368_7  from a screen of the game, not a place (menu, vision)
+e368_8  from a screen of the game, not a place (menu, vision)
+e368_9  from a screen of the game, not a place (menu, vision)
+e368_10  from a screen of the game, not a place (menu, vision)
+e368_11  from a screen of the game, not a place (menu, vision)
+e368_12  from a screen of the game, not a place (menu, vision)
+e368_13  from a screen of the game, not a place (menu, vision)
+e368_14  from a screen of the game, not a place (menu, vision)
+e368_15  from a screen of the game, not a place (menu, vision)
+e368_16  from a screen of the game, not a place (menu, vision)
+e368_17  from a screen of the game, not a place (menu, vision)
+e368_18  from a screen of the game, not a place (menu, vision)
+e368_19  from a screen of the game, not a place (menu, vision)
+e368_20  from a screen of the game, not a place (menu, vision)
+e367_1  from a screen of the game, not a place (menu, vision)
+e367_2  from a screen of the game, not a place (menu, vision)
+e367_3  from a screen of the game, not a place (menu, vision)
+e367_4  from a screen of the game, not a place (menu, vision)
+e367_5  from a screen of the game, not a place (menu, vision)
+e367_6  from a screen of the game, not a place (menu, vision)
+e366_1  from a screen of the game, not a place (menu, vision)
+e366_2  from a screen of the game, not a place (menu, vision)
+e366_3  from a screen of the game, not a place (menu, vision)
+e366_4  from a screen of the game, not a place (menu, vision)
+e366_5  from a screen of the game, not a place (menu, vision)
+e366_6  from a screen of the game, not a place (menu, vision)
+e366_7  from a screen of the game, not a place (menu, vision)
+e366_8  from a screen of the game, not a place (menu, vision)
+e366_9  from a screen of the game, not a place (menu, vision)
+e366_10  from a screen of the game, not a place (menu, vision)
+e366_11  from a screen of the game, not a place (menu, vision)
+e366_12  from a screen of the game, not a place (menu, vision)
+e366_13  from a screen of the game, not a place (menu, vision)
+e366_14  from a screen of the game, not a place (menu, vision)
+e366_15  from a screen of the game, not a place (menu, vision)
+e366_16  from a screen of the game, not a place (menu, vision)
+e366_17  from a screen of the game, not a place (menu, vision)
+e366_18  from a screen of the game, not a place (menu, vision)
+e366_19  from a screen of the game, not a place (menu, vision)
+e365_1  from a screen of the game, not a place (menu, vision)
+e365_2  from a screen of the game, not a place (menu, vision)
+e365_3  from a screen of the game, not a place (menu, vision)
+e365_4  from a screen of the game, not a place (menu, vision)
+e365_5  from a screen of the game, not a place (menu, vision)
+e365_6  from a screen of the game, not a place (menu, vision)
+e365_7  from a screen of the game, not a place (menu, vision)
+e364_1  from a screen of the game, not a place (menu, vision)
+e363_1  from a screen of the game, not a place (menu, vision)
+e362_1  from a screen of the game, not a place (menu, vision)
+e362_2  from a screen of the game, not a place (menu, vision)
+e362_3  from a screen of the game, not a place (menu, vision)
+e361_1  from a screen of the game, not a place (menu, vision)
+e361_2  from a screen of the game, not a place (menu, vision)
+e361_3  from a screen of the game, not a place (menu, vision)
+e360_1  from a screen of the game, not a place (menu, vision)
+e360_2  from a screen of the game, not a place (menu, vision)
+e360_3  from a screen of the game, not a place (menu, vision)
+e360_4  from a screen of the game, not a place (menu, vision)
+e360_5  from a screen of the game, not a place (menu, vision)
+e360_6  from a screen of the game, not a place (menu, vision)
+e360_7  from a screen of the game, not a place (menu, vision)
+e359_1  from a screen of the game, not a place (menu, vision)
+e359_2  from a screen of the game, not a place (menu, vision)
+e358_1  from a screen of the game, not a place (menu, vision)
+e358_2  from a screen of the game, not a place (menu, vision)
+e358_3  from a screen of the game, not a place (menu, vision)
+e358_4  from a screen of the game, not a place (menu, vision)
+e357_1  from a screen of the game, not a place (menu, vision)
+e357_2  from a screen of the game, not a place (menu, vision)
+e357_3  from a screen of the game, not a place (menu, vision)
+e357_4  from a screen of the game, not a place (menu, vision)
+e357_5  from a screen of the game, not a place (menu, vision)
+e357_6  from a screen of the game, not a place (menu, vision)
+e357_7  from a screen of the game, not a place (menu, vision)
+e357_8  from a screen of the game, not a place (menu, vision)
+e357_9  from a screen of the game, not a place (menu, vision)
+e357_10  from a screen of the game, not a place (menu, vision)
+e357_11  from a screen of the game, not a place (menu, vision)
+e357_12  from a screen of the game, not a place (menu, vision)
+e356_1  from a screen of the game, not a place (menu, vision)
+e356_2  from a screen of the game, not a place (menu, vision)
+e356_3  from a screen of the game, not a place (menu, vision)
+e356_4  from a screen of the game, not a place (menu, vision)
+e355_1  from a screen of the game, not a place (menu, vision)
+e355_2  from a screen of the game, not a place (menu, vision)
+e354_1  from a screen of the game, not a place (menu, vision)
+e354_2  from a screen of the game, not a place (menu, vision)
+e354_3  from a screen of the game, not a place (menu, vision)
+e354_4  from a screen of the game, not a place (menu, vision)
+e354_5  from a screen of the game, not a place (menu, vision)
+e354_6  from a screen of the game, not a place (menu, vision)
+e354_7  from a screen of the game, not a place (menu, vision)
+e354_8  from a screen of the game, not a place (menu, vision)
+e354_9  from a screen of the game, not a place (menu, vision)
+e354_10  from a screen of the game, not a place (menu, vision)
+e354_11  from a screen of the game, not a place (menu, vision)
+e354_12  from a screen of the game, not a place (menu, vision)
+e354_13  from a screen of the game, not a place (menu, vision)
+e354_14  from a screen of the game, not a place (menu, vision)
+e354_15  from a screen of the game, not a place (menu, vision)
+e354_16  from a screen of the game, not a place (menu, vision)
+e354_17  from a screen of the game, not a place (menu, vision)
+e354_18  from a screen of the game, not a place (menu, vision)
+e354_19  from a screen of the game, not a place (menu, vision)
+e354_20  from a screen of the game, not a place (menu, vision)
+e354_21  from a screen of the game, not a place (menu, vision)
+e354_22  from a screen of the game, not a place (menu, vision)
+e354_23  from a screen of the game, not a place (menu, vision)
+e354_24  from a screen of the game, not a place (menu, vision)
+e354_25  from a screen of the game, not a place (menu, vision)
+e354_26  from a screen of the game, not a place (menu, vision)
+e353_1  from a screen of the game, not a place (menu, vision)
+e352_1  from a screen of the game, not a place (menu, vision)
+e352_2  from a screen of the game, not a place (menu, vision)
+e352_3  from a screen of the game, not a place (menu, vision)
+e352_4  from a screen of the game, not a place (menu, vision)
+e352_5  from a screen of the game, not a place (menu, vision)
+e352_6  from a screen of the game, not a place (menu, vision)
+e352_7  from a screen of the game, not a place (menu, vision)
+e352_8  from a screen of the game, not a place (menu, vision)
+e352_9  from a screen of the game, not a place (menu, vision)
+e352_10  from a screen of the game, not a place (menu, vision)
+e352_11  from a screen of the game, not a place (menu, vision)
+e352_12  from a screen of the game, not a place (menu, vision)
+e352_13  from a screen of the game, not a place (menu, vision)
+e352_14  from a screen of the game, not a place (menu, vision)
+e352_15  from a screen of the game, not a place (menu, vision)
+e352_16  from a screen of the game, not a place (menu, vision)
+e352_17  from a screen of the game, not a place (menu, vision)
+e352_18  from a screen of the game, not a place (menu, vision)
+e352_19  from a screen of the game, not a place (menu, vision)
+e352_20  from a screen of the game, not a place (menu, vision)
+e352_21  from a screen of the game, not a place (menu, vision)
+e352_22  from a screen of the game, not a place (menu, vision)
+e352_23  from a screen of the game, not a place (menu, vision)
+e352_24  from a screen of the game, not a place (menu, vision)
+e352_25  from a screen of the game, not a place (menu, vision)
+e352_26  from a screen of the game, not a place (menu, vision)
+e352_27  from a screen of the game, not a place (menu, vision)
+e352_28  from a screen of the game, not a place (menu, vision)
+e352_29  from a screen of the game, not a place (menu, vision)
+e352_30  from a screen of the game, not a place (menu, vision)
+e352_31  from a screen of the game, not a place (menu, vision)
+e352_32  from a screen of the game, not a place (menu, vision)
+e352_33  from a screen of the game, not a place (menu, vision)
+e352_34  from a screen of the game, not a place (menu, vision)
+e352_35  from a screen of the game, not a place (menu, vision)
+e352_36  from a screen of the game, not a place (menu, vision)
+e352_37  from a screen of the game, not a place (menu, vision)
+e352_38  from a screen of the game, not a place (menu, vision)
+e352_39  from a screen of the game, not a place (menu, vision)
+e352_40  from a screen of the game, not a place (menu, vision)
+e352_41  from a screen of the game, not a place (menu, vision)
+e352_42  from a screen of the game, not a place (menu, vision)
+e352_43  from a screen of the game, not a place (menu, vision)
+e352_44  from a screen of the game, not a place (menu, vision)
+e351_1  from a screen of the game, not a place (menu, vision)
+e351_2  from a screen of the game, not a place (menu, vision)
+e351_3  from a screen of the game, not a place (menu, vision)
+e351_4  from a screen of the game, not a place (menu, vision)
+e351_5  from a screen of the game, not a place (menu, vision)
+e351_6  from a screen of the game, not a place (menu, vision)
+e350_1  from a screen of the game, not a place (menu, vision)
+e350_2  from a screen of the game, not a place (menu, vision)
+e350_3  from a screen of the game, not a place (menu, vision)
+e350_4  from a screen of the game, not a place (menu, vision)
+e350_5  from a screen of the game, not a place (menu, vision)
+e350_6  from a screen of the game, not a place (menu, vision)
+e350_7  from a screen of the game, not a place (menu, vision)
+e350_8  from a screen of the game, not a place (menu, vision)
+e350_9  from a screen of the game, not a place (menu, vision)
+e350_10  from a screen of the game, not a place (menu, vision)
+e349_1  from a screen of the game, not a place (menu, vision)
+e349_2  from a screen of the game, not a place (menu, vision)
+e349_3  from a screen of the game, not a place (menu, vision)
+e349_4  from a screen of the game, not a place (menu, vision)
+e349_5  from a screen of the game, not a place (menu, vision)
+e349_6  from a screen of the game, not a place (menu, vision)
+e349_7  from a screen of the game, not a place (menu, vision)
+e349_8  from a screen of the game, not a place (menu, vision)
+e349_9  from a screen of the game, not a place (menu, vision)
+e349_10  from a screen of the game, not a place (menu, vision)
+e347_1  from a screen of the game, not a place (menu, vision)
+e346_1  from a screen of the game, not a place (menu, vision)
+e345_1  from a screen of the game, not a place (menu, vision)
+e345_2  from a screen of the game, not a place (menu, vision)
+e345_3  from a screen of the game, not a place (menu, vision)
+e345_4  from a screen of the game, not a place (menu, vision)
+e344_1  from a screen of the game, not a place (menu, vision)
+e344_2  from a screen of the game, not a place (menu, vision)
+e344_3  from a screen of the game, not a place (menu, vision)
+e344_4  from a screen of the game, not a place (menu, vision)
+e343_1  from a screen of the game, not a place (menu, vision)
+e343_2  from a screen of the game, not a place (menu, vision)
+e342_1  from a screen of the game, not a place (menu, vision)
+e342_2  from a screen of the game, not a place (menu, vision)
+e342_3  from a screen of the game, not a place (menu, vision)
+e341_1  from a screen of the game, not a place (menu, vision)
+e341_2  from a screen of the game, not a place (menu, vision)
+e341_3  from a screen of the game, not a place (menu, vision)
+e341_4  from a screen of the game, not a place (menu, vision)
+e340_1  from a screen of the game, not a place (menu, vision)
+e340_2  from a screen of the game, not a place (menu, vision)
+e340_3  from a screen of the game, not a place (menu, vision)
+e340_4  from a screen of the game, not a place (menu, vision)
+e340_5  from a screen of the game, not a place (menu, vision)
+e340_6  from a screen of the game, not a place (menu, vision)
+e340_7  from a screen of the game, not a place (menu, vision)
+e339_1  from a screen of the game, not a place (menu, vision)
+e338_1  from a screen of the game, not a place (menu, vision)
+e338_2  from a screen of the game, not a place (menu, vision)
+e338_3  from a screen of the game, not a place (menu, vision)
+e338_4  from a screen of the game, not a place (menu, vision)
+e338_5  from a screen of the game, not a place (menu, vision)
+e338_6  from a screen of the game, not a place (menu, vision)
+e338_7  from a screen of the game, not a place (menu, vision)
+e338_8  from a screen of the game, not a place (menu, vision)
+e337_1  from a screen of the game, not a place (menu, vision)
+e337_2  from a screen of the game, not a place (menu, vision)
+e335_1  from a screen of the game, not a place (menu, vision)
+e334_1  from a screen of the game, not a place (menu, vision)
+e334_2  from a screen of the game, not a place (menu, vision)
+e333_1  from a screen of the game, not a place (menu, vision)
+e333_2  from a screen of the game, not a place (menu, vision)
+e333_3  from a screen of the game, not a place (menu, vision)
+e333_4  from a screen of the game, not a place (menu, vision)
+e333_5  from a screen of the game, not a place (menu, vision)
+e332_1  from a screen of the game, not a place (menu, vision)
+e332_2  from a screen of the game, not a place (menu, vision)
+e332_3  from a screen of the game, not a place (menu, vision)
+e331_1  from a screen of the game, not a place (menu, vision)
+e331_2  from a screen of the game, not a place (menu, vision)
+e331_3  from a screen of the game, not a place (menu, vision)
+e330_1  from a screen of the game, not a place (menu, vision)
+e330_2  from a screen of the game, not a place (menu, vision)
+e330_3  from a screen of the game, not a place (menu, vision)
+e328_1  from a screen of the game, not a place (menu, vision)
+e326_5  flipped duplicate of e326_4
+e326_10  flipped duplicate of e326_9
+e326_13  almost like e326_6
+e326_15  almost like e326_6
+e326_18  almost like e326_12
+e326_19  almost like e326_6
+e325_1  almost like e326_2
+e325_2  duplicate of e326_3
+e325_3  duplicate of e326_4
+e325_4  flipped duplicate of e326_4
+e325_6  almost like e325_5
+e325_7  almost like e325_5
+e325_8  duplicate of e326_6
+e325_9  duplicate of e326_7
+e325_10  duplicate of e326_8
+e325_11  duplicate of e326_9
+e325_12  flipped duplicate of e326_9
+e325_13  duplicate of e326_11
+e325_14  duplicate of e326_12
+e325_15  duplicate of e326_13
+e325_16  duplicate of e326_14
+e325_17  duplicate of e326_15
+e325_18  duplicate of e326_16
+e325_19  duplicate of e326_17
+e325_20  duplicate of e326_18
+e325_21  duplicate of e326_19
+e324_9  duplicate of e324_8
+e324_10  duplicate of e324_8
+e324_14  almost like e324_2
+e323_1  almost like e324_1
+e323_2  duplicate of e323_1
+e323_3  almost like e324_2
+e323_6  duplicate of e324_6
+e323_11  too small (60 pixels)
+e323_13  duplicate of e324_8
+e323_14  duplicate of e324_8
+e323_15  duplicate of e324_8
+e323_18  duplicate of e324_14
+e323_19  duplicate of e323_7
+e323_21  duplicate of e323_20
+e323_22  too small (41 pixels)
+e323_23  flipped duplicate of e324_8
+e323_24  almost like e323_8
+e322_1  from a screen of the game, not a place (menu, vision)
+e322_2  from a screen of the game, not a place (menu, vision)
+e322_3  from a screen of the game, not a place (menu, vision)
+e322_4  from a screen of the game, not a place (menu, vision)
+e310_9  almost like e310_4
+e310_10  almost like e310_4
+e310_11  too small (61 pixels)
+e310_14  almost like e310_4
+e310_15  almost like e310_4
+e310_16  almost like e310_4
+e310_20  almost like e310_4
+e310_24  almost like e310_4
+e310_26  almost like e310_19
+e310_27  almost like e310_12
+e299_1  almost like e458_1
+e298_1  almost like e457_1
+e297_1  duplicate of e298_1
+e296_1  almost like e455_1
+e292_1  duplicate of e293_1
+e288_2  duplicate of e289_2
+e288_3  duplicate of e289_3
+e288_4  duplicate of e289_4
+e287_2  duplicate of e289_2
+e287_3  duplicate of e289_3
+e287_4  duplicate of e289_4
+e286_2  duplicate of e289_2
+e286_3  duplicate of e289_3
+e286_4  duplicate of e289_4
+e285_2  duplicate of e289_2
+e285_3  duplicate of e289_3
+e285_4  duplicate of e289_4
+e277_1  almost like e295_1
+e271_3  almost like e271_1
+e271_5  duplicate of e271_3
+e271_6  almost like e271_1
+e271_7  duplicate of e271_3
+e271_8  too small (42 pixels)
+e271_9  almost like e310_5
+e271_10  almost like e310_5
+e271_11  too small (42 pixels)
+e271_13  almost like e271_1
+e271_20  almost like e271_17
+e271_24  duplicate of e271_1
+e271_26  duplicate of e271_3
+e271_27  almost like e271_17
+e271_28  duplicate of e271_4
+e271_30  almost like e271_17
+e271_31  almost like e271_4
+e271_32  almost like e271_2
+e271_36  too small (42 pixels)
+e271_37  almost like e310_5
+e271_39  almost like e271_22
+e271_40  almost like e271_15
+e271_44  almost like e271_33
+e271_45  almost like e271_1
+e271_47  almost like e271_1
+e271_49  almost like e310_5
+e271_50  almost like e271_18
+e271_51  almost like e271_19
+e271_52  almost like e271_2
+e271_53  almost like e271_15
+e271_54  almost like e271_42
+e271_55  almost like e271_22
+e271_56  almost like e271_23
+e271_58  almost like e271_17
+e270_1  duplicate of e271_1
+e270_2  duplicate of e271_2
+e270_3  duplicate of e271_3
+e270_4  duplicate of e271_4
+e270_5  duplicate of e271_3
+e270_6  duplicate of e271_6
+e270_7  duplicate of e271_3
+e270_8  too small (42 pixels)
+e270_9  duplicate of e271_9
+e270_10  duplicate of e271_10
+e270_11  too small (42 pixels)
+e270_12  duplicate of e271_12
+e270_13  duplicate of e271_13
+e270_14  duplicate of e271_14
+e270_15  duplicate of e271_15
+e270_16  duplicate of e271_16
+e270_17  duplicate of e271_17
+e270_18  duplicate of e271_18
+e270_19  duplicate of e271_19
+e270_20  duplicate of e271_20
+e270_21  duplicate of e271_21
+e270_22  duplicate of e271_22
+e270_23  duplicate of e271_23
+e270_24  duplicate of e271_1
+e270_25  duplicate of e271_25
+e270_26  duplicate of e271_3
+e270_27  duplicate of e271_27
+e270_28  duplicate of e271_4
+e270_29  duplicate of e271_29
+e270_30  duplicate of e271_30
+e270_31  duplicate of e271_31
+e270_32  duplicate of e271_32
+e270_33  duplicate of e271_33
+e270_34  duplicate of e271_34
+e270_35  duplicate of e271_35
+e270_36  too small (42 pixels)
+e270_37  duplicate of e271_37
+e270_38  duplicate of e271_38
+e270_39  duplicate of e271_39
+e270_40  duplicate of e271_40
+e270_41  duplicate of e271_41
+e270_42  duplicate of e271_42
+e270_43  duplicate of e271_43
+e270_44  duplicate of e271_44
+e270_45  duplicate of e271_45
+e270_46  duplicate of e271_46
+e270_47  duplicate of e271_47
+e270_48  duplicate of e271_48
+e270_49  duplicate of e271_49
+e270_50  duplicate of e271_50
+e270_51  duplicate of e271_51
+e270_52  duplicate of e271_52
+e270_53  duplicate of e271_53
+e270_54  duplicate of e271_54
+e270_55  duplicate of e271_55
+e270_56  duplicate of e271_56
+e270_57  duplicate of e271_57
+e270_58  duplicate of e271_58
+e265_7  almost like e265_5
+e265_8  almost like e265_5
+e265_12  almost like e265_6
+e265_14  almost like e265_13
+e265_15  flipped duplicate of e265_14
+e263_2  almost like e263_1
+e263_16  almost like e263_10
+e263_19  almost like e263_18
+e263_21  almost like e263_13
+e263_22  almost like e263_4
+e263_26  almost like e263_4
+e263_30  almost like e263_10
+e263_35  almost like e263_27
+e263_38  almost like e263_11
+e263_40  almost like e263_13
+e263_41  almost like e263_15
+e263_43  almost like e263_17
+e263_44  almost like e263_31
+e263_45  almost like e263_32
+e263_50  almost like e263_13
+e263_51  almost like e263_23
+e263_53  almost like e263_24
+e263_54  almost like e263_29
+e262_1  almost like e263_6
+e262_2  almost like e263_8
+e262_4  almost like e263_11
+e262_7  almost like e263_13
+e262_9  almost like e263_15
+e262_10  almost like e263_11
+e262_11  almost like e263_32
+e262_12  almost like e263_13
+e262_13  almost like e262_8
+e262_14  almost like e263_15
+e262_15  almost like e263_47
+e261_5  almost like e263_23
+e261_8  almost like e263_14
+e261_9  duplicate of e261_4
+e261_11  duplicate of e261_5
+e261_12  duplicate of e261_3
+e261_13  duplicate of e261_7
+e261_17  almost like e263_14
+e261_19  too small (30 pixels)
+e261_20  too small (30 pixels)
+e261_21  almost like e261_18
+e261_22  almost like e261_1
+e261_24  almost like e310_5
+e261_33  almost like e263_48
+e258_2  almost like e258_1
+e258_3  almost like e258_1
+e258_4  almost like e258_1
+e258_5  almost like e258_1
+e258_6  almost like e258_1
+e258_7  almost like e258_1
+e258_8  almost like e258_1
+e258_9  almost like e258_1
+e258_13  almost like e258_10
+e258_14  almost like e258_10
+e258_15  almost like e258_11
+e258_16  almost like e258_12
+e258_17  almost like e258_10
+e258_20  almost like e258_19
+e258_22  flipped duplicate of e258_21
+e256_2  almost like e256_1
+e255_2  too small (44 pixels)
+e255_4  too small (44 pixels)
+e255_6  too small (33 pixels)
+e252_10  almost like e252_8
+e252_12  almost like e252_8
+e251_1  almost like e252_1
+e251_2  almost like e252_2
+e251_3  almost like e252_3
+e251_4  almost like e252_4
+e251_5  almost like e252_5
+e251_7  almost like e252_7
+e251_8  almost like e252_8
+e251_9  almost like e252_9
+e251_10  almost like e252_8
+e251_11  almost like e252_11
+e251_12  almost like e252_8
+e251_13  almost like e252_13
+e251_14  almost like e252_14
+e251_15  almost like e252_15
+e251_16  almost like e252_16
+e250_5  duplicate of e250_4
+e250_10  almost like e250_8
+e249_1  duplicate of e250_2
+e249_2  duplicate of e250_3
+e249_3  duplicate of e250_4
+e249_4  duplicate of e250_4
+e249_6  almost like e250_9
+e249_7  almost like e250_7
+e249_8  duplicate of e250_10
+e249_9  almost like e250_8
+e247_3  flipped duplicate of e247_1
+e247_5  flipped duplicate of e247_4
+e247_7  flipped duplicate of e247_6
+e247_10  flipped duplicate of e247_9
+e246_2  duplicate of e247_1
+e246_3  flipped duplicate of e247_1
+e246_4  duplicate of e247_4
+e246_5  flipped duplicate of e247_4
+e246_6  duplicate of e247_6
+e246_7  flipped duplicate of e247_6
+e246_8  duplicate of e247_8
+e246_9  duplicate of e247_9
+e246_10  flipped duplicate of e247_9
+e245_4  almost like e245_1
+e245_6  almost like e245_2
+e245_7  almost like e245_3
+e245_9  almost like e245_1
+e245_10  almost like e245_5
+e245_11  almost like e245_2
+e245_12  almost like e245_8
+e245_16  almost like e245_13
+e245_17  almost like e245_14
+e245_19  almost like e245_15
+e245_21  almost like e245_18
+e244_2  almost like e245_1
+e244_3  almost like e245_2
+e244_4  almost like e245_3
+e244_5  almost like e245_1
+e244_6  almost like e245_5
+e244_7  almost like e245_2
+e244_8  almost like e245_8
+e244_9  almost like e245_5
+e244_10  almost like e245_13
+e244_11  almost like e245_14
+e244_12  almost like e245_18
+e244_13  almost like e245_15
+e244_14  almost like e245_13
+e244_15  almost like e245_14
+e244_16  almost like e245_18
+e244_17  almost like e245_15
+e242_2  too small (50 pixels)
+e242_5  almost like e242_4
+e242_7  flipped duplicate of e242_6
+e240_1  too small (48 pixels)
+e240_2  too small (48 pixels)
+e240_4  almost like e240_3
+e240_6  almost like e240_5
+e239_9  almost like e239_3
+e239_10  almost like e239_1
+e239_11  almost like e239_4
+e239_12  almost like e239_2
+e239_13  almost like e239_5
+e239_15  almost like e239_6
+e239_16  almost like e239_8
+e239_17  almost like e239_3
+e239_18  almost like e239_4
+e239_20  almost like e239_5
+e239_21  almost like e239_7
+e239_22  almost like e239_3
+e239_23  almost like e239_4
+e239_24  almost like e239_5
+e239_25  almost like e239_7
+e239_26  almost like e239_3
+e239_27  almost like e239_4
+e239_28  almost like e239_5
+e239_29  almost like e239_7
+e238_3  almost like e239_1
+e238_8  almost like e261_30
+e238_9  almost like e239_1
+e238_10  almost like e239_8
+e238_11  almost like e263_13
+e238_14  almost like e238_6
+e238_15  almost like e239_8
+e237_12  almost like e263_13
+e237_13  almost like e261_30
+e237_17  almost like e263_14
+e236_9  almost like e236_5
+e236_12  almost like e236_2
+e236_13  almost like e236_5
+e236_14  almost like e236_7
+e236_15  almost like e236_8
+e236_17  almost like e236_10
+e232_4  duplicate of e232_1
+e232_5  flipped duplicate of e232_3
+e232_6  duplicate of e232_1
+e232_7  flipped duplicate of e232_2
+e232_9  almost like e232_1
+e232_10  duplicate of e232_2
+e232_12  duplicate of e232_1
+e232_13  duplicate of e232_2
+e232_14  flipped duplicate of e232_3
+e232_15  duplicate of e232_1
+e232_16  flipped duplicate of e232_3
+e232_17  flipped duplicate of e232_3
+e232_18  duplicate of e232_8
+e232_19  duplicate of e232_1
+e232_20  duplicate of e232_11
+e232_21  duplicate of e232_8
+e232_22  flipped duplicate of e232_2
+e232_23  duplicate of e232_11
+e232_24  duplicate of e232_11
+e231_2  almost like e231_1
+e231_3  almost like e231_1
+e231_4  almost like e231_1
+e231_5  duplicate of e231_4
+e231_6  almost like e231_1
+e231_7  almost like e231_1
+e230_5  flipped duplicate of e230_4
+e230_12  flipped duplicate of e230_11
+e229_1  duplicate of e230_1
+e229_2  duplicate of e230_2
+e229_3  duplicate of e230_3
+e229_4  duplicate of e230_4
+e229_5  flipped duplicate of e230_4
+e229_6  duplicate of e230_6
+e229_7  duplicate of e230_7
+e229_8  duplicate of e230_8
+e229_9  duplicate of e230_9
+e229_10  duplicate of e230_10
+e229_11  duplicate of e230_11
+e229_12  flipped duplicate of e230_11
+e229_13  duplicate of e230_13
+e228_9  almost like e228_3
+e228_10  almost like e228_2
+e228_14  flipped duplicate of e228_13
+e228_15  almost like e228_1
+e228_16  almost like e228_2
+e228_17  almost like e228_3
+e228_18  almost like e228_4
+e227_8  almost like e227_7
+e227_9  almost like e227_6
+e227_11  almost like e227_10
+e227_12  flipped duplicate of e227_11
+e226_2  almost like e226_1
+e226_12  almost like e226_11
+e226_13  duplicate of e226_5
+e226_16  almost like e226_11
+e226_17  almost like e226_1
+e226_18  almost like e226_1
+e225_6  almost like e225_3
+e225_7  almost like e226_5
+e225_8  almost like e226_5
+e225_10  almost like e225_9
+e225_11  duplicate of e225_5
+e225_12  duplicate of e225_6
+e225_13  duplicate of e225_1
+e224_1  duplicate of e226_1
+e224_2  duplicate of e226_2
+e224_3  duplicate of e226_3
+e224_4  duplicate of e226_4
+e224_5  duplicate of e226_5
+e224_6  duplicate of e226_7
+e224_7  duplicate of e226_8
+e224_8  duplicate of e226_10
+e224_9  duplicate of e226_11
+e224_10  duplicate of e226_12
+e224_11  duplicate of e226_5
+e224_12  duplicate of e226_14
+e224_13  duplicate of e226_15
+e224_14  duplicate of e226_16
+e224_15  duplicate of e226_17
+e224_16  duplicate of e226_18
+e221_3  almost like e221_2
+e220_1  almost like e221_1
+e220_2  almost like e221_2
+e220_3  almost like e221_2
+e219_1  almost like e221_1
+e219_2  duplicate of e220_2
+e219_3  duplicate of e220_3
+e218_1  almost like e221_1
+e218_2  almost like e221_2
+e218_3  almost like e221_2
+e210_7  almost like e210_6
+e210_14  almost like e265_13
+e210_16  almost like e210_10
+e210_17  almost like e210_15
+e209_1  almost like e210_1
+e209_2  almost like e210_2
+e209_3  almost like e210_3
+e209_4  almost like e210_4
+e209_5  almost like e210_5
+e209_6  almost like e210_6
+e209_7  almost like e210_6
+e209_8  almost like e210_8
+e209_9  almost like e210_9
+e209_10  almost like e210_10
+e209_11  almost like e210_11
+e209_12  almost like e210_12
+e209_13  almost like e210_13
+e209_14  almost like e265_13
+e209_15  almost like e210_15
+e209_16  almost like e210_10
+e209_17  almost like e226_5
+e208_2  almost like e208_1
+e207_2  almost like e207_1
+e207_3  almost like e208_3
+e207_4  almost like e208_4
+e206_5  almost like e226_5
+e206_6  almost like e226_5
+e206_7  almost like e206_4
+e206_8  almost like e226_5
+e206_10  almost like e226_5
+e206_12  almost like e206_4
+e206_14  almost like e226_5
+e206_16  almost like e226_5
+e206_17  almost like e226_5
+e206_18  almost like e226_5
+e205_1  duplicate of e206_1
+e205_3  duplicate of e206_3
+e205_4  duplicate of e206_4
+e205_5  duplicate of e206_5
+e205_6  duplicate of e206_6
+e205_7  duplicate of e206_7
+e205_8  duplicate of e206_8
+e205_9  duplicate of e206_9
+e205_10  duplicate of e206_10
+e205_11  duplicate of e206_11
+e205_12  duplicate of e206_12
+e205_13  duplicate of e206_13
+e205_14  duplicate of e206_14
+e205_15  duplicate of e206_15
+e205_16  duplicate of e206_16
+e205_17  duplicate of e206_17
+e205_18  duplicate of e206_18
+e204_1  almost like e206_1
+e204_2  almost like e206_2
+e204_3  almost like e206_3
+e204_4  almost like e206_4
+e204_5  almost like e226_5
+e204_6  almost like e226_5
+e204_7  almost like e206_4
+e204_8  almost like e226_5
+e204_9  almost like e206_9
+e204_10  almost like e226_5
+e204_11  almost like e206_11
+e204_12  almost like e206_4
+e204_13  almost like e206_13
+e204_14  almost like e226_5
+e204_15  almost like e226_15
+e204_16  almost like e226_5
+e204_17  almost like e226_5
+e204_18  almost like e226_5
+e203_1  duplicate of e204_1
+e203_2  almost like e205_2
+e203_3  duplicate of e204_3
+e203_4  duplicate of e204_4
+e203_5  duplicate of e204_5
+e203_6  duplicate of e204_6
+e203_7  duplicate of e204_7
+e203_8  duplicate of e204_8
+e203_9  duplicate of e204_9
+e203_10  duplicate of e204_10
+e203_11  duplicate of e204_11
+e203_12  duplicate of e204_12
+e203_13  duplicate of e204_13
+e203_14  duplicate of e204_14
+e203_15  duplicate of e204_15
+e203_16  duplicate of e204_16
+e203_17  duplicate of e204_17
+e203_18  duplicate of e204_18
+e202_5  flipped duplicate of e202_4
+e202_8  flipped duplicate of e202_7
+e202_12  almost like e210_1
+e202_14  flipped duplicate of e202_13
+e202_15  flipped duplicate of e202_12
+e202_23  almost like e226_5
+e202_24  flipped duplicate of e202_21
+e202_26  almost like e202_17
+e202_27  flipped duplicate of e202_26
+e202_28  almost like e226_5
+e202_29  duplicate of e202_28
+e202_31  almost like e202_17
+e202_32  duplicate of e202_28
+e202_33  duplicate of e202_28
+e202_34  almost like e202_17
+e202_35  flipped duplicate of e202_34
+e201_2  flipped duplicate of e201_1
+e201_4  flipped duplicate of e201_3
+e200_2  almost like e226_14
+e200_3  almost like e206_15
+e200_6  almost like e226_11
+e200_7  almost like e226_11
+e199_1  almost like e200_1
+e199_2  duplicate of e200_2
+e199_3  duplicate of e200_3
+e199_4  duplicate of e200_4
+e199_5  duplicate of e200_5
+e199_6  duplicate of e200_6
+e199_7  duplicate of e200_7
+e198_3  almost like e198_2
+e198_4  almost like e226_14
+e198_5  almost like e226_5
+e198_6  almost like e226_5
+e198_7  almost like e226_14
+e198_8  almost like e226_15
+e198_9  almost like e200_4
+e198_10  almost like e200_5
+e198_11  almost like e226_11
+e198_12  almost like e226_11
+e197_1  almost like e198_1
+e197_2  duplicate of e198_2
+e197_3  duplicate of e198_3
+e197_4  duplicate of e198_4
+e197_5  duplicate of e198_5
+e197_6  duplicate of e198_6
+e197_7  duplicate of e198_7
+e197_8  duplicate of e198_8
+e197_9  duplicate of e198_9
+e197_10  duplicate of e198_10
+e197_11  duplicate of e198_11
+e197_12  duplicate of e198_12
+e196_1  almost like e198_1
+e196_3  almost like e196_2
+e196_4  almost like e226_14
+e196_5  almost like e226_5
+e196_6  almost like e226_5
+e196_7  almost like e226_14
+e196_8  almost like e226_15
+e196_9  almost like e200_4
+e196_10  almost like e200_5
+e196_11  almost like e226_11
+e196_12  almost like e226_11
+e195_1  almost like e198_1
+e195_2  duplicate of e196_2
+e195_3  duplicate of e196_3
+e195_4  duplicate of e196_4
+e195_5  duplicate of e196_5
+e195_6  duplicate of e196_6
+e195_7  duplicate of e196_7
+e195_8  duplicate of e196_8
+e195_9  duplicate of e196_9
+e195_10  duplicate of e196_10
+e195_11  duplicate of e196_11
+e195_12  duplicate of e196_12
+e156_6  almost like e156_3
+e156_12  almost like e156_4
+e156_13  almost like e156_11
+e156_19  duplicate of e156_12
+e156_20  almost like e156_5
+e156_21  almost like e156_4
+e156_23  duplicate of e156_13
+e156_24  almost like e156_4
+e156_25  almost like e156_10
+e156_26  almost like e156_4
+e156_27  duplicate of e156_13
+e156_28  duplicate of e156_13
+e156_30  almost like e156_4
+e156_33  almost like e156_16
+e156_37  flipped duplicate of e156_13
+e156_38  almost like e156_14
+e156_45  duplicate of e156_33
+e156_49  duplicate of e156_33
+e156_50  almost like e156_4
+e156_51  duplicate of e156_33
+e156_54  flipped duplicate of e156_13
+e156_55  flipped duplicate of e156_33
+e156_56  too small (52 pixels)
+e156_57  duplicate of e156_13
+e156_58  almost like e156_17
+e156_59  almost like e156_4
+e156_61  almost like e156_14
+e156_62  duplicate of e156_50
+e156_63  duplicate of e156_13
+e156_64  flipped duplicate of e156_33
+e156_66  duplicate of e156_15
+e156_67  almost like e156_5
+e156_68  duplicate of e156_15
+e156_70  almost like e156_11
+e156_74  almost like e156_3
+e156_76  duplicate of e156_12
+e156_78  almost like e156_3
+e156_79  duplicate of e156_60
+e156_80  almost like e156_60
+e156_81  almost like e156_9
+e156_83  duplicate of e156_15
+e156_84  duplicate of e156_13
+e156_85  duplicate of e156_12
+e156_86  almost like e156_35
+e156_88  duplicate of e156_12
+e156_89  almost like e156_14
+e156_90  duplicate of e156_65
+e156_91  duplicate of e156_15
+e156_92  duplicate of e156_15
+e156_93  duplicate of e156_9
+e156_94  duplicate of e156_12
+e156_95  almost like e156_4
+e156_99  duplicate of e156_12
+e156_100  duplicate of e156_9
+e142_4  flipped duplicate of e142_3
+e142_5  flipped duplicate of e142_2
+e142_8  flipped duplicate of e142_7
+e142_9  flipped duplicate of e142_6
+e142_11  flipped duplicate of e142_10
+e142_13  flipped duplicate of e142_12
+e142_14  too small (26 pixels)
+e142_15  too small (26 pixels)
+e142_17  duplicate of e142_3
+e142_18  flipped duplicate of e142_3
+e142_19  flipped duplicate of e142_16
+e142_20  duplicate of e142_7
+e142_21  flipped duplicate of e142_7
+e142_22  duplicate of e142_10
+e142_23  flipped duplicate of e142_10
+e142_24  duplicate of e142_12
+e142_25  flipped duplicate of e142_12
+e141_8  flipped duplicate of e141_6
+e141_13  duplicate of e141_7
+e138_9  almost like e141_3
+e138_21  almost like e138_4
+e138_22  too small (58 pixels)
+e137_9  almost like e137_8
+e137_12  almost like e137_8
+e137_13  almost like e137_11
+e137_14  duplicate of e137_13
+e137_15  almost like e137_11
+e137_16  almost like e137_11
+e137_18  almost like e137_17
+e137_19  almost like e137_11
+e137_20  almost like e137_11
+e137_21  too small (37 pixels)
+e137_22  almost like e137_11
+e137_23  almost like e137_17
+e137_24  almost like e137_8
+e137_25  duplicate of e137_17
+e137_26  almost like e137_17
+e137_27  almost like e137_8
+e136_2  almost like e137_5
+e136_5  duplicate of e137_11
+e136_6  almost like e137_8
+e136_8  duplicate of e137_15
+e136_10  almost like e136_9
+e136_11  almost like e137_11
+e136_12  duplicate of e136_9
+e136_13  almost like e137_17
+e136_14  almost like e137_11
+e136_16  almost like e137_8
+e136_17  duplicate of e137_17
+e136_18  almost like e137_1
+e136_19  almost like e137_1
+e135_8  almost like e135_2
+e135_13  almost like e135_1
+e135_14  almost like e141_14
+e135_15  almost like e135_9
+e135_17  duplicate of e135_8
+e135_19  duplicate of e135_8
+e129_6  almost like e129_3
+e129_7  almost like e129_3
+e129_8  almost like e129_4
+e129_11  almost like e129_5
+e128_15  almost like e261_25
+e128_16  almost like e128_1
+e128_17  almost like e128_2
+e127_1  almost like e128_1
+e127_3  almost like e128_10
+e127_11  almost like e128_19
+e127_12  almost like e128_1
+e127_13  almost like e127_2
+e127_14  almost like e128_10
+e127_15  almost like e127_4
+e125_7  too small (46 pixels)
+e125_9  almost like e310_5
+e125_10  almost like e128_2
+e125_12  almost like e128_14
+e125_13  almost like e261_25
+e125_15  almost like e127_5
+e125_17  almost like e125_5
+e125_19  almost like e310_5
+e125_20  almost like e310_5
+e125_21  almost like e127_7
+e125_22  almost like e128_4
+e125_25  almost like e125_4
+e125_26  almost like e128_11
+e125_27  almost like e125_4
+e125_28  almost like e138_5
+e125_29  almost like e127_4
+e125_30  almost like e128_2
+e125_31  almost like e125_5
+e125_32  almost like e125_16
+e125_33  almost like e310_5
+e125_35  too small (45 pixels)
+e125_36  almost like e125_8
+e125_38  too small (45 pixels)
+e125_39  almost like e125_8
+e125_40  almost like e125_5
+e125_41  almost like e310_5
+e122_3  too small (62 pixels)
+e122_4  too small (59 pixels)
+e122_10  too small (62 pixels)
+e122_11  almost like e122_9
+e122_13  too small (63 pixels)
+e122_17  almost like e264_2
+e122_18  almost like e122_8
+e122_19  almost like e264_6
+e122_20  almost like e122_12
+e122_22  almost like e122_9
+e122_24  almost like e122_2
+e122_25  almost like e122_21
+e122_27  almost like e122_26
+e122_28  almost like e122_21
+e122_30  almost like e122_26
+e122_36  almost like e264_14
+e122_38  almost like e264_8
+e122_40  almost like e125_5
+e122_41  almost like e122_9
+e122_43  almost like e122_39
+e122_45  almost like e122_8
+e122_46  too small (63 pixels)
+e122_47  too small (62 pixels)
+e122_49  almost like e122_2
+e122_50  almost like e122_21
+e122_51  almost like e122_9
+e122_52  almost like e122_26
+e122_55  almost like e122_6
+e122_56  almost like e122_9
+e122_58  almost like e122_29
+e121_1  almost like e263_11
+e121_2  almost like e263_13
+e121_4  almost like e263_15
+e121_6  almost like e261_3
+e121_7  almost like e263_11
+e121_9  almost like e263_13
+e121_11  almost like e121_3
+e121_12  almost like e263_15
+e121_14  almost like e263_20
+e121_15  almost like e263_13
+e121_18  too small (57 pixels)
+e121_20  too small (57 pixels)
+e121_21  almost like e121_19
+e121_22  too small (43 pixels)
+e121_24  too small (43 pixels)
+e118_2  almost like e263_48
+e118_3  almost like e263_6
+e118_4  almost like e263_8
+e118_5  almost like e263_23
+e118_8  almost like e263_12
+e118_9  almost like e121_10
+e118_14  almost like e263_15
+e118_15  almost like e238_4
+e117_4  almost like e261_18
+e117_5  almost like e117_2
+e117_6  too small (32 pixels)
+e117_7  too small (32 pixels)
+e117_9  too small (60 pixels)
+e117_10  almost like e261_4
+e117_11  almost like e261_25
+e117_12  almost like e261_1
+e117_13  almost like e261_1
+e117_14  almost like e263_23
+e117_16  almost like e263_6
+e117_17  almost like e117_8
+e117_18  too small (60 pixels)
+e117_20  almost like e261_4
+e117_22  almost like e261_25
+e117_23  almost like e263_23
+e117_25  almost like e262_3
+e117_26  almost like e117_15
+e117_27  almost like e239_8
+e117_28  almost like e263_47
+e113_1  almost like e263_32
+e113_3  almost like e263_8
+e113_4  almost like e117_29
+e113_6  almost like e117_29
+e113_11  almost like e263_15
+e111_2  duplicate of e111_1
+e111_7  duplicate of e111_5
+e111_8  duplicate of e111_6
+e109_3  duplicate of e109_1
+e109_4  duplicate of e109_2
+e109_9  duplicate of e109_7
+e109_10  duplicate of e109_8
+e109_19  duplicate of e109_16
+e109_20  duplicate of e109_17
+e109_21  duplicate of e109_18
+e109_23  duplicate of e109_22
+e109_25  duplicate of e109_24
+e109_27  duplicate of e109_26
+e101_1  too small (35 pixels)
+e101_2  too small (35 pixels)
+e101_4  flipped duplicate of e101_3
+e101_6  flipped duplicate of e101_5
+e101_7  too small (28 pixels)
+e101_8  too small (28 pixels)
+e93_2  flipped duplicate of e93_1
+e93_6  almost like e93_5
+e93_8  almost like e93_5
+e80_2  too small (51 pixels)
+e80_8  almost like e80_5
+e80_10  duplicate of e80_3
+e80_11  almost like e80_5
+e80_12  almost like e80_6
+e80_13  almost like e80_6
+e80_14  almost like e80_7
+e80_16  almost like e80_15
+e80_18  almost like e80_15
+e80_19  almost like e80_5
+e80_20  almost like e80_5
+e80_21  almost like e80_3
+e80_22  almost like e80_7
+e80_23  almost like e80_3
+e80_24  almost like e80_7
+e80_26  almost like e80_6
+e80_28  almost like e80_6
+e80_29  almost like e80_6
+e80_30  almost like e80_3
+e80_31  almost like e80_7
+e80_32  almost like e80_3
+e80_33  almost like e80_6
+e80_34  almost like e80_5
+e80_35  almost like e80_5
+e80_36  almost like e80_6
+e80_37  almost like e80_5
+e80_38  almost like e80_7
+e80_39  almost like e80_3
+e80_41  almost like e80_5
+e80_42  almost like e80_7
+e80_43  almost like e80_7
+e80_44  almost like e80_6
+e80_45  almost like e80_7
+e74_10  flipped duplicate of e74_9
+e74_12  duplicate of e74_9
+e70_1  almost like e71_2
+e67_2  duplicate of e67_1
+e67_4  flipped duplicate of e67_3
+e67_5  flipped duplicate of e67_1
+e67_6  flipped duplicate of e67_1
+e67_9  duplicate of e67_7
+e67_10  duplicate of e67_8
+e67_13  almost like e67_12
+e67_14  flipped duplicate of e67_11
+e67_15  flipped duplicate of e67_8
+e67_16  flipped duplicate of e67_7
+e67_17  flipped duplicate of e67_8
+e67_18  flipped duplicate of e67_7
+e67_21  flipped duplicate of e67_20
+e67_33  almost like e67_27
+e65_2  duplicate of e65_1
+e65_3  almost like e65_1
+e65_4  almost like e65_1
+e65_6  almost like e65_5
+e65_10  duplicate of e65_9
+e65_11  almost like e65_9
+e65_13  duplicate of e65_12
+e65_15  duplicate of e65_14
+e65_16  almost like e65_5
+e65_17  duplicate of e65_14
+e65_18  almost like e65_9
+e65_19  almost like e65_14
+e65_20  almost like e65_12
+e65_22  almost like e65_21
+e65_25  almost like e65_24
+e65_26  duplicate of e65_25
+e64_2  duplicate of e64_1
+e64_3  almost like e64_1
+e64_5  almost like e64_1
+e64_6  almost like e64_4
+e64_8  almost like e64_1
+e64_9  almost like e64_7
+e64_10  almost like e64_4
+e64_11  almost like e64_1
+e64_12  almost like e64_4
+e64_13  almost like e64_1
+e64_14  almost like e64_7
+e64_15  almost like e64_4
+e64_16  almost like e64_7
+e64_18  flipped duplicate of e64_17
+e63_1  duplicate of e64_1
+e63_2  duplicate of e64_1
+e63_3  duplicate of e64_3
+e63_4  duplicate of e64_4
+e63_5  duplicate of e64_5
+e63_6  duplicate of e64_6
+e63_7  duplicate of e64_7
+e63_8  duplicate of e64_8
+e63_9  duplicate of e64_9
+e63_10  duplicate of e64_10
+e63_11  duplicate of e64_11
+e63_12  duplicate of e64_12
+e63_13  duplicate of e64_13
+e63_14  duplicate of e64_14
+e63_15  duplicate of e64_15
+e63_16  duplicate of e64_16
+e63_17  duplicate of e64_17
+e63_18  flipped duplicate of e64_17
+e62_2  duplicate of e62_1
+e62_4  duplicate of e62_3
+e62_8  almost like e62_5
+e62_9  almost like e62_6
+e62_11  almost like e62_3
+e61_7  too small (48 pixels)
+e61_9  duplicate of e61_8
+e61_10  duplicate of e61_8
+e59_1  almost like e263_1
+e59_2  almost like e263_4
+e59_4  almost like e263_1
+e59_5  almost like e263_3
+e59_6  almost like e263_4
+e59_7  almost like e263_5
+e59_8  almost like e263_18
+e59_9  almost like e263_18
+e59_10  almost like e263_7
+e59_11  almost like e263_18
+e59_12  almost like e263_18
+e59_13  almost like e263_4
+e59_14  almost like e263_4
+e59_16  almost like e59_3
+e59_17  almost like e263_4
+e59_18  almost like e59_3
+e59_19  almost like e263_4
+e59_20  almost like e263_3
+e59_21  almost like e59_3
+e59_22  almost like e263_3
+e59_23  almost like e59_3
+e59_26  almost like e263_4
+e59_33  almost like e59_30
+e57_2  flipped duplicate of e57_1
+e57_5  flipped duplicate of e57_4
+e57_7  flipped duplicate of e57_6
+e55_7  almost like e55_4
+e55_8  almost like e55_6
+e55_11  almost like e55_4
+e55_12  almost like e55_6
+e54_3  almost like e54_2
+e54_4  almost like e54_2
+e54_6  almost like e54_5
+e53_1  almost like e54_1
+e53_2  almost like e54_2
+e53_4  almost like e54_2
+e53_6  almost like e53_5
+e52_6  almost like e53_3
+e51_3  almost like e263_13
+e51_4  almost like e261_30
+e51_6  almost like e263_13
+e51_7  almost like e261_30
+e51_11  almost like e263_46
+e51_12  almost like e51_1
+e51_13  almost like e263_13
+e51_14  almost like e261_30
+e51_15  almost like e237_10
+e51_16  almost like e263_13
+e51_17  almost like e261_2
+e51_19  almost like e261_30
+e51_23  too small (61 pixels)
+e51_24  almost like e51_1
+e51_25  almost like e263_13
+e51_26  almost like e261_2
+e51_27  almost like e261_30
+e51_28  almost like e51_20
+e51_29  almost like e51_1
+e51_30  almost like e263_13
+e51_32  almost like e261_30
+e51_33  almost like e51_21
+e51_34  almost like e51_22
+e50_1  almost like e263_6
+e50_2  almost like e261_3
+e50_3  almost like e263_11
+e50_4  almost like e263_13
+e50_6  almost like e239_8
+e50_7  almost like e263_15
+e50_8  almost like e121_3
+e50_9  almost like e263_46
+e50_12  almost like e263_6
+e50_13  almost like e261_3
+e50_15  almost like e50_5
+e50_16  almost like e239_8
+e50_17  almost like e263_11
+e50_18  duplicate of e50_10
+e50_19  almost like e263_13
+e50_20  almost like e263_15
+e50_21  almost like e121_3
+e50_24  almost like e50_11
+e50_25  almost like e263_11
+e50_26  almost like e263_13
+e50_27  almost like e263_15
+e50_28  almost like e121_3
+e50_29  duplicate of e50_10
+e46_2  almost like e261_2
+e46_3  almost like e51_1
+e46_4  duplicate of e46_2
+e46_5  almost like e263_13
+e46_6  almost like e51_5
+e46_9  duplicate of e46_6
+e46_10  almost like e238_6
+e46_12  duplicate of e46_10
+e46_13  duplicate of e46_11
+e46_15  almost like e46_14
+e46_17  almost like e46_16
+e46_20  almost like e46_19
+e46_21  almost like e46_18
+e46_22  almost like e46_19
+e46_23  almost like e46_19
+e46_24  almost like e46_18
+e46_28  almost like e46_26
+e46_29  almost like e263_13
+e46_31  almost like e46_8
+e45_2  almost like e45_1
+e45_4  almost like e45_1
+e45_5  almost like e45_3
+e45_6  almost like e45_1
+e45_8  almost like e45_1
+e45_10  almost like e45_3
+e45_11  almost like e45_9
+e42_3  almost like e42_1
+e42_8  almost like e42_2
+e42_10  almost like e42_4
+e40_2  too small (47 pixels)
+e39_2  flipped duplicate of e39_1
+e39_6  flipped duplicate of e39_5
+e39_9  flipped duplicate of e39_8
+e39_10  flipped duplicate of e39_7
+e39_11  too small (52 pixels)
+e39_12  too small (52 pixels)
+e39_14  too small (39 pixels)
+e39_16  too small (39 pixels)
+e39_18  flipped duplicate of e39_17
+e39_19  too small (46 pixels)
+e39_20  too small (46 pixels)
+e39_23  too small (35 pixels)
+e39_24  too small (35 pixels)
+e39_26  almost like e39_25
+e39_27  flipped duplicate of e39_26
+e39_28  flipped duplicate of e39_25
+e39_29  too small (59 pixels)
+e39_30  too small (59 pixels)
+e38_2  flipped duplicate of e38_1
+e38_4  flipped duplicate of e38_3
+e38_6  flipped duplicate of e38_5
+e38_7  almost like e39_5
+e38_8  flipped duplicate of e38_7
+e38_9  almost like e39_7
+e38_10  almost like e39_8
+e38_11  flipped duplicate of e38_10
+e38_12  flipped duplicate of e38_9
+e38_13  too small (46 pixels)
+e38_14  too small (38 pixels)
+e38_15  too small (35 pixels)
+e38_16  too small (52 pixels)
+e38_17  too small (52 pixels)
+e38_18  almost like e39_13
+e38_19  too small (39 pixels)
+e38_20  flipped duplicate of e38_18
+e38_21  too small (39 pixels)
+e38_22  almost like e39_17
+e38_23  flipped duplicate of e38_22
+e38_24  too small (46 pixels)
+e38_25  too small (46 pixels)
+e38_26  almost like e39_21
+e38_27  too small (38 pixels)
+e38_28  too small (38 pixels)
+e38_29  almost like e39_22
+e38_30  too small (35 pixels)
+e38_31  too small (35 pixels)
+e38_32  almost like e39_25
+e38_33  almost like e39_25
+e38_34  flipped duplicate of e38_33
+e38_35  flipped duplicate of e38_32
+e38_36  too small (59 pixels)
+e38_37  too small (59 pixels)
+e37_3  almost like e37_1
+e37_7  almost like e37_5
+e37_8  almost like e37_5
+e37_10  almost like e37_1
+e37_12  almost like e37_4
+e37_13  almost like e164_2
+e37_14  duplicate of e37_13
+e37_16  almost like e37_1
+e37_17  almost like e37_5
+e37_18  almost like e37_9
+e37_19  almost like e37_5
+e37_21  almost like e37_15
+e37_22  almost like e37_1
+e37_23  almost like e37_5
+e34_10  flipped duplicate of e34_9
+e34_11  almost like e265_1
+e34_12  too small (33 pixels)
+e34_13  flipped duplicate of e34_11
+e34_14  almost like e265_1
+e34_16  flipped duplicate of e34_14
+e34_18  too small (37 pixels)
+e34_25  too small (37 pixels)
+e34_26  too small (33 pixels)
+e34_28  almost like e34_22
+e34_31  almost like e34_9
+e33_9  almost like e33_3
+e33_10  almost like e33_4
+e33_13  almost like e33_4
+e33_15  almost like e33_11
+e33_16  almost like e33_7
+e33_17  too small (40 pixels)
+e33_18  almost like e33_2
+e33_19  too small (30 pixels)
+e33_20  too small (30 pixels)
+e33_21  almost like e33_4
+e33_25  too small (40 pixels)
+e33_26  almost like e33_22
+e33_28  too small (30 pixels)
+e33_32  almost like e33_4
+e32_11  almost like e32_7
+e32_12  almost like e32_10
+e32_16  almost like e32_7
+e32_19  almost like e32_15
+e32_20  almost like e32_6
+e32_21  almost like e32_17
+e32_23  duplicate of e32_22
+e29_3  too small (57 pixels)
+e29_4  too small (32 pixels)
+e29_9  flipped duplicate of e29_7
+e29_12  too small (39 pixels)
+e29_13  too small (39 pixels)
+e29_16  almost like e29_14
+e29_23  almost like e29_15
+e29_26  duplicate of e29_18
+e29_29  almost like e29_25
+e25_2  almost like e25_1
+e25_3  almost like e25_1
+e25_9  almost like e164_9
+e25_12  duplicate of e25_11
+e25_13  almost like e25_4
+e25_15  almost like e25_7
+e25_16  almost like e25_7
+e25_18  almost like e25_14
+e25_19  duplicate of e25_11
+e22_5  too small (33 pixels)
+e22_6  too small (31 pixels)
+e22_8  too small (33 pixels)
+e22_13  almost like e22_7
+e22_16  almost like e22_1
+e22_19  almost like e22_2
+e22_21  too small (33 pixels)
+e22_22  almost like e22_1
+e22_25  too small (37 pixels)
+e22_26  almost like e22_20
+e22_33  too small (33 pixels)
+e21_1  almost like e22_7
+e21_2  almost like e22_7
+e16_4  almost like e16_3
+e16_5  almost like e16_3
+e16_6  almost like e16_3
+e16_10  almost like e16_3
+e16_11  almost like e16_3
+e16_12  duplicate of e16_11
+e16_13  duplicate of e16_11
+e16_14  almost like e16_3
+e16_15  duplicate of e16_14
+e16_17  almost like e16_3
+e16_18  almost like e16_3
+e16_21  almost like e16_3
+e16_24  almost like e16_22
+e16_26  almost like e16_20
+e16_27  almost like e16_16
+e16_28  almost like e16_3
+e16_29  almost like e16_16
+e16_30  duplicate of e16_17
+e16_31  almost like e16_16
+e16_33  almost like e16_3
+e16_34  almost like e16_16
+e16_35  duplicate of e16_10
+e16_37  almost like e16_20
+e16_38  almost like e16_19
+e16_39  almost like e16_3
+e16_40  almost like e16_3
+e16_41  almost like e16_23
+e16_42  almost like e16_3
+e16_43  almost like e16_36
+e15_10  almost like e15_8
+e14_8  almost like e14_3
+e14_11  duplicate of e14_4
+e14_15  almost like e14_13
+e14_18  almost like e14_14
+e14_19  almost like e14_16
+e14_20  almost like e14_12
+e14_21  almost like e14_16
+e14_22  almost like e14_14
+e14_24  almost like e14_10
+e14_26  almost like e14_25
+e12_5  almost like e226_14
+e11_1  almost like e12_1
+e11_2  almost like e12_2
+e10_1  from a screen of the game, not a place (menu, vision)
+e10_2  from a screen of the game, not a place (menu, vision)
+e10_3  from a screen of the game, not a place (menu, vision)
+e9_1  from a screen of the game, not a place (menu, vision)
+e5_1  duplicate of e195_1
+e5_2  duplicate of e196_2
+e5_3  duplicate of e196_3
+e5_4  duplicate of e196_4
+e5_5  duplicate of e196_5
+e5_6  duplicate of e196_6
+e5_7  duplicate of e196_7
+e5_8  duplicate of e196_8
+e5_9  duplicate of e196_9
+e5_10  duplicate of e196_10
+e5_11  duplicate of e196_11
+e5_12  duplicate of e196_12
+e4_1  duplicate of e196_1
+e4_2  duplicate of e196_2
+e4_3  duplicate of e196_3
+e4_4  duplicate of e196_4
+e4_5  duplicate of e196_5
+e4_6  duplicate of e196_6
+e4_7  duplicate of e196_7
+e4_8  duplicate of e196_8
+e4_9  duplicate of e196_9
+e4_10  duplicate of e196_10
+e4_11  duplicate of e196_11
+e4_12  duplicate of e196_12
+e3_1  duplicate of e324_1
+e3_2  duplicate of e324_2
+e3_3  duplicate of e324_3
+e3_4  duplicate of e324_4
+e3_5  duplicate of e324_5
+e3_6  duplicate of e324_6
+e3_7  duplicate of e324_7
+e3_8  duplicate of e324_8
+e3_9  duplicate of e324_8
+e3_10  duplicate of e324_8
+e3_11  duplicate of e324_11
+e3_12  duplicate of e324_12
+e3_13  duplicate of e324_13
+e3_14  duplicate of e324_14
+e3_15  duplicate of e324_15
+e3_16  duplicate of e324_16
+e2_1  duplicate of e323_1
+e2_2  duplicate of e323_1
+e2_3  duplicate of e323_3
+e2_4  duplicate of e323_4
+e2_5  duplicate of e323_5
+e2_6  duplicate of e324_6
+e2_7  duplicate of e323_7
+e2_8  duplicate of e323_8
+e2_9  duplicate of e323_9
+e2_10  duplicate of e323_10
+e2_11  too small (60 pixels)
+e2_12  duplicate of e323_12
+e2_13  duplicate of e324_8
+e2_14  duplicate of e324_8
+e2_15  duplicate of e324_8
+e2_16  duplicate of e323_16
+e2_17  duplicate of e323_17
+e2_18  duplicate of e324_14
+e2_19  duplicate of e323_7
+e2_20  duplicate of e323_20
+e2_21  duplicate of e323_20
+e2_22  too small (41 pixels)
+e2_23  flipped duplicate of e324_8
+e2_24  duplicate of e323_24
+a398_1  from a screen of the game, not a place (menu, vision)
+a396_1  from a screen of the game, not a place (menu, vision)
+a395_1  from a screen of the game, not a place (menu, vision)
+a393_1  from a screen of the game, not a place (menu, vision)
+a393_2  from a screen of the game, not a place (menu, vision)
+a375_1  from a screen of the game, not a place (menu, vision)
+a374_1  from a screen of the game, not a place (menu, vision)
+a367_1  from a screen of the game, not a place (menu, vision)
+a367_2  from a screen of the game, not a place (menu, vision)
+a367_3  from a screen of the game, not a place (menu, vision)
+a367_4  from a screen of the game, not a place (menu, vision)
+a367_5  from a screen of the game, not a place (menu, vision)
+a324_10  duplicate of a324_4
+a324_12  duplicate of a324_4
+a324_13  duplicate of a324_7
+a324_16  duplicate of a324_3
+a324_17  duplicate of a324_4
+a324_18  duplicate of a324_7
+a324_20  duplicate of a324_3
+a324_21  duplicate of a324_3
+a323_4  duplicate of a324_3
+a323_5  duplicate of a324_7
+a323_10  duplicate of a324_4
+a323_11  duplicate of a324_4
+a323_12  duplicate of a324_7
+a323_13  duplicate of a324_14
+a323_14  duplicate of a324_7
+a323_15  duplicate of a324_4
+a323_17  duplicate of a324_3
+a323_18  duplicate of a324_7
+a307_4  flipped duplicate of a307_2
+a307_5  duplicate of a307_2
+a307_6  duplicate of a307_3
+a307_7  duplicate of a307_2
+a307_8  duplicate of a307_2
+a307_9  flipped duplicate of a307_2
+a307_10  duplicate of a307_2
+a307_11  duplicate of a307_3
+a231_2  flipped duplicate of a231_1
+a220_1  almost like a221_1
+a219_1  duplicate of a220_1
+a218_1  almost like a221_1
+a216_1  almost like a217_1
+a40_2  almost like a324_5
+a3_1  duplicate of a324_1
+a3_2  duplicate of a324_2
+a3_3  duplicate of a324_3
+a3_4  duplicate of a324_4
+a3_5  duplicate of a324_5
+a3_6  duplicate of a324_6
+a3_7  duplicate of a324_7
+a3_8  duplicate of a324_8
+a3_9  duplicate of a324_9
+a3_10  duplicate of a324_4
+a3_11  duplicate of a324_11
+a3_12  duplicate of a324_4
+a3_13  duplicate of a324_7
+a3_14  duplicate of a324_14
+a3_15  duplicate of a324_15
+a3_16  duplicate of a324_3
+a3_17  duplicate of a324_4
+a3_18  duplicate of a324_7
+a3_19  duplicate of a324_19
+a3_20  duplicate of a324_3
+a3_21  duplicate of a324_3
+a2_1  duplicate of a323_1
+a2_2  duplicate of a323_2
+a2_3  duplicate of a323_3
+a2_4  duplicate of a324_3
+a2_5  duplicate of a324_7
+a2_6  duplicate of a323_6
+a2_7  duplicate of a323_7
+a2_8  duplicate of a323_8
+a2_9  duplicate of a323_9
+a2_10  duplicate of a324_4
+a2_11  duplicate of a324_4
+a2_12  duplicate of a324_7
+a2_13  duplicate of a324_14
+a2_14  duplicate of a324_7
+a2_15  duplicate of a324_4
+a2_16  duplicate of a323_16
+a2_17  duplicate of a324_3
+a2_18  duplicate of a324_7
+a1_3  duplicate of a1_1
+a1_4  duplicate of a1_2
+a1_5  duplicate of a1_2
+a1_6  duplicate of a1_2
+a1_7  duplicate of a1_1
+a1_8  duplicate of a1_1
+a1_9  duplicate of a1_2
+a1_11  duplicate of a1_2
+a1_12  duplicate of a1_1
+a1_13  duplicate of a1_2
+a1_14  duplicate of a1_1
+a1_15  duplicate of a1_2
+a1_17  duplicate of a1_1
+a1_19  duplicate of a1_1
+a1_20  duplicate of a1_2
+a1_21  duplicate of a1_1
+a1_22  duplicate of a1_2
+a1_23  duplicate of a1_2
+a1_24  duplicate of a1_2
+a1_26  duplicate of a1_1
+a1_27  duplicate of a1_2
+o12  too small (4 pixels)
+o13  too small (4 pixels)
+o14  too small (4 pixels)
+o15  too small (4 pixels)
+o17  almost like e310_5
+o19  duplicate of o18
+o21  duplicate of o20
+o22  duplicate of o20
+o25  duplicate of o24
+o26  too small (20 pixels)
+o27  too small (20 pixels)
+o28  too small (20 pixels)
+o30  duplicate of o29
+o31  duplicate of o29
+o35  duplicate of o34
+o36  duplicate of o34
+o37  almost like o34
+o38  duplicate of o37
+o39  duplicate of o37
+o40  almost like o34
+o41  duplicate of o40
+o42  duplicate of o40
+o43  almost like o34
+o44  duplicate of o43
+o45  duplicate of o43
+o46  almost like o34
+o47  duplicate of o46
+o48  duplicate of o46
+o49  almost like o34
+o50  duplicate of o49
+o51  duplicate of o49
+o52  almost like o34
+o53  duplicate of o52
+o54  duplicate of o52
+o59  duplicate of o58
+o60  duplicate of o58
+o62  duplicate of o61
+o63  duplicate of o61
+o67  duplicate of o66
+o68  almost like o66
+o74  too small (24 pixels)
+o76  duplicate of o75
+o77  duplicate of o75
+o79  duplicate of o78
+o80  duplicate of o78
+o90  too small (52 pixels)
+o92  duplicate of o91
+o101  duplicate of o100
+o102  duplicate of o100
+o103  duplicate of o100
+o105  duplicate of o104
+o108  too small (32 pixels)
+o109  too small (32 pixels)
+o110  too small (32 pixels)
+o112  almost like e164_18
+o113  duplicate of o112
+o114  duplicate of o112
+o117  duplicate of o116
+o118  duplicate of o116
+o121  too small (46 pixels)
+o123  too small (8 pixels)
+o124  too small (8 pixels)
+o125  too small (8 pixels)
+o126  too small (8 pixels)
+o129  duplicate of o128
+o130  duplicate of o128
+o131  duplicate of o128
+o132  duplicate of o128
+o133  duplicate of o127
+o136  duplicate of o135
+o137  duplicate of o135
+o138  too small (45 pixels)
+o139  too small (45 pixels)
+o140  too small (45 pixels)
+o142  duplicate of o141
+o143  duplicate of o141
+o144  almost like o11
+o146  duplicate of o93
+o148  duplicate of o147
+o149  duplicate of o147
+o150  duplicate of o147
+o151  duplicate of o147
+o152  duplicate of o147
+o156  too small (21 pixels)
+o157  too small (21 pixels)
+o158  too small (21 pixels)
+o159  too small (21 pixels)
+o160  too small (21 pixels)
+o161  too small (21 pixels)
+o162  too small (21 pixels)
+o163  too small (21 pixels)
+o164  too small (21 pixels)
+o173  almost like o170
+o174  almost like o170
+o177  duplicate of o175
+o178  duplicate of o175
+o179  duplicate of o175
+o184  duplicate of o181
+o186  almost like o185
+o188  duplicate of o187
+o190  almost like o96
+o191  almost like o97
+o192  almost like o98
+o193  almost like o99
+o195  duplicate of o194
+o199  duplicate of o198
+o200  duplicate of o198
+o201  duplicate of o198
+o202  duplicate of o198
+o203  duplicate of o198
+o204  duplicate of o198
+o205  duplicate of o198
+o208  duplicate of o207
+o210  duplicate of o209
+o213  duplicate of o212
+o214  duplicate of o212
+o215  duplicate of o212
+o217  duplicate of o216
+o218  duplicate of o216
+o219  duplicate of o216
+o225  almost like o11
+o226  duplicate of o225
+o227  duplicate of o225
+o228  duplicate of o225
+o229  duplicate of o225
+o230  duplicate of o225
+o231  too small (52 pixels)
+o232  too small (52 pixels)
+o233  too small (52 pixels)
+o234  too small (52 pixels)
+o235  too small (52 pixels)
+o236  too small (52 pixels)
+o237  too small (32 pixels)
+o238  too small (32 pixels)
+o239  too small (32 pixels)
+o240  too small (32 pixels)
+o241  too small (32 pixels)
+o242  too small (32 pixels)
+o254  flipped duplicate of o252
+o255  flipped duplicate of o253
+o257  duplicate of o256
+o258  duplicate of o256
+o259  duplicate of o256
+o260  duplicate of o256
+o261  duplicate of o256
+o263  duplicate of o262
+o264  duplicate of o262
+o265  duplicate of o262
+o266  duplicate of o262
+o267  duplicate of o262
+o269  duplicate of o268
+o270  duplicate of o268
+o271  duplicate of o268
+o272  duplicate of o268
+o273  duplicate of o268
+o274  duplicate of o268
+o275  duplicate of o268
+o276  duplicate of o268
+o277  duplicate of o268
+o278  duplicate of o268
+o279  duplicate of o268
+o282  duplicate of o281
+o283  duplicate of o281
+o286  duplicate of o285
+o287  duplicate of o285
+o291  duplicate of o290
+o292  duplicate of o290
+o293  duplicate of o290
+o298  duplicate of o297
+o299  duplicate of o297
+o300  too small (32 pixels)
+o301  too small (32 pixels)
+o302  too small (32 pixels)
+o304  duplicate of o303
+o305  duplicate of o303
+o308  duplicate of o303
+o309  duplicate of o303
+o310  almost like o306
+o312  duplicate of o311
+o314  duplicate of o313
+o322  duplicate of o321
+o324  duplicate of o323
+o326  duplicate of o325
+o330  duplicate of o329
+o331  duplicate of o329
+o332  duplicate of o329
+o333  duplicate of o329
+o334  too small (13 pixels)
+o335  too small (13 pixels)
+o336  too small (13 pixels)
+o337  too small (13 pixels)
+o338  too small (13 pixels)
+o340  duplicate of o339
+o341  duplicate of o339
+o343  duplicate of o342
+o344  duplicate of o342
+o345  too small (1 pixels)
+o346  too small (1 pixels)
+o347  too small (1 pixels)
+o349  duplicate of o348
+o350  duplicate of o348
+o351  too small (20 pixels)
+o352  too small (11 pixels)
+o356  duplicate of o355
+o357  duplicate of o355
+o358  duplicate of o355
+o359  duplicate of o355
+o360  duplicate of o355
+o361  duplicate of o355
+o362  duplicate of o355
+o363  duplicate of o355
+o364  duplicate of o355
+o366  duplicate of o365
+o368  too small (9 pixels)
+o369  too small (9 pixels)
+o370  almost like o185
+o374  almost like o373
+o377  flipped duplicate of o376
+o378  almost like o376
+o379  flipped duplicate of o378
+o384  too small (48 pixels)
+o389  duplicate of o388
+o392  too small (25 pixels)
+o400  duplicate of o399
+o401  duplicate of o399
+o403  duplicate of o402
+o404  duplicate of o402
+o405  too small (5 pixels)
+o407  almost like o406
+o408  almost like o406
+o409  almost like o406
+o413  too small (9 pixels)
+o415  too small (9 pixels)
+o420  almost like o11
+o421  duplicate of o420
+o427  duplicate of o426
+o428  duplicate of o426
+o430  duplicate of o429
+o432  duplicate of o431
+o434  too small (5 pixels)
+o438  duplicate of o187
+o439  too small (1 pixels)
+o440  too small (8 pixels)
+o441  too small (8 pixels)
+o442  too small (8 pixels)
+o443  too small (14 pixels)
+o444  too small (14 pixels)
+o445  too small (22 pixels)
+o446  too small (22 pixels)
+o447  too small (56 pixels)
+o448  too small (56 pixels)
+o449  too small (41 pixels)
+o452  almost like o185
+o453  too small (1 pixels)
+o454  too small (1 pixels)
+o458  too small (24 pixels)
+o463  too small (1 pixels)
+o464  too small (32 pixels)
+o466  duplicate of o465
+o468  almost like o467
+o469  almost like o467
+o470  almost like o467
+o471  almost like o467
+o472  almost like o467
+o473  almost like o467
+o474  almost like o467
+o476  almost like o475
+o477  almost like o475
+o478  almost like o475
+o479  almost like o475
+o480  almost like o475
+o481  almost like o475
+o482  almost like o475
+o483  almost like o475
+o499  too small (59 pixels)
+o512  too small (51 pixels)
+o514  too small (41 pixels)
+o515  too small (28 pixels)
+o528  almost like o525
+o530  almost like o525
+o532  duplicate of o531
+o535  duplicate of o534
+o536  too small (36 pixels)
+o537  too small (36 pixels)
+o538  too small (36 pixels)
+o540  duplicate of o539
+o541  duplicate of o539
+o542  duplicate of o539
+o543  duplicate of o539
+o544  duplicate of o539
+o545  duplicate of o539
+o547  too small (29 pixels)
+o549  duplicate of o548
+o551  duplicate of o550
+o552  duplicate of o550
+o553  duplicate of o550
+o555  duplicate of o554
+o556  duplicate of o554
+o557  duplicate of o554
+r456  duplicate of r457
+r454  from a screen of the game, not a place (menu, vision)
+r453  from a screen of the game, not a place (menu, vision)
+r452  from a screen of the game, not a place (menu, vision)
+r451  from a screen of the game, not a place (menu, vision)
+r450  from a screen of the game, not a place (menu, vision)
+r449  from a screen of the game, not a place (menu, vision)
+r448  from a screen of the game, not a place (menu, vision)
+r447  from a screen of the game, not a place (menu, vision)
+r446  from a screen of the game, not a place (menu, vision)
+r445  from a screen of the game, not a place (menu, vision)
+r444  from a screen of the game, not a place (menu, vision)
+r443  from a screen of the game, not a place (menu, vision)
+r442  from a screen of the game, not a place (menu, vision)
+r441  from a screen of the game, not a place (menu, vision)
+r440  from a screen of the game, not a place (menu, vision)
+r439  from a screen of the game, not a place (menu, vision)
+r438  from a screen of the game, not a place (menu, vision)
+r437  from a screen of the game, not a place (menu, vision)
+r436  from a screen of the game, not a place (menu, vision)
+r435  from a screen of the game, not a place (menu, vision)
+r434  from a screen of the game, not a place (menu, vision)
+r433  from a screen of the game, not a place (menu, vision)
+r432  from a screen of the game, not a place (menu, vision)
+r431  from a screen of the game, not a place (menu, vision)
+r430  from a screen of the game, not a place (menu, vision)
+r429  from a screen of the game, not a place (menu, vision)
+r428  from a screen of the game, not a place (menu, vision)
+r427  from a screen of the game, not a place (menu, vision)
+r426  from a screen of the game, not a place (menu, vision)
+r425  from a screen of the game, not a place (menu, vision)
+r424  from a screen of the game, not a place (menu, vision)
+r423  from a screen of the game, not a place (menu, vision)
+r422  from a screen of the game, not a place (menu, vision)
+r421  from a screen of the game, not a place (menu, vision)
+r420  from a screen of the game, not a place (menu, vision)
+r419  from a screen of the game, not a place (menu, vision)
+r418  from a screen of the game, not a place (menu, vision)
+r417  from a screen of the game, not a place (menu, vision)
+r416  from a screen of the game, not a place (menu, vision)
+r415  from a screen of the game, not a place (menu, vision)
+r414  from a screen of the game, not a place (menu, vision)
+r413  from a screen of the game, not a place (menu, vision)
+r412  from a screen of the game, not a place (menu, vision)
+r411  from a screen of the game, not a place (menu, vision)
+r410  from a screen of the game, not a place (menu, vision)
+r409  from a screen of the game, not a place (menu, vision)
+r408  from a screen of the game, not a place (menu, vision)
+r407  from a screen of the game, not a place (menu, vision)
+r406  from a screen of the game, not a place (menu, vision)
+r405  from a screen of the game, not a place (menu, vision)
+r404  from a screen of the game, not a place (menu, vision)
+r403  from a screen of the game, not a place (menu, vision)
+r402  from a screen of the game, not a place (menu, vision)
+r401  from a screen of the game, not a place (menu, vision)
+r400  from a screen of the game, not a place (menu, vision)
+r399  from a screen of the game, not a place (menu, vision)
+r398  from a screen of the game, not a place (menu, vision)
+r397  from a screen of the game, not a place (menu, vision)
+r396  from a screen of the game, not a place (menu, vision)
+r395  from a screen of the game, not a place (menu, vision)
+r394  from a screen of the game, not a place (menu, vision)
+r393  from a screen of the game, not a place (menu, vision)
+r392  from a screen of the game, not a place (menu, vision)
+r391  from a screen of the game, not a place (menu, vision)
+r390  from a screen of the game, not a place (menu, vision)
+r389  from a screen of the game, not a place (menu, vision)
+r388  from a screen of the game, not a place (menu, vision)
+r387  from a screen of the game, not a place (menu, vision)
+r386  from a screen of the game, not a place (menu, vision)
+r385  from a screen of the game, not a place (menu, vision)
+r384  from a screen of the game, not a place (menu, vision)
+r383  from a screen of the game, not a place (menu, vision)
+r382  from a screen of the game, not a place (menu, vision)
+r381  from a screen of the game, not a place (menu, vision)
+r380  from a screen of the game, not a place (menu, vision)
+r379  from a screen of the game, not a place (menu, vision)
+r378  from a screen of the game, not a place (menu, vision)
+r377  from a screen of the game, not a place (menu, vision)
+r376  from a screen of the game, not a place (menu, vision)
+r375  from a screen of the game, not a place (menu, vision)
+r374  from a screen of the game, not a place (menu, vision)
+r373  from a screen of the game, not a place (menu, vision)
+r372  from a screen of the game, not a place (menu, vision)
+r371  from a screen of the game, not a place (menu, vision)
+r370  from a screen of the game, not a place (menu, vision)
+r369  from a screen of the game, not a place (menu, vision)
+r368  from a screen of the game, not a place (menu, vision)
+r367  from a screen of the game, not a place (menu, vision)
+r366  from a screen of the game, not a place (menu, vision)
+r365  from a screen of the game, not a place (menu, vision)
+r364  from a screen of the game, not a place (menu, vision)
+r363  from a screen of the game, not a place (menu, vision)
+r362  from a screen of the game, not a place (menu, vision)
+r361  from a screen of the game, not a place (menu, vision)
+r360  from a screen of the game, not a place (menu, vision)
+r359  from a screen of the game, not a place (menu, vision)
+r358  from a screen of the game, not a place (menu, vision)
+r357  from a screen of the game, not a place (menu, vision)
+r356  from a screen of the game, not a place (menu, vision)
+r355  from a screen of the game, not a place (menu, vision)
+r354  from a screen of the game, not a place (menu, vision)
+r353  from a screen of the game, not a place (menu, vision)
+r352  from a screen of the game, not a place (menu, vision)
+r351  from a screen of the game, not a place (menu, vision)
+r350  from a screen of the game, not a place (menu, vision)
+r349  from a screen of the game, not a place (menu, vision)
+r348  from a screen of the game, not a place (menu, vision)
+r347  from a screen of the game, not a place (menu, vision)
+r346  from a screen of the game, not a place (menu, vision)
+r345  from a screen of the game, not a place (menu, vision)
+r344  from a screen of the game, not a place (menu, vision)
+r343  from a screen of the game, not a place (menu, vision)
+r342  from a screen of the game, not a place (menu, vision)
+r341  from a screen of the game, not a place (menu, vision)
+r340  from a screen of the game, not a place (menu, vision)
+r339  from a screen of the game, not a place (menu, vision)
+r338  from a screen of the game, not a place (menu, vision)
+r337  from a screen of the game, not a place (menu, vision)
+r336  from a screen of the game, not a place (menu, vision)
+r335  from a screen of the game, not a place (menu, vision)
+r334  from a screen of the game, not a place (menu, vision)
+r333  from a screen of the game, not a place (menu, vision)
+r332  from a screen of the game, not a place (menu, vision)
+r331  from a screen of the game, not a place (menu, vision)
+r330  from a screen of the game, not a place (menu, vision)
+r329  from a screen of the game, not a place (menu, vision)
+r328  from a screen of the game, not a place (menu, vision)
+r325  almost like r326
+r322  from a screen of the game, not a place (menu, vision)
+r321  from a screen of the game, not a place (menu, vision)
+r320  from a screen of the game, not a place (menu, vision)
+r311  duplicate of r312
+r297  duplicate of r298
+r296  almost like r299
+r293  almost like r294
+r292  duplicate of r293
+r291  almost like r294
+r290  almost like r294
+r287  almost like r288
+r286  almost like r288
+r285  almost like r288
+r281  duplicate of r282
+r280  duplicate of r282
+r275  duplicate of r282
+r274  almost like r316
+r273  duplicate of e273_1
+r270  duplicate of r271
+r269  duplicate of r315
+r251  almost like r252
+r246  almost like r247
+r233  almost like r234
+r229  duplicate of r230
+r224  almost like r226
+r219  almost like r220
+r216  almost like r217
+r214  almost like r215
+r211  almost like r212
+r209  almost like r210
+r207  almost like r208
+r205  almost like r206
+r204  almost like r206
+r203  almost like r206
+r199  almost like r200
+r197  almost like r198
+r195  almost like r196
+r192  almost like r194
+r191  almost like r194
+r186  almost like r188
+r185  almost like r188
+r183  almost like r188
+r182  almost like r188
+r175  almost like r179
+r172  almost like r178
+r171  almost like r178
+r170  almost like r178
+r169  almost like r178
+r168  almost like r178
+r159  duplicate of r160
+r158  almost like r162
+r155  almost like r188
+r154  almost like r188
+r153  almost like r181
+r152  almost like r188
+r150  almost like r151
+r145  almost like r161
+r143  almost like r161
+r139  almost like r161
+r133  almost like r134
+r132  duplicate of r133
+r131  almost like r165
+r123  almost like r177
+r119  almost like r165
+r115  duplicate of r116
+r114  almost like r165
+r110  almost like r165
+r104  almost like r161
+r102  almost like r161
+r100  almost like r174
+r98  almost like r165
+r90  almost like r177
+r89  almost like r188
+r88  almost like r179
+r86  almost like r91
+r85  almost like r91
+r82  almost like r83
+r81  almost like r83
+r78  almost like r79
+r77  almost like r79
+r70  almost like r72
+r68  almost like r165
+r63  almost like r64
+r60  almost like r177
+r56  almost like r161
+r48  almost like r177
+r35  almost like r161
+r30  almost like r177
+r27  duplicate of r145
+r10  from a screen of the game, not a place (menu, vision)
+r9  from a screen of the game, not a place (menu, vision)
+r8  from a screen of the game, not a place (menu, vision)
+r7  almost like r161
+r5  duplicate of r195
+r4  duplicate of r196
+r3  duplicate of r324
+r2  duplicate of r323
+r0  duplicate of r282

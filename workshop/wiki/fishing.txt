@@ -1,0 +1,50 @@
+# The Wiki's pages: fishing, at sea (workshop/src/wiki/written.rs).
+# A fisher's rod is drawn on a variant (pikachu_pecheur, painted from your own copy
+# of the game); with a plain Pokémon the line plays without the rod, and the
+# Script says so: the examples use Pikachu, so they play everywhere.
+
+== release
+> He lets his catch go: it thanks him and jumps back into the water.
+uses fishing
+scene: beach pikachu piplup
+pikachu cast at 330 152
+bite
+pikachu reel catch magikarp
+pikachu release
+
+== ride
+> Someone hops onto another's back and stays there, wherever it swims.
+scene: beach pikachu lapras
+pikachu ride lapras
+lapras walk to right
+
+== bite
+> A fish bites the line in the water (the last one cast): the bobber dives, a splash, the fisher starts. bite strong: it is yanked under, the rod pulls him forward; bite nibble: it only touches, the bobber quivers twice and he wonders.
+uses fishing
+scene: beach pikachu piplup
+pikachu cast at 330 152
+bite nibble
+pikachu: Hm?
+bite strong
+pikachu (surprised): A big one!
+pikachu reel catch magikarp
+
+== reel
+> He winds the line in on the reel, one click per turn: the bobber comes back to his feet. reel catch and what bit: it flies out of the water and lands beside him; reel snap: the line snaps; reel lose: the fish gets away, the line comes back empty.
+uses fishing
+scene: beach pikachu piplup
+pikachu cast at 330 152
+bite
+pikachu reel lose
+pikachu (sad): It got away...
+pikachu cast at 330 152
+bite
+pikachu reel catch magikarp
+pikachu (joyous): Got it!
+
+== cast
+> A fisher casts his line: his swing, the line flying out, the bobber landing on the water (there, or before him). The rod is drawn on a fisher's variant of his sprite.
+uses fishing
+scene: beach pikachu piplup
+pikachu cast at 330 140
+pikachu: Come on, fishies...

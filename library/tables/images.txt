@@ -1,0 +1,242 @@
+# The game's pictures no one walks on, by what a look at each shows:
+#   <level> <category> <name> [<x> <y>]    x y: what the view is on, else its middle
+#
+# sky, sea, landscape, night, time (the stopped world), light (flashes and
+# plain colours), poster (notices, objects, close-ups), map, title, ending:
+# for films. screen: the game's own screens: not for films.
+
+# The sky
+338 sky evening_sky
+348 sky dark_clouds
+377 sky night_clouds
+402 sky blue_sky
+438 sky pink_clouds
+441 sky dawn_sky
+305 sky plain_sky
+10 sky island_in_the_clouds 156 440
+10 sky clear_sky 156 96
+362 sky island_in_the_clouds2 156 440
+400 sky cliff_in_the_sky
+243 sky golden_clouds
+
+# The sea
+8 sea stormy_sea
+336 sea stormy_sea2
+328 sea cliff_waves
+9 sea cliff_night 126 120
+301 sea sea_horizon
+396 sea sea_day
+398 sea sea_day2
+403 sea sea_day3
+330 sea bay_day
+331 sea bay_sunset
+332 sea bay_sunset2
+333 sea krabby_beach
+389 sea sunset
+390 sea sunset2
+413 sea sunset3
+393 sea cave_sunset
+241 sea coast_night
+
+# Landscapes
+308 landscape hills
+308 sky hills_sky 132 96
+308 landscape meadow 132 480
+415 landscape hill_day
+416 landscape foliage
+422 landscape cliff_cave
+425 landscape mountains
+426 landscape jungle_temple 128 144
+428 landscape distant_mountain 128 144
+429 landscape field_of_flowers 128 288
+429 landscape meadow_flowers 128 480
+429 sky dazzled_sky 128 96
+430 landscape sky_and_flowers 128 670
+430 sky sea_of_clouds 128 500
+430 night stars_above 128 100
+443 landscape hill_trees
+445 landscape red_rocks
+386 landscape dragon_rock 128 96
+387 landscape canyon_evening
+388 landscape canyon_day
+272 landscape turtle_island
+365 landscape floating_island
+300 landscape town_from_the_sky 180 470
+307 landscape lake_path
+278 landscape cave_path
+306 landscape cave_of_spikes
+434 landscape dark_mountains
+439 landscape glowing_peaks 132 110
+440 landscape rocks_night 132 280
+
+# The night
+341 night moon_clouds
+391 night moon_sea
+395 night sea_night
+423 night starry_night
+444 night forest_night
+366 night lake_night
+367 night fountain_night 156 190
+367 night fountain_foot 156 310
+414 night night_to_dawn 156 660
+414 night night_far_above 156 100
+414 sky pastel_sky 156 900
+414 landscape desert_at_dawn 156 1220
+373 night crystal_night 156 444
+373 night crystal_glow 156 640
+370 night cavern_glow
+435 night aurora
+
+# The stopped world and Temporal Tower
+401 time distant_tower
+404 time vortex_tower
+405 time vortex_tower2
+406 time red_vortex
+407 time red_gate
+408 time green_gate
+409 time island_tower
+410 time falling_tower
+411 time lone_tower
+352 time lava_titan 156 168
+353 time frozen_sky
+381 time frozen_stones
+360 time grey_hill
+361 time grey_foliage
+264 time grey_dead_tree 180 252
+378 time floating_rocks
+431 time grey_peaks
+432 time white_peaks
+436 time grey_sunrise
+437 time sunrise
+442 time dead_trees 240 340
+380 time red_eyes 780 120
+384 time red_eye
+
+# Light and colours
+317 light warm_light 128 96
+318 light hearts 128 96
+319 light flash
+376 light tunnel_of_light
+359 light dazzled_window
+358 light round_window
+274 light green_backdrop
+273 light red_waves
+363 light green_waves
+424 light green_waves2
+
+# Posters, objects, close-ups
+335 poster engraved_stone
+339 poster floor_grate
+342 poster job_board
+344 poster guild_board
+345 poster empty_board
+347 poster fearow_notice
+356 poster guild_poster
+364 poster ancient_tablet
+369 poster froakie_notice
+427 poster gengar_notice 128 96
+343 poster open_chest 128 96
+302 poster treasure 132 96
+303 poster job_items 132 96
+309 poster guild_sheet 128 96
+334 poster krabby_on_rocks
+337 poster wigglytuff_house 132 150
+337 poster wigglytuff_gate 132 400
+394 poster fresco
+284 poster red_fresco 132 96
+446 poster green_seal 128 144
+304 poster shadows_in_the_dark 156 288
+
+# Maps
+2 map town_map
+3 map town_map2
+269 map dark_island_map 128 96
+310 map route_map
+311 map world_map
+312 map world_map2
+313 map world_map3
+314 map ice_map 128 96
+315 map ancient_island_map 128 96
+
+# Titles
+277 title title_mystery_dungeon 128 96
+296 title title_donjon_mystere 128 96
+295 title title_mystery_dungeon2 128 96
+298 title title_mystery_dungeon3 128 96
+297 title title_mystery_dungeon4 128 96
+299 title title_mundo_misterioso 128 96
+455 title title_donjon_mystere2 128 96
+456 title title_mystery_dungeon5 128 96
+457 title title_mystery_dungeon6 128 96
+458 title title_mundo_misterioso2 128 96
+290 screen title_backdrop
+291 screen title_backdrop2
+292 screen title_backdrop3
+293 screen title_backdrop4
+294 screen title_backdrop5
+
+# Endings
+418 ending end_screen_fr
+417 ending end_screen
+419 ending end_screen_de
+420 ending end_screen_it
+421 ending end_screen_fr2
+
+# Sheets, cell by cell
+355 poster grovyle 156 120
+355 poster grovyle_silhouette 468 120
+329 landscape dragon_rock_night 144 108
+329 landscape dragon_rock_lightning 432 108
+371 landscape cave_pillars
+372 landscape cave_pillars2
+285 title presents_en 132 96
+285 title title_explorers 396 96
+286 title presents_fr 132 96
+286 title title_explorateurs_du_ciel 396 96
+287 title presents_de 132 96
+287 title title_erkundungsteam 396 96
+288 title presents_it 132 96
+288 title title_esploratori 396 96
+289 title presents_es 132 96
+289 title title_exploradores 396 96
+
+# Animations: anim <level> <category> <name> <cols> <rows> <frames> <cells>
+anim 268 map mist_lifting 2 4 30 0,1,2,3,4,5,6,7
+anim 368 light eclipse 4 1 10 0,1,2,3
+anim 380 time eyes_opening 3 1 14 0,1,2
+anim 382 time shockwave 3 3 6 0,1,2,3,4,5,6,7,8
+anim 383 time shining_crest 3 1 12 0,1,2
+anim 385 light broken_pane 3 2 12 0,1,2,4,3,5
+anim 397 sea fin 3 3 8 0,1,2,3,4,5,6,7,8
+anim 399 sky island_approaching 3 3 16 0,1,2,3,4,5,6,7,8
+anim 412 sea sparkling_sea 3 3 8 0,1,2,3,4,5,6,7
+anim 433 time struck_peak 3 2 5 0,3,4,1,2,5
+
+# The game's screens
+0 screen white_black
+275 screen white_black2
+276 screen logos
+279 screen black
+280 screen white_black3
+281 screen white_black4
+282 screen white_black5
+283 screen menu
+316 screen black2
+320 screen warning
+321 screen rating
+322 screen title_screen
+447 screen warning_fr
+448 screen warning_de
+449 screen warning_it
+450 screen warning_es
+451 screen title_screen_fr
+452 screen title_screen_de
+453 screen title_screen_it
+454 screen title_screen_es
+6 screen game_plan
+84 screen bottle_plan
+85 screen bottle_plan2
+86 screen bottle_plan3
+88 screen cave_plan
+175 screen green_plan
+179 screen brown_plan

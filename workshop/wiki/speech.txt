@@ -1,0 +1,124 @@
+# The Wiki's pages written by hand: what a word does, said for an author,
+# and a little film of our own as its example (workshop/src/wiki/written.rs).
+# A page: `== word`, its `> ` lines, then its example (a `scene:` in it).
+# A word with no page here gets one made from its forms.
+#
+# This file: speaking, the film's own lines (scene, title, blocks).
+
+== scene
+> Opens a scene: a place, and who is there from the start. They are placed on their own, spread out and turned towards each other; everything until the next scene happens there.
+scene: beach pikachu piplup
+pikachu (happy): What a nice day!
+piplup: Let's go for a swim.
+
+== title
+> The film's title, shown alone on the dark before its first scene.
+title The Big Swim
+scene: beach pikachu piplup
+pikachu: Ready?
+
+== transition
+> How a scene goes to the next, written just before it: fade (to black, the default), white, boss (the white flashes before a boss), wipe, iris (the circle closes on the last one who spoke) or cut. With in or out it plays now, in the middle of a scene: transition fade out 1s, then transition fade in.
+scene: beach pikachu piplup
+pikachu: Let's go home.
+transition iris
+scene: beach_evening pikachu piplup
+piplup: Home at last.
+
+== define
+> Makes a recipe of your own: a name for a few lines, called later like any word. What follows its name are the words it is given.
+scene: beach pikachu piplup
+define greet who:pokemon
+  jump who
+  emote who joy
+end
+pikachu greet
+piplup greet
+
+== repeat
+> Plays the lines up to its end so many times.
+scene: beach pikachu piplup
+repeat 3
+  pikachu jump
+end
+piplup: Show-off!
+
+== else
+> In an if block, the lines played when the test is false.
+scene: beach pikachu piplup
+if chance(50)
+  pikachu: Heads!
+else
+  pikachu: Tails!
+end
+
+== end
+> Closes a block: a recipe, a repeat, together, beside, a choice, a memory…
+scene: beach pikachu piplup
+together
+  pikachu jump
+  piplup jump
+end
+
+== choice
+> The player chooses an answer: one option line each, the lines under it played if it is chosen, then the film comes back together after end.
+scene: beach pikachu piplup
+pikachu: Shall we swim?
+choice
+option Yes!
+  piplup (joyous): Last one in is a Slowpoke!
+option Not now
+  piplup (sad): Oh, all right...
+end
+
+== popup
+> Words that float up from someone and fade, like a number of damage or a little "+1".
+scene: beach pikachu piplup
+pikachu jump
+pikachu popup white +1
+
+== bubble
+> A speech bubble over someone, without the dialogue box: the film goes on at once.
+scene: beach pikachu piplup
+pikachu bubble Look!
+piplup walk to center
+
+== box
+> Where the dialogue box stands. auto, as each scene starts: where it hides no one who speaks, as the game has it, at the foot of the screen and at the top for a line of someone standing low. top or bottom: kept there for the rest of the scene, whoever speaks.
+scene: town pikachu piplup
+piplup walk to 360 290
+pikachu: Piplup? Where are you?
+piplup: Down here!
+box top
+pikachu: The box stays up here now.
+box auto
+pikachu: And back where it hides no one.
+
+== think
+> Someone thinks a line: in the box, with their portrait and its face, the words in brackets as the game writes a thought. Nobody around hears it.
+scene: beach pikachu piplup
+piplup: Pikachu, look at the sea!
+pikachu think (worried): It looks so cold...
+pikachu (happy): It's lovely!
+
+== narrate
+> Words of no one's: in the box with no name nor portrait (narrate:, or narrate box:), centred on the screen over the scene (narrate screen:), or read on a sign, centred in the box (narrate sign:).
+scene: beach pikachu piplup
+narrate screen: The next morning...
+narrate: The sea was calm.
+narrate sign: Beware of the waves!
+pikachu (worried): Waves?
+
+== explain
+> Someone takes the floor to explain, as the game's explaining routine: stepping on the spot a moment, then standing still. Their lines follow.
+scene: beach pikachu piplup
+piplup (surprised): How does the tide work?
+pikachu explain
+pikachu (happy): Twice a day, the sea comes up the beach!
+
+== whisper
+> Someone tells the other a secret: they step up close, the other listens, notices something, and nods. The words follow, said low.
+scene: beach pikachu piplup
+pikachu whisper piplup
+pikachu (worried): ...Don't tell anyone.
+piplup: Promise.

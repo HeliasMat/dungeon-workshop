@@ -1,0 +1,338 @@
+# The kind of each place, as the lists of decors group them: each place of the game (by its level)
+# and each decor of the library and of the games (by its name). Written by hand, from the places'
+# names and their pictures (decor labels <folder> places); our words only.
+#
+#   place | kind [| our name, for a place the game leaves unnamed]
+#
+# Kinds: town, beach (beach & sea), forest (forest & grove), cave (cave & mountain),
+# guild (guild & interiors), dungeon (dungeon entrances), other.
+
+# The game's places
+0 | other | blank screen
+1 | beach
+2 | beach
+3 | beach
+4 | beach
+5 | beach
+6 | beach
+7 | beach
+11 | beach
+12 | beach
+13 | beach
+14 | cave
+15 | cave
+16 | cave
+17 | cave
+18 | beach
+19 | beach
+20 | beach
+21 | forest
+22 | forest
+23 | dungeon
+24 | dungeon
+25 | dungeon
+26 | dungeon
+27 | cave
+28 | cave
+29 | forest
+30 | forest
+31 | forest
+32 | cave
+33 | beach
+34 | beach
+35 | cave
+36 | beach
+37 | beach
+38 | cave
+39 | beach
+40 | beach
+41 | beach
+42 | beach
+43 | beach
+44 | beach
+45 | dungeon
+46 | dungeon
+47 | dungeon
+48 | beach
+49 | beach
+50 | dungeon
+51 | dungeon
+52 | dungeon
+53 | cave
+54 | cave
+55 | dungeon
+56 | cave
+57 | cave
+58 | cave
+59 | dungeon
+60 | forest
+61 | cave
+62 | cave
+63 | cave
+64 | cave
+65 | cave
+66 | cave
+67 | dungeon
+68 | other
+69 | other
+70 | other
+71 | other
+72 | other
+73 | other
+74 | dungeon
+75 | beach
+76 | beach
+77 | cave
+78 | cave
+79 | cave
+80 | cave
+81 | cave
+82 | cave
+83 | cave
+84 | cave
+85 | cave
+86 | cave
+87 | cave
+88 | beach
+89 | beach
+90 | beach
+91 | beach
+92 | cave
+93 | cave
+94 | cave
+95 | cave
+96 | cave
+97 | dungeon
+98 | cave
+99 | cave
+100 | cave
+101 | cave
+102 | cave
+103 | cave
+104 | cave
+105 | cave
+106 | cave
+107 | cave
+108 | cave
+109 | cave
+110 | cave
+111 | cave
+112 | cave
+113 | dungeon
+114 | cave
+115 | cave
+116 | cave
+117 | dungeon
+118 | dungeon
+119 | other
+120 | cave
+121 | dungeon
+122 | cave
+123 | cave
+124 | cave
+125 | dungeon
+126 | dungeon
+127 | forest
+128 | forest
+129 | dungeon
+130 | dungeon
+131 | cave
+132 | cave
+133 | cave
+134 | cave
+135 | dungeon
+136 | cave
+137 | cave
+138 | cave
+139 | cave
+140 | cave
+141 | guild
+142 | cave
+143 | cave
+144 | cave
+145 | cave
+146 | cave
+147 | cave
+148 | cave
+149 | cave
+150 | other | orange keyhole shape
+151 | beach
+152 | cave
+153 | cave
+154 | cave
+155 | other
+156 | town
+157 | other
+158 | other
+159 | other
+160 | other
+161 | other
+162 | other
+163 | other
+164 | other
+165 | other
+166 | cave
+167 | cave
+168 | cave
+169 | cave
+170 | cave
+171 | cave
+172 | other
+173 | cave
+174 | forest
+175 | beach
+176 | dungeon
+177 | cave
+178 | cave
+179 | beach
+180 | cave
+181 | cave
+182 | forest
+183 | forest
+184 | beach
+185 | beach
+186 | beach
+187 | beach
+188 | beach
+189 | other
+190 | forest
+191 | forest
+192 | cave
+193 | forest
+194 | beach
+195 | guild
+196 | guild
+197 | guild
+198 | guild
+199 | guild
+200 | guild
+201 | guild
+202 | guild
+203 | guild
+204 | guild
+205 | guild
+206 | guild
+207 | guild
+208 | guild
+209 | guild
+210 | guild
+211 | guild
+212 | guild
+213 | guild
+214 | guild
+215 | guild
+216 | guild
+217 | guild
+218 | beach
+219 | beach
+220 | beach
+221 | beach
+222 | beach
+223 | beach
+224 | town
+225 | beach
+226 | town
+227 | guild
+228 | cave
+229 | forest | grove under waterfalls
+230 | forest | grove under waterfalls
+231 | forest | narrow path at night
+232 | other | ruined stone floor in the dark
+233 | guild
+234 | guild
+235 | other | dark place with a small shrine
+236 | cave | grey cliff at night
+237 | cave | grey wasteland at night
+238 | cave | grey rocks at night
+239 | forest
+240 | cave | grey rocky plateau with ruins
+241 | beach | dark sea and reef
+242 | cave | cave passage with light
+243 | other | sea of golden clouds with a rainbow
+244 | other | golden clouds with floating rocks
+245 | other | golden clouds with floating rocks
+246 | cave
+247 | forest | glowing spring in a forest
+248 | other | small meadow in the dark
+249 | forest
+250 | guild
+251 | guild
+252 | guild
+253 | forest | blue forest edge
+254 | guild
+255 | guild
+256 | cave
+257 | cave
+258 | cave
+259 | forest | meadow with mist
+260 | forest | sunlit stone path
+261 | cave | dark grey wasteland
+262 | cave | dark grey wasteland
+263 | beach | rocky islet in a dark sea
+264 | cave | snowy grove of dead trees
+265 | cave | round stone chamber
+266 | cave | earth mound in a cave
+267 | cave | teal crystal cave
+268 | other | sand panels
+269 | other | map of an island
+270 | beach
+271 | beach
+272 | forest | jungle with a big stone head
+273 | other | red zigzag screen
+274 | other | green screen
+275 | other | blank screen
+276 | other | credits screen
+277 | other | title menu
+278 | cave | purple cave corridor
+279 | other | blank screen
+280 | other | blank screen
+281 | other | blank screen
+282 | other | blank screen
+283 | other | green panels menu
+284 | other | red swirl
+285 | other | title screen
+286 | other | title screen
+287 | other | title screen
+288 | other | title screen
+289 | other | title screen
+290 | other | title screen
+291 | other | title screen
+292 | other | title screen
+293 | other | title screen
+294 | other | title screen
+295 | other | title screen
+296 | other | title screen
+297 | other | title screen
+298 | other | title screen
+299 | other | title screen
+300 | town | sky over a town
+301 | beach | sky over the sea
+302 | other | treasure on a table
+303 | other | explorer things on a table
+304 | other | dark pit with vines
+305 | forest | open plain under a blue sky
+306 | cave | dark cavern
+307 | cave | dark cave corridor
+308 | forest | green hills under the sky
+309 | other | wooden emblem board
+310 | other | golden map
+311 | other | world map
+312 | other | world map
+313 | other | world map
+314 | other | map of a frozen island
+315 | other | map of a dark island
+316 | other | black screen
+317 | other | yellow glow
+318 | other | pink hearts
+319 | other | two lights on a line
+323 | town
+324 | town
+325 | guild
+326 | guild
+327 | beach
+455 | other | title screen
+456 | other | title screen
+457 | other | title screen
+458 | other | title screen
+
+# The decors

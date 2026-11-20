@@ -1,0 +1,26 @@
+[package]
+name = "dungeon_lsp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "A language server for the films, games and decors: the Workshop's help in any editor"
+readme = "README.md"
+publish.workspace = true
+
+# The Language Server Protocol over stdin and stdout, its framing written
+# here: what the film service says (diagnostics, fixes, completion, help,
+# definitions), the language's errors for a game and the whole game checked
+# (game's project_check), the decor reader's.
+[dependencies]
+assets = { path = "../assets" }
+decor = { path = "../decor" }
+game = { path = "../game" }
+film = { path = "../film" }
+language = { path = "../language" }
+serde_json.workspace = true
+
+[[bin]]
+name = "dungeon_lsp"
+path = "src/main.rs"

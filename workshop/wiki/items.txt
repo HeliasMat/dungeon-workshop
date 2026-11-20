@@ -1,0 +1,45 @@
+# The Wiki's pages: things held, given, put down; tools, crops (workshop/src/wiki/written.rs).
+
+== hold
+> Someone holds an item in their hands, its icon from the game (on the side they face); it follows their jumps and walks.
+scene: beach pikachu piplup
+pikachu hold Oran Berry
+pikachu: For you!
+
+== give
+> An item passes from someone's hands to someone else's, through the air.
+scene: beach pikachu piplup
+pikachu hold Oran Berry
+pikachu give Oran Berry to piplup
+piplup: Thanks!
+
+== drop
+> Someone lets go of what they hold: it falls at their feet; at a place, it is set down there.
+scene: beach pikachu piplup
+pikachu hold Apple
+pikachu drop
+pikachu (surprised): Oops!
+
+== throw
+> Someone throws an item at someone (an arc, a shadow; it hits them, unless they catch it) or at a place, where it lands and stays.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu hold Apple
+pikachu throw Apple at piplup
+piplup (pain): Hey!
+
+== open
+> A thing of the scene plays its animation up to its end: a chest opens.
+scene: beach pikachu piplup
+put object chest right_of pikachu
+open chest
+pikachu (joyous): It's open!
+
+== close
+> A thing of the scene goes back to its first picture: a chest closes.
+scene: beach pikachu piplup
+put object chest right_of pikachu
+open chest
+close chest
+

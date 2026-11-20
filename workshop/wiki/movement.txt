@@ -1,0 +1,76 @@
+# The Wiki's pages: the Movement family, going about (workshop/src/wiki/written.rs).
+
+== walk
+> Someone walks to a place or to someone, step by step: slow or brisk sets the pace, backward walks with their back to where they go, via a b goes by those places first. The film waits until they get there; end the line with & to go on at once.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu walk to center brisk
+piplup walk to pikachu slow
+pikachu walk to left backward
+piplup: There you are!
+
+== run
+> Like walk, at a run: someone runs to a place (or to someone), and the film waits until they arrive.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu run to piplup
+piplup (surprised): Whoa, slow down!
+
+== shift
+> Someone slides a little without walking, still looking the same way: to a place, or by so many pixels (by 16 0), to make room or be pushed aside.
+scene: beach pikachu piplup
+pikachu: Move over a bit.
+piplup shift by 24 0
+piplup (worried): Sorry!
+
+== jump
+> Someone leaps up, higher than a hop, as the game moves a body up and down: on the spot, or to a place or someone (jump to right_of piplup); height sets how high.
+scene: beach pikachu piplup
+pikachu (joyous): Watch this!
+pikachu jump to right_of piplup height 24
+piplup (surprised): Wow!
+
+== hop
+> The game's little hop, its gesture number one: the sprite's Hop animation; happy, surprised or angry add the game's emote and its sound (angry: two quick hops); times repeats it.
+scene: beach pikachu piplup
+pikachu (happy): We did it!
+pikachu hop happy times 2
+piplup hop surprised
+piplup: Really?
+
+== follow
+> Someone follows another wherever they go, a step behind, until follow off.
+scene: beach pikachu piplup
+piplup follow pikachu
+pikachu walk to right
+pikachu: Still there?
+piplup follow off
+piplup: Yes!
+
+== chase
+> Someone runs after another, keeping on their heels, until chase off.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+piplup chase pikachu
+pikachu run to right
+piplup chase off
+pikachu (worried): Stop it!
+
+== flee
+> Someone runs away from another: to a place, or a little way off.
+scene: beach pikachu piplup
+piplup (angry): Come here, you!
+pikachu flee from piplup to left
+pikachu (worried): No way!
+
+== wander
+> Someone strolls about where they are, now and then, until wander off.
+scene: beach pikachu piplup
+pikachu wander
+piplup: Nice day for a walk.
+wait 2s
+pikachu wander off
+pikachu: It is!

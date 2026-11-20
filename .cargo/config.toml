@@ -1,0 +1,3 @@
+# Building with every core ran rustc out of memory here (6 GB machine).
+[build]
+jobs = 3

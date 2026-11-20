@@ -1,0 +1,127 @@
+# The gestures of the library: what each one does, in the words of the
+# language. `_evolution` is the library's own (`who evolve species`), never
+# written in a film.
+
+# He evolves: slowed, a silhouette growing and shrinking, a flash, then what he becomes.
+define _evolution who:word form:word
+  tempo 0.5
+  who colour 0 0 0 30f
+  wait who
+  repeat 3
+    who scale 1.3 12f
+    wait who
+    who scale 1 12f
+    wait who
+  end
+  flash white
+  who disguise form
+  particles sparks who 40 white
+  who uncolour 40f
+  wait who
+  tempo 1
+  sound alert
+end
+
+define hug who:pokemon other:pokemon
+  who run to other
+  who face other
+  other face who
+  who hop happy &
+  other hop happy
+end
+
+define whisper who:pokemon other:pokemon
+  who walk to other
+  who face other
+  other face who
+  wait 0.5s
+  other emote notice
+  wait 0.5s
+  other nod
+end
+
+define comfort who:pokemon other:pokemon
+  who walk to other
+  who face other
+  other face who
+  wait 0.5s
+  who nod
+  wait 0.3s
+  other emote joy
+  other hop
+end
+
+define explain who:pokemon
+  who pose walk loop
+  wait 0.75s
+  who pose off
+  wait 0.5s
+end
+
+define cower who:pokemon from other:pokemon
+  who face other
+  who pose cringe
+  who tremble
+  who emote sweat
+  wait 0.5s
+  who tremble off
+end
+
+define cower who:pokemon
+  who pose cringe
+  who tremble
+  who emote sweat
+  wait 0.5s
+  who tremble off
+end
+
+define cheer who:pokemon
+  who hop happy times 2
+  who pose proud
+  wait 0.5s
+end
+
+define sigh who:pokemon
+  who pose breathe
+  wait 0.3s
+  who emote sweat
+  wait 0.7s
+end
+
+define react who:pokemon joy
+  who hop happy
+end
+
+define react who:pokemon surprise
+  who emote exclaim
+  who hop
+end
+
+define react who:pokemon anger
+  who hop angry
+end
+
+define react who:pokemon fear
+  who emote sweat
+  who pose cringe
+  wait 0.7s
+  who pose off
+end
+
+define react who:pokemon doubt
+  who emote question
+  wait 0.7s
+end
+
+define react who:pokemon relief
+  who pose breathe
+  wait 0.3s
+  who emote joy silent
+  wait 0.5s
+end
+
+# He turns half see-through and floats, as a ghost does.
+define ghost who:pokemon
+  who opacity 0.5 30f &
+  who float 5 70f
+end

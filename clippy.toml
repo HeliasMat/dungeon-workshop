@@ -1,0 +1,6 @@
+# What drawing and the original's own routines need: many plain numbers.
+too-many-arguments-threshold = 12
+# What is wrong is said whole (`diagnostics::Diagnostic`: its code, where,
+# its message, notes and fixes), returned as it is by the language and
+# the decors rather than boxed at every step.
+large-error-threshold = 256

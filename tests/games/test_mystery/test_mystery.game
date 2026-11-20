@@ -1,0 +1,79 @@
+# A game of the tests only (Test Mystery): never offered by the Workshop.
+title: Test Mystery
+author: the tests
+team: riolu pachirisu
+home: test_harbour right
+
+chapter 1 "Chapter 1"
+  play opening
+  open test_harbour
+  go test_harbour right
+  on zone tideline if not saw_trail
+    play clue_one
+    set saw_trail
+  end
+  on talk corphish if not saw_trail
+    play clue_one
+    set saw_trail
+  end
+  on talk sableye if not met_sableye
+    play the_choice
+    set met_sableye
+  end
+  on talk wingull if saw_trail and met_sableye
+    play to_the_garden
+    open test_garden
+    open test_plaza
+    chapter 2
+  end
+  on talk pelipper
+    map
+  end
+end
+
+chapter 2 "Chapter 2"
+  play garden
+  go test_garden down
+  on zone lamp_stairs if not felt_cold
+    play clue_two
+    set felt_cold
+  end
+  on talk mareep if not felt_cold
+    play clue_two
+    set felt_cold
+  end
+  on talk ampharos if felt_cold
+    play night
+    chapter 3
+  end
+  on talk pelipper
+    map
+  end
+end
+
+chapter 3 "Chapter 3"
+  play morning
+  go test_harbour right
+  on talk sableye if not got_gift
+    play gift
+    if heard_sableye
+      give 2 Reviver Seed
+    else
+      give 1 Oran Berry
+    end
+    set got_gift
+  end
+  on talk wingull
+    play to_the_fight
+    fight test_thief
+    if won
+      play ending
+      finish
+    else
+      play fight_lost
+    end
+  end
+  on talk pelipper
+    map
+  end
+end

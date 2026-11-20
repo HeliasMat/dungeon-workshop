@@ -1,0 +1,5 @@
+# What a fight and a film say alike, one word and its value on each line.
+# Read by scenes/src/fight/said.rs, for fights and films alike.
+level {who} grew to level {level}!
+log 150
+reading 80 2

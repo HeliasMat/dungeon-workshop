@@ -1,0 +1,15 @@
+# The Wiki's pages: bodies, gestures, emotions (workshop/src/wiki/written.rs).
+
+== status
+> The game's status icon over someone, as in a dungeon: sleep, burn, poison, frozen, confused, cringe…; status off takes it away. A stat up or down: the game's own arrows over them.
+scene: beach pikachu piplup
+piplup status sleep
+pikachu: He fell asleep...
+pikachu status attack up
+
+
+== ghost
+> A ghost: half visible, he floats.
+scene: beach pikachu piplup
+pikachu ghost
+piplup (worried): Pikachu...?

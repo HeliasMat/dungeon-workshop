@@ -1,0 +1,59 @@
+0	Nothing
+1	Iron Tail
+14	Hail
+16	Bubble
+17	Encore
+18	Cut
+19	Rage
+29	Rock Smash
+30	Rock Slide
+32	Whirlpool
+48	Return
+49	Grudge
+50	Strength
+57	Gust
+63	Bite
+69	Clamp
+87	Crabhammer
+118	Earthquake
+123	Selfdestruct
+125	Bind
+128	Charge
+129	Thunderbolt
+130	Mist
+141	Sandstorm
+154	Tackle
+155	Explosion
+156	Dive
+158	Waterfall
+174	Peck
+186	Iron Defense
+188	ThunderShock
+194	Block
+197	Toxic
+205	Bounce
+214	Thief
+219	Surf
+224	Leer
+232	Rest
+237	Curse
+240	Hydro Pump
+254	Splash
+260	Scratch
+273	Flash
+277	Present
+282	Transform
+295	Spikes
+301	Protect
+334	Snatch
+352	Struggle
+369	Warp
+385	Escape
+395	Reviver
+397	Echo
+405	projectile
+446	Chatter
+473	Zen Headbutt
+480	Stealth Rock
+496	Toxic Spikes
+497	Last Resort

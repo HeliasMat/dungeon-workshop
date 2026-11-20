@@ -1,0 +1,19 @@
+[package]
+name = "spritecollab"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The PMDCollab community's sprites and faces fetched by git and imported into data/extra; SpriteBot's layout written and read"
+readme = "../README.md"
+publish.workspace = true
+
+# An import tool, run by the Workshop's Tools › SpriteCollab… and a
+# Pokémon's Inspector: it runs git and reads the network, which no other
+# block of the bottom does. No window, no sound.
+[dependencies]
+assets = { path = "../assets" }
+image.workspace = true
+# The community's list of Pokémon (SpriteCollab's tracker.json).
+serde_json.workspace = true

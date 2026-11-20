@@ -1,0 +1,81 @@
+decor: test_square 896 672
+name Test Square
+center 416 376
+entrance 416 664 south
+entrance 8 376 west
+entrance 600 376 bridge
+like 323 324
+level 484
+ground herbe_bourg
+path terre_bourg from 416 672 to 416 376 width 40
+path terre_bourg from 0 376 to 640 376 width 32
+path terre_bourg from 416 376 to 416 208 width 32
+
+water a323_1 640 0
+water a323_2 664 0
+water a323_1 640 168
+water a323_2 664 168
+water a323_4 720 320
+water a323_6 640 400
+water a323_7 720 400
+water a323_8 784 400
+water a323_13 688 448
+
+put e324_4 368 88
+put e324_5 352 136
+
+put e323_16 64 232
+put e323_20 64 280
+put e323_21 120 280
+put e324_14 160 248, 192 264
+
+put e323_24 464 440
+put e323_24 512 448
+put e324_14 560 432
+
+put e323_7 288 616
+
+
+put e156_3 -4 -32, 108 -32, 548 552, -4 552, 92 560
+put e156_73 536 0
+put e156_74 536 0
+put e156_3 516 208
+
+
+scatter e156_15 6 zone 16 160 620 660
+
+put e156_3 716 -24, 804 40, 716 128, 804 200, 724 264
+
+
+[life]
+music 86
+
+resident kecleon 470 330 down
+says if chapter = 1: Said if chapter = 1.
+says if chapter = 1: Said if chapter = 1.
+says if chapter >= 2: Said if chapter >= 2.
+talk shop
+
+resident bibarel 360 330 down
+says if chapter = 1: Said if chapter = 1.
+says if chapter >= 2: Said if chapter >= 2.
+
+resident marill 470 420 left
+says if chapter = 1: Said if chapter = 1.
+says if chapter >= 2: Said if chapter >= 2.
+
+resident noctowl 416 230 down
+says if chapter = 1: Said if chapter = 1.
+says if chapter >= 2: Said if chapter >= 2.
+
+resident blissey 300 420 right
+says Test line.
+says Test line.
+
+resident azurill 520 430 left wanders 24 if chapter >= 2
+says Test line.
+says Test line.
+
+resident ursaring 230 370 right if chapter >= 2
+says Test line.
+says Test line.

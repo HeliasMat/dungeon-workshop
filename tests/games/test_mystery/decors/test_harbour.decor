@@ -1,0 +1,38 @@
+decor: test_harbour 640 384
+name Test Harbour
+like 11
+entrance 632 200 right
+entrance 8 200 left
+level 480
+ground sable_plage
+edge mer_plage 72
+edge mer_large top
+edge rivage_sud_plage bottom
+put e195_9 512 136
+put e323_24 408 184
+put o395 444 192
+put e323_24 176 192
+put e323_7 248 248
+scatter e11_2 3 zone 64 200 560 260
+
+[life]
+music 100
+exit 624 184 16 32 to test_plaza west
+zone tideline 56 140 88 36
+
+resident corphish 470 230 left
+says if chapter = 1: Said if chapter = 1.
+says if chapter >= 2: Said if chapter >= 2.
+
+resident sableye 300 240 down
+says if not met_sableye: Said if not met_sableye.
+says if accused_sableye: Said if accused_sableye.
+says if heard_sableye: Said if heard_sableye.
+
+resident wingull 380 180 right wanders 40
+says if chapter = 1: Said if chapter = 1.
+says if chapter = 2: Said if chapter = 2.
+says if chapter = 3: Said if chapter = 3.
+
+resident pelipper 560 208 left
+says Test line.

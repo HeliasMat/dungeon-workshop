@@ -1,0 +1,24 @@
+[package]
+name = "preview"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "A film being worked on, with no window: played at once, any moment drawn"
+readme = "../README.md"
+publish.workspace = true
+
+# A film as it is worked on: compiled, played, gone to any moment, drawn,
+# told what is wrong with it. No window: for scene_player and the Workshop.
+[dependencies]
+assets = { path = "../assets" }
+engine = { path = "../engine" }
+film = { path = "../film" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+shell = { path = "../shell" }
+media = { path = "../media" }
+stage_view = { path = "../stage_view" }
+glam.workspace = true
+bincode.workspace = true

@@ -1,0 +1,9 @@
+name: Test Woods
+floors: 4
+look: Mystifying Forest
+music: foggy_forest
+pokemon: Hoothoot 5 x3 floors 1-2, Oddish 5 x3 floors 1-3, Spinarak 6 x2, Shroomish 6 x2 floors 2-4, Teddiursa 7 x2 floors 3-4
+items: Oran Berry x3, Apple x2, Pecha Berry x2 floors 2-4, Blast Seed floor 4
+recruiting: yes
+level: 6
+fight: test_woods_boss

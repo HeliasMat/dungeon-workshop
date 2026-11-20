@@ -1,0 +1,26 @@
+[package]
+name = "scene_player"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "scene_player: plays a film or a game, checks it without a window, draws pictures of it"
+readme = "../README.md"
+publish.workspace = true
+
+# Plays a film or a game by itself, in the shell, and all its commands.
+[dependencies]
+engine = { path = "../engine" }
+film = { path = "../film" }
+language = { path = "../language" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+shell = { path = "../shell" }
+stage_view = { path = "../stage_view" }
+preview = { path = "../preview" }
+game = { path = "../game" }
+glam.workspace = true
+serde_json.workspace = true
+image.workspace = true
+bincode.workspace = true

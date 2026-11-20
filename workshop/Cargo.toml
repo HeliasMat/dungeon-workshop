@@ -1,0 +1,34 @@
+[package]
+name = "workshop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "L'Atelier des Donjons : l'éditeur des films, décors, donjons, combats de boss, images, sons et musiques"
+readme = "../README.md"
+publish.workspace = true
+
+# Dungeon Workshop: the films', decors' and dungeons' editor, laid out as a
+# studio (menus, docked panels, an inspector, a bar of state), simple and
+# clean; the engine, the films' language and the decors' tool used as they are.
+[dependencies]
+assets = { path = "../assets" }
+film = { path = "../film" }
+scenes = { path = "../scenes" }
+rules = { path = "../rules" }
+preview = { path = "../preview" }
+game = { path = "../game" }
+dive = { path = "../dive" }
+engine = { path = "../engine" }
+stage_view = { path = "../stage_view" }
+shell = { path = "../shell" }
+media = { path = "../media" }
+spritecollab = { path = "../spritecollab" }
+decor = { path = "../decor" }
+eframe = { version = "0.32", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+egui_dock = "0.17"
+image.workspace = true
+glam.workspace = true
+# Native dialogs to pick a file or a folder (beside drag and drop).
+rfd = "0.15"

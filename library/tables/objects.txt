@@ -1,0 +1,93 @@
+# The props of the game a film calls by a word, by what a look at each shows:
+#   <object> <word>
+# `scene_player items` lists them all; those not named here go by their number
+# (`o186`) or their name in the game (`d30p33a5_568`).
+
+# Chests (their animation opens them)
+186 chest
+185 blue_chest
+370 green_chest
+375 olive_chest
+452 big_chest
+
+# Fire, light
+116 fire
+376 brazier
+386 torch_stand
+385 flame
+11 glow
+221 clock
+
+# Stones, treasures
+146 stone
+390 rocks
+23 ruby
+33 pendant
+89 medallion
+372 coin
+371 scroll
+94 paper
+106 ingot
+423 crystal
+566 pearl
+406 red_rug
+407 green_rug
+408 blue_rug
+409 yellow_rug
+
+# Nature
+81 bush
+112 hay
+115 green_hay
+20 shrubs
+111 grasses
+
+# Things of the town
+122 wooden_sign
+393 stump
+394 crate
+395 barrel
+396 cooking_pot
+397 door
+66 slab
+70 stele
+84 seat
+85 red_throne
+100 flat_crate
+95 gate
+
+# Little nothings
+198 bubble
+449 heart
+467 bow
+468 red_bow
+469 blue_bow
+484 note
+24 cloud
+154 smoke
+
+# Lapras: the crossing to the Hidden Land
+303 big_lapras
+304 big_lapras2
+305 big_lapras3
+308 big_lapras4
+309 big_lapras5
+319 sky_lapras
+306 wake
+310 light_wake
+311 splash
+312 splash2
+313 foam
+314 foam2
+315 sea_shadow
+316 sparkle
+317 beam
+318 dark_island
+320 geyser
+321 pink_arc
+322 pink_arc2
+323 pink_arc3
+324 pink_arc4
+325 pink_arc5
+326 pink_arc6
+307 distant_grovyle

@@ -1,0 +1,5 @@
+# A film of the tests' game test_rescue: only what its test needs.
+title: Job
+uses guild
+scene: test_square chikorita totodile bibarel
+chikorita: Test line.

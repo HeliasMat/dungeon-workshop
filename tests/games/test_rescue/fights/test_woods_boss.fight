@@ -1,0 +1,16 @@
+name: Test Woods Boss
+boss_look: Mystifying Forest
+boss: Ursaring 13
+boss_title: The Guardian of the Woods
+boss_cry: roar
+boss_guards: Teddiursa 7, Teddiursa 7
+boss_hp: x2
+boss_arena: 15x9
+boss_shape: room
+boss_music: battle
+boss_says: Test line.
+boss_falls: Test line.
+boss_moves: Slash, Scary Face, Fury Swipes, Rest
+boss_phase: 50% | says Phase at 50%. | anger +1 | shake
+boss_phase: 25% | says Phase at 25%. | heal 20%
+boss_item: Oran Berry

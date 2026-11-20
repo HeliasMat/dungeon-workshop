@@ -1,0 +1,15 @@
+# Recipes of the tests: "uses welcome" at the top of a film of the test game.
+
+# Two friends meet again: one runs to the other, joy, a hug.
+define reunion who:pokemon other:pokemon
+  who run to other
+  other emote joy
+  who hug other
+end
+
+# Someone waves hello: a jump, hops=1 more if one wants.
+define salute who:pokemon hops:number=1
+  repeat hops
+    who jump
+  end
+end

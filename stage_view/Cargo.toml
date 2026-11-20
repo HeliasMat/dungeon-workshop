@@ -1,0 +1,22 @@
+[package]
+name = "stage_view"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "All that is drawn: the scene, the interface, what goes over them"
+readme = "../README.md"
+publish.workspace = true
+
+# All that is drawn: a scene's stage (who stands there, a fight going on) and
+# the game's interface (windows, text, menus, what a scene says over itself).
+[dependencies]
+assets = { path = "../assets" }
+engine = { path = "../engine" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+shell = { path = "../shell" }
+media = { path = "../media" }
+glam.workspace = true
+image.workspace = true

@@ -1,0 +1,20 @@
+[package]
+name = "scenes"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The game on the scene engine: its words, its commands, its fights on stage"
+readme = "../README.md"
+publish.workspace = true
+
+# This game on the scene engine: its words, the commands only it plays,
+# its fights on a stage. The rules stay in rules, which knows no engine.
+[dependencies]
+rules = { path = "../rules" }
+engine = { path = "../engine" }
+glam.workspace = true
+
+[dev-dependencies]
+bincode.workspace = true

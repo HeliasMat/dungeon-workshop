@@ -1,0 +1,66 @@
+# The Wiki's pages: dungeons, the guild, hunting, the game's rituals (workshop/src/wiki/written.rs).
+
+== stairs
+> The game's stairs on the floor (on the right, or where said), under the bodies; stairs take: the team goes up them, one after another, and the floor ends.
+uses dungeon
+scene: beach pikachu piplup
+stairs right
+pikachu: The stairs!
+stairs take pikachu piplup
+
+== trap
+> A trap of the game under someone: it shows, clicks, the log says it, and it does what it does (slumber, poison, spin, gust, warp…); trap off: the traps fade away.
+uses dungeon
+scene: beach pikachu piplup
+trap slumber on pikachu
+piplup: Wake up!
+trap off
+
+== shop
+> A shop on the floor: its items laid out in rows before the shopkeeper, each with its price; someone shop buy an item: goes to it, pays, picks it up.
+uses dungeon
+scene: town pikachu kecleon
+kecleon shop Apple 50 Oran Berry 30
+pikachu shop buy Apple
+kecleon (happy): Thank you!
+
+== steal
+> Someone takes an item of the shop without paying: the shopkeeper, furious, cries thief.
+uses dungeon
+scene: town pikachu kecleon
+kecleon shop Apple 50
+pikachu steal Apple
+kecleon (angry): Thief!
+
+== morning_call
+> The shout that shakes the crew quarters: everyone up, in line.
+uses guild
+scene: beach loudred pikachu piplup
+loudred morning_call pikachu piplup
+
+== dinner
+> Each goes to a seat, eats at their own pace, then is happy.
+uses guild
+scene: beach pikachu piplup
+dinner pikachu piplup
+
+== rank
+> They line up in a row, facing us, like apprentices at the morning call; a team and a rank (rank pokepals gold): the team rises to that rank, with the game's tune and sentence.
+uses guild
+scene: beach pikachu piplup
+rank pokepals gold
+pikachu (joyous): We did it!
+
+== ambush
+> Wild Pokémon leap down round someone from above, one after another in their dust, as an ambush in the game: the alarm, the ground shaking, then face to face.
+uses dungeon
+scene: beach pikachu piplup
+ambush krabby geodude on pikachu
+pikachu (surprised): An ambush!
+
+== job
+> A job of the guild's board: job take, the notice and its tune; job done, the game's tune of a mission accomplished; job fail, failed.
+uses guild
+scene: beach pikachu piplup
+job take Find the lost Shellos
+pikachu: Let's go!

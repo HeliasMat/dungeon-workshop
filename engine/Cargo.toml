@@ -1,0 +1,16 @@
+[package]
+name = "engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The scene engine: who is where and what is happening, frame by frame"
+readme = "../README.md"
+publish.workspace = true
+
+# Scenes written as text, played frame by frame: nothing drawn, no game, no
+# game engine. Whatever shows them reads what the stage says.
+[dependencies]
+diagnostics = { path = "../diagnostics" }
+glam.workspace = true

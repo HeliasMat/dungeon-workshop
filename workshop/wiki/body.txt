@@ -1,0 +1,85 @@
+# The Wiki's pages: the Body family, what the body does where it stands (workshop/src/wiki/written.rs).
+
+== pose
+> Someone plays one of their sprite's animations, by a clear name: sit, lie, cringe, stagger, look_up, proud, breathe, attack, charge, doze… once (then standing again), loop (again and again) or hold (staying on its last picture); each has its own default. pose off: standing again.
+scene: beach pikachu piplup
+pikachu pose sit
+piplup: Tired?
+pikachu (happy): A little.
+pikachu pose off
+
+== sleep
+> Someone falls asleep, lying down with the game's Z's, until sleep off (their Wake animation).
+scene: beach pikachu piplup
+pikachu sleep
+piplup: Good night.
+wait 1s
+pikachu sleep off
+pikachu (happy): Morning!
+
+== eat
+> Someone eats what they hold, with their Eat animation: bites, and the thing shrinks away.
+scene: beach pikachu piplup
+pikachu hold Apple
+pikachu eat Apple
+pikachu (joyous): Yum!
+
+== hurt
+> Someone is hurt: their Pain animation, knocked back the way they look; back sets how far, hard knocks them further and shakes the view.
+scene: beach pikachu piplup
+piplup (angry): Take that!
+pikachu hurt hard
+pikachu (pain): Ouch!
+
+== tremble
+> Someone trembles where they stand, until tremble off.
+scene: beach pikachu piplup
+pikachu tremble
+pikachu (worried): It's so cold...
+pikachu tremble off
+piplup: Here, take my scarf.
+
+== fall
+> Someone falls and stays down: over (their Tumble animation, the default), back (on their back) or trip (tripping forward).
+scene: beach pikachu piplup
+pikachu walk to center
+pikachu fall trip
+piplup (surprised): Are you all right?
+
+== faint
+> Someone faints, with their Faint animation, and stays down until faint off, when they get up again.
+scene: beach pikachu piplup
+pikachu faint
+piplup (worried): Pikachu!
+pikachu faint off
+pikachu: I'm fine...
+
+== cower
+> Someone cowers: they cringe, sweat and tremble, facing what they fear if from says it.
+scene: beach pikachu piplup
+piplup (angry): Grrr!
+pikachu cower from piplup
+pikachu (worried): Please don't...
+
+== hug
+> Someone runs up to the other: they face each other and hop for joy together.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu (joyous): You're back!
+pikachu hug piplup
+piplup (happy): I missed you!
+
+== comfort
+> Someone comes close to another who is down, nods to them, and the other takes heart.
+scene: beach pikachu piplup
+piplup (sad): I lost it...
+pikachu comfort piplup
+pikachu: We'll find it together.
+
+== cheer
+> Someone cheers: two hops for joy, and their proud pose.
+scene: beach pikachu piplup
+piplup: We won!
+pikachu cheer
+pikachu (joyous): Hooray!

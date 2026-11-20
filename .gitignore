@@ -1,0 +1,35 @@
+/target
+
+# Third-party reference projects, cloned to read, never committed.
+/reference/
+
+# Game data comes from the user's own cartridge dump: never committed.
+*.nds
+/rom/
+# What is taken out of the ROM (see extractor/), and what is made of it.
+/data/*
+!/data/DATA.md
+/data_new
+/dist
+/library/histoire/
+/library/reecrit/
+/photos/
+
+# Raw sources for the tools, never read by the game.
+/sources
+
+# Saves and local settings.
+/saves
+/.claude/settings.local.json
+
+# Films written out by hand, to look at them.
+/library/films/*.txt
+
+
+# The Workshop's safe saves: the last version, a save cut short, what a file
+# was before being taken back (workshop/src/safe.rs).
+*.bak
+*.tmp
+*.tmp.abandoned
+*.before
+__pycache__/

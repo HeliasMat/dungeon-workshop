@@ -1,0 +1,17 @@
+# A film of the tests' game test_village: only what its test needs.
+title: Thanks
+keep got_apple = false
+scene: test_market pikachu piplup kecleon
+pikachu: Test line.
+if got_apple
+  pikachu: Test line.
+end
+choice
+  option First
+    set stayed
+  option Second
+    pikachu: Test line.
+end
+if stayed
+  pikachu: Test line.
+end

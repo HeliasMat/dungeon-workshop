@@ -1,0 +1,18 @@
+[package]
+name = "dive"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "A dungeon on screen: the floor, the interface, the menu and the bag"
+readme = "../README.md"
+publish.workspace = true
+
+# A dungeon on screen, for the game and for the films one plays.
+[dependencies]
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+shell = { path = "../shell" }
+stage_view = { path = "../stage_view" }
+glam.workspace = true

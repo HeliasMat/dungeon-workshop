@@ -1,0 +1,18 @@
+[package]
+name = "decor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Builds the places and the dungeon rooms described in library/decors"
+readme = "../README.md"
+publish.workspace = true
+
+# Places for films, built from the pieces of the game's own places; dungeon
+# rooms from a floor's tiles; the sheets to look at them.
+[dependencies]
+diagnostics = { path = "../diagnostics" }
+assets = { path = "../assets" }
+media = { path = "../media" }
+image.workspace = true

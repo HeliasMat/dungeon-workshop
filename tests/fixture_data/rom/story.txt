@@ -1,0 +1,4 @@
+map	look	120	80
+map	name	Beach Cave
+map	look	200	100
+map	name	Treasure Town
