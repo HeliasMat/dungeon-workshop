@@ -265,7 +265,7 @@ pub fn run(word: &str, rest: &[String], context: &Arc<Context>, debug: &preview:
         "fingerprint" => language::fingerprint(context, asked.has("--compare"), asked.has("--fields")),
         "pack" => pictures::pack(&Piece::find(context, asked.first())?, context),
         "pack-game" => pictures::pack_game(asked.first(), context),
-        "export-ds" => ds::export(context, asked.first(), asked.value("--out"), asked.has("--table")),
+        "export-ds" => ds::export(context, asked.first(), asked.value("--out"), asked.has("--table"), asked.has("--partial")),
         other => Err(format!("“{other}” is in the list of commands but nothing does it")),
     }
 }

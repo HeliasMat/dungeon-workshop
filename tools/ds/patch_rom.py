@@ -42,6 +42,7 @@ from skytemple_files.common.types.file_types import FileType
 from skytemple_files.common.util import create_file_in_rom, create_folder_in_rom, get_ppmdu_config_for_rom
 from skytemple_files.script.ssa_sse_sss.actor import SsaActor
 from skytemple_files.script.ssa_sse_sss.layer import SsaLayer
+from skytemple_files.script.ssa_sse_sss.performer import SsaPerformer
 from skytemple_files.script.ssa_sse_sss.model import Ssa
 from skytemple_files.script.ssa_sse_sss.position import SsaPosition
 from skytemple_files.script.ssb.script_compiler import ScriptCompiler
@@ -80,6 +81,7 @@ class Scene:
     def __init__(self, level):
         self.level = level
         self.actors = []  # (name, fields)
+        self.performers = []  # fields: type, x, y (the camera, the weather)
         self.lines = []
 
     @property
@@ -97,6 +99,8 @@ def scenes_of(source):
             scenes[-1].lines = head + [line]
             head = []
             continue
+        if words[:3] == ['//', 'ds-export', 'performer'] and scenes:
+            scenes[-1].performers.append(dict(zip(words[4::2], words[5::2])))
         if words[:3] == ['//', 'ds-export', 'actor'] and scenes:
             fields = dict(zip(words[4::2], words[5::2]))
             scenes[-1].actors.append((words[3].removeprefix('ACTOR_'), fields))
@@ -157,7 +161,7 @@ def set_species(rom, config, region, actor_id, species):
     return f'poke={address:X}={int(species).to_bytes(2, "little").hex()}'
 
 
-def layer(config, actors):
+def layer(config, actors, performers=()):
     """The scene's only layer: the film's actors, where they first stand."""
     data = config.script_data
     directions = {d.name.upper(): d.ssa_id for d in data.directions.values()}
@@ -169,18 +173,24 @@ def layer(config, actors):
         facing = directions[fields.get('facing', 'DIR_DOWN').removeprefix('DIR_').upper()]
         position = SsaPosition(data, x, y, x_offset, y_offset, facing)
         placed.append(SsaActor(data, actor.id, position, -1, -1))
-    return SsaLayer.new(placed, [], [], [], [])
+    shown = []
+    for fields in performers:
+        x, x_offset = tile(fields['x'])
+        y, y_offset = tile(fields['y'])
+        position = SsaPosition(data, x, y, x_offset, y_offset, directions['DOWN'])
+        shown.append(SsaPerformer(int(fields.get('type', 0)), 1, 1, position, -1, -1))
+    return SsaLayer.new(placed, [], shown, [], [])
 
 
-def replaced_layout(rom, config, path, actors):
+def replaced_layout(rom, config, path, actors, performers=()):
     """A story scene's layout with only the film's actors."""
     ssa = FileType.SSA.deserialize(rom.getFileByName(path), config.script_data)
-    ssa.layer_list = [layer(config, actors)]
+    ssa.layer_list = [layer(config, actors, performers)]
     return FileType.SSA.serialize(ssa)
 
 
-def new_layout(config, actors):
-    return FileType.SSA.serialize(Ssa.new(config.script_data, [layer(config, actors)], [], []))
+def new_layout(config, actors, performers=()):
+    return FileType.SSA.serialize(Ssa.new(config.script_data, [layer(config, actors, performers)], [], []))
 
 
 def compile_script(config, source, path):
@@ -207,7 +217,7 @@ def add_scenes(rom, config, scenes, film_path):
         place = scene.level.removeprefix('LEVEL_')
         name = f'dwscen{number:02d}'
         base = f'SCRIPT/{place}/{name}'
-        put_file(rom, base + '.ssa', new_layout(config, scene.actors))
+        put_file(rom, base + '.ssa', new_layout(config, scene.actors, scene.performers))
         put_file(rom, base + '.ssb', compile_script(config, scene.source, film_path))
         plays.append(f"    supervision_ExecuteActingSub({scene.level}, '{name.upper()}', 0);\n")
         print(f'  scene {number}: {base} ({len(scene.actors)} actors)')
@@ -268,7 +278,7 @@ def main():
         map_name, scene_name = args[2].split('/')
         base = f'SCRIPT/{map_name}/{scene_name}'
         first, rest = scenes[0], scenes[1:]
-        rom.setFileByName(base + '.ssa', replaced_layout(rom, config, base + '.ssa', first.actors))
+        rom.setFileByName(base + '.ssa', replaced_layout(rom, config, base + '.ssa', first.actors, first.performers))
         rom.setFileByName(base + '.ssb', compile_script(config, first.source, film_path))
         if rest:
             plays = add_scenes(rom, config, rest, film_path)
