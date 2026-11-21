@@ -291,7 +291,9 @@ fn the_view_is_told_of_bodies() {
 
 #[test]
 fn framing_and_the_view() {
-    wrote(&scene(&["frame krabby piplup"]), &[&["keepframe", "off"], &["frame", "40", "krabby", "piplup"], &["waitcam"]]);
+    // (At the head of the scene a cut: it opens on its first framing; later a glide.)
+    wrote(&scene(&["frame krabby piplup"]), &[&["keepframe", "off"], &["frame", "0", "krabby", "piplup"], &["fadein", "30"]]);
+    wrote(&scene(&["krabby: Oh!", "frame krabby piplup"]), &[&["keepframe", "off"], &["frame", "40", "krabby", "piplup"], &["waitcam"]]);
     has(&scene(&["frame 30 krabby piplup"]), "frame");
     wrote(&scene(&["krabby: Oh!", "glide to piplup in 3s"]), &[&["pan", "piplup", "180"], &["waitcam"]]);
     told(&scene(&["frame nowhere"]), "nowhere");

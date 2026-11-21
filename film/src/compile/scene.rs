@@ -66,7 +66,10 @@ pub(super) fn place_songs(film: &Film, scenes: &mut [SceneOf]) -> Vec<(usize, St
 /// that set it, and among them, in any order, those that change nothing
 /// one sees happen (the weather as it is, `weather rain`; who looks where;
 /// how one is drawn, `prop`, `anim`, out of the foliage or under it;
-/// the sound of the place): a `put` after them still places.
+/// the sound of the place): a `put` after them still places. The scene's
+/// first framing right after them (`frame a b`, its `moment:` before it, if
+/// any) is of the head too: the scene opens on it, never on a view that
+/// cuts its big bodies off before it lands.
 fn setting_lines(lines: &[Instr]) -> usize {
     let sets = |item: &Instr| {
         item.verb().is_some_and(|verb| SETTING.contains(&verb)) && !(item.verb() == Some("camera") && item.words().first().is_some_and(|word| word == "from"))
@@ -77,7 +80,12 @@ fn setting_lines(lines: &[Instr]) -> usize {
         Some("look" | "ambient" | "prop" | "anim" | "front_of_leaves" | "under_leaves" | "in_leaves") => true,
         _ => false,
     };
-    lines.iter().take_while(|item| sets(item) || as_it_is(item)).count()
+    let head = lines.iter().take_while(|item| sets(item) || as_it_is(item)).count();
+    let framing = head + usize::from(lines.get(head).is_some_and(|item| item.verb() == Some("moment")));
+    match lines.get(framing) {
+        Some(item) if item.verb() == Some("frame") && !item.words().iter().any(|word| word == "follows" || word == "free") => framing + 1,
+        _ => head,
+    }
 }
 
 /// The second word of the lines that start with that one.

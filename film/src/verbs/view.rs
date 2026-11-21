@@ -249,8 +249,10 @@ fn view_word(film: &mut Film, line: &Line) -> bool {
         // (`frame a b`: the view goes where they all show, and stays;
         // `frame a b follows`, as `view a b`, keeps them in it as they move; a
         // crowd's name is all of it.)
+        // (At the head of a scene, before it shows, a cut: the scene opens on
+        // its first framing.)
         "frame" => {
-            let snap = args.has("snap");
+            let snap = args.has("snap") || !film.staging.started;
             if framed_with_a_place(film, line, snap) {
                 return true;
             }

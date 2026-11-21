@@ -142,6 +142,7 @@ Listeners do not copy the speaker's emotion: `react on` does that, if you want i
 | The light, the grey and the weather go back to daytime | at the start | `daytime`, `daytime night stars`, `weather` in the scene |
 | The music goes on if the scene keeps the same one, otherwise it fades from one to the other | at the start | `music x`, `music off fade 3s` |
 | With `frame`, the view leaves room below for the dialogue box | on every framing | `boxroom off`, to write again after each `frame` |
+| The scene opens on its first framing: a `frame` right after the lines that set the scene (its `moment:` before it, if any) is a cut made before the fade, not a glide | at the start | a line before it (`wait 1s`), then `frame` glides |
 | A large body (Gyarados, Groudon) is measured so it fits in the framings | always | cannot be turned off |
 
 **Fights** (`fight a vs b`, `fight directed`)

@@ -100,7 +100,7 @@ pub const DAY: [(f32, [f32; 3], f32); 6] = [
 ];
 
 /// What sets a scene: done before it shows.
-pub const SETTING: [&str; 30] = [
+pub const SETTING: [&str; 29] = [
     "collisions",
     "put",
     "zoom",
@@ -126,7 +126,6 @@ pub const SETTING: [&str; 30] = [
     "all_pokemon",
     "generation",
     "height",
-    "depth",
     "infront",
     "still",
     "thing",

@@ -92,7 +92,7 @@ fn the_view_keeps_a_group_or_a_crowd() {
     let crowd = "scene: town krabby piplup\ncrowd marill 3 right\n";
     wrote(&format!("{crowd}frame krabby piplup follows\n"), &[&["keepframe", "krabby", "piplup"]]);
     wrote(&format!("{crowd}frame marills follows\n"), &[&["keepframe", "marill", "marill2", "marill3"]]);
-    wrote(&format!("{crowd}frame marills\n"), &[&["frame", "40", "marill", "marill2", "marill3"]]);
+    wrote(&format!("{crowd}frame marills\n"), &[&["frame", "0", "marill", "marill2", "marill3"]]);
 }
 
 #[test]
