@@ -210,6 +210,11 @@ fn at_once(film: &mut Film, scene: &Scene) {
         if let Beat::Flow(FlowBeat::Line { number: line, .. }) = beat {
             number = usize::try_from(*line).unwrap_or(0);
         }
+        // (A body's size, told for the framings of every scene at the film's
+        // start: not someone there.)
+        if matches!(beat, Beat::View(ViewBeat::Body { .. })) {
+            continue;
+        }
         let Some(fields) = beat.fields(&scenes::vocabulary::POKEMON) else { continue };
         let hides = matches!(beat, Beat::Place(PlaceBeat::Leaves { .. }) | Beat::Body(BodyBeat::Gone(_)) | Beat::Body(BodyBeat::Opacity { to: 0.0, .. }));
         // (Setting them there, not acting: put, a crowd, a frame of many; who speaks acts.)
