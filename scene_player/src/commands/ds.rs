@@ -200,7 +200,8 @@ fn export_of(word: &str) -> Option<Export> {
 
 /// `export-ds <film> --out <file.exps>`; `export-ds --table`: the table.
 /// `--partial`: what doesn't export is left out (and told), not an error.
-pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, partial: bool) -> Result<(), String> {
+/// `--tall`: the top screen shows the place above the bottom one (`Writer::tall`).
+pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, partial: bool, tall: bool) -> Result<(), String> {
     if table || name.is_empty() {
         print!("{}", told_table());
         return Ok(());
@@ -213,6 +214,7 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     let move_types = piece.art().map(|art| art.tables.move_slots.iter().map(|slot| slot.type_id).collect()).unwrap_or_default();
     let game = Game::read(&piece.tables.data, move_types);
     let mut writer = Writer::new(&game);
+    writer.tall_asked = tall;
     for (number, read) in &written.read_as {
         match export_of(&read.word) {
             Some(Export::Direct | Export::Close) => {}
@@ -249,6 +251,9 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     let text = writer.finish(&piece.name);
     for note in &writer.notes {
         eprintln!("  left out: {note}");
+    }
+    for told in &writer.told {
+        eprintln!("  {told}");
     }
     let out = out.cloned().unwrap_or_else(|| format!("target/ds/{}.exps", piece.name));
     if let Some(folder) = std::path::Path::new(&out).parent() {
@@ -296,6 +301,8 @@ struct Game {
     data: String,
     /// Each move's type (the game's numbers), by move.
     move_types: Vec<u8>,
+    /// The species' names, to tell who is left out.
+    names: HashMap<u16, String>,
 }
 
 impl Game {
@@ -309,8 +316,22 @@ impl Game {
         };
         let levels = rows("levels.txt").into_iter().filter_map(|row| Some((row.first()?.parse().ok()?, row.get(1)?.clone()))).collect();
         let actors = rows("entities.txt").into_iter().filter_map(|row| Some((row.get(1)?.clone(), row.get(2)?.parse().ok()?))).collect();
+        let names = rows("monsters.txt").into_iter().filter_map(|row| Some((row.first()?.parse().ok()?, row.get(1)?.clone()))).collect();
         _ = DATA.set(data.to_string());
-        Game { levels, actors, data: data.to_string(), move_types }
+        Game { levels, actors, data: data.to_string(), move_types, names }
+    }
+
+    /// A level's size in pixels (its picture's, as the extraction wrote it:
+    /// two numbers of 8 bytes first).
+    fn size(&self, level: &str) -> Option<(f32, f32)> {
+        let id = self.levels.iter().find(|(_, name)| *name == level)?.0;
+        let info = std::fs::read(game_file(&self.data, &format!("rom/grounds/info/{id}.bin"))).ok()?;
+        let number = |at: usize| Some(u64::from_le_bytes(info.get(at..at + 8)?.try_into().ok()?) as f32);
+        Some((number(0)?, number(8)?))
+    }
+
+    fn name(&self, species: u16) -> String {
+        self.names.get(&species).cloned().unwrap_or_else(|| format!("species {species}"))
     }
 
     /// Whether that species has that portrait (none known for 0: the hero
@@ -329,6 +350,9 @@ struct Actor {
     kind: u16,
     first: Option<(f32, f32, &'static str)>,
     hidden: bool,
+    /// The layer of the scene's layout it is in: 0 from the start, a later
+    /// one loaded when it comes in (past Sky's 21 at once).
+    layer: usize,
 }
 
 /// The picture Sky shows on the top screen with a place, as its own
@@ -578,6 +602,16 @@ struct Writer<'a> {
     words: HashMap<i32, Vec<String>>,
     problems: Vec<String>,
     notes: Vec<String>,
+    /// What the export changed to fit the DS, told as it exports.
+    told: Vec<String>,
+    /// Those a frame of a few named (never left out).
+    framed: Vec<Who>,
+    /// `--tall`: the top screen shows the place above the bottom one, where it is tall enough.
+    tall_asked: bool,
+    /// This scene's place shows on both screens, one above the other.
+    tall: bool,
+    /// The place's size in pixels.
+    size: Option<(f32, f32)>,
 }
 
 /// The actors the game never uses, given the film's species: the ten test
@@ -689,6 +723,45 @@ fn quoted(text: &str) -> String {
     text.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n")
 }
 
+/// A frame of so many at most is of a few: they are never left out.
+const FEW: usize = 6;
+
+/// A pan's pace across a crowd too wide for the screen, pixels a frame.
+const PAN: f32 = 0.75;
+
+/// Actors at once in a scene: the game's 24, less the hero's, the
+/// partner's and a third party member's, kept for them (overlay 11 looks
+/// for a free one from the fourth: `ov11_022F7E78`, NA). Seen: 21 load.
+const AT_ONCE: usize = 21;
+
+/// The screen, pixels, and how far round someone's feet its sprite shows
+/// (sideways, above, below).
+const SCREEN: (f32, f32) = (256.0, 192.0);
+const SPRITE: (f32, f32, f32) = (16.0, 32.0, 8.0);
+
+/// Where a pan across those starts and ends, when they don't fit the
+/// screen (none: they fit).
+fn pan(points: &[(f32, f32)]) -> Option<((f32, f32), (f32, f32))> {
+    let (left, right) = points.iter().fold((f32::MAX, f32::MIN), |(lo, hi), point| (lo.min(point.0), hi.max(point.0)));
+    let (top, bottom) = points.iter().fold((f32::MAX, f32::MIN), |(lo, hi), point| (lo.min(point.1), hi.max(point.1)));
+    let wide = right - left + 2.0 * SPRITE.0 > SCREEN.0;
+    let high = bottom - top + SPRITE.1 + SPRITE.2 > SCREEN.1;
+    if !wide && !high {
+        return None;
+    }
+    let middle = ((left + right) / 2.0, (top + bottom) / 2.0);
+    let from = (if wide { left - SPRITE.0 + SCREEN.0 / 2.0 } else { middle.0 }, if high { top - SPRITE.1 + SCREEN.1 / 2.0 } else { middle.1 });
+    let to = (if wide { right + SPRITE.0 - SCREEN.0 / 2.0 } else { middle.0 }, if high { bottom + SPRITE.2 - SCREEN.1 / 2.0 } else { middle.1 });
+    // (A few pixels out: their middle shows them well enough.)
+    let across = ((to.0 - from.0).powi(2) + (to.1 - from.1).powi(2)).sqrt();
+    (across >= 24.0).then_some((from, to))
+}
+
+/// Whether a script line names that actor (`ACTOR_X`, not `ACTOR_X2`).
+fn names(line: &str, actor: &str) -> bool {
+    line.match_indices(actor).any(|(at, _)| !line[at + actor.len()..].starts_with(|c: char| c.is_ascii_alphanumeric() || c == '_'))
+}
+
 /// Beside someone, so far (the engine's own distance between two at rest).
 const BESIDE: f32 = 24.0;
 
@@ -740,6 +813,11 @@ impl<'a> Writer<'a> {
             became: HashMap::new(),
             problems: Vec::new(),
             notes: Vec::new(),
+            told: Vec::new(),
+            framed: Vec::new(),
+            tall_asked: false,
+            tall: false,
+            size: None,
         }
     }
 
@@ -831,7 +909,7 @@ impl<'a> Writer<'a> {
         self.cast.insert(who, (name.clone(), species, kind));
         // Who comes in after the scene opens is hidden until then.
         let hidden = self.started;
-        self.actors.insert(who, Actor { name: name.clone(), species, kind, first: None, hidden });
+        self.actors.insert(who, Actor { name: name.clone(), species, kind, first: None, hidden, layer: 0 });
         Some(format!("ACTOR_{name}"))
     }
 
@@ -921,11 +999,32 @@ impl<'a> Writer<'a> {
         let distance = ((to.0 - self.camera.0).powi(2) + (to.1 - self.camera.1).powi(2)).sqrt();
         self.camera = to;
         let position = self.position(to);
+        let above = self.tall.then(|| self.above(to));
+        let above = above.map(|above| self.position(above));
         if frames <= 1.0 || distance < 2.0 || !self.started {
             self.line(&format!("SetPositionMark<performer 0>({position});"));
+            if let Some(above) = above {
+                self.line(&format!("camera2_SetPositionMark({above});"));
+            }
         } else {
-            self.line(&format!("MovePositionMark<performer 0>({}, {position});", speed(distance, frames)));
+            let pace = speed(distance, frames);
+            self.line(&format!("MovePositionMark<performer 0>({pace}, {position});"));
+            // (The top screen's camera glides with it, as Sky's tall views do: S13P04's.)
+            if let Some(above) = above {
+                self.line(&format!("camera2_MovePositionMark({pace}, {above});"));
+            }
         }
+    }
+
+    /// Where the top screen's camera looks for the bottom one's there, in
+    /// the tall view: a screen above, both kept in the place (the game
+    /// stops a camera at its edges; where the bottom one is too high for a
+    /// screen above, the two show the same rows).
+    fn above(&self, (x, y): (f32, f32)) -> (f32, f32) {
+        let (wide, high) = self.size.unwrap_or((256.0, 384.0));
+        let x = x.clamp(128.0, (wide - 128.0).max(128.0));
+        let y = y.clamp(96.0, (high - 96.0).max(96.0));
+        (x, (y - 192.0).max(96.0))
     }
 
     /// Someone walks (`MovePositionMark`, turned the way it goes) or
@@ -1274,7 +1373,20 @@ impl<'a> Writer<'a> {
             Beat::Screen(ScreenBeat::Backdrop(level, ..)) => match self.game.levels.get(level).cloned() {
                 Some(level) => {
                     self.top = TOP_SCREENS.iter().find(|(place, _)| *place == level).map(|(_, top)| *top);
-                    if let Some(top) = self.top {
+                    self.size = self.game.size(&level);
+                    // (`--tall`: the place itself on the top screen, a screen above, where it is tall enough.)
+                    // (A place Sky pairs with a picture of its own keeps it: the beach's is its sky and
+                    // rock, where the place above the sand is only sea, its foam blank on the top screen.)
+                    self.tall = self.tall_asked && self.top.is_none() && self.size.is_some_and(|(_, high)| high >= 384.0);
+                    if self.tall_asked && !self.tall {
+                        let why = if self.top.is_some() { "Sky's own top picture for it kept" } else { "too short for two screens (384 pixels)" };
+                        self.told.push(format!("{level}: no tall view, {why}"));
+                    }
+                    if self.tall {
+                        self.top = None;
+                        self.line("back2_SetMode(4);");
+                        self.line(&format!("back2_SetGround(LEVEL_{level});"));
+                    } else if let Some(top) = self.top {
                         self.line("back2_SetMode(4);");
                         self.line(&format!("back2_SetGround(LEVEL_{top});"));
                     }
@@ -1289,6 +1401,11 @@ impl<'a> Writer<'a> {
                 self.middle = Some((middle.x, middle.y));
                 self.camera = (middle.x, middle.y);
                 self.line("camera_SetMyself<performer 0>();");
+                if self.tall {
+                    let above = self.above((middle.x, middle.y));
+                    let position = self.position(above);
+                    self.line(&format!("camera2_SetPositionMark({position});"));
+                }
             }
             Beat::Place(PlaceBeat::Find { var, spot, .. }) => match self.spot(spot) {
                 Some(point) => {
@@ -1304,9 +1421,27 @@ impl<'a> Writer<'a> {
                     self.problems.push(format!("line {number}: where to frame is not known before the film plays"));
                     return;
                 }
+                // A frame of a few: those are never left out of a crowded scene.
+                if who.len() <= FEW {
+                    self.framed.extend(who.iter().copied());
+                }
                 let count = points.len() as f32;
                 let middle = (points.iter().map(|point| point.0).sum::<f32>() / count, points.iter().map(|point| point.1).sum::<f32>() / count);
-                self.camera_to(middle, frames.0);
+                match pan(&points).filter(|_| self.started) {
+                    // Wider (or taller) than the screen, and Sky has no zoom: a slow pan
+                    // across them, from one end to the other, then back to their middle.
+                    Some((from, to)) => {
+                        self.camera_to(from, frames.0);
+                        self.line("WaitExecutePerformer(0);");
+                        let across = ((to.0 - from.0).powi(2) + (to.1 - from.1).powi(2)).sqrt();
+                        self.camera_to(to, across / PAN);
+                        self.line("WaitExecutePerformer(0);");
+                        let back = ((middle.0 - to.0).powi(2) + (middle.1 - to.1).powi(2)).sqrt();
+                        self.camera_to(middle, back / PAN);
+                        self.told.push(format!("line {number}: the frame is wider than the screen: a pan across it ({across:.0} pixels)"));
+                    }
+                    None => self.camera_to(middle, frames.0),
+                }
             }
             Beat::View(ViewBeat::Pan { to, frames } | ViewBeat::PanStays { to, frames }) => match self.cam(to) {
                 Some(point) => self.camera_to(point, frames.0),
@@ -1741,7 +1876,7 @@ impl<'a> Writer<'a> {
                 self.started = true;
                 self.faded_out = false;
                 let frames = frames.0.round() as i32;
-                if first && self.top.is_some() {
+                if first && (self.top.is_some() || self.tall) {
                     self.line(&format!("screen2_FadeIn(0, {frames});"));
                 }
                 if let Some(tint) = self.tint.filter(|_| first) {
@@ -1907,6 +2042,8 @@ impl<'a> Writer<'a> {
         next.words = std::mem::take(&mut self.words);
         next.problems = std::mem::take(&mut self.problems);
         next.notes = std::mem::take(&mut self.notes);
+        next.told = std::mem::take(&mut self.told);
+        next.tall_asked = self.tall_asked;
         next.vars = std::mem::take(&mut self.vars);
         next.became = std::mem::take(&mut self.became);
         *self = next;
@@ -1923,15 +2060,132 @@ impl<'a> Writer<'a> {
         out
     }
 
+    /// A scene with more than Sky shows at once (`AT_ONCE`) made to fit:
+    /// who comes in later is loaded then, in a layer of its own
+    /// (`supervision_Acting(n)`, as Sky's scenes load theirs), in the slots
+    /// of those who have left (`Destroy`, as Sky's scenes put away who is
+    /// done); and if those there from the start are too many, the crowd's
+    /// idle ones farthest from its middle are left out, never one who
+    /// speaks, acts or is framed. What it did is told.
+    fn fit(&mut self) {
+        let counted: Vec<Who> =
+            self.actors.iter().filter(|(_, actor)| !actor.name.starts_with("PLAYER") && !actor.name.starts_with("ATTENDANT")).map(|(who, _)| *who).collect();
+        if counted.len() <= AT_ONCE {
+            return;
+        }
+        let level = self.level.clone().unwrap_or_default();
+        let mut lines: Vec<String> = self.body.lines().map(str::to_string).collect();
+        // Each one's first line, last line (none: there to the end), and whether a line names it.
+        let mut spans: HashMap<Who, (usize, usize, bool)> = HashMap::new();
+        for who in &counted {
+            let actor = &self.actors[who];
+            let token = format!("ACTOR_{}", actor.name);
+            let said: Vec<usize> = lines.iter().enumerate().filter(|(_, line)| names(line, &token)).map(|(at, _)| at).collect();
+            let start = if actor.hidden { said.first().copied().unwrap_or(usize::MAX) } else { 0 };
+            let gone = format!("SetOutputAttribute<actor {token}>({HIDDEN});");
+            let end = said.last().copied().filter(|at| lines[*at].contains(&gone)).unwrap_or(usize::MAX);
+            spans.insert(*who, (start, end, !said.is_empty()));
+        }
+        let mut left_out = Vec::new();
+        // Never seen: not loaded.
+        for who in &counted {
+            if spans[who].0 == usize::MAX {
+                left_out.push(*who);
+            }
+        }
+        // There from the start: the crowd's idle ones, farthest from its middle first.
+        let first = |actor: &Actor| actor.first.map_or(self.middle.unwrap_or((128.0, 96.0)), |(x, y, _)| (x, y));
+        let start: Vec<Who> = counted.iter().copied().filter(|who| spans[who].0 == 0).collect();
+        let mut dropped = Vec::new();
+        if start.len() > AT_ONCE {
+            let count = start.len() as f32;
+            let at: Vec<(f32, f32)> = start.iter().map(|who| first(&self.actors[who])).collect();
+            let centre = (at.iter().map(|one| one.0).sum::<f32>() / count, at.iter().map(|one| one.1).sum::<f32>() / count);
+            let mut idle: Vec<(f32, Who)> = start
+                .iter()
+                .filter(|who| !spans[*who].2 && !self.framed.contains(who))
+                .map(|who| {
+                    let (x, y) = first(&self.actors[who]);
+                    ((x - centre.0).powi(2) + (y - centre.1).powi(2), *who)
+                })
+                .collect();
+            idle.sort_by(|a, b| b.0.total_cmp(&a.0));
+            dropped = idle.into_iter().take(start.len() - AT_ONCE).map(|(_, who)| who).collect();
+            let names: Vec<String> = dropped.iter().map(|who| self.game.name(self.actors[who].kind)).collect();
+            self.told.push(format!(
+                "{level}: {} Pokémon from the start, Sky shows {AT_ONCE} at once: left out {} (idle in the crowd, the farthest from its middle)",
+                start.len(),
+                if names.is_empty() { "none".to_string() } else { names.join(", ") }
+            ));
+            if start.len() - dropped.len() > AT_ONCE {
+                self.told.push(format!(
+                    "{level}: still {} too many, each speaking, acting or framed: the game won't show the last ones of the layout",
+                    start.len() - dropped.len() - AT_ONCE
+                ));
+            }
+        }
+        // Who comes in later: loaded then, where some have left.
+        let mut live: Vec<(Who, usize)> = start.iter().filter(|who| !dropped.contains(who)).map(|who| (*who, spans[who].1)).collect();
+        let mut later: Vec<(usize, Who)> = counted.iter().map(|who| (spans[who].0, *who)).filter(|(at, _)| *at > 0 && *at < usize::MAX).collect();
+        later.sort();
+        let mut inserts: Vec<(usize, Vec<String>)> = Vec::new();
+        let mut layer = 0;
+        let mut at = 0;
+        while at < later.len() {
+            let line = later[at].0;
+            let group: Vec<Who> = later[at..].iter().take_while(|(start, _)| *start == line).map(|(_, who)| *who).collect();
+            at += group.len();
+            let mut put = Vec::new();
+            for (who, _) in live.iter().filter(|(_, end)| *end < line) {
+                put.push(format!("Destroy<actor ACTOR_{}>();", self.actors[who].name));
+            }
+            live.retain(|(_, end)| *end >= line);
+            let room = AT_ONCE.saturating_sub(live.len());
+            let (fits, over) = group.split_at(room.min(group.len()));
+            dropped.extend(over.iter().copied());
+            if !over.is_empty() {
+                let names: Vec<String> = over.iter().map(|who| self.game.name(self.actors[who].kind)).collect();
+                self.told.push(format!("{level}: no room yet for {} when they come in ({AT_ONCE} at once): left out", names.join(", ")));
+            }
+            if fits.is_empty() {
+                continue;
+            }
+            layer += 1;
+            put.push(format!("supervision_Acting({layer});"));
+            for who in fits {
+                let actor = self.actors.get_mut(who).expect("an actor of the scene");
+                actor.layer = layer;
+                put.push(format!("SetOutputAttribute<actor ACTOR_{}>({HIDDEN});", actor.name));
+                live.push((*who, spans[who].1));
+            }
+            inserts.push((line, put));
+        }
+        if layer > 0 {
+            self.told.push(format!("{level}: who comes in later is loaded then, in {layer} more layers of the layout, in the slots of who has left"));
+        }
+        for (line, put) in inserts.into_iter().rev() {
+            let indent: String = lines[line].chars().take_while(|c| c.is_whitespace()).collect();
+            for (n, text) in put.into_iter().enumerate() {
+                lines.insert(line + n, format!("{indent}{text}"));
+            }
+        }
+        for who in dropped.iter().chain(&left_out) {
+            self.actors.remove(who);
+        }
+        self.body = lines.into_iter().map(|line| line + "\n").collect();
+    }
+
     /// One scene: its level, actors and performers, then its `def 0`.
     fn block(&mut self) -> String {
+        self.fit();
         let mut out = String::new();
         let _ = writeln!(out, "// ds-export level {}", self.level.as_deref().unwrap_or("?"));
         let middle = self.middle.unwrap_or((128.0, 96.0));
         for actor in self.actors.values() {
             let (x, y, facing) = actor.first.unwrap_or((middle.0, middle.1, "DIR_DOWN"));
             let species = actor.species.map_or(String::new(), |species| format!(" species {species}"));
-            let _ = writeln!(out, "// ds-export actor ACTOR_{}{species} x {} y {} facing {facing}", actor.name, tiles(x), tiles(y));
+            let layer = if actor.layer > 0 { format!(" layer {}", actor.layer) } else { String::new() };
+            let _ = writeln!(out, "// ds-export actor ACTOR_{}{species} x {} y {} facing {facing}{layer}", actor.name, tiles(x), tiles(y));
         }
         for (object, (x, y)) in &self.objects {
             let _ = writeln!(out, "// ds-export object OBJECT_N{object} x {} y {}", tiles(*x), tiles(*y));
@@ -1950,7 +2204,7 @@ impl<'a> Writer<'a> {
             out.push_str("    screen_FadeIn(1, 30);\n    Wait(120);\n    screen_FadeOut(1, 30);\n    Wait(15);\n");
         }
         // Who comes in later is hidden until then.
-        let hidden: Vec<String> = self.actors.values().filter(|actor| actor.hidden).map(|actor| actor.name.clone()).collect();
+        let hidden: Vec<String> = self.actors.values().filter(|actor| actor.hidden && actor.layer == 0).map(|actor| actor.name.clone()).collect();
         let mut body = std::mem::take(&mut self.body);
         if !hidden.is_empty() {
             let hide: String = hidden.iter().map(|name| format!("    SetOutputAttribute<actor ACTOR_{name}>({HIDDEN});\n")).collect();
@@ -1964,7 +2218,7 @@ impl<'a> Writer<'a> {
         if self.memory {
             out.push_str("    screen_FlushIn(1, 0, 1, 0, 0, 0);\n");
         }
-        if self.top.is_some() {
+        if self.top.is_some() || self.tall {
             out.push_str("    screen2_FadeOut(0, 30);\n    WaitScreenFade();\n    back2_SetMode(0);\n");
         }
         if let Some(tint) = self.tint {
@@ -2041,5 +2295,19 @@ mod tests {
     #[test]
     fn texts_are_quoted_on_one_line() {
         assert_eq!(quoted("a \"b\"\nc"), "a \\\"b\\\"\\nc");
+    }
+
+    #[test]
+    fn a_crowd_wider_than_the_screen_is_panned_across() {
+        assert_eq!(pan(&[(100.0, 100.0), (300.0, 100.0)]), None);
+        let (from, to) = pan(&[(100.0, 100.0), (400.0, 110.0)]).expect("too wide");
+        assert_eq!((from.0, to.0), (100.0 - 16.0 + 128.0, 400.0 + 16.0 - 128.0));
+        assert_eq!(from.1, to.1);
+    }
+
+    #[test]
+    fn a_line_names_an_actor_not_a_longer_one() {
+        assert!(names("Destroy<actor ACTOR_FREE1>();", "ACTOR_FREE1"));
+        assert!(!names("Destroy<actor ACTOR_FREE12>();", "ACTOR_FREE1"));
     }
 }

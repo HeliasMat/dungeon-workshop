@@ -17,7 +17,9 @@ Explorers of Sky ROM, and write the patched copy.
 - The film's own lines (`// ds-export ...`) say what each scene is: a
   `// ds-export level` line starts a scene, then its `// ds-export actor`
   lines and its `def 0 { ... }`. Who stands in it is written into the
-  scene's layout (`.ssa`).
+  scene's layout (`.ssa`); an actor line ending `layer n` goes in layer n,
+  which its script loads later (`supervision_Acting(n)`): Sky has 21 actors
+  at once, and a scene shows more over its course this way.
 - A Pokémon the game has no actor for (`species` given) takes a free actor:
   the ten test actors and the story's actors that no scene places nor any
   script names (FREE_ACTORS, 45 in all), its species changed in the game's
@@ -224,7 +226,7 @@ def object_names(config, scene):
 
 
 def layer(config, actors, performers=(), objects=()):
-    """The scene's only layer: the film's actors and things, where they first stand."""
+    """A layer of the scene: the film's actors and things, where they first stand."""
     data = config.script_data
     directions = {d.name.upper(): d.ssa_id for d in data.directions.values()}
     placed = []
@@ -250,15 +252,25 @@ def layer(config, actors, performers=(), objects=()):
     return SsaLayer.new(placed, things, shown, [], [])
 
 
+def layers(config, actors, performers=(), objects=()):
+    """The scene's layers: the first holds the camera, the things and who
+    stands there from the start; an actor's `layer n` puts it in layer n,
+    which the script loads later (`supervision_Acting(n)`), when a slot of
+    the game's 24 is free again."""
+    count = 1 + max((int(fields.get('layer', 0)) for _, fields in actors), default=0)
+    return [layer(config, [one for one in actors if int(one[1].get('layer', 0)) == n],
+                  performers if n == 0 else (), objects if n == 0 else ()) for n in range(count)]
+
+
 def replaced_layout(rom, config, path, actors, performers=(), objects=()):
     """A story scene's layout with only the film's actors and things."""
     ssa = FileType.SSA.deserialize(rom.getFileByName(path), config.script_data)
-    ssa.layer_list = [layer(config, actors, performers, objects)]
+    ssa.layer_list = layers(config, actors, performers, objects)
     return FileType.SSA.serialize(ssa)
 
 
 def new_layout(config, actors, performers=(), objects=()):
-    return FileType.SSA.serialize(Ssa.new(config.script_data, [layer(config, actors, performers, objects)], [], []))
+    return FileType.SSA.serialize(Ssa.new(config.script_data, layers(config, actors, performers, objects), [], []))
 
 
 def compile_script(config, source, path):

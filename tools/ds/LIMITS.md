@@ -51,10 +51,42 @@ chapter 2 without one is a whole playthrough.
   (`ACTOR_FREE07`); `patch_rom.py` gives each a free actor and renames it.
   Limit: 45 Pokémon without an actor of their own per film (one species per
   actor for the whole film).
-- **Per scene: 24 actors at once** (`ground_mode.h`: `struct live_actor
-  actors[24]`). **Seen**: 24 different species in one scene. One run with
-  20 actors *and* a ground drawn on the top screen hung: keep the top
-  screen empty in crowd scenes.
+- **Per scene: 21 actors at once**, not 24. The ground state has 24 live
+  actors (`ground_mode.h`: `struct live_actor actors[24]`, allocated on
+  the heap: `MemAlloc(0x3780)` in
+  `AllocAndInitPartnerFollowDataAndLiveActorList`), but slots 0-2 are kept
+  for the hero, the partner and a third party member: the loader
+  (pret/pmd-sky `ov11_022F7E78`, NA) puts those three in their own slot and
+  looks for a free one for anyone else **from the fourth** (`mov r1, #3`).
+  **Seen** (reading the list in memory, `target/ds/labtools/probe.py`): a
+  layout of 24 loads its first 21, the last 3 silently not; with 21 loaded,
+  `supervision_Acting(1)` loads none of layer 1's. Objects (16) and
+  performers (16, the camera and the weather are performers) have pools of
+  their own and don't count. One run with 20 actors *and* a ground drawn on
+  the top screen once hung (not again with 24 and the tall view).
+- **More over a scene's course** (seen): `Destroy<actor X>()` (Sky's scenes
+  put away who is done with it) frees a slot, and `supervision_Acting(n)`
+  loads layer `n` of the layout into the free slots, mid-scene: two
+  destroyed, two of layer 1 shown in their place, on the beach. The
+  exporter does it (`Writer::fit`): in a scene over 21, who comes in later
+  is in a layer of its own, loaded on its first line, after destroying who
+  has left (hidden for good); seen: 22 on the beach, two walk out, two walk
+  in, one of them speaks (`target/ds/lab/room_s.png`). Too many from the
+  start: the crowd's idle
+  ones (no line names them, no frame of a few) farthest from its middle are
+  left out, and the export says who.
+- **24 or more with code** (armips): two ways. (1) Let ordinary actors use
+  the three kept slots: one instruction (`mov r1, #3` to `#0` in that
+  loader), 24 at once, but a hero or partner loaded after them takes slot
+  0-2 by force and replaces whoever is there: safe only in scenes without
+  them, and the patch is global (story scenes put the hero in their layout
+  too, usually first, so likely fine, but unproven). (2) A larger array:
+  the allocation size and every loop bound over it (`cmp rX, #0x18`: 16 in
+  `overlay_11_022EE5E4.s`, 4 more elsewhere in overlay 11, each to check it
+  is about actors) and the 0x250 stride, plus room on the heap (arena 6).
+  Then the other limits come in: 128 hardware sprites (OAM) for the bodies,
+  shadows and emotes, and the 96 loaded sprite files (`wan_table`). Doable
+  with armips, a day's work and a long test; not built.
 - **What armips unlocks**: SkyTemple's `ActorAndLevelLoader` (psy_commando's
   `pmd2_asm_mods/src/eu/actorlistloader_arm9.asm` and
   `..._overlay11.asm`, about 450 lines of ARM assembly patching a dozen call
@@ -69,7 +101,7 @@ chapter 2 without one is a whole playthrough.
 
 | Word | Verdict | How (script operations, as Sky's scripts use them) |
 |---|---|---|
-| crowd | **Fake works** (seen) | Up to 24 actors in a scene; free actors give the species. `ExecuteCommon<actor X>(CORO_JUMP_HAPPY_FUNC_SERIES, 0)` on each without waiting makes the whole crowd cheer at once. |
+| crowd | **Fake works** (seen) | Up to 21 actors at once in a scene; free actors give the species. `ExecuteCommon<actor X>(CORO_JUMP_HAPPY_FUNC_SERIES, 0)` on each without waiting makes the whole crowd cheer at once. |
 | follow | **Fake works** (seen) | `MovePositionMark<actor A>(1, mark); Wait(16); MovePositionLives<actor B>(1, ACTOR_A);` B walks to where A is (actions given to an actor run alongside the script; `WaitExecuteLives(ACTOR_B)` waits). A longer walk: a few legs. |
 | chase | **Fake works** (seen) | The same with speed 3 for both (`MovePositionMark<actor A>(3, …)`, `MovePositionLives<actor B>(3, ACTOR_A)`). |
 | wander | **Fake works** (seen) | `ExecuteCommon<actor X>(CORO_MOVE_RANDOM, 0)`: Sky's own random stroll (turn, step, wait 48 frames, for ever, until the scene ends or another action is given). |
@@ -129,6 +161,53 @@ back2_SetGround(LEVEL_…); camera2_SetPositionMark(Position<'m', x, y>);
 screen2_FadeIn(1, 30);` (and `screen2_FadeOut` at the end). Seen working;
 a place with animated parts (the guild's torches) showed blank squares in
 their place, so a still place reads better.
+
+## Seeing more of a scene: no zoom, a tall view, pans
+
+- **No zoom in Sky's ground mode.** Its places are text BGs at a fixed
+  scale and its Pokémon are plain OAM sprites; no script operation scales
+  the view (the camera operations move it, `camera_SetEffect` shakes it),
+  and pmdsky-debug knows no memory value that does.
+- **Tall view** (`export-ds --tall`, seen): the top screen shows the same
+  place a screen above the bottom one, `back2_SetMode(4);
+  back2_SetGround(<the same level>); camera2_SetPositionMark(...)`, and
+  `camera2_MovePositionMark` glides it with performer 0 at the same pace,
+  as Sky's own two-screen sky scene does (`S13P04B/t02a0203`). The ground
+  joins across the screens where the place is tall enough (the bottom
+  camera at least 288 pixels down). But **the top screen draws no
+  actors**: the beach's crowd standing in the top screen's part showed on
+  neither screen (`target/ds/lab/s2.png`). Sky's top-screen things are
+  objects flagged for it (the object table's third field is 1:
+  `v22p01a1`...), never Pokémon. So the bottom camera stays on the film's
+  subject and the top shows the scenery above; where the subject is near
+  the top of the place the two screens show some rows twice (the game
+  stops the top camera at the edge). A place Sky pairs with a picture of
+  its own (`TOP_SCREENS`: the beach's sky and rock) keeps that picture: the
+  beach above its sand is only sea, its animated foam blank on the top
+  screen.
+- **Pans** (seen): a `frame` of people wider or taller than the screen
+  (with room for their sprites) glides to one end, pans across at 0.75
+  pixels a frame, and comes back to their middle; less than 24 pixels out,
+  their middle is enough.
+- **A true zoom**: the place's BGs would have to become affine (rotation /
+  scaling) BGs, which take only 8-bit maps of 256-colour tiles (Sky's
+  places are 4-bit text BGs, up to three layers, palette animation), and
+  each Pokémon an affine sprite (32 matrices for the screen, double-size
+  boxes, so fewer fit in the 128 OAM entries). That rewrites the ground
+  renderer: C code (c-of-time) hooking overlay 11's BG and sprite setup,
+  weeks of work, not realistic.
+- **A frozen wide shot by display capture**: the DS's display capture
+  writes what engine A shows (BGs and sprites, 256x192 at most, no scaling
+  while capturing) to a VRAM bank; shown again as a 16-bit bitmap BG
+  (affine), it can be scaled down. One capture holds only the screen
+  already seen, so a 2x wide shot means four captures at four camera
+  positions, shrunk and pasted by the CPU into one 256x192 picture, shown
+  still while the script waits. It needs code (c-of-time: a special
+  process called from the script, the capture register, a free 128 KB VRAM
+  bank, while ground mode uses the banks for its BGs and sprites, so their
+  mapping saved and restored), and the picture is still: the Pokémon
+  frozen. Possible for a one-off establishing shot, a few days with
+  c-of-time and an ARM gcc; not built.
 
 ## Sound and video
 
@@ -196,8 +275,8 @@ moves to `BALANCE/actor_list.bin`, and every Pokémon of the film without
 an actor of its own gets a new actor there (`NPC_DW386`, ...), none of
 the story's changed. Past the 45 free ones the exporter names them
 `ACTOR_NPC_FREE045`, ... (without the option `patch_rom.py` refuses them).
-**Seen**: 48 species in two scenes of 24 from a cold boot, the last ones
+**Seen**: 48 species in two scenes of 24 from a cold boot (at most 21 of each can have loaded, as found later), the last ones
 (Clefairy, Golbat, Parasect, Golduck) shown right
 (`target/ds/lab/many_grid.png`). It unlocks any number of species in a
-film (still 24 at once in a scene), and the level list moves too
+film (still 21 at once in a scene), and the level list moves too
 (`BALANCE/level_list.bin`): new places become possible, not done yet.

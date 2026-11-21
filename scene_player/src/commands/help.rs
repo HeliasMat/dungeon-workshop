@@ -282,7 +282,7 @@ scene_player check-game my_game",
 Nothing of data/: a picture or a sound from the game's data is refused. Whoever plays it reads their own: scene_player play <game>.dwpack.",
     ),
     Command {
-        flags: &["--table", "--partial"],
+        flags: &["--table", "--partial", "--tall"],
         values: &["--out"],
         ..command(
             "export-ds",
@@ -292,6 +292,7 @@ Nothing of data/: a picture or a sound from the game's data is refused. Whoever 
             "A trial: tools/ds/patch_rom.py puts it in a copy of your own ROM. Each word that has no DS operation yet is an error.
 --table: each core word and the game's operations it becomes, direct, close (what is lost) or impossible (why).
 --partial: what doesn't export is left out, and told, instead of an error.
+--tall: both screens show the place, the top one a screen above the bottom one (the actors show on the bottom one only).
 scene_player export-ds my_film --out target/ds/my_film.exps",
         )
     },
