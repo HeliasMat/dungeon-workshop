@@ -53,4 +53,3 @@ pub(super) const PLACE_LABEL: char = '@';
 pub(super) fn place_label(at: super::Mark) -> String {
     format!("{PLACE_LABEL}{}.{}", at.scene, at.beat)
 }
-

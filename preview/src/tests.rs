@@ -31,7 +31,7 @@ fn tables() -> std::sync::Arc<film::tables::Tables> {
     READ.get_or_init(|| std::sync::Arc::new(film::tables::Tables::read(&project(), &data()))).clone()
 }
 
-const FILM: &str = "scene: beach pikachu piplup\nput pikachu 300 200\nput piplup 360 210\nwalk pikachu to 420 200\npikachu: Shall we go?\njump piplup\npiplup: Come on!\nwalk piplup to 200 220\nwait all\n";
+const FILM: &str = "scene: beach pikachu piplup\npikachu put 300 200\npiplup put 360 210\npikachu walk to 420 200\npikachu: Shall we go?\npiplup jump\npiplup: Come on!\npiplup walk to 200 220\nwait all\n";
 
 /// That frame of the session, drawn: its pixels.
 fn drawn(session: &mut Session, frame: usize) -> Vec<u8> {
@@ -72,7 +72,7 @@ fn what_it_tells_is_of_the_text_it_played() {
     assert!(!session.fresh(), "the text changed: what it says is of the old one");
     session.play();
     assert!(session.fresh());
-    session.edit(&Edit::Line { number: 6, text: "jump nobody".to_string() }).expect("an edit");
+    session.edit(&Edit::Line { number: 6, text: "nobody jump".to_string() }).expect("an edit");
     let report = session.play();
     assert!(report.read.iter().any(|problem| !problem.is_remark()), "a wrong word is told");
     assert!(report.timeline.is_none() && session.end().is_none(), "it does not play");
@@ -87,7 +87,7 @@ fn a_field_is_set_where_its_form_read_it() {
     let names: Vec<&str> = session.fields(2).iter().map(|value| value.name.as_str()).collect();
     assert!(names.contains(&"where"), "put has its fields: {names:?}");
     session.set_field(2, "where", &["320".to_string(), "190".to_string()]).expect("set");
-    assert_eq!(session.doc().line(2), Some("put pikachu 320 190"));
+    assert_eq!(session.doc().line(2), Some("pikachu put 320 190"));
     assert!(session.set_field(2, "where", &["1".to_string(), "2".to_string()]).is_err(), "the text changed since it played");
     session.play();
     assert!(session.report().read.iter().all(|problem| problem.is_remark()));
@@ -96,7 +96,7 @@ fn a_field_is_set_where_its_form_read_it() {
 
 /// A film long enough to keep a few moments: three scenes, people walking,
 /// speaking, waiting.
-const LONG: &str = "scene: beach pikachu piplup\nput pikachu 300 200\nput piplup 360 210\nwalk pikachu to 420 200\npikachu: Shall we go?\nwait 2s\npiplup: Come on!\nwalk piplup to 200 220\nwait all\n\nscene: town pikachu piplup\npikachu: The town!\nwalk pikachu to right\nwait 2s\npiplup: Wait for me!\nwait 2s\n\nscene: beach_evening pikachu\npikachu: Evening falls.\njump pikachu\nwait 2s\npikachu: Let's go home.\n";
+const LONG: &str = "scene: beach pikachu piplup\npikachu put 300 200\npiplup put 360 210\npikachu walk to 420 200\npikachu: Shall we go?\nwait 2s\npiplup: Come on!\npiplup walk to 200 220\nwait all\n\nscene: town pikachu piplup\npikachu: The town!\npikachu walk to right\nwait 2s\npiplup: Wait for me!\nwait 2s\n\nscene: beach_evening pikachu\npikachu: Evening falls.\npikachu jump\nwait 2s\npikachu: Let's go home.\n";
 
 /// What a play told, said whole (to be compared).
 fn told(session: &Session) -> String {
@@ -116,7 +116,7 @@ fn a_change_late_in_a_film_plays_from_the_last_moment_still_true_as_if_played_fr
     let number = LONG.lines().position(|line| line == "pikachu: Let's go home.").expect("its line") + 1;
     for (edit, late) in [
         (Edit::Line { number, text: "pikachu: Let's hurry home, it's cold!".to_string() }, true),
-        (Edit::Line { number: 2, text: "put pikachu 280 200".to_string() }, false),
+        (Edit::Line { number: 2, text: "pikachu put 280 200".to_string() }, false),
     ] {
         session.edit(&edit).expect("an edit");
         session.play();

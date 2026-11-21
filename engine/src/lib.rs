@@ -53,8 +53,8 @@ pub use stage::framed;
 pub use stage::node;
 pub use stage::tracks;
 pub use stage::{
-    Actor, Bolt, Bubble, Camera, Caption, Credits, Cue, Cutaway, Drawn, Ease, EaseFamily, Effect, Emotes, Fade, Flash, Gauge, Glance, Ground, HEAD, Halo,
-    LIFT, Layer, Letterbox, Light, Lit, LogLine, Mix, Note, Orbit, Pan, Particle, PlacedPicture, Placing, PlayState, Popup, Quake, Rect, SHEETS, SHOT_FRAMES,
+    Actor, Bolt, Bubble, Camera, Caption, Credits, Cue, Cutaway, Drawn, Ease, EaseFamily, Effect, Emotes, Fade, Flash, Gauge, Glance, Ground, HEAD, Halo, LIFT,
+    Layer, Letterbox, Light, Lit, LogLine, Mix, Note, Orbit, Pan, Particle, PlacedPicture, Placing, PlayState, Popup, Quake, Rect, SHEETS, SHOT_FRAMES,
     SetError, Shake, Sheet, Spotlight, Stage, Swing, TILE, Thing, Tint, Train, Tween, Viewport, WALK, Wipe, Words, Zoom, attribute, towards, z_table,
 };
 pub use vocabulary::Vocabulary;

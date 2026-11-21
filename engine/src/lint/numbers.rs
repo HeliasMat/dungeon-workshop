@@ -107,8 +107,7 @@ fn reserved(lines: &[(usize, Vec<String>)]) -> Vec<Diagnostic> {
 
 pub(super) fn numbers_never_given(lines: &[(usize, Vec<String>)], words: &Vocabulary) -> Vec<Diagnostic> {
     // (Words kept by a name: compared with a word, `if answer == pikachu`.)
-    let texts: HashSet<&String> =
-        lines.iter().filter(|(_, fields)| fields[0] == "settext").filter_map(|(_, fields)| fields.get(1)).collect();
+    let texts: HashSet<&String> = lines.iter().filter(|(_, fields)| fields[0] == "settext").filter_map(|(_, fields)| fields.get(1)).collect();
     let given: HashSet<String> = lines.iter().flat_map(|(_, fields)| given_by(fields)).collect();
     let known =
         |name: &str| given.contains(name) || words.given_numbers.contains(&name) || words.given_beginnings.iter().any(|beginning| name.starts_with(beginning));

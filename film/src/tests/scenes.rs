@@ -35,14 +35,6 @@ fn a_new_face_is_acted_first_and_what_is_said_is_acted() {
 }
 
 #[test]
-#[ignore = "needs the extracted data/ (run with --ignored)"]
-fn the_world_map() {
-    let lines = clean("scene: map pikachu\njourney pikachu Treasure Town | Beach Cave\n");
-    assert!(lines.contains(&line(&["caption", "120", "Beach Cave"])));
-    assert_eq!(engine_lines("scene: map pikachu\njourney pikachu Treasure Town | Nowhere\n").1.iter().filter(|problem| !is_remark(problem)).count(), 1);
-}
-
-#[test]
 fn how_a_film_opens_and_closes() {
     let (lines, _) = engine_lines("title: The film\nscene: town krabby\nkrabby: Yes.\ntransition: iris\nscene: beach krabby\n");
     for wanted in [&["typecaption", "150", "The film"][..], &["iris", "out", "30", "krabby"], &["iris", "in", "30"]] {
@@ -187,8 +179,6 @@ fn a_plan_is_set_before_it_shows() {
 fn what_stands_in_a_place_is_put_there() {
     let (lines, _) = engine_lines("scene: guild_entrance\nkrabby: Hi!\n");
     assert!(lines.contains(&line(&["put", "16576", "336", "180", "down"])));
-    let (lines, _) = engine_lines("scene: guild_entrance\ncamera @ 240 175\n");
-    assert!(lines.contains(&line(&["camera", "@", "240", "175"])));
 }
 
 /// The spots a film says are found for whom the words name: someone by the

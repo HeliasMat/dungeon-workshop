@@ -90,11 +90,7 @@ impl Beat {
                 | ViewBeat::Spotlight(Some(Lit { on: Cam::Who(who), .. })),
             ) => vec![(Acts, who)],
             // (Acted on, with another.)
-            Beat::Body(
-                BodyBeat::Face { who, other }
-                | BodyBeat::Recoil { who, from: other, .. }
-                | BodyBeat::MoveShot { from: who, to: other, .. },
-            )
+            Beat::Body(BodyBeat::Face { who, other } | BodyBeat::Recoil { who, from: other, .. } | BodyBeat::MoveShot { from: who, to: other, .. })
             | Beat::Motion(
                 MotionBeat::Approach { who, other, .. }
                 | MotionBeat::Flee { who, from: other, .. }
@@ -103,7 +99,9 @@ impl Beat {
             )
             | Beat::Data(DataBeat::Measure { a: who, b: other, .. }) => vec![(Acts, who), (Acts, other)],
             Beat::Body(BodyBeat::Move { who, target: other, .. } | BodyBeat::InFront { who, of: other })
-            | Beat::Motion(MotionBeat::Follow { who, leader: other, .. } | MotionBeat::Mirror { who, model: other }) => std::iter::once((Acts, who)).chain(other.as_mut().map(|other| (Acts, other))).collect(),
+            | Beat::Motion(MotionBeat::Follow { who, leader: other, .. } | MotionBeat::Mirror { who, model: other }) => {
+                std::iter::once((Acts, who)).chain(other.as_mut().map(|other| (Acts, other))).collect()
+            }
             // (Acted on, many: the first two looked for on the stage.)
             Beat::Motion(MotionBeat::LineUp { who, .. } | MotionBeat::Train { who, .. })
             | Beat::View(ViewBeat::Frame { who, .. } | ViewBeat::KeepFrame(Some(who))) => {
