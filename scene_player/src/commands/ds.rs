@@ -172,6 +172,26 @@ pub const WORDS: &[(&str, Export, &str)] = &[
         "a stats-up shine, the screen white, the evolved one (an actor of its own) put where it stood and shown, the other hidden; no change of species (Sky's scripts have none)",
     ),
     ("join", Export::Direct, "its emote and hop, then as Sky: me_Play(5), message_Mail(\"[CN]… joined the team!\"), WaitMe(5)"),
+    (
+        "roar",
+        Export::Direct,
+        "as Sky's bosses: se_Play(6930), camera_SetEffect(2, 1, 1.0) (hard: 2, 2, 3.0) a while, then 0, 0, 0; SetAnimation of the sprite's own Roar group once, else its Charge looped (9), as Groudon's",
+    ),
+    (
+        "charge",
+        Export::Direct,
+        "SetAnimation (its Charge, looped: 9), SetEffect(691, 3) (Sky's stats-up shine), se_Play(4881), a beat, standing; the charged attack's flash and shake as written (screen_WhiteOut, camera_SetEffect)",
+    ),
+    (
+        "dodge",
+        Export::Close,
+        "Sky's hop (CORO_JUMP_HAPPY_FUNC_SERIES) and a quick MovePositionMark aside, the miss's sound (se_Play); no \"Missed!\" (Sky's scenes have no floating words)",
+    ),
+    (
+        "finish",
+        Export::Close,
+        "its words: the flash, the attack, the faint; bgm_ChangeVolume(0, 0) for the silence, then (0, 256); no slow motion (Sky's scripts have none)",
+    ),
     // Time
     ("wait", Export::Direct, "Wait(frames) / WaitExecuteLives / all: each one moving, WaitExecutePerformer(0)"),
     ("together", Export::Direct, "each one's moves told at once (actors move on their own), then their WaitExecuteLives; its waits are lost"),
@@ -458,10 +478,10 @@ fn common_group(name: &str) -> Option<u16> {
 /// group shows (the starters' order): itself for most of the story's
 /// heroes, another one, or a close one, for the sprites ordered their own
 /// way (Dusknoir's faint is its 25). `None`: it would only stand.
-fn own_group(species: u16, group: u16) -> Option<u16> {
+fn own_groups() -> &'static HashMap<u16, Vec<(u16, String)>> {
     use std::sync::OnceLock;
     static TABLE: OnceLock<HashMap<u16, Vec<(u16, String)>>> = OnceLock::new();
-    let table = TABLE.get_or_init(|| {
+    TABLE.get_or_init(|| {
         let told = DATA.get().map(|data| std::fs::read_to_string(game_file(data, OWN_ORDER)).unwrap_or_default()).unwrap_or_default();
         told.lines()
             .filter(|line| !line.starts_with('#'))
@@ -472,7 +492,17 @@ fn own_group(species: u16, group: u16) -> Option<u16> {
                 Some((species.parse().ok()?, groups))
             })
             .collect()
-    });
+    })
+}
+
+/// The group of that species' own sprite named so (`Roar`), if it has one
+/// Sky's table reaches.
+fn own_named(species: u16, name: &str) -> Option<u16> {
+    own_groups().get(&species)?.iter().find(|(at, own)| own == name && *at <= 34).map(|(at, _)| *at)
+}
+
+fn own_group(species: u16, group: u16) -> Option<u16> {
+    let table = own_groups();
     let Some(own) = table.get(&species).filter(|_| species != 0) else { return Some(group) };
     let Some(name) = group.checked_sub(13).and_then(|at| SHARED.split(' ').nth(usize::from(at))) else { return Some(group) };
     // (Sky's table reaches groups 0 to 34 only.)
@@ -954,6 +984,22 @@ impl<'a> Writer<'a> {
                 let (x, y) = *self.at.get(of)?;
                 Some((x - BESIDE, y))
             }
+            // Before someone as it looks, or behind it (a dodge back).
+            Spot::Before { of, back } => {
+                let (x, y) = *self.at.get(of)?;
+                let (dx, dy) = match self.facing.get(of).copied().unwrap_or(Direction::Down) {
+                    Direction::Down => (0.0, 1.0),
+                    Direction::DownRight => (0.7, 0.7),
+                    Direction::Right => (1.0, 0.0),
+                    Direction::UpRight => (0.7, -0.7),
+                    Direction::Up => (0.0, -1.0),
+                    Direction::UpLeft => (-0.7, -0.7),
+                    Direction::Left => (-1.0, 0.0),
+                    Direction::DownLeft => (-0.7, 0.7),
+                };
+                let way = if *back { -BESIDE } else { BESIDE };
+                Some((x + dx * way, y + dy * way))
+            }
             Spot::By { of, dx, dy } => {
                 let (x, y) = *self.at.get(of)?;
                 Some((x + dx, y + dy))
@@ -1229,6 +1275,14 @@ impl<'a> Writer<'a> {
     /// The words Sky plays with a routine of its own (`unionall`'s
     /// coroutines): the rest of their line's beats are left to it.
     fn routine(&mut self, number: i32, word: Option<&str>, beat: &Beat) -> bool {
+        // (A roar, power gathered: each as Sky's scripts write it, from the line's first beat.)
+        if let Beat::Body(BodyBeat::Anim { who, .. }) = beat {
+            match word {
+                Some("roar") => return self.roar(number, *who),
+                Some("charge") => return self.charge(number, *who),
+                _ => {}
+            }
+        }
         let who = match beat {
             Beat::Body(BodyBeat::TurnBy { who, .. } | BodyBeat::Anim { who, .. } | BodyBeat::Effect { who, .. } | BodyBeat::Jump { who, .. }) => *who,
             // Eating, as Sky shows it: the eating animation and its effect, no item.
@@ -1276,8 +1330,43 @@ impl<'a> Writer<'a> {
         true
     }
 
+    /// `roar`: Sky's bosses' roar, the screen shaking a while, the sprite's
+    /// own Roar group once, or its Charge looped (as Groudon roars).
+    fn roar(&mut self, number: i32, who: Who) -> bool {
+        let Some(actor) = self.who(number, who) else { return true };
+        let species = self.actors.get(&self.became.get(&who).copied().unwrap_or(who)).map_or(0, |one| one.kind);
+        let set = own_named(species, "Roar").and_then(|group| animation(group, false)).or_else(|| self.set(who, 11, true)).unwrap_or(2);
+        let (shake, frames) = if self.said_with(number, "hard") { ("2, 2, 3.0", 70) } else { ("2, 1, 1.0", 60) };
+        self.line(&format!("camera_SetEffect({shake});"));
+        self.line(&format!("se_Play({});", rules::songs::noise::ROAR));
+        self.line(&format!("SetAnimation<actor {actor}>({set});"));
+        self.line(&format!("Wait({frames});"));
+        self.line("camera_SetEffect(0, 0, 0);");
+        self.line(&format!("SetAnimation<actor {actor}>(2);"));
+        true
+    }
+
+    /// `charge`: its Charge looped, Sky's stats-up shine a beat, standing.
+    fn charge(&mut self, number: i32, who: Who) -> bool {
+        let Some(actor) = self.who(number, who) else { return true };
+        let set = self.set(who, 11, true).unwrap_or(2);
+        self.line(&format!("SetAnimation<actor {actor}>({set});"));
+        self.line(&format!("SetEffect<actor {actor}>(691, 3);"));
+        self.line("se_Play(4881);");
+        self.line("Wait(50);");
+        self.line(&format!("SetEffect<actor {actor}>(EFFECT_NONE, 3);"));
+        self.line(&format!("SetAnimation<actor {actor}>(2);"));
+        true
+    }
+
     fn plain(&mut self, number: i32, word: Option<&str>, beat: &Beat) {
         match beat {
+            // Floating words (`Missed!`): Sky's scenes have none.
+            Beat::Body(BodyBeat::Popup { text, .. }) => self.notes.push(format!("line {number}: the words {text:?} floating up")),
+            // A slow motion: Sky's scripts have none; the finishing blow plays at its pace.
+            Beat::View(ViewBeat::Tempo(_)) if word == Some("finish") => {}
+            // The music lowered, or back: Sky's own volume (0 to 256), at once.
+            Beat::Sound(SoundBeat::Volume(volume)) => self.line(&format!("bgm_ChangeVolume(0, {});", (volume * 256.0).round() as i32)),
             // The place's things: objects of the game in the scene's layout.
             Beat::Body(BodyBeat::Put { who: Who::Thing { object, .. }, at, .. }) => {
                 let Some(point) = self.point(at) else { return };
@@ -1485,6 +1574,12 @@ impl<'a> Writer<'a> {
             },
             Beat::Sound(SoundBeat::Jingle(jingle)) => self.line(&format!("me_Play({jingle});")),
             Beat::Flow(FlowBeat::WaitSound { of: SoundOf::Game(sound), .. }) => self.line(&format!("WaitSe({});", sound.0)),
+            // An unseen point (where a dodger stood): only its place, kept.
+            Beat::Body(BodyBeat::Put { who: who @ Who::Spot(_), at, .. }) => {
+                if let Some(point) = self.point(at) {
+                    self.at.insert(*who, point);
+                }
+            }
             Beat::Body(BodyBeat::Put { who, at, direction: way }) => {
                 let Some(actor) = self.who(number, *who) else { return };
                 let Some(point) = self.point(at) else {
@@ -1834,6 +1929,12 @@ impl<'a> Writer<'a> {
                 self.line(&format!("SetAnimation<actor {actor}>({crouch});"));
                 self.line("Wait(12);");
                 self.line(&format!("SetAnimation<actor {actor}>(13);"));
+                // (Aimed at an unseen point, where one dodged from: on no one, it missed.)
+                if let Some(Who::Spot(_)) = target {
+                    self.line("Wait(20);");
+                    self.line(&format!("SetAnimation<actor {actor}>(2);"));
+                    return;
+                }
                 let on = match target.and_then(|target| self.who(number, target)) {
                     Some(target) => target,
                     None => actor.clone(),

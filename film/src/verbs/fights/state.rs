@@ -17,6 +17,15 @@ pub struct Combat {
     pub levels: BTreeMap<String, i32>,
     /// (How many fights wrote passages, to name them.)
     pub written: usize,
+    /// (Who gathered power for a move, by its number: their next attack
+    /// with it plays stronger, `charge`.)
+    pub charged: BTreeMap<String, u16>,
+    /// (The last blow aimed at someone, for a dodge right after it.)
+    pub blow: Option<super::blows::Blow>,
+    /// (Who dodged with no blow before, how far the film was written, and
+    /// the unseen point where they stood: the attack at them straight after
+    /// misses, aimed there.)
+    pub dodging: Option<(String, usize, String)>,
 }
 
 impl Combat {

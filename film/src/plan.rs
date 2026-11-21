@@ -164,6 +164,10 @@ pub const WORDS: &[Planned] = &[
     word("Fights", "attack", "who attack Move [at target]"),
     word("Fights", "evolve", "who evolve species"),
     word("Fights", "join", "who join [team]"),
+    word("Fights", "roar", "who roar [hard]"),
+    word("Fights", "charge", "who charge [Move]"),
+    word("Fights", "dodge", "who dodge [left|right|back]"),
+    recipe("Fights", "finish", "who finish target Move"),
     // Time
     word("Time", "wait", "wait d|who|all|sound|music"),
     syntax("Time", "together", "together ... end"),

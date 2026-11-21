@@ -107,6 +107,10 @@ pub struct Tables {
     pub bodies: HashMap<String, (i32, i32)>,
     /// Those with a sprite, in the order of their numbers.
     pub with_sprites: Vec<String>,
+    /// The group of each species' own sprite that shows it roaring, by its
+    /// number, where the sprite has one (`roar`): read from one's own game
+    /// (`extra/ds_animations.txt`, `tools/ds/animations.py`), none without.
+    pub roars: HashMap<String, u16>,
     /// Those with a portrait alone, and the file.
     pub faces_alone: BTreeMap<String, String>,
     pub generations: BTreeMap<usize, Vec<String>>,

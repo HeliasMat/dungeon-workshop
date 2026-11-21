@@ -50,8 +50,11 @@ use crate::words::{frames_of, plain};
 const DEEPEST: usize = 8;
 
 /// The library's recipes, a file a theme.
-const LIBRARY: [(&str, &str); 2] =
-    [("gestures", include_str!("../../recipes/gestures.film")), ("fishing/line", include_str!("../../recipes/fishing/line.film"))];
+const LIBRARY: [(&str, &str); 3] = [
+    ("gestures", include_str!("../../recipes/gestures.film")),
+    ("fights", include_str!("../../recipes/fights.film")),
+    ("fishing/line", include_str!("../../recipes/fishing/line.film")),
+];
 
 /// The words that are words said, or that carry them: no `there` nor `team`
 /// is read in them.

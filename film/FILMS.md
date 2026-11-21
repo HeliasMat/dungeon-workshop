@@ -729,6 +729,9 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `join` | `who:pokemon join [team]` | `fights` | by the line | emote, jump, the game's sentence |
 | `attack` | `who:pokemon attack move:thing... at target:pokemon`; `who:pokemon attack move:thing...` | `fights` | by the line | face, move (the move's own animation and effects, its sound), recoil and the Hurt pose of the target |
 | `evolve` | `who:pokemon evolve into:pokemon` | `fights` | by the line | do evolution, the game's sentence |
+| `roar` | `who:pokemon roar [hard]` | `fights` | by the line | the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise |
+| `charge` | `who:pokemon charge move:thing...`; `who:pokemon charge` | `fights` | by the line | his Charge animation, the game's stats-up shine and its sound, held a beat; a move told: his next attack with it lands with a flash and a hard shake |
+| `dodge` | `who:pokemon dodge [left\|right\|back]` | `fights` | by the line | a quick hop aside (back by default) with his Hop animation; right after an attack at him, or right before one, it misses: no knock back, "Missed!" |
 | `give` | `from:pokemon give thing... to other:pokemon`; `give thing... from:pokemon to:pokemon` | `items` | by the line | give |
 | `hold` | `who:pokemon hold thing...` | `items` | by the line | putnear, thing, hold (or approach and hold if it lies on the ground) |
 | `drop` | `who:pokemon drop at what:place`; `who:pokemon drop [thing...]` | `items` | by the line | hold off, fall (at a place: set there, a little hop) |
@@ -778,6 +781,7 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `sigh` |  | `gestures` | by the line | `sigh who:pokemon`:  |
 | `react` |  | `gestures` | by the line | `react who:pokemon joy`:  |
 | `ghost` |  | `gestures` | by the line | `ghost who:pokemon`: He turns half see-through and floats, as a ghost does. |
+| `finish` |  | `fights` | by the line | `finish who:pokemon target:pokemon move:word`: The finishing blow: time slowed, the screen white, the move; the one struck faints, and the music falls silent a moment over them. |
 | `reel` |  | `fishing/line` | by the line | `reel who:pokemon catch what:word`: He reels in what bit: it flies out of the water and lands beside him. |
 <!-- end of words -->
 

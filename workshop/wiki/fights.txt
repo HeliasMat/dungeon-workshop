@@ -25,3 +25,35 @@ pikachu put left
 piplup put right
 pikachu attack Thunderbolt at piplup
 piplup (pain): Ouch!
+
+== roar
+> A boss's cry: the game's roar (it has no cry of each species), the view shaking, harder with hard; the sprite's own Roar animation where it has one (Dialga, Palkia, Entei...), else its Charge and a rise.
+scene: beach pikachu groudon
+pikachu put left
+groudon put right
+groudon roar hard
+pikachu (surprised): Whoa!
+
+== charge
+> Gathering power: their Charge animation, the game's shine of power rising (its stats-up effect) and its sound, held a beat. With a move told, their next attack with that move lands with a flash and a hard shake, the target knocked further.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu charge Thunderbolt
+pikachu attack Thunderbolt at piplup
+
+== dodge
+> A quick hop aside, left, right or back (back by default), with their Hop animation. Right after an attack at them, or right before one, the blow misses: they hop aside just as it lands, no knock back, "Missed!" over them.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu attack Tackle at piplup
+piplup dodge left
+piplup: Too slow!
+
+== finish
+> The finishing blow: time slowed, the screen white, the move; the one struck faints, and the music falls silent a moment over them.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu finish piplup Thunderbolt

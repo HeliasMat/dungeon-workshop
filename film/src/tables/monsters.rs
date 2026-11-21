@@ -56,9 +56,27 @@ pub(super) fn read_monsters(tables: &mut Tables) {
         }
     }
     tables.with_sprites = with;
+    tables.roars = roars(&folder);
     read_generations(tables);
     read_variants(tables, &sheets);
     read_forms(tables);
+}
+
+/// The table of the sprites' own groups past the shared ones, by species
+/// (`species<TAB>13=Injured,17=Roar,...`), if one's own game gave it.
+const OWN_GROUPS: &str = "extra/ds_animations.txt";
+
+/// The group each species' sprite roars with, where it has one.
+fn roars(folder: &str) -> HashMap<String, u16> {
+    let told = std::fs::read_to_string(super::files::game_file(folder, OWN_GROUPS)).unwrap_or_default();
+    told.lines()
+        .filter(|line| !line.starts_with('#'))
+        .filter_map(|line| {
+            let (species, groups) = line.split_once('\t')?;
+            let roar = groups.split(',').filter_map(|pair| pair.split_once('=')).find(|(_, name)| *name == "Roar")?.0;
+            Some((species.to_string(), roar.parse().ok()?))
+        })
+        .collect()
 }
 
 /// The forms of the story that share a name with another (Dialga as the

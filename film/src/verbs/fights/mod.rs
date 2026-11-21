@@ -15,6 +15,7 @@ use crate::{emit, fields};
 
 mod state;
 pub use state::Combat;
+mod blows;
 mod directed;
 mod lines;
 
@@ -42,6 +43,20 @@ pub const WORDS: &[Word] = &[
     )
     .does(attacked),
     Word::new("evolve", &["who:pokemon into:pokemon"], "do evolution, the game's sentence").maybe(fought_word),
+    Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise")
+        .does(blows::roared),
+    Word::new(
+        "charge",
+        &["who:pokemon move:thing...", "who:pokemon"],
+        "his Charge animation, the game's stats-up shine and its sound, held a beat; a move told: his next attack with it lands with a flash and a hard shake",
+    )
+    .does(blows::charged),
+    Word::new(
+        "dodge",
+        &["who:pokemon [left|right|back]"],
+        "a quick hop aside (back by default) with his Hop animation; right after an attack at him, or right before one, it misses: no knock back, \"Missed!\"",
+    )
+    .does(blows::dodged),
 ];
 
 fn bar_opens(film: &mut Film, line: &Line) {
@@ -87,7 +102,7 @@ fn level_of(line: &Line, usual: i32) -> i32 {
 }
 
 /// The frames from a move's start to its blow landing, and after.
-const STRIKE_FRAMES: f32 = 24.0;
+pub(super) const STRIKE_FRAMES: f32 = 24.0;
 const STRUCK_FRAMES: i64 = 40;
 
 /// `pikachu attack Thunderbolt at koffing`: the move by its name, as the
@@ -98,9 +113,7 @@ fn attacked(film: &mut Film, line: &Line) {
     let args = &line.args;
     let who = plain(args.word("who").unwrap_or_default());
     let named = args.words("move").join(" ");
-    let Some(id) =
-        film.tables.moves.get(&plain(&named.replace(' ', ""))).or_else(|| film.tables.moves.get(&plain(&named))).and_then(|row| row.0.parse::<u16>().ok())
-    else {
+    let Some(id) = move_id(film, &named) else {
         let tables = film.tables.clone();
         film.unknown(line.number, "unknown move", &named, tables.moves.keys().map(String::as_str), "");
         return;
@@ -118,17 +131,45 @@ fn attacked(film: &mut Film, line: &Line) {
         }
         None => None,
     };
+    // (Charged for this move: it lands stronger; a dodge straight before: it misses.)
+    let strong = film.combat.charged.get(&who) == Some(&id);
+    if strong {
+        film.combat.charged.remove(&who);
+    }
+    let dodged = film.combat.dodging.take().filter(|(one, written, _)| Some(one) == target.as_ref() && blows::straight_after(film, *written));
     if let Some(target) = &target {
         film.face(&who, target);
     }
-    film.beat(emit::uses_move(user, engine::MoveId(id), on));
+    // (Dodged: aimed where they stood.)
+    let aimed = dodged.as_ref().and_then(|(_, _, stood)| film.other(stood)).or(on);
+    let moved = film.written.len();
+    film.beat(emit::uses_move(user, engine::MoveId(id), aimed));
+    film.combat.blow = None;
     if let (Some(target), Some(_)) = (&target, on) {
-        film.on(target, |struck| emit::after(STRIKE_FRAMES, 0.0, emit::recoil(struck, user, 12.0)));
-        if let Some(hurt) = emit::anim_of("Hurt") {
-            film.on(target, |struck| emit::after(STRIKE_FRAMES, 0.0, emit::anim(struck, hurt, false, false)));
+        if dodged.is_some() {
+            blows::missed(film, target, STRIKE_FRAMES);
+        } else {
+            let start = film.written.len();
+            film.on(target, |struck| emit::after(STRIKE_FRAMES, 0.0, emit::recoil(struck, user, if strong { 20.0 } else { 12.0 })));
+            if let Some(hurt) = emit::anim_of("Hurt") {
+                film.on(target, |struck| emit::after(STRIKE_FRAMES, 0.0, emit::anim(struck, hurt, false, false)));
+            }
+            if strong {
+                blows::strong(film, STRIKE_FRAMES);
+            }
+            let struck = start..film.written.len();
+            film.combat.blow = Some(blows::Blow { target: target.clone(), user, id: engine::MoveId(id), moved, struck, written: 0 });
         }
     }
     film.wait_frames((STRIKE_FRAMES as i64 + STRUCK_FRAMES) as i32, line.wait);
+    if let Some(blow) = film.combat.blow.as_mut() {
+        blow.written = film.written.len();
+    }
+}
+
+/// A move of the game by its name (`Thunderbolt`, `Thunder Punch`): its number.
+fn move_id(film: &Film, named: &str) -> Option<u16> {
+    film.tables.moves.get(&plain(&named.replace(' ', ""))).or_else(|| film.tables.moves.get(&plain(named))).and_then(|row| row.0.parse::<u16>().ok())
 }
 
 /// A boss looms: the view on it, the ground shaking, its song.

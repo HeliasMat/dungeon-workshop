@@ -1,0 +1,16 @@
+# The recipes of the fights: what a fight's great moments are made of, in
+# the words of the language.
+
+# The finishing blow: time slowed, the screen white, the move; the one
+# struck faints, and the music falls silent a moment over them.
+define finish who:pokemon target:pokemon move:word
+  who face target
+  tempo 0.5
+  flash white
+  who attack move at target
+  tempo 1
+  target faint
+  volume 0
+  wait 1s
+  volume 1
+end
