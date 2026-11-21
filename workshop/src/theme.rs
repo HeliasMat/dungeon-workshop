@@ -31,6 +31,7 @@ pub const DECOR: Color32 = Color32::from_rgb(0x3B, 0xA7, 0xD9);
 pub const ASSETS: Color32 = Color32::from_rgb(0xA7, 0x8B, 0xFA);
 pub const DUNGEON: Color32 = Color32::from_rgb(0x5C, 0xC9, 0x7B);
 pub const GAME: Color32 = Color32::from_rgb(0xF4, 0x72, 0xB6);
+pub const EMULATOR: Color32 = Color32::from_rgb(0x2D, 0xD4, 0xBF);
 /// What is wrong.
 /// What is pointed at in one panel, shown in the others.
 pub const POINTED: Color32 = Color32::from_rgb(0x4F, 0xC1, 0xFF);

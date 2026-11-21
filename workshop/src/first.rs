@@ -459,7 +459,7 @@ impl First {
 }
 
 /// One of the programs that come with the Workshop, beside it: its path, or why it is not there.
-fn program_beside(program: &str) -> Result<PathBuf, String> {
+pub fn program_beside(program: &str) -> Result<PathBuf, String> {
     let folder = std::env::current_exe().ok().and_then(|exe| exe.parent().map(Path::to_path_buf)).unwrap_or_default();
     let path = folder.join(format!("{program}{}", std::env::consts::EXE_SUFFIX));
     if path.is_file() { Ok(path) } else { Err(missing_program(&path)) }

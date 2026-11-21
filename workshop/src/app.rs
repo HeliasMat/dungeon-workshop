@@ -21,10 +21,11 @@ pub enum Space {
     Decor,
     Dungeon,
     Assets,
+    Emulator,
 }
 
 impl Space {
-    pub const ALL: [Space; 6] = [Space::Home, Space::Game, Space::Film, Space::Decor, Space::Dungeon, Space::Assets];
+    pub const ALL: [Space; 7] = [Space::Home, Space::Game, Space::Film, Space::Decor, Space::Dungeon, Space::Assets, Space::Emulator];
 
     pub fn word(self) -> &'static str {
         match self {
@@ -34,6 +35,7 @@ impl Space {
             Space::Decor => "Decor",
             Space::Dungeon => "Dungeon",
             Space::Assets => "Resources",
+            Space::Emulator => "Emulator",
         }
     }
 
@@ -45,6 +47,7 @@ impl Space {
             Space::Decor => theme::DECOR,
             Space::Dungeon => theme::DUNGEON,
             Space::Assets => theme::ASSETS,
+            Space::Emulator => theme::EMULATOR,
         }
     }
 
@@ -125,7 +128,7 @@ fn layout(space: Space) -> DockState<Panel> {
             dock
         }
         // (Its editors, its columns on the whole window: no panels.)
-        Space::Dungeon | Space::Game => DockState::new(Vec::new()),
+        Space::Dungeon | Space::Game | Space::Emulator => DockState::new(Vec::new()),
         Space::Assets => {
             let mut dock = DockState::new(vec![Panel::AssetGrid]);
             let surface = dock.main_surface_mut();
@@ -169,6 +172,8 @@ pub struct Work {
     pub dungeons: crate::dungeons::Dungeons,
     /// The Game space's own.
     pub games: crate::games::Games,
+    /// The Emulator space's own.
+    pub emulate: crate::emulate::Emulate,
 }
 
 impl Work {
@@ -188,7 +193,7 @@ impl Work {
 /// The window.
 pub struct App {
     space: Space,
-    docks: [DockState<Panel>; 6],
+    docks: [DockState<Panel>; 7],
     work: Work,
     capture: Option<crate::capture::Capture>,
     /// Tools › Convert an Image (Tilequant), while open.
@@ -217,6 +222,7 @@ impl App {
             resources: crate::resources::Resources::new(&session, context),
             dungeons: crate::dungeons::Dungeons::new(&session),
             games: crate::games::Games::new(&session),
+            emulate: crate::emulate::Emulate::new(&session),
             session,
         };
         // (`WORKSHOP_SPACE=game|film|decor|dungeon|resources`: that space first, for a picture.)
@@ -227,6 +233,7 @@ impl App {
             Some("decor") => Space::Decor,
             Some("dungeon") => Space::Dungeon,
             Some("resources") => Space::Assets,
+            Some("emulator") => Space::Emulator,
             _ => Space::Home,
         };
         let mut app = App {
@@ -399,6 +406,7 @@ impl App {
             Space::Film => self.film_tools(ui),
             Space::Dungeon => crate::dungeons::tabs(ui, &mut self.work.dungeons),
             Space::Game => crate::games::tools(ui, &mut self.work.games),
+            Space::Emulator => crate::emulate::tools(ui, &mut self.work.emulate, self.work.film.as_deref()),
             Space::Assets if self.work.resources.creating() => crate::resources::making_tabs(ui, &mut self.work.resources),
             space => {
                 let open = match space {
@@ -420,7 +428,7 @@ impl App {
             Space::Dungeon => self.work.dungeons.unsaved_count() > 0,
             Space::Assets => self.work.resources.unsaved_count() > 0,
             Space::Game => self.work.games.unsaved(),
-            Space::Home => false,
+            Space::Home | Space::Emulator => false,
         }
     }
 
@@ -1050,6 +1058,13 @@ impl eframe::App for App {
             egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::PANEL)).show(context, |ui| {
                 crate::games::page(ui, &mut self.work.games);
             });
+        } else if self.space == Space::Emulator {
+            egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::PANEL).inner_margin(egui::Margin::symmetric(4, 4))).show(context, |ui| {
+                crate::emulate::page(ui, &mut self.work.emulate);
+            });
+            if !self.work.emulate.said.is_empty() {
+                self.work.said = std::mem::take(&mut self.work.emulate.said);
+            }
         } else if self.space == Space::Assets && self.work.resources.creating() {
             egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::PANEL).inner_margin(egui::Margin::symmetric(4, 4))).show(context, |ui| {
                 crate::resources::studio(ui, &mut self.work.resources);

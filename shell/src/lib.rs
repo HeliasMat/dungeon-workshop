@@ -14,6 +14,7 @@ pub mod record;
 pub mod screen;
 pub mod sheet;
 pub mod sound;
+pub mod stream;
 pub mod window;
 
 pub use blit::{Around, Fx, Mix, Paint, blit, blit_with};

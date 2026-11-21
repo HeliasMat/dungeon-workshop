@@ -99,7 +99,7 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `scene_player` | `engine`, `film`, `game`, `language`, `preview`, `rules`, `scenes`, `shell`, `stage_view` |
 | `emulator` | nothing |
 | `dungeon_lsp` | `assets`, `decor`, `film`, `game`, `language` |
-| `workshop` | `assets`, `decor`, `dive`, `engine`, `film`, `game`, `media`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view` |
+| `workshop` | `assets`, `decor`, `dive`, `emulator`, `engine`, `film`, `game`, `media`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view` |
 <!-- end of rule -->
 
 So `preview` plays and draws films and knows no game (no `decor`, `language` nor `dive`); `game` uses `preview`, never the other way; only `extractor` uses `rom_formats`; `assets` reads `data/` for everyone. The engine reads no game's data nor rules: its faces, songs, animations and the commands only a game plays are handed to it (`Vocabulary`). It does know a few things of this kind of game, said exactly in "What the engine knows" below.

@@ -75,6 +75,19 @@ pub struct LaunchOptions {
     pub first: bool,
     /// `WORKSHOP_WELCOME`: the "what to try first" panel, as after the first launch.
     pub welcome: bool,
+    /// `WORKSHOP_SETTINGS=<file>`: the Workshop's settings (else `settings.txt` in the
+    /// system's folder for them: `%APPDATA%\dungeon_workshop`, `~/.config/dungeon_workshop`).
+    pub settings: Option<PathBuf>,
+    /// `WORKSHOP_LIBRETRO_CORE=<file>`: the libretro core the Emulator space runs (before the settings' own).
+    pub libretro_core: Option<PathBuf>,
+    /// `SKYTEMPLE_ARMIPS_EXEC=<armips>`: what `patch_rom.py --more-actors` assembles with (before the settings' own).
+    pub armips: Option<PathBuf>,
+    /// `WORKSHOP_EMULATOR_ROM=<file.nds>`: that game loaded in the Emulator space at once.
+    pub emulator_rom: Option<PathBuf>,
+    /// `WORKSHOP_EMULATOR_FRAMES=n`: and run that many frames at once (past a game's logos), for a picture.
+    pub emulator_frames: Option<u32>,
+    /// `WORKSHOP_EMULATOR_FILM=<file.film>`: that film played on DS at once (Play This Film on DS).
+    pub emulator_film: Option<PathBuf>,
 }
 
 impl LaunchOptions {
@@ -120,6 +133,26 @@ impl LaunchOptions {
             library: var("WORKSHOP_LIBRARY"),
             first: set("WORKSHOP_FIRST"),
             welcome: set("WORKSHOP_WELCOME"),
+            settings: std::env::var_os("WORKSHOP_SETTINGS").map(PathBuf::from).or_else(settings_folder),
+            libretro_core: std::env::var_os("WORKSHOP_LIBRETRO_CORE").map(PathBuf::from),
+            armips: std::env::var_os("SKYTEMPLE_ARMIPS_EXEC").map(PathBuf::from),
+            emulator_rom: std::env::var_os("WORKSHOP_EMULATOR_ROM").map(PathBuf::from),
+            emulator_frames: number("WORKSHOP_EMULATOR_FRAMES"),
+            emulator_film: std::env::var_os("WORKSHOP_EMULATOR_FILM").map(PathBuf::from),
         }
     }
+}
+
+/// `settings.txt` in the system's folder for a program's settings (`%APPDATA%`, the
+/// Library's Application Support, `$XDG_CONFIG_HOME` or `~/.config`), in `dungeon_workshop/`.
+fn settings_folder() -> Option<PathBuf> {
+    let home = || std::env::var_os("HOME").map(PathBuf::from);
+    let folder = if cfg!(windows) {
+        std::env::var_os("APPDATA").map(PathBuf::from)
+    } else if cfg!(target_os = "macos") {
+        home().map(|home| home.join("Library").join("Application Support"))
+    } else {
+        std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).or_else(|| home().map(|home| home.join(".config")))
+    };
+    folder.map(|folder| folder.join("dungeon_workshop").join("settings.txt"))
 }

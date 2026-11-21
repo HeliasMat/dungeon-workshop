@@ -4,7 +4,7 @@
 cargo run --offline -p workshop [file.film | file.decor]
 ```
 
-One window, six spaces (Home, Game, Film, Decor, Dungeon, Resources), each with its panels docked as in a studio (the Game's columns and the Dungeon's editors take the whole window).
+One window, seven spaces (Home, Game, Film, Decor, Dungeon, Resources, Emulator), each with its panels docked as in a studio (the Game's columns and the Dungeon's editors take the whole window).
 
 ## Game
 
@@ -350,9 +350,20 @@ Everywhere, a click goes back to the line in the text.
 | Alt + drag | change a number |
 | F11 | focus |
 
+## Emulator
+
+A DS game run inside the Workshop, to see a film as the real game plays it (`workshop/src/emulate.rs`, the `emulator` crate). It needs a **libretro core**, the emulator itself as a small library, which the Workshop never comes with: get the melonDS core (or DeSmuME's) from libretro's site (buildbot.libretro.com, nightly, your system, latest: `melonds_libretro`), unzip it anywhere of yours, then **Choose a Core…** in the space (or set `WORKSHOP_LIBRETRO_CORE`). melonDS needs no BIOS or firmware: it uses its own FreeBIOS. See `docs/DS.md`.
+
+- **Load ROM…**: a `.nds` of yours. Both screens are drawn one above the other, crisp, as big as fits; the sound plays at 1×.
+- **Keys**: arrows the D-pad, X the A button, Z the B button, S the X button, A the Y button, Q/W L/R, Enter Start, Shift Select; the mouse held on the bottom screen is the stylus.
+- **Pause/Play**, **Reset**, **Step** (one frame, paused), **1× 2× 4×**, **Save State** / **Load State** (one slot a game), **Screenshot** (a PNG): the states and pictures go in the settings folder's `emulator/`.
+- **Play This Film on DS**: the film open in the Film space exported (`scene_player export-ds --partial`) and put in a copy of your Explorers of Sky (`tools/ds/patch_rom.py --boot --more-actors`, Python with `skytemple_files`) as `target/ds/workshop_play.nds`, then played from power on, A pressed by itself through the title until the film starts (about 25 s). The ROM and armips are asked the first time and remembered; what the steps say, and why one failed, is shown under the screens.
+
+The Workshop's **settings** (`settings.rs`) are a small `key = value` file of the user's own: `%APPDATA%\dungeon_workshop\settings.txt` (`~/.config/dungeon_workshop/` elsewhere, or `WORKSHOP_SETTINGS`), holding the core (`libretro_core`), the ROM (`ds_rom`) and armips (`armips`); the emulator's saves, states and screenshots sit beside it in `emulator/`. Nothing of them goes in the project.
+
 ## The code
 
-`workshop/src/`, a module a subject; a big one is a folder, its `mod.rs` holding its state and what its files share. Under the building-block rule (`tools/rule.sh`): it uses `assets`, `decor`, `rules`, `dive`, `game`, `scenes`, `film`, `preview`, `engine`, `shell` and `stage_view`, by their public side.
+`workshop/src/`, a module a subject; a big one is a folder, its `mod.rs` holding its state and what its files share. Under the building-block rule (`tools/rule.sh`): it uses `assets`, `decor`, `emulator`, `rules`, `dive`, `game`, `scenes`, `film`, `preview`, `engine`, `shell` and `stage_view`, by their public side.
 
 | Module | What it holds |
 |---|---|
@@ -372,6 +383,7 @@ Everywhere, a click goes back to the line in the text.
 | `making/` | what is made in the Resources: `mod.rs` (`Maker`), `picture/` (the painting: `canvas.rs`, `pointer.rs` (what the pointer does with each tool), `panels.rs`, `editor.rs`, `simple.rs`, `strokes.rs`, `selection.rs`, `effects.rs`, `steps.rs`, `pixels.rs`, `files.rs`), `sound/` (the sound maker: `synth.rs`, `render.rs`, `voices.rs`, `mix.rs`, `presets.rs`, `instruments.rs`, `versions.rs`, `controls.rs`, `views.rs`, `editor.rs` (the expert's), `settings.rs` (a layer's settings, the mix), `simple.rs`) |
 | `music/` | the music maker: `mod.rs` (its state), `project.rs` (the song rendered), `midi.rs`, `editor.rs`, `transport.rs`, `tracks.rs`, `notes.rs`, `mixer.rs`, `keys.rs`, `wave.rs` |
 | `spritecollab.rs`, `quant_tool.rs`, `level_csv.rs`, `tool_run.rs` | the Tools: SpriteCollab, an image converted, a species exported as CSV, a long piece of work on its thread |
+| `emulate.rs`, `settings.rs` | the Emulator space (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), the Workshop's own settings |
 | `capture.rs` | a picture of the window without a mouse |
 | `session.rs`, `launch.rs` | what every space works with (`Session`: the library, the data, what is read of them, `reload`), how the Workshop was launched (`LaunchOptions`) |
 
@@ -385,6 +397,9 @@ The Workshop's `main` reads, once, what it is launched with (`workshop/src/launc
 | `DUNGEON_DATA=<folder>` | the game's files read from there (else the root's `data/`) |
 | `DUNGEON_SPRITECOLLAB=<folder>` | the clone of SpriteCollab the Tools read (else `<root>/sources/spritecollab`) |
 | `DUNGEON_FILM_LANGUAGE=fr` | the films said in that language (a line that does not give it: in English) |
+| `WORKSHOP_SETTINGS=<file>` | the Workshop's settings there (else `dungeon_workshop/settings.txt` in the system's settings folder) |
+| `WORKSHOP_LIBRETRO_CORE=<file>` | the libretro core the Emulator runs (before the settings' own) |
+| `SKYTEMPLE_ARMIPS_EXEC=<armips>` | what Play This Film on DS assembles with (before the settings' own) |
 
 The root (`library/`, `games/`, `film/recipes/`) is the first folder up from where it runs, else up from the program, that has `library/films`. What its spaces make (films, decors, dungeons, fights, pictures, sounds, music, tilesets) goes into `library/`; a new game into `games/<name>/`; its own settings and versions into `<root>/target/workshop/`.
 
@@ -395,7 +410,9 @@ The root (`library/`, `games/`, `film/recipes/`) is the first folder up from whe
 | Variable | Effect |
 |---|---|
 | `WORKSHOP_AFTER=seconds` | when the picture is taken |
-| `WORKSHOP_SPACE=game\|film\|decor\|resources` | the space shown |
+| `WORKSHOP_SPACE=game\|film\|decor\|resources\|emulator` | the space shown |
+| `WORKSHOP_EMULATOR_ROM=<file.nds>`, `WORKSHOP_EMULATOR_FRAMES=n` | that game loaded in the Emulator, run n frames at once (past its logos) |
+| `WORKSHOP_EMULATOR_FILM=<file.film>` | that film put on DS at once (Play This Film on DS; the settings' ROM and armips) |
 | `WORKSHOP_GAME=my_game` | that game open in the Game space |
 | `WORKSHOP_VIEW="x y zoom"` | the view of the scene (in the Film: `Screenplay`, `Board`, `Characters`, `Graph`: the Script seen so) |
 | `WORKSHOP_TOOL=terrain\|scatter\|walls\|walk` | the tool in hand |

@@ -1,7 +1,8 @@
 //! `emulator <core> <rom> [frames] [out.png] [--press A:90]`: a game run
 //! without a window, for that many frames (600), its last frame written as a
 //! PNG (`target/emulator/shot.png`), the core's options told.
-//! `--press A:90` holds A for three frames every 90 (through a title screen).
+//! `--press A:90[:1400]` holds A for three frames every 90 (until frame 1400): through a title screen;
+//! `--every N` also writes a PNG every N frames (`<out>_<frame>.png`).
 //! The core and the ROM are the user's own: nothing of them is kept.
 
 use std::path::PathBuf;
@@ -10,13 +11,19 @@ use emulator::{Button, Core, Input, Options};
 
 fn main() -> std::process::ExitCode {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
-    let mut press: Option<u32> = None;
-    if let Some(at) = args.iter().position(|arg| arg == "--press") {
-        press = args.get(at + 1).and_then(|said| said.trim_start_matches("A:").parse().ok());
+    let mut option = |name: &str| {
+        let at = args.iter().position(|arg| arg == name)?;
+        let value = args.get(at + 1).cloned();
         args.drain(at..(at + 2).min(args.len()));
-    }
+        value
+    };
+    let press: Option<(u32, u32)> = option("--press").and_then(|said| {
+        let mut parts = said.trim_start_matches("A:").split(':').map(|part| part.parse::<u32>().ok());
+        Some((parts.next()??, parts.next().flatten().unwrap_or(u32::MAX)))
+    });
+    let every: Option<u32> = option("--every").and_then(|said| said.parse().ok());
     if args.len() < 2 {
-        eprintln!("emulator <core> <rom> [frames] [out.png] [--press A:90]");
+        eprintln!("emulator <core> <rom> [frames] [out.png] [--press A:90[:until]] [--every N]");
         return std::process::ExitCode::from(2);
     }
     let frames: u32 = args.get(2).and_then(|said| said.parse().ok()).unwrap_or(600);
@@ -38,11 +45,17 @@ fn main() -> std::process::ExitCode {
     let mut samples = 0;
     for frame in 1..=frames {
         let input = match press {
-            Some(period) if frame % period < 3 => Input::default().with(Button::A),
+            Some((period, until)) if frame < until && frame % period.max(1) < 3 => Input::default().with(Button::A),
             _ => Input::default(),
         };
         core.run(input);
         samples += core.take_audio().len() / 2;
+        if every.is_some_and(|every| frame % every.max(1) == 0) {
+            let shot = out.with_file_name(format!("{}_{frame}.png", out.file_stem().unwrap_or_default().to_string_lossy()));
+            if let Err(why) = core.frame().save_png(&shot) {
+                eprintln!("{why}");
+            }
+        }
     }
     let took = started.elapsed().as_secs_f64();
     let frame = core.frame();

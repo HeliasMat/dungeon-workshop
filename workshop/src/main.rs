@@ -1,5 +1,5 @@
-//! Dungeon Workshop: one window, six spaces (Home, Game, Film, Decor,
-//! Dungeon, Resources), each its panels docked as in a studio, under a bar of menus
+//! Dungeon Workshop: one window, seven spaces (Home, Game, Film, Decor,
+//! Dungeon, Resources, Emulator), each its panels docked as in a studio, under a bar of menus
 //! and over a bar of state.
 //!
 //! - `first`: the first launch: the user's own copy of the game asked
@@ -30,6 +30,7 @@ mod decors;
 mod dungeon;
 mod dungeons;
 mod edit;
+mod emulate;
 mod example;
 mod films;
 mod first;
@@ -52,6 +53,7 @@ mod safe;
 mod scene;
 mod script;
 mod session;
+mod settings;
 mod spritecollab;
 mod story;
 mod terrains;

@@ -7,6 +7,8 @@ marked **seen** was checked in the original game in the emulator
 
 ## Watching the film
 
+In the Workshop: the Emulator space's **Play This Film on DS** exports the film open, patches it in with `--boot --more-actors` and plays it from power on in a libretro core of the user's (melonDS); how to get one: `docs/DS.md`.
+
 Three ways were weighed:
 
 | Way | Verdict |
