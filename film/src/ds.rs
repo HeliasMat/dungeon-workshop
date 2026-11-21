@@ -116,7 +116,7 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("spot", Export::Direct, "nothing: a named point, read into positions"),
     ("enter", Export::Direct, "SetPositionMark off screen, ResetOutputAttribute(128) (hidden until then), MovePositionMark"),
     ("exit", Export::Direct, "MovePositionMark off screen, SetOutputAttribute(128) (hidden)"),
-    ("appear", Export::Close, "smoke: SetEffect(99, smoke puff); light: as Sky brings Uxie, two screen_WhiteOut / FadeIn blinks with se_Play(5143), se_Play(6920) and SetEffect(638) on the actor while hidden; shown with ResetOutputAttribute(128): at once, no fading in"),
+    ("appear", Export::Close, "smoke: SetEffect(99); light: 2 blinks, se_Play(6920), SetEffect(638) on it hidden; then ResetOutputAttribute(128), no fade"),
     ("vanish", Export::Close, "smoke: SetEffect(99); hidden with SetOutputAttribute(128): at once, no fading out"),
     ("crowd", Export::Close, "a free actor each (45 a film, 24 a scene), round the place facing it; no fidgeting"),
     // Formations
