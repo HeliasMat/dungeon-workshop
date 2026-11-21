@@ -57,8 +57,11 @@ the_end
   quotes. The comment just above a `define` is its documentation.
 - **Headers** (at the start of a line, followed by `:`): `title:`, `scene:`, `moment:`. A `scene:`
   lasts until the next one, with no `end`. Its lines are not indented.
-- **Before the first scene**: `title:`, `uses`, `include`, the names (`name = species`), the
+- **Before the first scene**: `title:`, `uses`, `include`, `for ds`, the names (`name = species`), the
   film's `define`s, `let`s and `keep`s.
+- **`for ds`**: the film is written for the DS (Explorers of Sky, `scene_player export-ds`),
+  played as a new game starts; `for ds scene`, in place of a scene of a game going on. What
+  the DS can't play is then told (`E-DS-…`, `R-DS-…`, film/FILMS.md).
 
 ## 2. Lines
 

@@ -260,6 +260,7 @@ fn a_film_reads_and_plays_with_no_text_between() {
 mod cast;
 mod doc;
 mod docs;
+mod ds;
 mod fights;
 mod grammar;
 mod hostile;

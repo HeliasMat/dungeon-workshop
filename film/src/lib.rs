@@ -7,6 +7,7 @@
 //! - `names`: what a film calls those it shows, things, places, ways;
 //! - `spots`: where a line says, routes, formations;
 //! - `tables`: the game's files as a film reads them;
+//! - `ds`: what each word becomes on the DS (the export's table);
 //! - `words`, `screen`, `check`: the small words, words on the screen, what
 //!   is wrong and the nearest names.
 //!
@@ -20,6 +21,7 @@ pub mod codes;
 mod compile;
 pub mod context;
 pub mod doc;
+pub mod ds;
 pub mod emit;
 mod film;
 pub mod grammar;

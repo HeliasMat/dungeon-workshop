@@ -114,3 +114,21 @@ fn a_comparison_is_counted() {
     let compared = [Diff::Same("a".into()), Diff::Gone("b".into()), Diff::Came("c".into()), Diff::Came("d".into())];
     assert_eq!(super::windows::counted(&compared), (1, 2));
 }
+
+/// In DS Mode (`for ds`), what is offered exports: a word with a loss said
+/// so, one the DS lacks not offered; without the line, everything.
+#[test]
+fn in_ds_mode_only_what_exports_is_offered() {
+    let session = crate::session::Session::for_tests();
+    let text = "scene: beach pikachu piplup\npikachu d";
+    let all = super::completion::offered(&session, text, text.chars().count(), true).expect("what Pikachu may do");
+    let ds = format!("for ds\n{text}");
+    let exported = super::completion::offered(&session, &ds, ds.chars().count(), true).expect("what Pikachu may do on DS");
+    assert!(all.choices.iter().any(|(word, _)| word == "drop"), "{:?}", all.choices);
+    assert!(!exported.choices.iter().any(|(word, _)| word == "drop"), "no held item on DS: {:?}", exported.choices);
+    let dodge = exported.choices.iter().find(|(word, _)| word == "dodge").expect("dodge exports");
+    assert!(dodge.1.contains("DS with loss"), "{dodge:?}");
+    let models =
+        super::completion::for_ds(vec![("fight".to_string(), "model — a directed fight".to_string()), ("scene".to_string(), "model — a scene".to_string())]);
+    assert_eq!(models.iter().map(|(word, _)| word.as_str()).collect::<Vec<_>>(), ["scene"]);
+}

@@ -94,6 +94,7 @@ pub fn stmt_text(stmt: &Stmt) -> String {
         Kind::Moment(moment) => format!("moment: {moment}"),
         Kind::Uses(name) => format!("uses {}", name.text),
         Kind::Includes(name) => format!("include {}", name.text),
+        Kind::For(target) => format!("for {}", target.text),
         Kind::Naming { name, species } => format!("{} = {}", name.text, species.text),
         Kind::Said(said) => {
             let mut made = said.who.text.clone();

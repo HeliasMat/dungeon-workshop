@@ -20,6 +20,24 @@ pub const OLD_WORD: &str = "E-OLD-WORD";
 /// does not take its library in (`uses fishing`).
 pub const USES: &str = "R-USES";
 
+/// In a film `for ds`: a word the DS has nothing for (`film::ds`), with
+/// how to write it another way where there is one.
+pub const DS_WORD: &str = "E-DS-WORD";
+/// In a film `for ds`: a word that exports with less than the film shows,
+/// what it loses said (once a word).
+pub const DS_LOSS: &str = "R-DS-LOSS";
+/// In a film `for ds`: more Pokémon at once in a scene than Sky shows (21),
+/// who would be left out said.
+pub const DS_ACTORS: &str = "E-DS-ACTORS";
+/// In a film `for ds`: a place that is no map of Explorers of Sky's.
+pub const DS_PLACE: &str = "E-DS-PLACE";
+/// In a film `for ds` (played as a new game starts): the hero or the
+/// partner, not chosen yet.
+pub const DS_HERO: &str = "E-DS-HERO";
+/// In a film `for ds`: a zoom, or a frame wider than the screen, where the
+/// view would step back: Sky has no zoom.
+pub const DS_ZOOM: &str = "R-DS-ZOOM";
+
 /// What the words of a film say, with no code of their own yet, as the
 /// language's service tells it (`crate::service::diagnostics`).
 pub const WORDS: &str = "film";
@@ -36,6 +54,12 @@ pub const ALL: &[(&str, &str)] = &[
     (OLD_ORDER, "a line written the word first, said of someone: who acts comes first"),
     (OLD_WORD, "a word of the old vocabulary: the form of the plan that says it now"),
     (USES, "a word of an optional family in a film that does not take its library in (uses dungeon, guild, fishing)"),
+    (DS_WORD, "in a film for ds: a word the DS has nothing for, with how to write it another way"),
+    (DS_LOSS, "in a film for ds: a word that exports with less than the film shows, what it loses"),
+    (DS_ACTORS, "in a film for ds: more than 21 Pokémon at once in a scene, who would be left out"),
+    (DS_PLACE, "in a film for ds: a place that is no map of Explorers of Sky's"),
+    (DS_HERO, "in a film for ds: the hero or the partner, before the player chose them"),
+    (DS_ZOOM, "in a film for ds: a zoom, or a frame wider than the screen: Sky has no zoom"),
 ];
 
 #[cfg(test)]

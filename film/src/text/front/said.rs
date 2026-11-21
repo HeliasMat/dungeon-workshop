@@ -80,6 +80,7 @@ impl Lower<'_> {
             Kind::Moment(moment) => self.word(number, "moment", moment.split_whitespace().map(str::to_string).collect()),
             Kind::Uses(name) => self.word(number, "uses", vec![name.text.clone()]),
             Kind::Includes(name) => self.word(number, "include", vec![name.text.clone()]),
+            Kind::For(target) => self.word(number, "for", target.text.split_whitespace().map(str::to_string).collect()),
             Kind::Naming { name, species } => {
                 let shape = Shape::Naming { name: name.text.clone(), species: species.text.clone() };
                 self.made(number, format!("{} = {}", name.text, species.text), shape);

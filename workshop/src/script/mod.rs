@@ -301,6 +301,8 @@ pub struct Scripts {
     wiki_page: Option<String>,
     wiki_playing: bool,
     wiki_source: bool,
+    /// In DS Mode: only the words that export to the DS listed.
+    wiki_ds_only: bool,
     /// What the Script says of a word a film does not take, by the word (read once).
     wiki_refused: Option<(String, String)>,
     /// The text the folds and bookmarks were last at (they follow the lines as they move).
@@ -454,6 +456,7 @@ impl Scripts {
                 .map(|asked| asked.split(':').next().unwrap_or_default().to_string()),
             wiki_playing: session.launch.wiki.as_deref().is_some_and(|asked| asked.ends_with(":play")),
             wiki_source: session.launch.wiki.as_deref().is_some_and(|asked| asked.ends_with(":source")),
+            wiki_ds_only: session.launch.wiki.as_deref().is_some_and(|asked| asked.ends_with(":ds")),
             wiki_refused: None,
             marks_text: String::new(),
             followed: None,
@@ -528,6 +531,12 @@ impl Scripts {
             if let (Some(line), Some(open)) = (self.session.launch.line, self.open.as_mut()) {
                 open.go_to_line(line);
                 open.cursor = index_of(&open.text, Spot { line, column: 1 });
+                // (`WORKSHOP_COMPLETE=1`: at its end, what may be typed offered.)
+                if self.session.launch.complete {
+                    let long = open.text.lines().nth(line - 1).map_or(0, |said| said.chars().count());
+                    open.cursor = index_of(&open.text, Spot { line, column: long + 1 });
+                    self.completion = completion::offered(&self.session, &open.text, open.cursor, true);
+                }
             }
             // (`WORKSHOP_PANELS=layout,wiki`: those beside the text, for a picture.)
             let beside = self.session.launch.panels.clone().unwrap_or_default();

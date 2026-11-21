@@ -137,7 +137,43 @@ pub(super) fn wants_fin(text: &str, line: usize, lead: &str, before: &str) -> bo
     }
 }
 
+/// What may be typed at the cursor; in a film written for the DS (`for
+/// ds`), only the words that export, those with a loss marked so.
 pub(super) fn offered(session: &Session, text: &str, cursor: usize, asked: bool) -> Option<Completion> {
+    let mut completion = every_offer(session, text, cursor, asked)?;
+    if film::ds::written_for_ds(text) {
+        completion.choices = for_ds(completion.choices);
+    }
+    (!completion.choices.is_empty()).then_some(completion)
+}
+
+/// The choices a film for the DS keeps: a word of the plan only if it
+/// exports (marked when with a loss), a model only if its words do; the
+/// rest (names, species, things, lines said) as they are.
+pub(super) fn for_ds(choices: Vec<(String, String)>) -> Vec<(String, String)> {
+    let planned = |word: &str| film::plan::WORDS.iter().any(|planned| planned.word == word);
+    choices
+        .into_iter()
+        .filter_map(|(word, about)| {
+            if about.starts_with("model") {
+                let lines = MODELS.iter().find(|(model, ..)| *model == word).map_or("", |(_, _, lines)| *lines);
+                let words = lines.lines().flat_map(|line| line.split_whitespace().take(2)).map(film::words::plain);
+                return words.filter(|said| planned(said)).all(|said| film::ds::status(&said).exports()).then_some((word, about));
+            }
+            let plain = film::words::plain(&word);
+            if !planned(&plain) {
+                return Some((word, about));
+            }
+            match film::ds::status(&plain) {
+                film::ds::Export::Direct => Some((word, about)),
+                film::ds::Export::Close => Some((word, format!("{about} · DS with loss: {}", film::ds::lost(&plain).unwrap_or("less")))),
+                _ => None,
+            }
+        })
+        .collect()
+}
+
+fn every_offer(session: &Session, text: &str, cursor: usize, asked: bool) -> Option<Completion> {
     let letters: Vec<char> = text.chars().collect();
     let mut start = cursor.min(letters.len());
     while start > 0 && letter_of_word(letters[start - 1]) {

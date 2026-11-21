@@ -63,6 +63,8 @@ pub struct LaunchOptions {
     pub focus: bool,
     /// `WORKSHOP_LINE=n`: the Script's cursor on line n.
     pub line: Option<usize>,
+    /// `WORKSHOP_COMPLETE=1`: the cursor at the end of that line, what may be typed there offered.
+    pub complete: bool,
     /// `WORKSHOP_PANELS=…`: the Script's panels shown.
     pub panels: Option<String>,
     /// `WORKSHOP_WORDS=<family>`: the words of that family browsed.
@@ -127,6 +129,7 @@ impl LaunchOptions {
             project: var("WORKSHOP_PROJECT"),
             focus: set("WORKSHOP_FOCUS"),
             line: number("WORKSHOP_LINE"),
+            complete: var("WORKSHOP_COMPLETE").is_some(),
             panels: var("WORKSHOP_PANELS"),
             words: var("WORKSHOP_WORDS"),
             wiki: var("WORKSHOP_WIKI"),

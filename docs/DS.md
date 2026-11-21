@@ -6,6 +6,21 @@ language (`scene_player export-ds`), put in a copy of your own ROM
 (`tools/ds/patch_rom.py`), and played in an emulator. What exports and what
 does not: `tools/ds/LIMITS.md`.
 
+## Writing a film for the DS
+
+A line `for ds` before the first scene (the Script's **DS Mode** writes it)
+says the film is for the DS, played as a new game starts; `for ds scene`, in
+place of a scene of a game going on (the hero and partner chosen). Then what
+the DS can't play is told as you write, from the same table `scene_player
+export-ds --table` prints (`film/src/ds.rs`): a word the DS has nothing for
+(`E-DS-WORD`, with how to write it: a `fight` as blows of `attack`), a word
+that exports with a loss (`R-DS-LOSS`: what is lost), more than 21 Pokémon at
+once in a scene (`E-DS-ACTORS`: who the export leaves out), a place that is
+no map of Sky's (`E-DS-PLACE`), the hero or the partner before the player
+chose them (`E-DS-HERO`), a zoom or a frame wider than the screen
+(`R-DS-ZOOM`: Sky has no zoom). In DS Mode the completion offers only what
+exports, and the Wiki shows each word's DS badge.
+
 ## A core for the Emulator space
 
 The Workshop's **Emulator** space runs DS games through a **libretro core**:

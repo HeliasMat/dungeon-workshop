@@ -220,6 +220,8 @@ pub struct Film {
     pub story: crate::plot::StoryMap,
     /// The libraries it takes in (`uses fishing`): an optional family's words with them.
     pub uses: Vec<String>,
+    /// What it is written for (`for ds`): told what the DS can't play.
+    pub for_ds: Option<crate::ds::Mode>,
     /// What the film read a line as, to be told when asked (`verifie --tout`):
     /// what `there` and `team` stood for.
     pub notes: Vec<(usize, String)>,
@@ -290,6 +292,7 @@ impl Film {
             moment: None,
             story: Default::default(),
             uses: Vec::new(),
+            for_ds: None,
             notes: Vec::new(),
             recipe_calls: 0,
             defined: Vec::new(),

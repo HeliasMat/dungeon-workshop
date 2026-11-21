@@ -261,7 +261,7 @@ fn walk(alone: &mut Film, line: &Instr, known: &Known, source: &language::Source
 /// What is wrong with a word's line a recipe writes: its word not known, or
 /// none of its forms (or of the recipes of that name) fitting.
 fn wrong_line(alone: &mut Film, line: &Instr, verb: &str, words: &[String], known: &Known, source: &language::Source) -> Option<String> {
-    if matches!(verb, "end" | "else" | "uses" | "include") {
+    if matches!(verb, "end" | "else" | "uses" | "include" | "for") {
         return None;
     }
     let first = line.text.split_whitespace().next().filter(|first| plain(first) == verb).unwrap_or(verb).to_string();
