@@ -76,7 +76,6 @@ pub static POKEMON: Vocabulary = Vocabulary {
     leaping_faces: &[10, 12],
     // (What the original's scripts play beside them most: "!", "?", a drop,
     // shock, anger, sweat, notice.)
-    emote_sounds: &[(88, 8967), (89, 8962), (92, 8961), (91, 8968), (94, 8971), (171, 8972), (172, 8978)],
     // (As their pictures show them: `data/rom/effects`.)
     emotes: &[
         ("exclaim", emote::EXCLAIM.0),
@@ -180,7 +179,6 @@ pub static POKEMON: Vocabulary = Vocabulary {
         "talking",
         "target",
         "timer",
-        "cancelled",
         "clock",
         "music_clock",
         "press_clock",

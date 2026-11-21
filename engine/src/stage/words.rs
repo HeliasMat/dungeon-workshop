@@ -21,9 +21,6 @@ pub struct Words {
     pub pictures: Vec<PlacedPicture>,
     /// The thing shown large over the scene (see `BodyBeat::Large`).
     pub large: Option<Who>,
-    /// The keys shown on screen: over whom or where, which (none: taken
-    /// away), the frames left (none: until taken away); see `PlayBeat::Icon`.
-    pub icons: Vec<Icon>,
     /// The words kept on screen as they show now (see `PlayBeat::Hud`).
     pub hud: [Option<String>; 3],
     /// The last lines of a fight's log (see `ScreenBeat::BattleLog`).
@@ -60,15 +57,6 @@ pub struct PlacedPicture {
     pub name: String,
     pub file: String,
     pub at: Vec2,
-}
-
-/// A key shown over someone or a point, the frames left (none: until taken
-/// away).
-#[derive(Clone, Debug, PartialEq)]
-pub struct Icon {
-    pub on: Cam,
-    pub key: String,
-    pub left: Option<f32>,
 }
 
 /// A bubble over someone's head: whose, the frames it still stays, its
@@ -142,10 +130,6 @@ impl Words {
         self.caption = self.caption.take().filter(|caption| caption.left > 0.0);
         let letterbox = &mut self.letterbox;
         letterbox.shown += (letterbox.to - letterbox.shown).clamp(-frames / 20.0, frames / 20.0);
-        for left in self.icons.iter_mut().filter_map(|icon| icon.left.as_mut()) {
-            *left -= frames;
-        }
-        self.icons.retain(|icon| icon.left.is_none_or(|left| left > 0.0));
         if let Some(credits) = &mut self.credits {
             credits.left -= frames;
             if credits.left <= 0.0 {

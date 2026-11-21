@@ -91,9 +91,8 @@ impl Director {
             *stage = Stage::dark();
             (self.pause, self.reading, self.timed) = (0.0, false, None);
             (self.schedule.later, self.schedule.returns, self.schedule.every, self.schedule.parallels) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
-            (self.skippable, self.manner.last_speaker, self.kept.hud, self.kept.gauges) = (None, None, Default::default(), Default::default());
-            (self.asking.ask_timer, self.asking.ask_left, self.clocks.timers, self.asking.cancel_next, self.asking.number_asked) =
-                (None, None, Vec::new(), None, None);
+            (self.manner.last_speaker, self.kept.hud, self.kept.gauges) = (None, Default::default(), Default::default());
+            (self.asking.ask_timer, self.asking.ask_left, self.clocks.timers, self.asking.number_asked) = (None, None, Vec::new(), None);
         }
         self.clocks.scene_clock = 0.0;
         // (Who may be talked to and the ways out: the scene's own.)

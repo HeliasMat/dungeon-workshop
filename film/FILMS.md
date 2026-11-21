@@ -261,26 +261,24 @@ The **advanced words**, folded in the Workshop, are the engine's own commands (`
 | 110 | halos |
 | 120 | pictures (node … picture) |
 | 130 | lightning bolts |
-| 140 | keys shown |
-| 150 | ripples |
-| 160 | particles |
-| 170 | health bars |
-| 180 | names under the feet |
-| 190 | words rising |
-| 200 | bubbles |
-| 210 | film bands |
-| 220 | the digits of blows |
-| 230 | glowing particles |
-| 240 | the screen without colours |
-| 250 | the fade |
-| 260 | the wipe |
-| 270 | the credits |
-| 280 | the caption |
-| 290 | words kept on screen |
-| 300 | a fight's log |
-| 310 | gauges |
-| 320 | a dungeon's map |
-| 330 | the dialogue box and its choices |
+| 140 | ripples |
+| 150 | particles |
+| 160 | health bars |
+| 170 | words rising |
+| 180 | bubbles |
+| 190 | film bands |
+| 200 | the digits of blows |
+| 210 | glowing particles |
+| 220 | the screen without colours |
+| 230 | the fade |
+| 240 | the wipe |
+| 250 | the credits |
+| 260 | the caption |
+| 270 | words kept on screen |
+| 280 | a fight's log |
+| 290 | gauges |
+| 300 | a dungeon's map |
+| 310 | the dialogue box and its choices |
 <!-- end of z ranks -->
 
 **How long the engine's commands last:**
@@ -781,7 +779,7 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `sigh` |  | `gestures` | by the line | `sigh who:pokemon`:  |
 | `react` |  | `gestures` | by the line | `react who:pokemon joy`:  |
 | `ghost` |  | `gestures` | by the line | `ghost who:pokemon`: He turns half see-through and floats, as a ghost does. |
-| `finish` |  | `fights` | by the line | `finish who:pokemon target:pokemon move:word`: The finishing blow: time slowed, the screen white, the move; the one struck faints, and the music falls silent a moment over them. |
+| `finish` |  | `fights` | by the line | `finish who:pokemon target:pokemon move...`: The finishing blow: time slowed, the screen white, the move; the one struck faints, and the music falls silent a moment over them. |
 | `reel` |  | `fishing/line` | by the line | `reel who:pokemon catch what:word`: He reels in what bit: it flies out of the water and lands beside him. |
 <!-- end of words -->
 

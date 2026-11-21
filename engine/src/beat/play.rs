@@ -32,8 +32,8 @@ pub enum PlayBeat {
     /// more walls).
     Wall(Option<Rect>),
     /// Collisions on or off, to the end of the scene: off, walks go
-    /// straight where they are sent, through the place's walls, the
-    /// scene's and the solid, no one steps aside, and places are taken as
+    /// straight where they are sent, through the place's walls and the
+    /// scene's, no one steps aside, and places are taken as
     /// written (see `Stage::no_collisions`; a film's scenes open so, the
     /// game's with them).
     Collisions(bool),
@@ -73,7 +73,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new(
         "collisions",
         &["rest..."],
-        "collisions, until the end of the scene. `off`: each goes straight where they are sent (`walkto`, `path`, entrances and exits), through the place's ground, the `wall`s and those who are `solid`; no one steps aside (`spacing` no longer plays); a place is taken as written, never pushed onto the free tile; a crowd takes all the room it needs; `check` no longer says anything about walls or bodies on top of each other. The ground still serves to choose where one comes in and goes out. `on`: all that comes back. A film's scenes open without (`off`), those of the game and of `.scene` files with",
+        "collisions, until the end of the scene. `off`: each goes straight where they are sent (`walkto`, `path`, entrances and exits), through the place's ground and the `wall`s; no one steps aside (`spacing` no longer plays); a place is taken as written, never pushed onto the free tile; a crowd takes all the room it needs; `check` no longer says anything about walls or bodies on top of each other. The ground still serves to choose where one comes in and goes out. `on`: all that comes back. A film's scenes open without (`off`), those of the game and of `.scene` files with",
     ),
     Form::new("control", &["who:code", "off"], "the player makes them walk with the arrows (Shift: running), while the scene goes on"),
     Form::new(

@@ -134,17 +134,13 @@ pub(crate) struct Habits {
     /// Whom it copies as a reflection would, and where that one stood
     /// last (see `MotionBeat::Mirror`).
     pub(crate) mirrors: Option<Mirroring>,
-    /// Who carries it over its head (see `BodyBeat::Carry`); whether the one
-    /// walked about cannot go through it, and whether it pushes it along
-    /// (see `PlayBeat::Solid`, `PlayBeat::Pushable`).
+    /// Who carries it over its head (see `BodyBeat::Carry`).
     pub(crate) carried_by: Option<Who>,
     /// What is carried is in the hands, before who has it.
     pub(crate) held: bool,
     /// It rides on the back of who carries it: how high over its feet, how
     /// far to its side (see `BodyBeat::Ride`).
     pub(crate) rides: Option<(f32, f32)>,
-    pub(crate) solid: bool,
-    pub(crate) pushable: bool,
     /// It leaves the stage once it gets where it goes (a thing given).
     pub(crate) vanishes: bool,
     /// It wanders about a point, never further from it than that.

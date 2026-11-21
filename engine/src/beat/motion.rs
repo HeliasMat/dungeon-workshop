@@ -19,8 +19,8 @@ pub enum MotionBeat {
         at: Point,
         run: bool,
     },
-    /// Someone walks (or runs) to a point going round the walls and the
-    /// solid (see `PlayBeat::Wall`, `PlayBeat::Solid`).
+    /// Someone walks (or runs) to a point going round the walls (see
+    /// `PlayBeat::Wall`).
     WalkTo {
         who: Who,
         at: Point,
@@ -173,7 +173,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("run", &["who:code x:coordinate y:coordinate"], "walks / runs there, at their pace"),
     Form::new("runpath", &["rest..."], "through several points in a row"),
     Form::new("runstep", &["rest..."], "a few steps from where they are: `step pika -20 0`"),
-    Form::new("runto", &["rest..."], "goes there going around walls and those who are solid (they find their way)"),
+    Form::new("runto", &["rest..."], "goes there going around the walls (they find their way)"),
     Form::new(
         "spacing",
         &["[rest...]"],
@@ -187,7 +187,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "a line: each walks where the leader went, at this gap from the one before (runs if too far behind); a parade, a train",
     ),
     Form::new("walk", &["who:code x:coordinate y:coordinate"], "walks / runs there, at their pace"),
-    Form::new("walkto", &["who:code x:coordinate y:coordinate"], "goes there going around walls and those who are solid (they find their way)"),
+    Form::new("walkto", &["who:code x:coordinate y:coordinate"], "goes there going around the walls (they find their way)"),
     Form::new("wander", &["who:code [radius:number]"], "strolls around where they are (24 pixels; `0`: stops); does not count for `waitall`"),
 ];
 

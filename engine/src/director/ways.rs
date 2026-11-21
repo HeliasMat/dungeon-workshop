@@ -46,7 +46,7 @@ impl Director {
                     Beat::Course(Course::Say { entity, face, text, name, .. }) => {
                         self.say(entity, face, &text, name, stage, focus, calls);
                         self.said_meanwhile = true;
-                        self.timed = Some(self.manner.auto_lines.unwrap_or(line_frames("", &text, false) as f32));
+                        self.timed = Some(line_frames("", &text, false) as f32);
                         false
                     }
                     Beat::Speech(SpeechBeat::Said) => self.reading && !hurrying,

@@ -47,40 +47,6 @@ impl Director {
         self.vars.insert(ARROW_AT.to_string(), self.clocks.scene_clock as f64);
     }
 
-    /// The player leaves the question asked with Escape, if it may be
-    /// (see `PlayBeat::Cancel`): its answer for that is taken. Whether it was.
-    pub fn cancel(&mut self) -> bool {
-        let Some(answer) = self.asking.cancel_now.filter(|_| self.hold == Some(Hold::Question)) else {
-            return false;
-        };
-        // (A number being chosen: that number given.)
-        if let Some(NumberAsked { var, .. }) = self.asking.number_asked.take() {
-            self.vars.insert(var, answer as f64);
-            (self.hold, self.asking.cancel_now) = (None, None);
-            self.vars.insert(CANCELLED.to_string(), 1.0);
-            return true;
-        }
-        let shown = self.asking.offered.iter().position(|&place| place == answer).unwrap_or(0);
-        self.answer(Some(shown));
-        self.vars.insert(CANCELLED.to_string(), 1.0);
-        true
-    }
-
-    /// The player skips what may be skipped (see `FlowBeat::SkipTo`): the line
-    /// or the question on screen goes (the first answer), and the scene
-    /// plays at once up to the label. Whether there was anything to skip.
-    pub fn skip(&mut self) -> bool {
-        let Some(label) = self.skippable.take() else {
-            return false;
-        };
-        if self.hold == Some(Hold::Question) {
-            self.answer(Some(0));
-        }
-        self.read();
-        self.author.skip_to = Some(label);
-        true
-    }
-
     /// The player has read the line on screen.
     pub fn read(&mut self) {
         (self.reading, self.timed) = (false, None);
@@ -95,9 +61,8 @@ impl Director {
         // (Among those offered: its place among all of them.)
         let chosen = chosen.map(|chosen| self.asking.offered.get(chosen).copied().unwrap_or(chosen));
         // (In time, not left.)
-        (self.asking.ask_left, self.asking.cancel_now) = (None, None);
+        self.asking.ask_left = None;
         self.vars.insert(TOO_LATE.to_string(), 0.0);
-        self.vars.insert(CANCELLED.to_string(), 0.0);
         // (A number chosen, see `PlayBeat::AskNumber`: kept, and the scene goes
         // on past it.)
         if let Some(NumberAsked { var, values }) = self.asking.number_asked.take() {

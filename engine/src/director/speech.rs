@@ -55,8 +55,8 @@ pub fn names_in(text: &str, words: &Vocabulary, who: impl Fn(Who) -> String, ite
 
 impl Director {
     /// What a line does by itself on the stage, as asked (see
-    /// `SpeechBeat::AutoFace`): its speaker and the one before face each other,
-    /// it shows the emote of its face, the view glides to it.
+    /// `SpeechBeat::AutoFace`): its speaker and the one before face each other;
+    /// the view glides to it when it is out of sight (`keepspeaker`).
     pub(super) fn stage_line(&mut self, stage: &mut Stage, who: Who, face: Option<u16>, focus: Vec2) {
         if self.manner.auto_face
             && let Some(other) = self.manner.last_speaker.filter(|other| *other != who && stage.cast.contains_key(other))
@@ -67,11 +67,6 @@ impl Director {
             if !self.manner.held_gaze.contains(&other) && stage.painted_ways(other).is_none() {
                 stage.direct(Beat::Body(BodyBeat::Face { who: other, other: who }), focus);
             }
-        }
-        if self.manner.auto_emote
-            && let Some(emote) = face.and_then(|face| self.words.emote_of_face(face))
-        {
-            stage.effect(who, emote, Some(45.0));
         }
         self.listen(stage, who, face, focus);
         // (What the view shows: the screen, less its edges and the box of the
@@ -90,7 +85,7 @@ impl Director {
             self.manner.box_raised = raise;
         }
         let unseen = off.is_some() && (!in_screen || (under_the_box && !raise));
-        if self.manner.auto_cam || (self.manner.keep_speaker && unseen) {
+        if self.manner.keep_speaker && unseen {
             stage.direct(Beat::View(ViewBeat::PanStays { to: Cam::Who(who), frames: Frames(30.0) }), focus);
         }
         self.manner.last_speaker = Some(who);
@@ -137,9 +132,6 @@ impl Director {
         let voice = entity.and_then(|who| self.manner.voices.get(&who).copied());
         if let Some(who) = entity.filter(|who| stage.cast.contains_key(who)) {
             self.stage_line(stage, who, face, focus);
-            if let Some(sound) = face.filter(|_| self.manner.auto_emote).and_then(|face| self.words.sound_of_face(face)) {
-                calls.push(Call::Show(Beat::Sound(SoundBeat::Sound(SoundId(sound)))));
-            }
         }
         let right = entity.is_some_and(|who| self.manner.right.contains(&who));
         // (Shown as another: its name and its face.)

@@ -75,11 +75,9 @@ pub(crate) fn draw_over(sheet: Sheet, over: &mut Over) {
         Sheet::Halos => draw_halos(canvas, stage, below, close, &on_screen),
         Sheet::Pictures => draw_pictures(canvas, stage, close, seconds, &on_screen),
         Sheet::Bolts => draw_bolts(canvas, stage, below, close, &on_screen),
-        Sheet::Icons => draw_icons(canvas, art, stage, &on_screen),
         Sheet::Ripples => draw_ripples(canvas, stage, below, seconds),
         Sheet::Particles => draw_particles(canvas, stage, close, on_screen),
         Sheet::Bars => draw_bars(canvas, stage, close, on_screen),
-        Sheet::Tags => draw_tags(canvas, art, stage, close, on_screen),
         Sheet::Popups => draw_popups(canvas, art, stage, on_screen, over.digits),
         Sheet::Bubbles => draw_bubbles(canvas, art, stage, look, below, close, on_screen),
         Sheet::Bands => draw_bands(canvas, stage, below),
@@ -166,20 +164,6 @@ fn draw_bars(canvas: &mut Canvas, stage: &Stage, close: f32, on_screen: &dyn Fn(
         };
         canvas.fill(x - wide / 2 - 1, top - 1, wide as usize + 2, 4, [0, 0, 0, 220]);
         canvas.fill(x - wide / 2, top, (wide as f32 * share).ceil() as usize, 2, colour);
-    }
-}
-
-/// Names under the feet of who has one (see `Beat::NameTag`).
-fn draw_tags(canvas: &mut Canvas, art: &UiArt, stage: &Stage, close: f32, on_screen: &dyn Fn(Vec2) -> (i32, i32)) {
-    for actor in stage.cast.values() {
-        let Some(tag) = &actor.tag else {
-            continue;
-        };
-        let (x, y) = on_screen(actor.shown_at());
-        let wide = art.font.width(tag) as i32 + 6;
-        let top = y + (9.0 * close) as i32;
-        canvas.fill(x - wide / 2, top, wide as usize, PITCH as usize, [0, 0, 0, 150]);
-        centred_lines(canvas, art, &[tag.as_str()], x - wide / 2, top + 1, wide, ui::color::YELLOW);
     }
 }
 

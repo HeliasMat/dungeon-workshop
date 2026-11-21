@@ -240,7 +240,6 @@ impl Director {
                 return Step::Leave;
             }
             PlayBeat::AskNumber { var, from, to, step } => {
-                self.asking.cancel_now = self.asking.cancel_next.take();
                 let values: Vec<i32> = (from..=to).step_by(step.max(1) as usize).collect();
                 calls.push(Call::Ask(values.iter().map(i32::to_string).collect()));
                 self.asking.offered = (0..values.len()).collect();
@@ -323,12 +322,11 @@ impl Director {
                 self.say(entity, face, &text, name, stage, focus, calls);
                 // (Its time, when it has one, is known as it shows: the box
                 // goes by itself from its first frame, keys or none.)
-                (self.timed, self.said_meanwhile) = (timed.map(Frames::get).or(self.manner.auto_lines), false);
+                (self.timed, self.said_meanwhile) = (timed.map(Frames::get), false);
             }
             Course::Ask(answers) => {
                 self.hold = Some(Hold::Question);
                 self.asking.ask_left = self.asking.ask_timer.take();
-                self.asking.cancel_now = self.asking.cancel_next.take();
                 let offered = self.offered(&answers);
                 self.asking.offered = offered.iter().map(|(place, _)| *place).collect();
                 calls.push(Call::Ask(offered.iter().map(|(_, answer)| emphasis(&self.fill(answer))).collect()));

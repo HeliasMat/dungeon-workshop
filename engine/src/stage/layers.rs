@@ -41,19 +41,17 @@ pub enum Sheet {
     /// A dungeon's name on a dark screen.
     Banner,
     /// What falls (rain, snow...), the spotlight or its lights, halos, the
-    /// pictures put about, bolts, the keys shown, the ripples.
+    /// pictures put about, bolts, the ripples.
     Weather,
     Lights,
     Halos,
     Pictures,
     Bolts,
-    Icons,
     Ripples,
-    /// The particles in the game's pixels, the bars of life, the names under
-    /// the feet, the words rising, the bubbles, the film bands.
+    /// The particles in the game's pixels, the bars of life, the words
+    /// rising, the bubbles, the film bands.
     Particles,
     Bars,
-    Tags,
     Popups,
     Bubbles,
     Bands,
@@ -79,7 +77,7 @@ pub enum Sheet {
 }
 
 /// The sheets of a scene, from the furthest back.
-pub const SHEETS: [Sheet; 37] = [
+pub const SHEETS: [Sheet; 35] = [
     Sheet::Place,
     Sheet::PlaceUpper,
     Sheet::PlaceLight,
@@ -97,11 +95,9 @@ pub const SHEETS: [Sheet; 37] = [
     Sheet::Halos,
     Sheet::Pictures,
     Sheet::Bolts,
-    Sheet::Icons,
     Sheet::Ripples,
     Sheet::Particles,
     Sheet::Bars,
-    Sheet::Tags,
     Sheet::Popups,
     Sheet::Bubbles,
     Sheet::Bands,
@@ -135,11 +131,9 @@ impl Sheet {
                 | Sheet::Halos
                 | Sheet::Pictures
                 | Sheet::Bolts
-                | Sheet::Icons
                 | Sheet::Ripples
                 | Sheet::Particles
                 | Sheet::Bars
-                | Sheet::Tags
                 | Sheet::Popups
                 | Sheet::Bubbles
                 | Sheet::Bands
@@ -156,7 +150,7 @@ impl Sheet {
     }
 
     /// Its rank: ten more than the one before it, the bodies' at 0 (the
-    /// place -30, the pictures 120, the fade 250, the box 330).
+    /// place -30, the pictures 120, the fade 230, the box 310).
     pub fn z(self) -> f32 {
         let at = SHEETS.iter().position(|sheet| *sheet == self).unwrap_or(0) as f32;
         let bodies = SHEETS.iter().position(|sheet| *sheet == Sheet::Bodies).unwrap_or(0) as f32;
@@ -183,11 +177,9 @@ impl Sheet {
             Sheet::Halos => "halos",
             Sheet::Pictures => "pictures (node … picture)",
             Sheet::Bolts => "lightning bolts",
-            Sheet::Icons => "keys shown",
             Sheet::Ripples => "ripples",
             Sheet::Particles => "particles",
             Sheet::Bars => "health bars",
-            Sheet::Tags => "names under the feet",
             Sheet::Popups => "words rising",
             Sheet::Bubbles => "bubbles",
             Sheet::Bands => "film bands",
@@ -431,7 +423,7 @@ mod tests {
     #[test]
     fn the_ranks_are_in_their_table() {
         let table = z_table();
-        assert!(table.contains("| 0 | bodies") && table.contains("| 330 | the dialogue box"), "{table}");
+        assert!(table.contains("| 0 | bodies") && table.contains("| 310 | the dialogue box"), "{table}");
     }
 
     #[test]

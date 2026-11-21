@@ -2,16 +2,16 @@
 
 use super::*;
 
-/// A way from a point to another going round the walls and the solid
+/// A way from a point to another going round the walls
 /// (see `MotionBeat::WalkTo`): the points where it turns, the last the end; the
 /// end alone when nothing is in the way; none when there is no way.
-pub(in crate::stage) fn way_round(walls: &[Rect], solids: &[Vec2], from: Vec2, to: Vec2) -> Option<Vec<Vec2>> {
+pub(in crate::stage) fn way_round(walls: &[Rect], from: Vec2, to: Vec2) -> Option<Vec<Vec2>> {
     use std::cmp::Reverse;
     use std::collections::BinaryHeap;
     /// The squares the way is looked for on; how far round the two points.
     pub(in crate::stage) const CELL: f32 = 8.0;
     pub(in crate::stage) const MARGIN: f32 = 160.0;
-    let blocked = |at: Vec2| walled(walls, at) || solids.iter().any(|solid| solid.distance(at) < 14.0);
+    let blocked = |at: Vec2| walled(walls, at);
     let clear = |a: Vec2, b: Vec2| {
         let steps = (a.distance(b) / 4.0).ceil().max(1.0) as usize;
         (1..=steps).all(|step| !blocked(a + (b - a) * (step as f32 / steps as f32)))
@@ -98,26 +98,8 @@ impl Stage {
         }
         let way = toward.normalize();
         self.play.steered = true;
-        // (Walking into something that may be pushed: it goes a step that
-        // way, if it can; the one pushing waits for it.)
-        let pushed = self.cast.iter().find(|(who, actor)| {
-            **who != me
-                && actor.habits.pushable
-                && actor.way.left <= 0.0
-                && actor.position.distance(at) < 20.0
-                && (actor.position - at).normalize_or_zero().dot(way) > 0.7
-        });
-        if let Some((pushed, there)) = pushed.map(|(who, actor)| (*who, actor.position)) {
-            let step = (if way.x.abs() > way.y.abs() { Vec2::new(way.x.signum(), 0.0) } else { Vec2::new(0.0, way.y.signum()) }) * 16.0;
-            let to = there + step;
-            if self.kept_in(to) == to && (self.no_collisions || (!walled(&self.play.walls, to) && !self.solid_near(pushed, there, to))) {
-                self.with(pushed, |actor| actor.go(to, 10.0, true));
-            }
-            stop(self);
-            return;
-        }
         // (A few frames ahead, again each frame: on without a stop; not into
-        // a wall nor through someone solid, along it if it can.)
+        // a wall, along it if it can.)
         let ahead = self.kept_in(at + way * pace * 4.0);
         // (Who stands in a wall already, put there, may get out of it. The
         // walls: the scene's, the place's, its ground.)
@@ -126,7 +108,7 @@ impl Stage {
                 || walled(&stage.play.place_walls, point)
                 || stage.place.ground.as_ref().is_some_and(|ground| ground.blocked(point, 0))
         };
-        let free = |stage: &Stage, to: Vec2| stage.no_collisions || ((!solid(stage, to) || solid(stage, at)) && !stage.solid_near(me, at, to));
+        let free = |stage: &Stage, to: Vec2| stage.no_collisions || !solid(stage, to) || solid(stage, at);
         let along = [ahead, Vec2::new(ahead.x, at.y), Vec2::new(at.x, ahead.y)];
         match along.into_iter().find(|to| to.distance(at) > 0.5 && free(self, *to)) {
             Some(to) => self.with(me, |actor| actor.walk_to(to, run)),
@@ -160,15 +142,6 @@ impl Stage {
     /// A point kept in the box the one walked about stays in, if any.
     pub(in crate::stage) fn kept_in(&self, at: Vec2) -> Vec2 {
         self.play.bounds.map_or(at, |bounds| bounds.clamp(at))
-    }
-
-    /// Whether going from a point to another, someone would walk into one
-    /// of the solid (getting nearer than they stand: never stuck in one).
-    pub(in crate::stage) fn solid_near(&self, me: Who, from: Vec2, to: Vec2) -> bool {
-        pub(super) const BODY: f32 = 14.0;
-        self.cast.iter().any(|(who, actor)| {
-            *who != me && actor.habits.solid && actor.position.distance(to) < BODY && actor.position.distance(to) < actor.position.distance(from)
-        })
     }
 
     /// Whether one sees another: near enough, in front of it within that

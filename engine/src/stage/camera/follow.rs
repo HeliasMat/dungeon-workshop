@@ -45,7 +45,7 @@ impl Camera {
                 Cam::At(at) => Some(at.vec2()),
                 Cam::Who(who) => standing(cast, *who),
             };
-            let target = spot.map(|target| target + self.cam_offset + Vec2::Y * self.room);
+            let target = spot.map(|target| target + Vec2::Y * self.room);
             focus = target.map(|target| pan.from.lerp(target, eased)).or(focus);
             if pan.left <= 0.0 {
                 self.camera = Some(match (std::mem::take(&mut self.pan_stays), spot) {
@@ -55,7 +55,7 @@ impl Camera {
                 self.pan = None;
             }
         } else {
-            let offset = self.cam_offset + Vec2::Y * self.room;
+            let offset = Vec2::Y * self.room;
             focus = match self.camera {
                 Some(Cam::At(ref at)) => Some(at.vec2() + offset),
                 Some(Cam::Who(who)) => match (standing(cast, who).map(|at| at + offset), focus) {

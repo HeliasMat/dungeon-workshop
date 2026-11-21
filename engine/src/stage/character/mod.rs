@@ -40,10 +40,6 @@ pub struct Actor {
     pub sunk: f32,
     /// What it is sunk in is sand, not water.
     pub in_sand: bool,
-    /// The name shown under its feet; it looks about now and then; it
-    /// hops on the spot again and again (how high, the frames of a hop,
-    /// those gone so far).
-    pub tag: Option<String>,
     /// How much of its life is left, for a bar over it.
     pub bar: Option<f32>,
     /// How many blows it has taken.
@@ -67,7 +63,6 @@ impl Actor {
             flipped: false,
             sunk: 0.0,
             in_sand: false,
-            tag: None,
             bar: None,
             hits: 0,
             way: Way { to: position, left: 0.0, slide: false, pace: WALK, route: VecDeque::new(), running: false, then_face: None, halted: None },
@@ -92,8 +87,6 @@ impl Actor {
                 carried_by: None,
                 held: false,
                 rides: None,
-                solid: false,
-                pushable: false,
                 vanishes: false,
                 wander: None,
                 orbit: None,

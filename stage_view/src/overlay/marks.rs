@@ -100,47 +100,6 @@ pub(super) fn draw_bolts(canvas: &mut Canvas, stage: &Stage, below: i32, close: 
     }
 }
 
-/// The keys shown on screen (see `Beat::Icon`): a key cap over its
-/// bearer's head or on its point, an arrow drawn in it, or its name (`OK`
-/// for Enter, a letter).
-pub(super) fn draw_icons(canvas: &mut Canvas, art: &UiArt, stage: &Stage, on_screen: &impl Fn(Vec2) -> (i32, i32)) {
-    const SIZE: i32 = 15;
-    for Icon { on, key, .. } in &stage.words.icons {
-        let at = match on {
-            Cam::At(at) => Some(at.vec2()),
-            Cam::Who(who) => stage.cast.get(who).map(|actor| actor.shown_at() - Vec2::new(0.0, 34.0 + actor.shown_height())),
-        };
-        let Some(at) = at else {
-            continue;
-        };
-        let (x, y) = on_screen(at);
-        let (left, top) = (x - SIZE / 2, y - SIZE / 2);
-        canvas.fill(left - 1, top - 1, SIZE as usize + 2, SIZE as usize + 2, [250, 250, 250, 255]);
-        canvas.fill(left, top, SIZE as usize, SIZE as usize, [40, 48, 72, 255]);
-        let ink = [255, 255, 255, 255];
-        // (An arrow: a triangle row by row, then its stem.)
-        let arrow = |canvas: &mut Canvas, way: (i32, i32)| {
-            for row in 0..5 {
-                let wide = 1 + row * 2;
-                match way {
-                    (0, -1) => canvas.fill(x - row, y - 4 + row, wide as usize, 1, ink),
-                    (0, 1) => canvas.fill(x - row, y + 4 - row, wide as usize, 1, ink),
-                    (-1, 0) => canvas.fill(x - 4 + row, y - row, 1, wide as usize, ink),
-                    _ => canvas.fill(x + 4 - row, y - row, 1, wide as usize, ink),
-                }
-            }
-        };
-        match key.as_str() {
-            "up" => arrow(canvas, (0, -1)),
-            "down" => arrow(canvas, (0, 1)),
-            "left" => arrow(canvas, (-1, 0)),
-            "right" => arrow(canvas, (1, 0)),
-            "enter" => _ = canvas.text(art, left + 1, top + 2, "OK", ui::color::WHITE),
-            letter => _ = canvas.text(art, left + 4, top + 2, &letter.to_uppercase(), ui::color::WHITE),
-        }
-    }
-}
-
 /// A picture's file, read once (none: no such picture).
 pub(super) fn picture_file(file: &str) -> Option<Arc<(u32, u32, Vec<u8>)>> {
     // (A cache of the file's content, by its path and when it last changed:

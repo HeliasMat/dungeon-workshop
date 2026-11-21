@@ -89,12 +89,10 @@ impl Stage {
                 self.direct_motion(MotionBeat::Path { who, points: vec![at.vec2()], run });
             }
             MotionBeat::WalkTo { who, at, run } => {
-                let solids: Vec<Vec2> =
-                    self.cast.iter().filter(|(other, actor)| **other != who && actor.habits.solid).map(|(_, actor)| actor.position).collect();
                 let from = self.cast.get(&who).map(|actor| actor.position);
                 // (Round the place's walls too, if there is a way so.)
                 let walls: Vec<Rect> = self.play.walls.iter().chain(&self.play.place_walls).copied().collect();
-                let way = from.and_then(|from| way_round(&walls, &solids, from, at.vec2()).or_else(|| way_round(&self.play.walls, &solids, from, at.vec2())));
+                let way = from.and_then(|from| way_round(&walls, from, at.vec2()).or_else(|| way_round(&self.play.walls, from, at.vec2())));
                 if let Some(points) = way {
                     self.direct_motion(MotionBeat::Path { who, points, run });
                 }

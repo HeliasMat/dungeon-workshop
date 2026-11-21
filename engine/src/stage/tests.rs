@@ -545,9 +545,9 @@ fn particles_credits_and_wipes() {
 }
 
 #[test]
-fn walls_solids_pushing_and_eyes() {
+fn walls_and_eyes() {
     let mut stage = Stage::default();
-    let (me, guard, rock) = (Who::Character(0), Who::Monster(322), Who::Monster(74));
+    let (me, guard) = (Who::Character(0), Who::Monster(322));
     stage.put(me, Vec2::new(0.0, 0.0), 3);
     stage.direct(Beat::Play(PlayBeat::Control(Some(me))), Vec2::ZERO);
     stage.direct(Beat::Play(PlayBeat::Wall(Some([20.0, -50.0, 40.0, 50.0].into()))), Vec2::ZERO);
@@ -569,13 +569,6 @@ fn walls_solids_pushing_and_eyes() {
     assert!(stage.cast[&me].walks(), "gets out");
     stage.new_place();
     assert!(stage.play.walls.is_empty());
-    // (A rock pushed a step.)
-    stage.direct(Beat::Play(PlayBeat::Wall(None)), Vec2::ZERO);
-    stage.put(rock, stage.cast[&me].position + Vec2::new(14.0, 0.0), 1);
-    stage.cast.get_mut(&rock).unwrap().habits.pushable = true;
-    let before = stage.cast[&rock].position;
-    stage.steer(Vec2::X, false);
-    assert_eq!(stage.cast[&rock].way.to, before + Vec2::new(16.0, 0.0));
 }
 
 #[test]
@@ -594,7 +587,6 @@ fn walked_round_a_wall() {
     assert_eq!(
         way_round(
             &[[-100.0, -100.0, 200.0, -10.0], [-100.0, 10.0, 200.0, 100.0], [-100.0, -100.0, -10.0, 100.0], [10.0, -100.0, 200.0, 100.0]].map(Rect::from),
-            &[],
             Vec2::ZERO,
             Vec2::new(150.0, 0.0)
         ),

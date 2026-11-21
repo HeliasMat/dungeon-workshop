@@ -147,8 +147,8 @@ fn play_way(events: Vec<StoryEvent>, most: u32, way: usize, rehearsal: &mut Rehe
                         rehearsal.problems.push(problem);
                     }
                 }
-                // (Not with `autocam`: the view glides to who speaks.)
-                Call::Say { entity: Some(who), text, .. } if !director.manner.auto_cam && !director.manner.keep_speaker => {
+                // (Not with `keepspeaker`: the view glides to who speaks.)
+                Call::Say { entity: Some(who), text, .. } if !director.manner.keep_speaker => {
                     if let Some((who, text, at, _)) = said.take() {
                         judge(rehearsal, told, &stage, focus, who, &text, &at);
                     }

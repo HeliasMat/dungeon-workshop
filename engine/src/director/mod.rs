@@ -142,10 +142,6 @@ struct Asking {
     /// the time left to the one asked (see `PlayBeat::AskTimer`).
     ask_timer: Option<Timed>,
     ask_left: Option<Timed>,
-    /// The answer Escape takes, for the next question and for the one
-    /// asked (see `PlayBeat::Cancel`).
-    cancel_next: Option<usize>,
-    cancel_now: Option<usize>,
     /// The answers of the question asked that are offered, by their
     /// places among all of them (see `answer_test`).
     offered: Vec<usize>,
@@ -254,8 +250,6 @@ pub const SOUND_FALLBACK: f32 = 30.0;
 /// How lines are said.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Manner {
-    /// The frames after which each line goes by itself.
-    pub(crate) auto_lines: Option<f32>,
     /// Each speaker's face when a line gives none, and the sound of its
     /// lines.
     faces: HashMap<Who, u16>,
@@ -266,8 +260,6 @@ pub(crate) struct Manner {
     text_speed: Option<f32>,
     /// What is done at each line by itself, and who spoke last.
     auto_face: bool,
-    auto_emote: bool,
-    pub(crate) auto_cam: bool,
     pub(crate) keep_speaker: bool,
     pub(crate) last_speaker: Option<Who>,
     /// The box put at the top for a line by itself, its speaker low on the
@@ -442,8 +434,6 @@ pub struct Director {
     /// The label the story was last saved at in the event at hand: a save
     /// keeps it, and reopened the event plays at once up to it.
     pub(crate) checkpoint: Option<String>,
-    /// Where the player may skip to (see [`Director::skip`]).
-    pub(crate) skippable: Option<String>,
     pub author: Author,
     /// The film's lines open, as they play (see `FlowBeat::Line`).
     film_lines: FilmLines,

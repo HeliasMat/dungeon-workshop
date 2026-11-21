@@ -234,7 +234,6 @@ impl Stage {
         self.view.new_place();
         self.clear_walls();
         (self.play.place_walls, self.play.bounds) = (Vec::new(), None);
-        self.words.icons.clear();
         self.words.pictures.clear();
     }
 

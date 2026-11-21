@@ -8,11 +8,8 @@ pub(crate) const ANSWER: &str = "answer";
 /// answered (0).
 pub(crate) const TIME_LEFT: &str = "time";
 
-/// The seconds a countdown has left (see `DataBeat::Timer`); whether the last
-/// question was left with Escape (see `PlayBeat::Cancel`).
+/// The seconds a countdown has left (see `DataBeat::Timer`).
 pub(crate) const TIMER: &str = "timer";
-
-pub(crate) const CANCELLED: &str = "cancelled";
 
 /// What Enter does while the player walks someone about (see
 /// [`Director::press`](crate::Director::press)): the presses counted; whether someone is close

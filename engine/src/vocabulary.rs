@@ -38,8 +38,6 @@ pub struct Vocabulary {
     /// `Director::listen`).
     pub face_emotes: &'static [(u16, u16)],
     pub leaping_faces: &'static [u16],
-    /// The sound an emote goes with.
-    pub emote_sounds: &'static [(u16, u16)],
     /// The emotes scenes show most, by a name.
     pub emotes: Named<u16>,
     /// Songs and sounds heard around, by a name.
@@ -75,7 +73,6 @@ impl Vocabulary {
         faces: &[],
         face_emotes: &[],
         leaping_faces: &[],
-        emote_sounds: &[],
         emotes: &[],
         songs: &[],
         sounds: &[],
@@ -104,12 +101,6 @@ impl Vocabulary {
     /// The emote a portrait's face goes with, if any.
     pub(crate) fn emote_of_face(&self, face: u16) -> Option<u16> {
         self.face_emotes.iter().find(|(known, _)| *known == face).map(|(_, emote)| *emote)
-    }
-
-    /// The sound the emote of a face goes with, if any.
-    pub(crate) fn sound_of_face(&self, face: u16) -> Option<u16> {
-        let emote = self.emote_of_face(face)?;
-        self.emote_sounds.iter().find(|(known, _)| *known == emote).map(|(_, sound)| *sound)
     }
 
     /// An animation's group by its name, whatever the case.
@@ -150,7 +141,6 @@ pub(crate) static SAMPLE: Vocabulary = Vocabulary {
     faces: &[("normal", 0), ("happy", 1), ("angry", 3), ("sad", 5), ("determined", 9), ("joyous", 10), ("surprised", 12)],
     face_emotes: &[(3, 91), (5, 171), (1, 93), (10, 93), (12, 88)],
     leaping_faces: &[10, 12],
-    emote_sounds: &[(88, 8964)],
     emotes: &[("!", 88), ("?", 92), ("joy", 93), ("none", 0)],
     songs: &[("jolly_master", 73), ("rain", 106)],
     sounds: &[("exclamation", 8964), ("hop", 8974)],
@@ -171,7 +161,6 @@ pub(crate) static SAMPLE: Vocabulary = Vocabulary {
         "talking",
         "presses",
         "too_late",
-        "cancelled",
     ],
     given_beginnings: &["item_", "recruit_"],
 };
