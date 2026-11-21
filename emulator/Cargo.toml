@@ -1,0 +1,17 @@
+[package]
+name = "emulator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "A small libretro frontend: a core the user chose (melonDS, DeSmuME) loaded, a game run frame by frame"
+readme = "../README.md"
+publish.workspace = true
+
+# A libretro core is a library of the user's own (never bundled): loaded at
+# run time, its callbacks answered, its frames and sound handed out. No crate
+# of the project is used.
+[dependencies]
+libloading = "0.8"
+image.workspace = true

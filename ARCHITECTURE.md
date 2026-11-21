@@ -37,8 +37,9 @@
     plays the scenes           rules and data, no engine      the files of data/,    the language of
                                                               read and merged        films and scenes
 
-0   diagnostics
-    what is wrong, said one way by every block (`Diagnostic`); words compared (`text`)
+0   diagnostics                                                  emulator
+    what is wrong, said one way by every block (`Diagnostic`);   a libretro core run (melonDS):
+    words compared (`text`)                                      the Workshop's Emulator space
 ```
 
 Each block is a crate, its folder named as its package.
@@ -68,6 +69,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `game` | a game: story, places, dungeons, screens; its `.game` file (`game_file`) |
 | `extractor` | the program that writes `data/rom/` out of the ROM |
 | `scene_player` | the program that plays a film or a game, and its commands |
+| `emulator` | a small libretro frontend: a core the user chose loaded, a game run frame by frame (program `emulator`, headless) |
 | `dungeon_lsp` | the language server (program `dungeon_lsp`) |
 | `workshop` | Dungeon Workshop, the editor |
 
@@ -95,6 +97,7 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `extractor` | `engine`, `rom_formats`, `rules`, `shell`, `stage_view` |
 | `game` | `assets`, `decor`, `dive`, `engine`, `film`, `language`, `preview`, `rules`, `scenes`, `shell`, `stage_view` |
 | `scene_player` | `engine`, `film`, `game`, `language`, `preview`, `rules`, `scenes`, `shell`, `stage_view` |
+| `emulator` | nothing |
 | `dungeon_lsp` | `assets`, `decor`, `film`, `game`, `language` |
 | `workshop` | `assets`, `decor`, `dive`, `engine`, `film`, `game`, `media`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view` |
 <!-- end of rule -->
@@ -136,6 +139,7 @@ Nothing below a program's `main` looks for any of it. Each `main` finds the root
 |---|---|
 | `scene_player` | a `film::Context` (the library, the data, the language `DUNGEON_FILM_LANGUAGE`; `--data` replaces the data folder), given to every command; the developer's options of a film in a window (`DUNGEON_FILM_DEBUG`, `preview::debug::Debug::read`), given to `play`; a packet (`scene_player pack`) is its own root |
 | `workshop` | a `Session` (`workshop/src/session.rs`): the `film::Context`, how it was launched (`launch.rs`: every variable it reads, `DUNGEON_FILM_DEBUG` too), what is read of the files and kept (sheets, effects, the Pokédex, the words' catalogue, the dungeon editor's offers, the own sounds' samples); given to each space at its making; `reload()` when the Workshop reads its project again |
+| `emulator` | nothing: the core, the ROM and the frames named on its command line |
 | `dungeon_lsp` | a `film::Context` of the root up from the editor's folder (`initialize`), read again (`reload`) when a file is saved |
 | `decor` | the library (`Project`) and the data folder |
 | `extractor` | its folder: the one named, else `DUNGEON_DATA`, else `./data` |
