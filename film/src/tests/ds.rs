@@ -25,12 +25,12 @@ fn for_ds_is_read_and_written_back() {
 
 #[test]
 fn a_word_the_ds_lacks_is_wrong_with_its_fix() {
-    let film = "for ds\nscene: beach krabby pikachu\nzoom 2\n";
+    let film = "for ds\nscene: beach krabby pikachu\npikachu bubble Look!\n";
     let wrong = told(film, codes::DS_WORD);
     assert_eq!(wrong.len(), 1, "{:?}", coded(film));
-    assert!(wrong[0].contains("“zoom”") && wrong[0].contains("frame"), "{wrong:?}");
+    assert!(wrong[0].contains("“bubble”") && wrong[0].contains("who: text"), "{wrong:?}");
     // (Not written for the DS: nothing said of it.)
-    assert!(told("scene: beach krabby pikachu\nzoom 2\n", codes::DS_WORD).is_empty());
+    assert!(told("scene: beach krabby pikachu\npikachu bubble Look!\n", codes::DS_WORD).is_empty());
 }
 
 #[test]

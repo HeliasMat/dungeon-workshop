@@ -282,7 +282,7 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("timer", Export::Work, "a Wait counted"),
     ("every", Export::Work, "a routine looped beside the scene"),
     ("while", Export::Work, "while ( $LOCALn … ) { }"),
-    ("random", Export::Work, "a random number of the game's"),
+    ("random", Export::Close, "switch ( random(n) ) as Sky draws its numbers, a case a tenth of the range setting $LOCALn"),
     ("when", Export::Close, "its lines in a routine of their own (def n for actor, as beside)"),
     (
         "beside",
@@ -330,6 +330,7 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("keep", "kept in the scene only, not past it"),
     ("float", "the hover stops, landing, when it is told anything else"),
     ("when", "its lines start at once, not when the other arrives"),
+    ("random", "drawn in tenths of the range: within a tenth of it"),
     ("beside", "one told something by the script before its lines plays them in the script, at once"),
 ];
 

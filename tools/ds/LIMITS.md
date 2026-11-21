@@ -335,3 +335,34 @@ the story's changed. Past the 45 free ones the exporter names them
 (`target/ds/lab/many_grid.png`). It unlocks any number of species in a
 film (still 21 at once in a scene), and the level list moves too
 (`BALANCE/level_list.bin`): new places become possible, not done yet.
+
+## The gate's sheets (`tools/ds/gate.py`, 2026-11-21)
+
+Every word's Wiki example, exported (`--partial`), patched and played
+from a cold boot, a sheet a family (`target/ds/gate/`). Every family
+played to its end and on to the personality quiz: no scene hung. What
+differs from the engine, family by family (the words not named play as
+the table says):
+
+| Family | What the sheets show apart from the engine |
+|---|---|
+| Structure | `if chance(50)`: Sky's `switch ( random(100) )`, in tenths (seen: "Lucky!"). Transitions: fades only. |
+| Speech | `box top`: only the portrait goes up. `whisper`: normal text. |
+| Presence | `appear`/`vanish`: a smoke puff, then at once. `crowd`: still. |
+| Formations | As the engine. |
+| Movement | `jump` to a place: a run (no arc). `follow`/`chase`: catch-ups after each move. |
+| Turning | `face … slowly`: turns at Sky's pace (the engine's slow turn is left out). |
+| Body | `eat`: the eating effect, no apple (items: none). `hurt`: the slide back, its pain. |
+| Emotions | As the engine (Sky's emotes are the engine's numbers). |
+| Camera | As the engine; a frame wider than the screen pans across. |
+| Screen | `flash` of a colour: Sky's FlushOut and FlushIn; `memory`: Sky's sepia. |
+| Sound | A sound played in a loop by name (`chirp`) and faded: left out. |
+| Effects | `effect … from a to b`: the effect on b (no shot flying). `weather sparkles`, sand, fog, sun: nothing. `daytime`: Sky's evening / night tints. |
+| Objects | `hold`, `give`, `drop`, `throw`: no item drawn (no item sprite in ground mode). `open`/`close`: as the engine. |
+| Fights | `fight` by the rules: its blows as attacks (the Wiki's: one Thunder, Piplup faints, as the engine plays it). `dodge`: no "Missed!". `finish`: no slow motion. |
+| Time | `at 2s:` and `at mark + 1s:`: from where the line is written. `together`: at once. |
+| Story | `{value}`: the number as last set ("I have 3 apples."). `seen()`, `keep`: the scene's own variables. Menus as Sky's. |
+| Dungeon | `stairs`, `trap`, `ambush`, `shop`, `steal`: the Pokémon's part only; stairs, traps, items, the log and "-50 P" left out. |
+| Guild | `job`, `rank`, `morning_call`, `dinner`: the lines said; the cutaway, Loudred's bubble and the menus left out. |
+| Fishing | `cast`, `bite`, `reel`, `release`: poses and lines; the rod, line and bobber left out (pictures of one's own). |
+| Advanced | `beside`, `when`, `at`: routines (above). `float`: hovering. `layer`, `ghost`, `zoom`, `bubble`, `light`, `flip`, nodes, `every`, `while` (a variable set from another), `timer`, `spin`: left out; `player`, `dialogue`, `explore`, `game`, `way`: a cutscene has none. |

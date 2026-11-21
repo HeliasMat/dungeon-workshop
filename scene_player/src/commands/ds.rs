@@ -53,7 +53,9 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     if let Some(art) = &art {
         writer.fights = fights_played(written, art, &game);
     }
-    for (number, read) in &written.read_as {
+    // (A word the film defines, `define greet`: its lines are written out already.)
+    let defined: Vec<&str> = piece.text.lines().filter_map(|line| line.trim().strip_prefix("define ")?.split_whitespace().next()).collect();
+    for (number, read) in written.read_as.iter().filter(|(_, read)| !defined.contains(&read.word.as_str())) {
         match export_of(&read.word) {
             Some(Export::Direct | Export::Close) => {}
             Some(_) => writer.problems.push(format!("line {number}: “{}” doesn't export to DS yet", read.word)),
@@ -117,10 +119,11 @@ fn fights_played(written: &::film::Written, art: &preview::art::Art, game: &Game
     let mut played = HashMap::new();
     for beat in written.events.iter().flat_map(|event| &event.scenes).flat_map(|scene| &scene.beats) {
         let (Beat::Host(fields) | Beat::Course(Course::Host(fields))) = beat else { continue };
-        if fields.first().is_some_and(|first| first == "fight") && fields.get(1).is_some_and(|second| second != "end") {
-            if let Some(fight) = scenes::fight::host::played(fields, &rules, &other) {
-                played.insert(fields.clone(), fight);
-            }
+        if fields.first().is_some_and(|first| first == "fight")
+            && fields.get(1).is_some_and(|second| second != "end")
+            && let Some(fight) = scenes::fight::host::played(fields, &rules, &other)
+        {
+            played.insert(fields.clone(), fight);
         }
     }
     played
@@ -580,7 +583,9 @@ fn parts_of(chunks: &[&str]) -> Option<(Vec<String>, Vec<Part>)> {
                     owner = Some(target.to_string());
                     mine.push(line.to_string());
                 }
-                None if ["Wait(", "WaitExecuteLives(", "se_Play(", "camera_SetEffect("].iter().any(|start| line.starts_with(start)) => mine.push(line.to_string()),
+                None if ["Wait(", "WaitExecuteLives(", "se_Play(", "camera_SetEffect("].iter().any(|start| line.starts_with(start)) => {
+                    mine.push(line.to_string())
+                }
                 None => return None,
             }
         }
@@ -915,7 +920,12 @@ impl<'a> Writer<'a> {
             self.line(&format!("MoveHeight<actor {actor}>({pace}, {up}); // float"));
             return;
         }
-        let part = Part { actor: actor.clone(), told: vec![format!("MoveHeight<actor {actor}>({pace}, {up});")], own: Vec::new(), float: Some((pace, up.to_string())) };
+        let part = Part {
+            actor: actor.clone(),
+            told: vec![format!("MoveHeight<actor {actor}>({pace}, {up});")],
+            own: Vec::new(),
+            float: Some((pace, up.to_string())),
+        };
         self.begin_block(format!("float_{actor}_{}", self.besides.len()), vec![part]);
     }
 
@@ -958,7 +968,8 @@ impl<'a> Writer<'a> {
         }
         let Some((sides, sights)) = self.fights.get(fields).cloned() else {
             // (Its blows can't be read: a short exchange between the first of each side.)
-            let side: Vec<Who> = fields.windows(2).filter(|pair| pair[0] == "side").filter_map(|pair| pair[1].strip_prefix('m')?.parse().ok().map(Who::Monster)).collect();
+            let side: Vec<Who> =
+                fields.windows(2).filter(|pair| pair[0] == "side").filter_map(|pair| pair[1].strip_prefix('m')?.parse().ok().map(Who::Monster)).collect();
             if let [first, second, ..] = side[..] {
                 for (who, target) in [(first, second), (second, first)] {
                     self.blow(number, who, 0, Some(target), false, false);
@@ -968,6 +979,12 @@ impl<'a> Writer<'a> {
             return;
         };
         let _ = sides;
+        // (`DS_FIGHT=1`: what the rules played, sight by sight.)
+        if std::env::var_os("DS_FIGHT").is_some() {
+            for sight in &sights {
+                eprintln!("{sight:?}");
+            }
+        }
         for sight in sights {
             match sight {
                 Sight::Blow(blow) => {
@@ -1497,7 +1514,13 @@ impl<'a> Writer<'a> {
                 let many = who.len() as f32;
                 for (at, one) in who.iter().enumerate() {
                     let along = (at as f32 - (many - 1.0) / 2.0) * 2.0 * BESIDE;
-                    let facing = if along < 0.0 { Direction::Right } else if along > 0.0 || many > 1.0 { Direction::Left } else { Direction::Down };
+                    let facing = if along < 0.0 {
+                        Direction::Right
+                    } else if along > 0.0 || many > 1.0 {
+                        Direction::Left
+                    } else {
+                        Direction::Down
+                    };
                     let at = Point { x: Num::Lit(x + along), y: Num::Lit(y) };
                     self.plain(number, word, &Beat::Body(BodyBeat::Put { who: *one, at, direction: facing }));
                 }
@@ -1510,7 +1533,9 @@ impl<'a> Writer<'a> {
             Beat::Data(DataBeat::Calc { var, b: Value::Number(after), .. }) if var.starts_with("_at_") => {
                 self.values.insert(var.clone(), *after);
             }
-            Beat::Flow(FlowBeat::WaitUntil(test)) if test.any.iter().flatten().any(|condition| condition.var == "clock" || condition.var == engine::MUSIC_CLOCK) => {
+            Beat::Flow(FlowBeat::WaitUntil(test))
+                if test.any.iter().flatten().any(|condition| condition.var == "clock" || condition.var == engine::MUSIC_CLOCK) =>
+            {
                 let frames = test.any.iter().flatten().find_map(|condition| match &condition.value {
                     Value::Number(frames) => Some(*frames),
                     Value::Var(name) => self.values.get(name).copied(),
@@ -1533,6 +1558,23 @@ impl<'a> Writer<'a> {
                     }
                     None => self.problems.push(format!("line {number}: the calculation {a:?} {op} {b:?} doesn't export to DS (only adding to a variable)")),
                 }
+            }
+            // A number drawn: Sky's `switch ( random(n) )`, its cases a tenth of the range each.
+            Beat::Data(DataBeat::Random { var, from, to }) => {
+                let Some(name) = self.var(number, var) else { return };
+                let range = i64::from(*to) - i64::from(*from) + 1;
+                let parts = range.clamp(1, 10);
+                self.line(&format!("switch ( random({range}) ) {{"));
+                for part in 0..parts {
+                    let value = i64::from(*from) + (part * range + range / 2) / parts;
+                    match part + 1 < parts {
+                        true => self.line(&format!("    case < {}:", (part + 1) * range / parts)),
+                        false => self.line("    default:"),
+                    }
+                    self.line(&format!("        {name} = {value};"));
+                    self.line("        break;");
+                }
+                self.line("}");
             }
             Beat::Flow(FlowBeat::Return) => {
                 // (The end of a fight's passage: kept for where the fight plays it.)
@@ -1878,6 +1920,12 @@ impl<'a> Writer<'a> {
                     let above = self.above((middle.x, middle.y));
                     let position = self.position(above);
                     self.line(&format!("camera2_SetPositionMark({position});"));
+                }
+            }
+            // A place named (`name rock 300 200`): read into positions, as a place found.
+            Beat::Place(PlaceBeat::Name { name, spot }) => {
+                if let Some(point) = self.spot(spot) {
+                    self.places.insert(name.clone(), point);
                 }
             }
             Beat::Place(PlaceBeat::Find { var, spot, .. }) => match self.spot(spot) {

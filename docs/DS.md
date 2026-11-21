@@ -86,7 +86,7 @@ power on in py-desmume, A pressed every 60 frames. It writes, under
 `target/ds/gate/`:
 
 - `<family>_sheet.png`: a contact sheet of both screens, a shot every 30
-  frames (`--every N`), the frame above each;
+  frames (`--every N`), the frame above each (96 shots a sheet, then `_2`, `_3`...);
 - `<family>.txt`: each word, whether it exported, and what the export left
   out or changed;
 - `report.txt`: a line a family.

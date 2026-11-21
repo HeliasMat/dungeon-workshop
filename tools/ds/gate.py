@@ -39,8 +39,9 @@ PLAYER = os.path.join(ROOT, 'target', 'release', 'scene_player' + ('.exe' if os.
 
 # From power on: the title (A), the controls (A), then the film (frame ~1130).
 FILM_STARTS = 1130
-# Frames each scene is given beyond its own length in the engine (fades, A to close each line).
-SCENE_MORE = 360
+# Frames each scene is given beyond three quarters of its length in the engine
+# (fades; A, pressed every second, closes lines sooner than the engine).
+SCENE_MORE = 240
 
 
 # The ways of writing with no page of their own in the Wiki (a line said,
@@ -110,9 +111,26 @@ def export(word, film, folder):
     return open(out, encoding='utf-8').read(), float(seconds.group(1)) if seconds else 10.0, told, True
 
 
-def labelled(exps, word):
-    """The export's scenes, the word said on black before each."""
+def free_actor(at):
+    """The exporter's name for the film's `at`th Pokémon with no actor of its own."""
+    if at < 10:
+        return f'NPC_TEST{at + 1:03d}'
+    return f'FREE{at + 1}' if at < 45 else f'NPC_FREE{at:03d}'
+
+
+def labelled(exps, word, species):
+    """The export's scenes, the word said on black before each. Each
+    example was exported alone, its free actors named from the first: they
+    are named anew for the whole film, one for each species (`species`, the
+    film's so far)."""
     said = word.replace('"', "'")
+    names = {}
+    for name, kind in re.findall(r'^// ds-export actor ACTOR_(\S+) species (\d+)', exps, re.M):
+        if kind not in species:
+            species.append(kind)
+        names[name] = free_actor(species.index(kind))
+    if names:
+        exps = re.sub(r'\bACTOR_(\w+)', lambda found: 'ACTOR_' + names.get(found.group(1), found.group(1)), exps)
     lines = []
     for line in exps.splitlines():
         if line.startswith('// The film'):
@@ -154,8 +172,14 @@ def shoot(rom, prefix, last, every):
     return shots
 
 
-def sheet(out, shots, columns=12, scale=0.5):
-    """The shots side by side, both screens, each under its frame."""
+def sheet(out, shots, columns=12, scale=0.5, page=96):
+    """The shots side by side, both screens, each under its frame; past
+    `page` shots, more sheets (`_2`, `_3`...), each readable whole."""
+    if len(shots) > page:
+        for at in range(0, len(shots), page):
+            number = at // page + 1
+            sheet(out if number == 1 else out.replace('.png', f'_{number}.png'), shots[at:at + page], columns, scale, page)
+        return
     if not shots:
         return
     w, h = int(256 * scale), int(384 * scale)
@@ -196,7 +220,7 @@ def main():
             continue
         folder = os.path.join(OUT, family.lower())
         os.makedirs(folder, exist_ok=True)
-        lines, scenes = [f'# {family}'], []
+        lines, scenes, species = [f'# {family}'], [], []
         frame = FILM_STARTS
         for word in words:
             film = pages.get(word)
@@ -207,9 +231,9 @@ def main():
             lines.append(f'{word}: {"exported" if ok else "NOT EXPORTED"}')
             lines.extend(f'    {line}' for line in told)
             if ok:
-                scenes.append(labelled(exps, word))
+                scenes.append(labelled(exps, word, species))
                 count = exps.count('// ds-export level')
-                length = int(seconds * 60) + SCENE_MORE * max(count, 1) + 120
+                length = int(seconds * 45) + SCENE_MORE * max(count, 1) + 60
                 frame += length
         exported = len(scenes)
         summary = f'{family}: {exported} of {len(words)} words exported'
