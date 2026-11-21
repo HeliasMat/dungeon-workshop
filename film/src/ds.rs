@@ -182,8 +182,152 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("seen()", Export::Work, "a game variable counted"),
     ("#id", Export::Direct, "nothing: an id for translators"),
     ("keep", Export::Work, "a game variable"),
+    // Dungeon (`uses dungeon`)
+    ("stairs", Export::None, "the game's stairs are a dungeon's: main_EnterDungeon"),
+    ("trap", Export::None, "traps are a dungeon's"),
+    ("ambush", Export::None, "an ambush is a dungeon's fight"),
+    ("shop", Export::Work, "Kecleon's shop menu (ProcessSpecial)"),
+    ("steal", Export::None, "stealing is a dungeon's"),
+    // Guild (`uses guild`)
+    ("job", Export::Work, "the guild's job lists (ProcessSpecial)"),
+    ("rank", Export::Work, "the team's rank, a game variable"),
+    ("morning_call", Export::Work, "Sky's own morning at the guild, its routine called"),
+    ("dinner", Export::Work, "Sky's own dinner at the guild, its routine called"),
+    // Fishing (`uses fishing`)
+    ("cast", Export::None, "Sky has no fishing: no rod, line nor bobber"),
+    ("bite", Export::None, "Sky has no fishing"),
+    ("reel", Export::None, "Sky has no fishing"),
+    ("release", Export::None, "Sky has no fishing"),
+    // Advanced
+    ("layer", Export::Work, "Sky draws its actors by their height on the screen; an attribute to set"),
+    ("ghost", Export::None, "Sky's actors have no see-through"),
+    ("tint", Export::Work, "screen_FlushOut in that colour"),
+    ("float", Export::Work, "MoveHeight up and down, looped"),
+    ("zoom", Export::None, "Sky's camera has no zoom"),
+    ("bubble", Export::None, "Sky has no speech bubbles: its words are in the box"),
+    ("light", Export::Work, "screen_FlushOut in the ambience's colour"),
+    ("spotlight", Export::None, "Sky has no light on a part of the screen"),
+    ("letterbox", Export::None, "Sky's scenes have no black bars"),
+    ("slowmo", Export::None, "Sky's scripts have no slow motion"),
+    ("spin", Export::Work, "Turn2Direction round, a turn after another"),
+    ("flip", Export::None, "Sky's sprites are not turned over"),
+    ("node", Export::None, "the engine's own nodes: Sky has none"),
+    ("attach", Export::None, "the engine's own nodes: Sky has none"),
+    ("detach", Export::None, "the engine's own nodes: Sky has none"),
+    ("prop", Export::None, "the engine's own nodes: Sky has none"),
+    ("timer", Export::Work, "a Wait counted"),
+    ("every", Export::Work, "a routine looped beside the scene"),
+    ("while", Export::Work, "while ( $LOCALn … ) { }"),
+    ("random", Export::Work, "a random number of the game's"),
+    ("when", Export::Work, "a routine waiting for someone to arrive"),
+    ("beside", Export::Work, "Sky's routines beside the scene's (with(actor))"),
+    ("player", Export::None, "a cutscene has no one the player walks"),
+    ("dialogue", Export::None, "a cutscene has no one the player talks to"),
+    ("explore", Export::None, "a cutscene has no exploring"),
+    ("game", Export::None, "the game's own ground play: a cutscene has none"),
+    ("way", Export::None, "the game's own ground play: a cutscene has none"),
 ];
 
+/// What a word written with less than the film shows loses on the DS (its
+/// remark in a film `for ds`, `R-DS-LOSS`): each `Close` word's.
+pub const LOSSES: &[(&str, &str)] = &[
+    ("transition", "a wipe or an iris becomes a fade"),
+    ("banner", "a narration on black, not Sky's chapter picture"),
+    ("box", "the box stays at the bottom: only the portrait goes on top"),
+    ("whisper", "no smaller text"),
+    ("appear", "no fading in: shown at once"),
+    ("vanish", "no fading out: hidden at once"),
+    ("crowd", "no fidgeting, and 24 at most a scene"),
+    ("jump", "no arc to a place: a run there"),
+    ("follow", "the follower catches up after each move, not step by step"),
+    ("chase", "it runs to where the other was, once"),
+    ("hurt", "no knock back"),
+    ("tremble", "no shiver: its pain animation looped"),
+    ("cower", "an emote and its pain looped"),
+    ("hug", "they stand side by side and hop"),
+    ("sound", "not placed on someone; a move's own sound is none"),
+    ("effect", "a script effect of the move's type, not the move's own"),
+    ("weather", "sand, fog and sun show nothing; snow is hail"),
+    ("daytime", "the light's own colour"),
+    ("status", "only confusion, poison, sleep, ice and stats show"),
+    ("attack", "a crouch, the attack and an effect of its type: not the move's own animation"),
+    ("evolve", "no change of species: the evolved one is another actor"),
+    ("dodge", "the “Missed!” won't show"),
+    ("finish", "no slow motion"),
+    ("go", "a film is one scene after another on DS: “go scene” is not written"),
+];
+
+/// How to write a word the DS doesn't have another way (its fix in a film
+/// `for ds`, `E-DS-WORD`).
+pub const FIXES: &[(&str, &str)] = &[
+    ("fight", "write the fight as blows: “attack”, “hurt”, “faint” and lines"),
+    ("hold", "say it in a line, or show it with “effect”"),
+    ("drop", "say it in a line"),
+    ("give", "say it in a line, with “join” or “emote”"),
+    ("throw", "write it with “attack” or “effect … from a to b”"),
+    ("zoom", "frame them with “frame” or “glide”"),
+    ("bubble", "a line said in the box: “who: text”"),
+    ("slowmo", "“wait” between the beats"),
+    ("flip", "“face” or “fall”"),
+    ("cast", "“pose” and “effect” say it"),
+    ("ghost", "“appear … fade” or “vanish”"),
+];
+
+impl Export {
+    /// Whether it is written in the export (with or without a loss).
+    pub fn exports(self) -> bool {
+        matches!(self, Export::Direct | Export::Close)
+    }
+
+    /// Its badge, as the Wiki shows it: `DS direct`, `DS with loss`, `not on DS`.
+    pub fn badge(self) -> &'static str {
+        match self {
+            Export::Direct => "DS direct",
+            Export::Close => "DS with loss",
+            Export::Work => "not on DS yet",
+            Export::None => "not on DS",
+        }
+    }
+
+    /// Its word in `export-ds --table`.
+    pub fn kind(self) -> &'static str {
+        match self {
+            Export::Direct => "direct",
+            Export::Close => "close",
+            Export::Work => "work",
+            Export::None => "none",
+        }
+    }
+}
+
+/// What it is written as on the DS: the game's operations.
+pub fn how(word: &str) -> Option<&'static str> {
+    WORDS.iter().find(|(name, _, _)| *name == word).map(|(_, _, how)| *how)
+}
+
+/// What a word written with less loses on the DS.
+pub fn lost(word: &str) -> Option<&'static str> {
+    LOSSES.iter().find(|(name, _)| *name == word).map(|(_, lost)| *lost)
+}
+
+/// How to write it another way, for a word the DS doesn't have.
+pub fn fix(word: &str) -> Option<&'static str> {
+    FIXES.iter().find(|(name, _)| *name == word).map(|(_, fix)| *fix)
+}
+
+/// What a film `for ds` is told of a word that doesn't export: why, and
+/// how to write it another way.
+pub fn refused(word: &str) -> String {
+    let why = match export_of(word) {
+        Some(Export::Work) => "the export doesn't write it yet",
+        Some(Export::None) => how(word).unwrap_or("Sky has nothing for it"),
+        _ => "not a word the export knows",
+    };
+    match fix(word) {
+        Some(fix) => format!("“{word}” doesn't export to DS ({why}): {fix}"),
+        None => format!("“{word}” doesn't export to DS ({why})"),
+    }
+}
 
 /// The families the export table covers: the core ones (not the optional
 /// nor the advanced).
@@ -199,6 +343,22 @@ pub fn export_of(word: &str) -> Option<Export> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_word_of_the_plan_has_its_ds_status() {
+        let missing: Vec<&str> = crate::plan::WORDS.iter().map(|word| word.word).filter(|word| export_of(word).is_none()).collect();
+        assert!(missing.is_empty(), "no DS status for {missing:?}");
+        for (at, (word, export, how)) in WORDS.iter().enumerate() {
+            assert!(crate::plan::WORDS.iter().any(|planned| planned.word == *word), "“{word}” is no word of the plan");
+            assert!(!WORDS[..at].iter().any(|(known, _, _)| known == word), "“{word}” twice");
+            assert!(!how.is_empty(), "{word}: no note");
+            assert_eq!(*export == Export::Close, lost(word).is_some(), "{word}: a loss said if and only if it exports with one");
+        }
+        for (word, _) in FIXES {
+            assert!(!export_of(word).is_some_and(Export::exports), "{word} exports: no fix needed");
+        }
+        assert!(refused("fight").contains("attack"));
+    }
 
     #[test]
     fn every_core_word_has_its_line_in_the_export_table() {

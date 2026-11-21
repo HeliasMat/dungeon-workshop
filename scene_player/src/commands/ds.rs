@@ -6,7 +6,7 @@
 //! It reads what the film has the engine play, its typed beats
 //! (`Written::events`: places, Pokémon, emotes and sounds are already the
 //! game's numbers), and writes each beat as the game's operations. First,
-//! each line's word is looked up in `WORDS`: a word that has no Sky
+//! each line's word is looked up in `film::ds::WORDS`: a word that has no Sky
 //! operation yet is an error, never dropped in silence. A few beats only our
 //! engine needs (the ground grid, its light, the title) are left out, and told.
 //!
@@ -16,7 +16,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 
-use ::film::ds::{Export, WORDS, core_words, export_of};
+use ::film::ds::{Export, export_of};
 use ::film::plan;
 use ::film::tables::game_file;
 
@@ -49,7 +49,7 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
         match export_of(&read.word) {
             Some(Export::Direct | Export::Close) => {}
             Some(_) => writer.problems.push(format!("line {number}: “{}” doesn't export to DS yet", read.word)),
-            None => writer.problems.push(format!("line {number}: “{}” (not a core word) doesn't export to DS yet", read.word)),
+            None => writer.problems.push(format!("line {number}: “{}” (not a word of the plan) doesn't export to DS yet", read.word)),
         }
     }
     for (number, read) in &written.read_as {
@@ -94,30 +94,27 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     Ok(())
 }
 
-/// The table, and how many core words map directly, closely, need work, or can't.
+/// The table (`film::ds`), every word of the plan, and how many of the
+/// core's and of the others' map directly, closely, need work, or can't.
 fn told_table() -> String {
     let mut out = String::new();
-    let mut counts: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
-    for word in core_words() {
-        let export = export_of(word.word);
-        let kind = match export {
-            Some(Export::Direct) => "direct",
-            Some(Export::Close) => "close",
-            Some(Export::Work) => "work",
-            Some(Export::None) => "none",
-            None => "missing",
-        };
-        let how = WORDS.iter().find(|(name, _, _)| *name == word.word).map_or("", |(_, _, how)| how);
-        let _ = writeln!(out, "{:<11} {:<12} {:<7} {how}", word.family, word.word, kind);
-        let count = counts.entry(kind).or_default();
+    let mut counts: BTreeMap<(bool, &str), (usize, usize)> = BTreeMap::new();
+    for word in plan::WORDS {
+        let kind = export_of(word.word).map_or("missing", Export::kind);
+        let how = ::film::ds::how(word.word).unwrap_or("");
+        let lost = ::film::ds::lost(word.word).map_or(String::new(), |lost| format!(" (lost: {lost})"));
+        let _ = writeln!(out, "{:<11} {:<12} {:<7} {how}{lost}", word.family, word.word, kind);
+        let core = plan::FAMILIES.contains(&word.family);
+        let count = counts.entry((!core, kind)).or_default();
         count.0 += 1;
         if word.made == plan::Made::Word {
             count.1 += 1;
         }
     }
     let _ = writeln!(out);
-    for (kind, (all, words)) in counts {
-        let _ = writeln!(out, "{kind}: {all} ({words} of them words, the rest syntax and recipes)");
+    for ((other, kind), (all, words)) in counts {
+        let of = if other { "optional and advanced" } else { "core" };
+        let _ = writeln!(out, "{of} {kind}: {all} ({words} of them words, the rest syntax and recipes)");
     }
     out
 }
