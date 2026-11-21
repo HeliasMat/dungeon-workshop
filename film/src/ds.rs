@@ -25,7 +25,8 @@ pub fn written_for_ds(text: &str) -> bool {
     text.lines().map(str::trim).take_while(|line| !line.starts_with("scene")).any(|line| line == HEADER || line.starts_with("for ds "))
 }
 
-/// Pokémon Sky shows at once in a scene: the game's 24, less the hero's,
+/// Pokémon Sky shows at once in a scene (`export-ds` makes room as
+/// `Writer::fit` says): the game's 24, less the hero's,
 /// the partner's and a third party member's, kept for them.
 pub const AT_ONCE: usize = 21;
 

@@ -569,7 +569,7 @@ const PAN: f32 = 0.75;
 /// Actors at once in a scene: the game's 24, less the hero's, the
 /// partner's and a third party member's, kept for them (overlay 11 looks
 /// for a free one from the fourth: `ov11_022F7E78`, NA). Seen: 21 load.
-const AT_ONCE: usize = 21;
+const AT_ONCE: usize = ::film::ds::AT_ONCE;
 
 /// The screen, pixels, and how far round someone's feet its sprite shows
 /// (sideways, above, below).
