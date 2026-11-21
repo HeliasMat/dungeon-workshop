@@ -138,7 +138,6 @@ fn play_way(events: Vec<StoryEvent>, most: u32, way: usize, rehearsal: &mut Rehe
                     director.answer((!answers.is_empty()).then(|| (asked + way) % answers.len()));
                     (asked, answers_most) = (asked + 1, answers_most.max(answers.len()));
                 }
-                Call::AskText(given) => director.text_given(if given.is_empty() { "Pikachu".to_string() } else { given }),
                 Call::Host { fields, .. } if words.host_holds.contains(&fields[0].as_str()) => director.menu_done(false),
                 Call::Game { ask, .. } if ask.holds() => director.menu_done(false),
                 Call::Show(Beat::Flow(FlowBeat::Log(text))) if text.starts_with("line badly filled") => {

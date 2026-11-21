@@ -122,8 +122,8 @@ fn every_command_of_the_engine_is_written_in_a_film() {
         .copied()
         .collect();
     assert!(refused.is_empty(), "{refused:?}");
-    let (lines, problems) = super::engine_lines("scene: beach pikachu\ncamlag 0.5\n");
-    assert!(problems.is_empty() && lines.iter().any(|fields| fields[0] == "camlag"), "{problems:?} {lines:?}");
+    let (lines, problems) = super::engine_lines("scene: beach pikachu\nmusicspeed 120\n");
+    assert!(problems.is_empty() && lines.iter().any(|fields| fields[0] == "musicspeed"), "{problems:?} {lines:?}");
 }
 
 /// A recipe's calculation binds as the language's do: `x + 2 * 3` is 7.

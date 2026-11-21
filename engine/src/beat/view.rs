@@ -49,9 +49,6 @@ pub enum ViewBeat {
         who: Who,
         size: Vec2,
     },
-    /// The view following someone catches up with them in about that many
-    /// frames (0: keeps on them).
-    CamLag(f32),
     /// The view glides to a point or someone, stays there that many
     /// frames, then glides back.
     Glance {
@@ -95,7 +92,6 @@ declare! {
     ViewBeat;
     hand: "camera", "ease", "frame", "glance", "iris", "keepframe", "pan",
         "spotlight", "tempo";
-    "camlag" => CamLag(frames: f32),
     "zoom" => Zoom { to: f32, frames: Frames },
     "body" => Body { who: Who, size: Vec2 },
     "shake" => Shake { axis: u16, strength: f32, frames: Opt<Frames> },
@@ -120,7 +116,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "the view moves away from the dialogue box when a line shows, and stays away between two lines; `frame` and `keepframe` do it on their own",
     ),
     Form::new("camera", &["who:code", "@ x:coordinate y:coordinate"], "the view on someone (and follows them) / on a point, at once"),
-    Form::new("camlag", &["frames:duration"], "the view that follows someone catches up with them smoothly (`0`: stuck to them)"),
     Form::new(
         "ease",
         &["rest..."],

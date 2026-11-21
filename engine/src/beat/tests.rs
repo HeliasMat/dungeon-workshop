@@ -98,7 +98,6 @@ fn bodies_are_told_exactly() {
     assert_eq!(line("tremble m25 30"), Some(Beat::Body(BodyBeat::Tremble { who: a, frames: Frames(30.0), strength: 1.0 })));
     assert_eq!(line("infront m25 0"), Some(Beat::Body(BodyBeat::InFront { who: a, of: Some(Who::Character(0)) })));
     assert_eq!(line("infront m25 off"), Some(Beat::Body(BodyBeat::InFront { who: a, of: None })));
-    assert_eq!(line("depth m25 3"), Some(Beat::Body(BodyBeat::Depth { who: a, depth: 3.0 })));
     assert_eq!(line("resume m25"), Some(Beat::Motion(MotionBeat::Resume(a))));
     assert_eq!(
         line("orbit m25 0 2 90"),
@@ -189,7 +188,7 @@ fn a_beat_names_each_one_once_with_what_it_does() {
     let near = beat("putnear 1 2");
     assert_eq!((near.naming(Role::Comes), near.naming(Role::Acts)), (vec![a], vec![b]));
     // (`target` replaced wherever it is named, in a beat played later too.)
-    for line in ["depth target 3", "after 10 depth target 3", "face 1 target"] {
+    for line in ["height target 3", "after 10 height target 3", "face 1 target"] {
         let mut beat = beat(line);
         for who in beat.whos_mut().into_iter().filter(|who| **who == Who::Target) {
             *who = b;

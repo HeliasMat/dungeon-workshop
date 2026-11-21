@@ -157,10 +157,8 @@ pub(crate) static SAMPLE: Vocabulary = Vocabulary {
         "clock",
         "music_clock",
         "timer",
-        "time",
         "talking",
         "presses",
-        "too_late",
     ],
     given_beginnings: &["item_", "recruit_"],
 };

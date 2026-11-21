@@ -1,6 +1,6 @@
 //! The numbers and words a scene keeps.
 
-use super::declare::{Opt, Text, declare};
+use super::declare::{Text, declare};
 use super::parse::Fields;
 use super::*;
 
@@ -35,16 +35,6 @@ pub enum DataBeat {
         var: String,
         a: Who,
         b: Who,
-    },
-    /// Two numbers given where someone stands.
-    /// The free point that far before someone, as it faces now (behind it
-    /// when less than 0), kept in two numbers; `for`: who is to go there.
-    Facing {
-        x: String,
-        y: String,
-        who: Who,
-        far: f32,
-        goer: Option<Who>,
     },
     Position {
         who: Who,
@@ -83,7 +73,6 @@ declare! {
     "measure" => Measure { var: Text, a: Who, b: Who },
     "sees" => Sees { var: Text, who: Who, other: Who, distance: f32 = 64.0, angle: f32 = 90.0 },
     "position" => Position { who: Who, x: Text, y: Text },
-    "facing" => Facing { x: Text, y: Text, who: Who, far: f32, goer: Opt<Who> },
 }
 
 /// Each of these commands as a film writes it: its forms (`name:kind`, a
@@ -95,11 +84,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "calc",
         &["name:word a:word op:word b:number"],
         "`+` `-` `*` `/` (decimal: 7 / 2 is 3.5) `div` (whole: 7 div 2 is 3) `%` (the remainder) `min` `max` (a division by 0 gives 0)",
-    ),
-    Form::new(
-        "facing",
-        &["x:coordinate y:coordinate who:code far:word [who2:code rest...]"],
-        "puts into two numbers the free point at this distance in front of who, as they look when the line plays (behind if `far` is negative); then `walkto a {x} {y}`, `pan @ {x} {y} 30`",
     ),
     Form::new("measure", &["name:word a:word b:number"], "the distance between the two, in pixels"),
     Form::new("position", &["who:code x:coordinate y:coordinate"], "two numbers take where they stand"),

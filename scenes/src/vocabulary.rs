@@ -173,8 +173,6 @@ pub static POKEMON: Vocabulary = Vocabulary {
         "partner",
         "answer",
         "recruits",
-        "time",
-        "too_late",
         "presses",
         "talking",
         "target",

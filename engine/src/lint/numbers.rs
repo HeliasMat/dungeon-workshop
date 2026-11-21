@@ -3,7 +3,7 @@
 use super::*;
 
 /// The commands that give a number, by the name after them.
-const GIVING: [&str; 9] = ["set", "add", "random", "calc", "measure", "asknumber", "sees", "asktext", "settext"];
+const GIVING: [&str; 7] = ["set", "add", "random", "calc", "measure", "sees", "settext"];
 
 /// The words of the tests.
 const WORDS: [&str; 8] = ["and", "or", "==", "!=", "<", "<=", ">", ">="];
@@ -108,7 +108,7 @@ fn reserved(lines: &[(usize, Vec<String>)]) -> Vec<Diagnostic> {
 pub(super) fn numbers_never_given(lines: &[(usize, Vec<String>)], words: &Vocabulary) -> Vec<Diagnostic> {
     // (Words kept by a name: compared with a word, `if answer == pikachu`.)
     let texts: HashSet<&String> =
-        lines.iter().filter(|(_, fields)| matches!(fields[0].as_str(), "asktext" | "settext")).filter_map(|(_, fields)| fields.get(1)).collect();
+        lines.iter().filter(|(_, fields)| fields[0] == "settext").filter_map(|(_, fields)| fields.get(1)).collect();
     let given: HashSet<String> = lines.iter().flat_map(|(_, fields)| given_by(fields)).collect();
     let known =
         |name: &str| given.contains(name) || words.given_numbers.contains(&name) || words.given_beginnings.iter().any(|beginning| name.starts_with(beginning));

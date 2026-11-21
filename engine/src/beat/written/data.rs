@@ -63,8 +63,6 @@ mod tests {
             DataBeat::Random { var: var(), from: 2, to: 9 },
             DataBeat::Calc { var: var(), a: Value::Var("a".into()), op: "max".into(), b: Value::Number(-2.0) },
             DataBeat::Measure { var: var(), a: Who::Monster(25), b: Who::Character(0) },
-            DataBeat::Facing { x: "x".into(), y: "y".into(), who: Who::Monster(7), far: -24.5, goer: Some(Who::Target) },
-            DataBeat::Facing { x: "x".into(), y: "y".into(), who: Who::Monster(7), far: 16.0, goer: None },
             DataBeat::Position { who: Who::Monster(7), x: "x".into(), y: "y".into() },
             DataBeat::Sees { var: var(), who: Who::Monster(7), other: Who::Monster(25), distance: 80.0, angle: 45.0 },
             DataBeat::SetText { var: var(), text: "hello you".into() },

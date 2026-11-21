@@ -257,14 +257,6 @@ impl Director {
                     }
                 }
             }
-            PlaceBeat::Wave(who) => {
-                let mut those: Vec<(f32, Who)> = who.iter().map(|one| (stage.cast.get(one).map_or(0.0, |actor| actor.position.x), *one)).collect();
-                those.sort_by(|a, b| a.0.total_cmp(&b.0));
-                for (place, (_, one)) in those.into_iter().enumerate() {
-                    let beat = Beat::Body(BodyBeat::Jump { who: one, height: 10.0, frames: Frames(10.0) });
-                    self.schedule.later.push(Later { left: place as f32 * 2.0, beat });
-                }
-            }
             PlaceBeat::Advance { who, by } => {
                 for one in who {
                     let Some(start) = stage.cast.get(&one).map(|actor| actor.position) else {

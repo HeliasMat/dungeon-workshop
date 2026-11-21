@@ -80,7 +80,7 @@ fn two_names_for_one_character_are_told() {
 
 #[test]
 fn words_compared_are_not_someone() {
-    let text = "cast\traichu\tm26\nput\traichu\t0\t0\tdown\nasktext\tword\nif\tword == raichu or target == raichu\nendif\n";
+    let text = "cast\traichu\tm26\nput\traichu\t0\t0\tdown\nsettext\tword\tpichu\nif\tword == raichu or target == raichu\nendif\n";
     let lines: Vec<Vec<String>> = read_scene(text, None, &SAMPLE).lines.into_iter().map(|(_, line)| line).collect();
     assert_eq!(lines[2], ["if", "word", "==", "raichu", "or", "target", "==", "m26"]);
 }

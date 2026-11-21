@@ -266,7 +266,7 @@ mod tests {
         // (The families are v2.1's: an engine's command the plan does not name, advanced; an old word, none.)
         assert_eq!(FAMILIES[0], "Structure");
         assert_eq!(family_shown(ADVANCED), "Advanced");
-        assert_eq!(entry(&session, "camlag").map(|camlag| camlag.family), Some(ADVANCED));
+        assert_eq!(entry(&session, "musicspeed").map(|musicspeed| musicspeed.family), Some(ADVANCED));
         assert!(entry(&session, "dungeon_hud").is_none() && entry(&session, "fadein").is_none() && entry(&session, "_bobber").is_none());
         assert_eq!(entry(&session, "emote").map(|emote| FAMILIES[emote.family]), Some("Emotions"));
     }

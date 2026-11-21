@@ -91,7 +91,7 @@ pub fn properties(kind: Option<&str>, as_json: bool) -> Result<(), String> {
 }
 
 /// The forms the engine declares for each of its commands (`engine::forms`),
-/// each written with its name first: `camlag frames:duration`.
+/// each written with its name first: `musicspeed percent:word`.
 fn engine_forms() -> std::collections::BTreeMap<String, Vec<String>> {
     engine::forms()
         .map(|form| (form.own.to_string(), form.forms.iter().map(|written| format!("{} {written}", form.own).trim_end().to_string()).collect()))

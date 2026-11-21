@@ -1,7 +1,7 @@
 //! How a `PlayBeat` is written as its line (read by `beat::play`).
 
-use super::data::{frames, value};
-use crate::beat::{ASKED_NUMBERS, HUD_PLACES, PlayBeat, colour_named};
+use super::data::value;
+use crate::beat::{HUD_PLACES, PlayBeat, colour_named};
 use crate::stage::Rect;
 use crate::vocabulary::Vocabulary;
 
@@ -26,17 +26,6 @@ impl PlayBeat {
         let mut line = vec![];
         let word = |word: &str| word.to_string();
         match self {
-            PlayBeat::AskNumber { var, from, to, step } => {
-                // (Only what fits in the box is read.)
-                if *step < 1 || to < from || (to - from) / step >= ASKED_NUMBERS as i32 {
-                    return None;
-                }
-                line.extend([word("asknumber"), var.clone(), from.to_string(), to.to_string(), step.to_string()]);
-            }
-            PlayBeat::AskText { var, given } => line.extend([word("asktext"), var.clone(), given.clone()]),
-            PlayBeat::AskTimer { frames: time, default } => {
-                line.extend([word("asktimer"), frames(time.0)?, u16::try_from(*default).ok()?.to_string()]);
-            }
             PlayBeat::Control(who) => line.extend([word("control"), who.map_or(word("off"), |who| who.to_string())]),
             PlayBeat::ControlTeam(team) if team.is_empty() => line.extend([word("swapcontrol"), word("off")]),
             PlayBeat::ControlTeam(team) => {
@@ -84,8 +73,6 @@ impl PlayBeat {
 
 #[cfg(test)]
 mod tests {
-    use crate::Frames;
-
     use crate::beat::{Beat, GaugeOf, PlayBeat, Value};
     use crate::stage::Rect;
     use crate::vocabulary::SAMPLE;
@@ -95,9 +82,6 @@ mod tests {
     fn every_play_beat_written_is_read_back_the_same() {
         let rect = || Rect::from([10.0, 20.5, 300.0, 200.0]);
         for beat in [
-            PlayBeat::AskNumber { var: "n".into(), from: 1, to: 10, step: 2 },
-            PlayBeat::AskText { var: "name".into(), given: "Pika chu".into() },
-            PlayBeat::AskTimer { frames: Frames(120.0), default: 1 },
             PlayBeat::Control(Some(Who::Monster(25))),
             PlayBeat::Control(None),
             PlayBeat::ControlTeam(vec![Who::Monster(25), Who::Character(0)]),

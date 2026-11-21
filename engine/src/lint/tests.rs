@@ -66,7 +66,7 @@ ring	100	100	200	0	10
 
 #[test]
 fn words_compared_are_not_numbers() {
-    let text = "event\t0\tE\t1\t1\nscene\t1\ta\nasktext\tword\nif\tword == pikachu or clock > 10\nendif\n";
+    let text = "event\t0\tE\t1\t1\nscene\t1\ta\nsettext\tword\tpikachu\nif\tword == pikachu or clock > 10\nendif\n";
     let problems = lint_script(read_scene(text, None, &SAMPLE), &SAMPLE);
     assert!(problems.is_empty(), "{problems:?}");
 }

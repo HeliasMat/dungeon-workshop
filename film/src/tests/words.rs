@@ -137,7 +137,6 @@ fn bodies() {
         "piplup height 12",
         "piplup tremble 2 30",
         "piplup infront krabby",
-        "piplup depth 3",
     ]));
     for wanted in [
         &["pose", "piplup", "Attack", "image", "3"][..],
@@ -147,7 +146,6 @@ fn bodies() {
         &["height", "piplup", "12"],
         &["tremble", "piplup", "2", "30"],
         &["infront", "piplup", "krabby"],
-        &["depth", "piplup", "3"],
     ] {
         assert!(lines.contains(&line(wanted)), "{wanted:?}");
     }

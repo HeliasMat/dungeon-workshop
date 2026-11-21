@@ -55,10 +55,6 @@ pub fn flock(who: Vec<Who>, to: Spot, run: bool) -> Beat {
     Beat::Place(PlaceBeat::Flock { who, to, run })
 }
 
-/// Joy running through a crowd, from one side to the other.
-pub fn wave_through(who: Vec<Who>) -> Beat {
-    Beat::Place(PlaceBeat::Wave(who))
-}
 
 /// A crowd running that far, staying on the ground.
 pub fn advance(who: Vec<Who>, by: Vec2) -> Beat {

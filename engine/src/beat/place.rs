@@ -306,8 +306,6 @@ pub enum PlaceBeat {
     /// So many on free ground about a spot, each given two numbers
     /// (`<var><n>_x`...); none: a place kept, with no one to put there.
     Gathers { var: String, spot: Spot, step: Vec2, who: Vec<Option<Who>> },
-    /// Joy running through a crowd, from one side to the other.
-    Wave(Vec<Who>),
     /// A crowd running that far, staying on the ground.
     Advance { who: Vec<Who>, by: Vec2 },
     /// A crowd going together to a spot, each keeping its place in it (its
@@ -351,7 +349,7 @@ fn spot_at(fields: &Fields, at: usize) -> Option<Spot> {
 declare! {
     PlaceBeat;
     hand: "advance", "alllook", "arrives", "crowd", "entrances", "find", "flies", "flock", "gathers", "goes", "ground", "leaves", "roundcheck",
-        "seats", "setspot", "spread", "wavethrough";
+        "seats", "setspot", "spread";
     "shot" => Shot { close: f32, who: Opt<Who> },
     "roams" => Roams { who: Who, wide: f32 },
 }
@@ -394,7 +392,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("setspot", &["rest..."], "names a place, found now"),
     Form::new("shot", &["zoom:number who:word"], "this zoom, less if the body needs it"),
     Form::new("spread", &["frameplace:word who:code"], "they move apart at the start of a scene, the view on them"),
-    Form::new("wavethrough", &["who:code"], "a Mexican wave, from left to right"),
 ];
 
 pub(super) fn read(fields: &Fields) -> Option<PlaceBeat> {
@@ -472,7 +469,6 @@ pub(super) fn read(fields: &Fields) -> Option<PlaceBeat> {
                 (5..end).map(|at| fields.who(at)).collect()
             },
         },
-        "wavethrough" => PlaceBeat::Wave(group_of(fields, 1, end)?),
         "advance" => PlaceBeat::Advance { by: point_of(fields, 1)?, who: group_of(fields, 3, end)? },
         "seats" => {
             let split = fields.find(0, ";")?;

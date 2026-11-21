@@ -77,7 +77,6 @@ Names hold for the whole file; the words of lines are never touched (except `{na
 | `put <who> <x> <y> <dir>` | puts them there, facing that way |
 | `putnear <who> <other> [side]` | right next to the other (to the right by default; `left`, `up`, `down`…), facing them |
 | `gone <who> [<who>…]` | removes them from the scene |
-| `hide <who>` / `show <who>` | hidden / shown at once |
 | `vanish <who> [frames]` / `appear <who> [frames]` | fades out / fades in (20 frames by default) |
 | `opacity <who> <0 to 1> [frames]` | half visible, a quarter… (`opacity <who> 0 0` right after a `put`: invisible at first) |
 | `give <item> <from> <to> [frames] [keep]` | an item (`i109` an Apple) passes from one's hands to the other's in an arc, then vanishes; with `keep`, it first shows above the giver and stays in the other's hands |
@@ -144,7 +143,7 @@ Movements do not wait: the scene goes on. `waitfor <who>` waits until they have 
 | Command | Effect |
 |---|---|
 | `turn <who> <dir>` | turns |
-| `face <who> <other>` / `turnaway <who> <other>` | turns towards the other / turns their back on them |
+| `face <who> <other>` | turns towards the other |
 | `turnaround <who>` | turns right around |
 | `turnby <who> <eighths>` | turns so many eighths from where they look, at once (counter-clockwise, clockwise below 0): the game's look around and head shake |
 | `turnslow <who> [frames]` | their next turn goes the slow way, through each way in between, one every so many frames (6 otherwise), as the game's slow turns |
@@ -162,7 +161,6 @@ Movements do not wait: the scene goes on. `waitfor <who>` waits until they have 
 | `rise <who> <height> <frames>` | rises (or comes back down) above the ground |
 | `tremble <who> [strength] <frames>` | trembles, by so many pixels (1) |
 | `recoil <who> <from> [distance]` | takes a blow from the other: backs off (16 pixels), is hurt, trembles, turns towards them |
-| `kick <who> <to> [distance]` | the kick of what they shoot at the other: they slide backwards (8 pixels), still facing them, shaken, without being hurt |
 | `anim <who> <name> [loop] [frozen]` | an animation of their sprite, by its name (table below) |
 | `anim <who> <name> <n> times` | this animation n times, then they stand as before |
 | `pose <who> <name> image <n>` | this frame of the animation (the first: 1), and they stay on it |
@@ -170,7 +168,6 @@ Movements do not wait: the scene goes on. `waitfor <who>` waits until they have 
 | `still <who>`, `unfreeze <who>` | they stay as they are, mid-gesture, and no longer count for `waitall`; then they go on |
 | `height <who> <height> [frames]` | at this height above the ground, at once or in so many frames |
 | `infront <who> <other\|off>` | drawn in front of the other, wherever they are |
-| `depth <who> <pixels>` | drawn as if they were so many pixels lower |
 | `move <who> <move> [<target>]` | uses a move (`data/rom/moves.txt`) as in a dungeon: its gesture, its effects, its sound, the target takes it |
 
 Animations by their name, as SpriteCollab names them:
@@ -194,7 +191,7 @@ An animation a Pokémon does not have: they stay as they are (see 18 to add some
 |---|---|
 | `scale <who> <size> [frames]` | grows or shrinks (`scale pika 2 30`; 1: their size) |
 | `colour <who> <r> <g> <b> [frames]` | tints them (out of 255: `colour pika 255 120 120` reddens) |
-| `silhouette <who> [frames]` / `uncolour <who> [frames]` | as a black shadow / their colours |
+| `uncolour <who> [frames]` | their colours |
 | `color ...` / `uncolor ...` | `colour` and `uncolour`, other spelling |
 | `layer <who> over\|under\|normal` | drawn over everyone, under, or among the others |
 | `blink <who> on\|off` | blinks |
@@ -285,20 +282,6 @@ end
 - `question <who> <face> <text> <a|b|c>`: the line and the choice together, the question staying shown above the answers (like the game); then the `answer`s as for `ask`.
 - `answer` keeps the place of the answer taken (0 for the first), for later: `if answer == 1`.
 - `[if <condition>]` in front of an answer: offered only if it is true (the condition as after `if`). Each `answer` keeps its number, and `answer` the place among all.
-- `asktimer <time> [answer]` before an `ask`: it waits only this long, then the given answer is taken (0 by default). Meanwhile, `time` gives the seconds left (`hud Quick! {time}`); afterwards, `too_late` is 1 if the time ran out.
-- `asknumber <name> <from> <to> [step]`: the player chooses a number (20 at most at a time), kept under this name; the scene goes on just after (no `answer`). Enough to make a shop:
-
-```
-line	kecleon	-	 How many Apples? 50 Poké each.
-asknumber	amount	0	5
-calc	price	amount	*	50
-if	money >= price
-getmoney	-price
-getitem	109	amount
-else
-line	kecleon	sigh	 Not enough money...
-endif
-```
 
 ## 11. The view
 | Command | Effect |
@@ -309,12 +292,10 @@ endif
 | `zoom <closeness> <frames>` | brings the view closer (2: twice as big; 1: normal). The original game shows its scenes without zoom, and all those in this folder are at 1 |
 | `boxroom [on\|off]` | the view moves away from the dialogue box when a line shows, and stays away between two lines; `frame` and `keepframe` do it on their own |
 | `pan <who\|@ x y> <frames> fixed` | slides and stays there, without following the one it was going to |
-| `facing <x> <y> <who> <far> [<who goes>]` | puts into two numbers the free point at this distance in front of who, as they look when the line plays (behind if `far` is negative); then `walkto a {x} {y}`, `pan @ {x} {y} 30` |
 | `frame <frames> <who…> [max:0.5]` | the view slides and shows them all, bodies included (see `body`), with a margin; it moves back if it must, never closer than 1 (never zooming: the view only slides); `max:0.5`: never closer than this zoom |
 | `keepframe <who…>` / `keepframe off` | keeps them all in view continuously, wherever they go; the view moves back if their bodies do not fit, never closer than 1 |
 | `body <who> <wide> <high>` | the size of a body on screen, in pixels: `frame` and `keepframe` make it fit (`film/` writes it on its own for the big ones) |
 | `glance <who> [frames] [wait]` / `glance @ <x> <y> …` | the view goes to take a look, stays there (60 frames), then comes back |
-| `camlag <frames>` | the view that follows someone catches up with them smoothly (`0`: stuck to them) |
 | `shake <axis> <strength> [frames]` | a shake (strength 0: stop; with a duration, stops on its own) |
 | `quake <strength> [frames]` | an earthquake that dies down (40 frames) |
 | `letterbox 1` / `letterbox 0` | black cinema bars |
@@ -424,7 +405,6 @@ Numbers by name, kept in the story's save (a choice in chapter 2 counts in chapt
 | `list <name> <a,b,c>` | a list: `name1`, `name2`, `name3`, and `name_count` (how many); read by its rank with `{name{i}}` or `set x name{i}` |
 | `sees <name> <watcher> <who> [distance] [angle]` | 1 if the watcher sees them: close enough (64 pixels), in front of them in this cone (90 degrees), with no wall between them |
 | `settext <name> <words>` | words kept under this name, put into texts by `{name}`; kept in the save |
-| `asktext <name> [words]` | the player writes words (the game's letter grid), kept under this name: a nickname (`{nickname}` afterwards); compared in a condition: `if answer == pikachu` |
 | `if <condition>` … `elif <condition>` … `else` … `endif` | the first true case is played |
 | `switch <name>` / `case <v>[,<v>…]` / `default` / `endswitch` | one case per value |
 | `when <condition> <scene>` … `otherwise <scene>` | a table of what comes next: the story carries on in the scene of the first true condition, otherwise in the last: several endings |
@@ -439,13 +419,13 @@ Numbers by name, kept in the story's save (a choice in chapter 2 counts in chapt
 | `every <time> <command>` / `every off` | the command every so many frames or seconds, in the background; `every 3s~6s …`: at intervals drawn at random |
 | `log <text>` | writes to the console (`{name}` replaced): for debugging |
 
-**Conditions**: `<name> == != < <= > >= <value>`, or `<name>` alone (other than 0), joined by `and` (all) and `or` (one or the other; `and` goes first). With tabs or spaces. Someone is compared by their name: `if target == eevee`. A number must not be called `and` or `or` (the checker reports it). Words written by the player (`asktext`, `settext`) are compared to a word (even a character's name: `if answer == raichu` compares the word), ignoring capitals, accents and the spaces around: `if answer == pikachu` (`_` for a space: `== treasure_town`).
+**Conditions**: `<name> == != < <= > >= <value>`, or `<name>` alone (other than 0), joined by `and` (all) and `or` (one or the other; `and` goes first). With tabs or spaces. Someone is compared by their name: `if target == eevee`. A number must not be called `and` or `or` (the checker reports it). Words kept (`settext`) are compared to a word (even a character's name: `if answer == raichu` compares the word), ignoring capitals, accents and the spaces around: `if answer == pikachu` (`_` for a space: `== treasure_town`).
 
 **Parallel passages** have their own waits, `if`, `while` and `goto` (a merchant pacing up and down while two characters talk); they can make bubbles, but not lines or choices (they stop there).
 
 **An event's numbers**: a number whose name starts with `_` (`_i`, `_tries`) belongs only to its event: it disappears when the story moves on to the next one and is never saved. For counters, loops, anything another scene does not need to read; the other numbers are kept by the whole story.
 
-**Numbers given by the game**, always up to date (not saved): `money`, `items` (in the bag), `item_<n>` (how many of item n), `hero_species`, `partner_species` (their species; also `hero`, `partner`, but these names most often stand for the characters, given by `cast`), `recruits`, `recruit_<species>`, `answer`, `time`, `too_late`, `timer`, and for the player in control `presses`, `talking`, `target`, `controlled` (who they steer: `if controlled == partner`); `clock` (the frames since the start of the scene), `music_clock` (the frames of the music playing, since its `music` line, from its start `musicfrom`, at its speed `musicspeed`; a new music resets it to zero; absent before any music, very large once the music is cut), `press_clock` (when Enter was pressed), `arrows`, `arrow` (1 up, 2 down, 3 left, 4 right), `arrow_clock` (with `listen`).
+**Numbers given by the game**, always up to date (not saved): `money`, `items` (in the bag), `item_<n>` (how many of item n), `hero_species`, `partner_species` (their species; also `hero`, `partner`, but these names most often stand for the characters, given by `cast`), `recruits`, `recruit_<species>`, `answer`, `timer`, and for the player in control `presses`, `talking`, `target`, `controlled` (who they steer: `if controlled == partner`); `clock` (the frames since the start of the scene), `music_clock` (the frames of the music playing, since its `music` line, from its start `musicfrom`, at its speed `musicspeed`; a new music resets it to zero; absent before any music, very large once the music is cut), `press_clock` (when Enter was pressed), `arrows`, `arrow` (1 up, 2 down, 3 left, 4 right), `arrow_clock` (with `listen`).
 
 ## 15. Little games: the player in control
 | Command | Effect |
@@ -536,7 +516,7 @@ Kept because the story taken from the game (`data/rom/story.txt`) uses them; in 
 |---|---|
 | `fade <out 0/1> <white 0/1> <frames>` | a fade (`fadein`, `fadeout`, `whitein`, `whiteout`) |
 | `dim 0 <frames> <light out of 256>` | darkens (`light`, `tint`) |
-| `attr <who> <bits>` | 32 blinks, 64 transparent, 128 hidden, 8 on top (`blink`, `opacity`, `hide`, `layer`) |
+| `attr <who> <bits>` | 32 blinks, 64 transparent, 128 hidden, 8 on top (`blink`, `opacity`, `layer`) |
 | `effect <who> <n> [frames]` | an emote or effect by number: 88 "!", 89 sweat, 90 "…", 91 anger, 92 "?", 93 notes, 171 tears, 642 sparkles (`emote`) |
 | `pose <who> sleep\|hurt\|attack\|idle\|walk` | a pose (`anim <who> <name>`) |
 | `anim <who> <group> <loop> <frozen>` | an animation by its number (`anim` by its name) |
@@ -562,7 +542,6 @@ What `film/` writes for what depends on the stage at the moment the line plays (
 | `alllook <who\|side>` | everyone looks |
 | `crowd <walk\|-> <spot\|-> [shape:ring\|flock\|line\|heap] [radius:<px>] [tight:1] [from:<side>] [run:1] <who...>` | a crowd around this place: in a ring, away from those who act; in a flock or in a tight heap on free ground; in a line; `radius`: this wide; `from:right`: they all come in from that side of the view, each keeping their place, straight ahead |
 | `gathers <var> <spot> <step x> <step y> <who\|-...>` | each on free ground around the place, their place in `{var<n>_x}` |
-| `wavethrough <who...>` | a Mexican wave, from left to right |
 | `advance <dx> <dy> <who...>` | a crowd runs, staying on the ground |
 | `flock <spot> <walk\|run> <who...>` | a crowd goes to this place, its middle there, each keeping their place (straight ahead) |
 
@@ -588,9 +567,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `approach` | `approach who:code other:code frames:duration` |
 | `arrives` | `arrives who:code walkrun:word pace:word x:coordinate y:coordinate [rest...]` |
 | `ask` | `ask [text...]` |
-| `asknumber` | `asknumber [text...]` |
-| `asktext` | `asktext name:word [words...]` |
-| `asktimer` | `asktimer [text...]` |
 | `attach` | `attach node:word parent:word [dx:number dy:number] [inherit pos angle:number scale:number opacity colour:word]` |
 | `attr` | `attr who:code bits:word` |
 | `audience` | `audience rest...` · `audience off` |
@@ -609,7 +585,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `bubble` | `bubble who:code frames:word text...` |
 | `calc` | `calc name:word a:word op:word b:number` |
 | `camera` | `camera who:code` · `camera @ x:coordinate y:coordinate` |
-| `camlag` | `camlag frames:duration` |
 | `caption` | `caption frames:duration text...` |
 | `carry` | `carry item:word who:code` · `carry item:word off` |
 | `chase` | `chase who:code other:code` |
@@ -623,7 +598,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `crossfade` | `crossfade place:word [time:duration]` |
 | `crowd` | `crowd walk:word spot:word [rest...]` |
 | `cutaway` | `cutaway [over] place:word x:coordinate y:coordinate [time:duration]` · `cutaway off` · `cutaway pan x:coordinate y:coordinate time:duration` |
-| `depth` | `depth who:code pixels:number` |
 | `detach` | `detach node:word` |
 | `dim` | `dim 0 frames:duration light:word out of rest...` |
 | `disguise` | `disguise who:code other:code` · `disguise who:code off` |
@@ -642,7 +616,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `entrances` | `entrances name:word x:coordinate rest...` |
 | `every` | `every time:duration command...` · `every off` |
 | `face` | `face who:code other:code` |
-| `facing` | `facing x:coordinate y:coordinate who:code far:word [who2:code rest...]` |
 | `fade` | `fade out:word rest...` |
 | `fadein` | `fadein frames:duration` |
 | `fademusic` | `fademusic v:word frames:duration` |
@@ -675,7 +648,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `ground` | `ground place:word` · `ground x:coordinate y:coordinate lines:word` |
 | `halo` | `halo who:code [radius:number] [colour:word]` · `halo @ x:coordinate y:coordinate [radius:number] [colour:word]` |
 | `height` | `height who:code height:number [frames:duration]` |
-| `hide` | `hide who:code` |
 | `hold` | `hold item:word who:code` · `hold item:word off` |
 | `holdgaze` | `holdgaze who:code [rest...]` |
 | `hop` | `hop who:code x:coordinate y:coordinate height:number frames:duration` · `hop` |
@@ -689,7 +661,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `keepframe` | `keepframe rest...` · `keepframe off` |
 | `keeponly` | `keeponly rest...` |
 | `keepspeaker` | `keepspeaker [rest...]` |
-| `kick` | `kick who:code to:word [distance:number]` |
 | `label` | `label label:word` |
 | `large` | `large item:word` · `large off` |
 | `layer` | `layer who:code rest...` |
@@ -763,8 +734,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `shine` | `shine item:word [off]` |
 | `shot` | `shot zoom:number who:word` |
 | `shout` | `shout rest...` |
-| `show` | `show who:code` |
-| `silhouette` | `silhouette who:code [frames:duration]` |
 | `sink` | `sink who:code pixels:number [sand]` |
 | `slowmo` | `slowmo who:code timesoff:word rest...` |
 | `sound` | `sound namen:word` · `sound namen:word who:code` |
@@ -794,7 +763,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `tremble` | `tremble who:code [strength:number] frames:duration` |
 | `turn` | `turn who:code dir:word` |
 | `turnaround` | `turnaround who:code` |
-| `turnaway` | `turnaway who:code other:code` |
 | `turnby` | `turnby who:code eighths:word` |
 | `turnslow` | `turnslow who:code [frames:duration]` |
 | `typecaption` | `typecaption rest...` |
@@ -822,7 +790,6 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `wall` | `wall left:word top:word right:word bottom:word` · `wall off` · `wall name:word left:word top:word right:word bottom:word` · `wall name:word off` |
 | `wander` | `wander who:code [radius:number]` |
 | `wave` | `wave strength:number [time:duration]` |
-| `wavethrough` | `wavethrough who:code` |
 | `weather` | `weather name:word` |
 | `while` | `while condition...` |
 | `whitein` | `whitein frames:duration` |

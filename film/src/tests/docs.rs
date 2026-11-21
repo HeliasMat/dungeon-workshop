@@ -172,8 +172,6 @@ const SHARED_WITH_THE_ENGINE: &[&str] = &[
     "shake",
     "shot",
     "shout",
-    "show",
-    "silhouette",
     "sound",
     "spot",
     "status",

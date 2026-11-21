@@ -60,17 +60,6 @@ impl Director {
         };
         // (Among those offered: its place among all of them.)
         let chosen = chosen.map(|chosen| self.asking.offered.get(chosen).copied().unwrap_or(chosen));
-        // (In time, not left.)
-        self.asking.ask_left = None;
-        self.vars.insert(TOO_LATE.to_string(), 0.0);
-        // (A number chosen, see `PlayBeat::AskNumber`: kept, and the scene goes
-        // on past it.)
-        if let Some(NumberAsked { var, values }) = self.asking.number_asked.take() {
-            let value = chosen.and_then(|chosen| values.get(chosen)).or(values.first()).copied().unwrap_or(0);
-            self.vars.insert(var, value.into());
-            self.hold = None;
-            return;
-        }
         let way = chosen.map_or(Mark { beat: at.beat + 1, ..at }, |chosen| self.branch(at, chosen));
         self.opened &= way.scene == at.scene;
         (self.at, self.hold) = (Some(way), None);
@@ -87,17 +76,6 @@ impl Director {
             test.is_none_or(|test| self.holds(&test)).then(|| (place, words.to_string()))
         });
         offered.collect()
-    }
-
-    /// The words the player wrote (see `PlayBeat::AskText`): kept, and the
-    /// scene goes on.
-    pub fn text_given(&mut self, text: String) {
-        if self.hold == Some(Hold::Host)
-            && let Some(var) = self.asking.text_asked.take()
-        {
-            self.texts.insert(var, text);
-            self.hold = None;
-        }
     }
 
     /// Where the one roaming stood at the last save (`FlowBeat::SaveGame`),

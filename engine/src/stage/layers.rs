@@ -443,9 +443,13 @@ mod tests {
         stage.put(b, Vec2::new(0.0, 50.0), 1);
         let order = |stage: &Stage| stage.in_drawing_order(|_| false).into_iter().map(|(who, _)| who).collect::<Vec<Who>>();
         assert_eq!(order(&stage), [a, b]);
-        stage.direct(Beat::Body(BodyBeat::Depth { who: a, depth: 60.0 }), Vec2::ZERO);
+        let depth = |stage: &mut Stage, depth: f32| {
+            use crate::props::{Given, PropId, Value};
+            stage.set(&crate::beat::NodeRef::Who(a), PropId::Depth, &Given::Is(Value::Number(depth))).expect("set");
+        };
+        depth(&mut stage, 60.0);
         assert_eq!(order(&stage), [b, a]);
-        stage.direct(Beat::Body(BodyBeat::Depth { who: a, depth: 0.0 }), Vec2::ZERO);
+        depth(&mut stage, 0.0);
         stage.direct(Beat::Body(BodyBeat::InFront { who: a, of: Some(b) }), Vec2::ZERO);
         assert_eq!(order(&stage), [b, a]);
         stage.direct(Beat::Body(BodyBeat::InFront { who: a, of: None }), Vec2::ZERO);

@@ -7,24 +7,14 @@ fn story(text: &str) -> Director {
 }
 
 #[test]
-fn before_someone_is_where_it_faces_now_even_turned_by_a_line() {
+fn a_line_turns_its_speaker_to_who_spoke_before() {
     // (Told to look down; the line has it turn to who spoke before.)
-    let text = "event\t0\tE\t1\t1\nscene\t1\ta\nput\t0\t100\t100\tdown\nput\t10\t200\t100\tdown\nautoface\ton\nsay\t10\t-\tA\ntimed\t2\nsaid\nsay\t0\t-\tB\ntimed\t2\nsaid\nfacing\t_x\t_y\t0\t30\n";
+    let text = "event\t0\tE\t1\t1\nscene\t1\ta\nput\t0\t100\t100\tdown\nput\t10\t200\t100\tdown\nautoface\ton\nsay\t10\t-\tA\ntimed\t2\nsaid\nsay\t0\t-\tB\ntimed\t2\nsaid\n";
     let (mut director, mut stage) = (story(text), Stage::default());
     for _ in 0..12 {
         director.tick(&mut stage, 1.0, Vec2::ZERO);
     }
     assert_eq!(stage.cast[&Who::Character(0)].direction, 3);
-    assert_eq!((director.numbers()["_x"], director.numbers()["_y"]), (130.0, 100.0));
-}
-
-#[test]
-fn before_someone_a_wall_moves_the_point_and_behind_is_the_other_way() {
-    let mut stage = Stage::default();
-    stage.put(Who::Character(0), Vec2::new(100.0, 100.0), 3);
-    assert_eq!(stage.before(Who::Character(0), -30.0, None), Some(Vec2::new(70.0, 100.0)));
-    stage.place_walls([[120.0, 60.0, 150.0, 140.0]]);
-    assert!(stage.before(Who::Character(0), 30.0, None).unwrap().x < 120.0 || stage.before(Who::Character(0), 30.0, None).unwrap().x > 150.0);
 }
 
 #[test]
@@ -181,21 +171,6 @@ fn loops_are_left_and_gone_round_again() {
 }
 
 #[test]
-fn questions_given_their_time() {
-    let mut director = story("event\t0\tE\nscene\t1\ta\nasktimer\t1s\t1\nask\tA|B\nanswer\t0\nsay\t-\t-\ta\nanswer\t1\nsay\t-\t-\tb\nend\n");
-    let mut stage = Stage::default();
-    director.tick(&mut stage, 1.0, Vec2::ZERO);
-    assert_eq!(director.hold, Some(Hold::Question));
-    director.tick(&mut stage, 30.0, Vec2::ZERO);
-    assert_eq!(director.vars[TIME_LEFT], 1.0);
-    let calls = director.tick(&mut stage, 31.0, Vec2::ZERO);
-    assert_eq!(calls, vec![Call::LineGone]);
-    let calls = director.tick(&mut stage, 1.0, Vec2::ZERO);
-    assert!(matches!(&calls[..], [Call::Say { text, .. }] if text == "b"), "{calls:?}");
-    assert_eq!((director.vars[ANSWER], director.vars[TOO_LATE]), (1.0, 1.0));
-}
-
-#[test]
 fn enter_talks_to_who_is_near() {
     let mut director = story(
         "event\t0\tE\nscene\t1\ta\nput\t0\t0\t0\tdown\nput\tm133\t20\t0\tdown\nput\ti109\t100\t0\tdown\ncontrol\t0\nwaituntil\ttalking\nif\ttarget == m133\nset\tok\t1\nendif\nwait\t5\n",
@@ -317,18 +292,6 @@ fn waits_drawn_between_two() {
 }
 
 #[test]
-fn a_number_chosen() {
-    let mut director = story("event\t0\tE\nscene\t1\ta\nasknumber\tapples\t0\t10\t2\nset\tdone\t1\n");
-    let mut stage = Stage::default();
-    let calls = director.tick(&mut stage, 1.0, Vec2::ZERO);
-    assert_eq!(calls[1], Call::Ask(["0", "2", "4", "6", "8", "10"].map(String::from).to_vec()));
-    assert!(director.tick(&mut stage, 1.0, Vec2::ZERO).is_empty() && !director.vars.contains_key("done"));
-    director.answer(Some(3));
-    director.tick(&mut stage, 1.0, Vec2::ZERO);
-    assert_eq!((director.vars["apples"], director.vars["done"]), (6.0, 1.0));
-}
-
-#[test]
 fn a_question_under_its_line() {
     let mut director = story("event\t0\tE\nscene\t1\ta\nsay\tm25\tjoyous\tHow many?\nask\tOne|Two\nanswer\t0\nanswer\t1\nend\n");
     let mut stage = Stage::default();
@@ -396,21 +359,16 @@ fn someone_shown_as_another() {
 
 #[test]
 fn words_written_and_kept() {
-    let mut director = story("event\t0\tE\nscene\t1\ta\nsettext\tplace\tthe beach\nasktext\tnickname\tZoroark\nsay\t-\t-\t{nickname}, at {place}!\nsaid\n");
+    let mut director = story("event\t0\tE\nscene\t1\ta\nsettext\tplace\tthe beach\nsettext\tnickname\tShadow\nsay\t-\t-\t{nickname}, at {place}!\nsaid\n");
     let mut stage = Stage::default();
     let calls = director.tick(&mut stage, 1.0, Vec2::ZERO);
-    assert_eq!(calls.last(), Some(&Call::AskText("Zoroark".to_string())));
-    director.text_given("Shadow".to_string());
-    let calls = director.tick(&mut stage, 1.0, Vec2::ZERO);
-    assert!(matches!(&calls[..], [Call::Say { text, .. }] if text == "Shadow, at the beach!"), "{calls:?}");
+    assert!(matches!(calls.last(), Some(Call::Say { text, .. }) if text == "Shadow, at the beach!"), "{calls:?}");
 }
 
 #[test]
 fn words_compared() {
-    let mut director = story("event\t0\tE\nscene\t1\ta\nasktext\tmot\nif\tmot == pikachu\nset\tgood\t1\nendif\nwait\t60\n");
+    let mut director = story("event\t0\tE\nscene\t1\ta\nsettext\tmot\tPikachu\nif\tmot == pikachu\nset\tgood\t1\nendif\nwait\t60\n");
     let mut stage = Stage::default();
-    director.tick(&mut stage, 1.0, Vec2::ZERO);
-    director.text_given(" Pikachu ".to_string());
     director.tick(&mut stage, 1.0, Vec2::ZERO);
     assert_eq!(director.vars["good"], 1.0);
 }

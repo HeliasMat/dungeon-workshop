@@ -116,29 +116,6 @@ impl Stage {
         }
     }
 
-    /// The free point that far before someone, as it faces now (behind it
-    /// when less than 0); `goer` is no one in the way.
-    pub(crate) fn before(&self, who: Who, far: f32, goer: Option<Who>) -> Option<Vec2> {
-        /// The rings of tiles looked at round the point, and how far from
-        /// someone a point is free.
-        const RINGS: i32 = 8;
-        const TILE: f32 = 8.0;
-        const BODY: f32 = 14.0;
-        let actor = self.cast.get(&who)?;
-        let wanted = actor.position + step_of(actor.direction).normalize_or_zero() * far;
-        if self.no_collisions {
-            return Some(wanted);
-        }
-        let free = |at: Vec2| {
-            !walled(&self.play.place_walls, at)
-                && !walled(&self.play.walls, at)
-                && !self.cast.iter().any(|(one, other)| Some(*one) != goer && other.position.distance(at) < BODY)
-        };
-        let ring = |far: i32| (-far..=far).flat_map(move |dx| (-far..=far).filter(move |dy| dx.abs().max(dy.abs()) == far).map(move |dy| (dx, dy)));
-        let near = (0..=RINGS).flat_map(ring).map(|(dx, dy)| wanted + Vec2::new(dx as f32, dy as f32) * TILE);
-        Some(near.into_iter().find(|at| free(*at)).unwrap_or(wanted))
-    }
-
     /// A point kept in the box the one walked about stays in, if any.
     pub(in crate::stage) fn kept_in(&self, at: Vec2) -> Vec2 {
         self.play.bounds.map_or(at, |bounds| bounds.clamp(at))

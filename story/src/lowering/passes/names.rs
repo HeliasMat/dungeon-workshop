@@ -69,7 +69,7 @@ pub(super) fn names(lines: Lines, problems: &mut Vec<Diagnostic>, vocabulary: &V
     let mut texts: HashSet<String> = HashSet::new();
     let mut out = Vec::with_capacity(lines.len());
     for (number, fields) in lines {
-        if matches!(fields[0].as_str(), "asktext" | "settext")
+        if fields[0] == "settext"
             && let Some(name) = fields.get(1)
         {
             texts.insert(name.clone());

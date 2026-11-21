@@ -93,11 +93,6 @@ pub enum BodyBeat {
         who: Who,
         of: Option<Who>,
     },
-    /// Someone is drawn as if it stood that much lower.
-    Depth {
-        who: Who,
-        depth: f32,
-    },
     /// Someone jumps on the spot, that high, in that many frames.
     Jump {
         who: Who,
@@ -282,18 +277,6 @@ pub enum BodyBeat {
         who: Who,
         from: Who,
         distance: f32,
-    },
-    /// The kick of what someone fires at someone else: he slides back a
-    /// little, still turned to him, shaken, not hurt.
-    Kick {
-        who: Who,
-        from: Who,
-        distance: f32,
-    },
-    /// Someone turns its back to someone else.
-    TurnAway {
-        who: Who,
-        other: Who,
     },
     /// Someone turns to look at a point.
     LookAt {

@@ -4,9 +4,6 @@
 
 use super::*;
 
-/// The frames a kick takes: the slide back, the shake.
-const KICK_FRAMES: f32 = 8.0;
-
 mod motion;
 mod screen;
 
@@ -37,8 +34,7 @@ impl Stage {
             | BodyBeat::Face { who, .. }
             | BodyBeat::LookAt { who, .. }
             | BodyBeat::TurnAround(who)
-            | BodyBeat::TurnBy { who, .. }
-            | BodyBeat::TurnAway { who, .. } => Some(*who),
+            | BodyBeat::TurnBy { who, .. } => Some(*who),
             _ => None,
         };
         let Some(who) = turner else {
@@ -80,7 +76,6 @@ impl Stage {
             BodyBeat::Slow { who, by } => self.with(who, |actor| actor.looks.time = by),
             BodyBeat::Freeze { who, on } => self.with(who, |actor| actor.looks.frozen = on),
             BodyBeat::InFront { who, of } => self.with(who, |actor| actor.looks.in_front_of = of),
-            BodyBeat::Depth { who, depth } => self.with(who, |actor| actor.looks.depth = depth),
             BodyBeat::Hop { who, at, height, frames } => self.with(who, |actor| {
                 actor.go(at.vec2(), frames.0, true);
                 // (From up there, it keeps that height, as a throw.)
@@ -182,21 +177,6 @@ impl Stage {
                         actor.hits += 1;
                         actor.cue(Cue::Hurt);
                     });
-                }
-            }
-            BodyBeat::Kick { who, from, distance } => {
-                if let Some(there) = position(self, from) {
-                    self.with(who, |actor| {
-                        let away = (actor.position - there).try_normalize().unwrap_or(Vec2::X);
-                        actor.direction = towards(actor.position, there).unwrap_or(actor.direction);
-                        actor.go(actor.position + away * distance, KICK_FRAMES, true);
-                        actor.air.tremble = KICK_FRAMES;
-                    });
-                }
-            }
-            BodyBeat::TurnAway { who, other } => {
-                if let Some(there) = position(self, other) {
-                    self.with(who, |actor| actor.direction = towards(there, actor.position).unwrap_or(actor.direction));
                 }
             }
             BodyBeat::LookAt { who, at } => self.with(who, |actor| actor.direction = towards(actor.position, at.vec2()).unwrap_or(actor.direction)),

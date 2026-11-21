@@ -22,7 +22,6 @@ impl Camera {
     pub(crate) fn direct(&mut self, beat: ViewBeat, focus: Vec2, cast: &Bodies) -> Option<ViewBeat> {
         match beat {
             ViewBeat::Ease(ease) => self.ease = ease,
-            ViewBeat::CamLag(frames) => self.cam_lag = frames.max(0.0),
             ViewBeat::Glance { to, frames, hold } => {
                 let back = self.camera.clone().unwrap_or(Cam::at(focus));
                 self.pan = Some(Pan::toward(focus, to, frames.0).eased(self.ease));

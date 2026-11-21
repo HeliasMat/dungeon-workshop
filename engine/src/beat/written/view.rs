@@ -131,7 +131,6 @@ mod tests {
             ViewBeat::KeepFrame(None),
             ViewBeat::KeepFrame(Some(vec![Who::Character(0), Who::Character(10)])),
             ViewBeat::Body { who: Who::Monster(130), size: Vec2::new(48.0, 32.0) },
-            ViewBeat::CamLag(12.0),
             ViewBeat::Glance { to: at.clone(), frames: Frames(30.0), hold: 60.0 },
             ViewBeat::Glance { to: pikachu.clone(), frames: Frames(15.0), hold: 90.0 },
             ViewBeat::Shake { axis: 1, strength: 2.5, frames: Some(Frames(30.0)) },

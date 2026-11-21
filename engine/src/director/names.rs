@@ -3,11 +3,6 @@
 /// The number the last answer chosen is kept in (0 for the first).
 pub(crate) const ANSWER: &str = "answer";
 
-/// The numbers of a question given its time (see `PlayBeat::AskTimer`): the
-/// seconds left to answer it; whether the time ran out (1) or the player
-/// answered (0).
-pub(crate) const TIME_LEFT: &str = "time";
-
 /// The seconds a countdown has left (see `DataBeat::Timer`).
 pub(crate) const TIMER: &str = "timer";
 
@@ -59,4 +54,3 @@ pub(super) fn place_label(at: super::Mark) -> String {
     format!("{PLACE_LABEL}{}.{}", at.scene, at.beat)
 }
 
-pub(crate) const TOO_LATE: &str = "too_late";

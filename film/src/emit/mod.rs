@@ -48,7 +48,7 @@ pub use motion::{approach, chase, follow, go, go_point, orbit, orbit_around, orb
 pub use node::{animate, attach, detach, follow_path, make, set_prop, stop_tracks, unmake, wait_track};
 pub use place::{
     advance, all_look, all_look_way, arrives, crowd, entrances, exit, find, flies, flock, gathers, goes, goes_by, ground, leaves, name_spot, roams, round,
-    seats, shot, spread, wave_through,
+    seats, shot, spread,
 };
 pub use play::{collisions, gauge, hud, named_wall};
 pub use screen::{

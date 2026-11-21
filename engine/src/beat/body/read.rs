@@ -8,16 +8,14 @@ use super::{BodyBeat, Play, SheetAnim, Stacked};
 declare! {
     BodyBeat;
     hand: "anim", "appear", "bar", "carry", "color", "colour", "drawing",
-        "effect", "emote", "fishline", "height", "hide", "hold",
-        "infront", "layer", "popup", "pose", "sheet", "show",
-        "silhouette", "slowmo", "status", "still", "thing", "tremble", "uncolor", "uncolour",
+        "effect", "emote", "fishline", "height", "hold",
+        "infront", "layer", "popup", "pose", "sheet", "slowmo", "status", "still", "thing", "tremble", "uncolor", "uncolour",
         "unfreeze", "vanish", "views";
     "put" => Put { who: Who, at: Point, direction: Direction },
     "putnear" => PutNear { who: Who, other: Who, side: IfAbsent<Direction> = Direction::Right },
     "gone" => Gone(who: Who),
     "turn" => Turn { who: Who, direction: Direction },
     "face" => Face { who: Who, other: Who },
-    "turnaway" => TurnAway { who: Who, other: Who },
     "turnaround" => TurnAround(who: Who),
     "turnby" => TurnBy { who: Who, eighths: f32 },
     "turnslow" => TurnSlow { who: Who, every: Frames = Frames(6.0) },
@@ -31,7 +29,6 @@ declare! {
     "throw" => Throw { who: Who, at: Who, height: f32 = 24.0, frames: Frames = Frames(30.0) },
     "spin" => Spin { who: Who, turns: f32, frames: Frames, rotate: Rotates },
     "recoil" => Recoil { who: Who, from: Who, distance: f32 = 16.0 },
-    "kick" => Kick { who: Who, from: Who, distance: f32 = 8.0 },
     "stop" => Stop(who: Who),
     "ride" => Ride { who: Who, on: OrOff<Who>, high: f32 = 16.0, beside: f32 = 0.0 },
     "give" => Give { what: Who, from: Who, to: Who, frames: Frames = Frames(30.0), keeps: Keeps },
@@ -47,7 +44,6 @@ declare! {
     "shadow" => Shadow { who: Who, on: OnOff },
     "flip" => Flip { who: Who, on: OnOff },
     "sink" => Sink { who: Who, depth: Free, sand: Sand },
-    "depth" => Depth { who: Who, depth: f32 },
     "move" => Move { who: Who, id: MoveId, target: Opt<Who> },
     "moveeffect" => MoveEffect { who: Who, id: MoveId },
     "moveshot" => MoveShot { from: Who, to: Who, id: MoveId, frames: Opt<Frames> },
@@ -64,7 +60,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "an animation of their sprite, by its name (table below)",
     ),
     Form::new("appear", &["who:code [frames:duration]"], "fades out / fades in (20 frames by default)"),
-    Form::new("attr", &["who:code bits:word"], "32 blinks, 64 transparent, 128 hidden, 8 on top (`blink`, `opacity`, `hide`, `layer`)"),
+    Form::new("attr", &["who:code bits:word"], "32 blinks, 64 transparent, 128 hidden, 8 on top (`blink`, `opacity`, `layer`)"),
     Form::new("bar", &["who:code v:word to rest...", "who:code off"], "a little health bar above them: what they have left"),
     Form::new("blink", &["who:code rest..."], "blinks"),
     Form::new(
@@ -79,7 +75,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     ),
     Form::new("color", &["rest..."], "`colour` and `uncolour`, other spelling"),
     Form::new("colour", &["who:code r:number g:number b:number [frames:duration]"], "tints them (out of 255: `colour pika 255 120 120` reddens)"),
-    Form::new("depth", &["who:code pixels:number"], "drawn as if they were so many pixels lower"),
     Form::new(
         "disguise",
         &["who:code other:code", "who:code off"],
@@ -100,7 +95,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         &["who:code name:word [frames:duration] [plus]"],
         "`!` `?` `...` `sweat` `anger` `joy` `tears` `shock` `sparkle` (`none`: removes them); with a duration, goes away on its own; `plus`: with those they already show, instead of replacing them (as many as you like)",
     ),
-    Form::new("face", &["who:code other:code"], "turns towards the other / turns their back on them"),
+    Form::new("face", &["who:code other:code"], "turns towards the other"),
     Form::new("fall", &["who:code [height:number] [frames:duration]", ""], "falls from high up to the ground (90 pixels, 18 frames)"),
     Form::new("fidget", &["who:code [rest...]"], "looks around from time to time (a lively crowd); does not count for `waitall`"),
     Form::new(
@@ -117,7 +112,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     ),
     Form::new("gone", &["who:code [rest...]"], "removes them from the scene"),
     Form::new("height", &["who:code height:number [frames:duration]"], "at this height above the ground, at once or in so many frames"),
-    Form::new("hide", &["who:code"], "hidden / shown at once"),
     Form::new(
         "hold",
         &["item:word who:code", "item:word off"],
@@ -126,11 +120,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("hop", &["who:code x:coordinate y:coordinate height:number frames:duration", ""], "a jump in an arc to there"),
     Form::new("infront", &["who:code otheroff:word"], "drawn in front of the other, wherever they are"),
     Form::new("jump", &["who:code [height:number] [frames:duration]"], "a jump on the spot (10 pixels, 12 frames)"),
-    Form::new(
-        "kick",
-        &["who:code to:word [distance:number]"],
-        "the kick of what they shoot at the other: they slide backwards (8 pixels), still facing them, shaken, without being hurt",
-    ),
     Form::new("large", &["item:word", "off"], "the item large, crisp, above the scene"),
     Form::new("layer", &["who:code rest..."], "drawn over everyone, under, or among the others"),
     Form::new("lookat", &["who:code x:coordinate y:coordinate"], "turns towards a point (`lookat eevee @fountain`)"),
@@ -166,8 +155,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "a character of your own drawn from a sheet (`character`): cells of W×H, one row per direction (1: all the same; 4: down, left, right, up; 8: down, downright, right, upright, up, upleft, left, downleft); each animation: its number (0 walk, 1 idle, 2 hurt, 3 sleep, 4 attack, 5 + n the n-th of your own), its cells on the row (`0,1,2`), their sixtieths (`6,6,8`, `-`: 8 each), the row of its first direction",
     ),
     Form::new("shine", &["item:word [off]"], "a little star of crisp pixels turns around it"),
-    Form::new("show", &["who:code"], "hidden / shown at once"),
-    Form::new("silhouette", &["who:code [frames:duration]"], "as a black shadow / their colours"),
     Form::new(
         "sink",
         &["who:code pixels:number [sand]"],
@@ -200,7 +187,6 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("tremble", &["who:code [strength:number] frames:duration"], "trembles, by so many pixels (1)"),
     Form::new("turn", &["who:code dir:word"], "turns"),
     Form::new("turnaround", &["who:code"], "turns right around"),
-    Form::new("turnaway", &["who:code other:code"], "turns towards the other / turns their back on them"),
     Form::new(
         "turnby",
         &["who:code eighths:word"],
@@ -212,7 +198,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "their next turn goes the slow way, through each way in between, one every so many frames (6 otherwise), as the game's slow turns",
     ),
     Form::new("uncolor", &["rest..."], "`colour` and `uncolour`, other spelling"),
-    Form::new("uncolour", &["who:code [frames:duration]"], "as a black shadow / their colours"),
+    Form::new("uncolour", &["who:code [frames:duration]"], "their colours"),
     Form::new("unfreeze", &["[text...]"], ""),
     Form::new("vanish", &["who:code [frames:duration]"], "fades out / fades in (20 frames by default)"),
     Form::new(
@@ -299,7 +285,6 @@ pub(in crate::beat) fn read(fields: &Fields) -> Option<BodyBeat> {
             let part = |at: usize| fields.real(at).filter(|part| (0.0..=255.0).contains(part));
             BodyBeat::Colour { who: fields.who(1)?, colour: [part(2)?, part(3)?, part(4)?], frames: Frames(fields.real(5).unwrap_or(0.0)) }
         }
-        "silhouette" => BodyBeat::Colour { who: fields.who(1)?, colour: [0.0; 3], frames: Frames(fields.real(2).unwrap_or(0.0)) },
         "uncolour" | "uncolor" => BodyBeat::Colour { who: fields.who(1)?, colour: [255.0; 3], frames: Frames(fields.real(2).unwrap_or(0.0)) },
         // (Over everyone, under everyone, among the others.)
         "layer" => BodyBeat::Layer {
@@ -321,8 +306,6 @@ pub(in crate::beat) fn read(fields: &Fields) -> Option<BodyBeat> {
             add,
         },
         "effect" => BodyBeat::Effect { who: fields.who(1)?, id: EmoteId(fields.number(2)?), frames: fields.real(3).map(Frames), add },
-        "hide" => BodyBeat::Opacity { who: fields.who(1)?, to: 0.0, frames: Frames(0.0) },
-        "show" => BodyBeat::Opacity { who: fields.who(1)?, to: 1.0, frames: Frames(0.0) },
         // (An emote by its name: `emote <who> !`, `?`, `...`, `sweat`...)
         "emote" => BodyBeat::Effect {
             who: fields.who(1)?,

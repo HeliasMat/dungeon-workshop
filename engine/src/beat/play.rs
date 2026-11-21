@@ -8,15 +8,6 @@ use crate::stage::Rect;
 /// What the player does in a scene.
 #[derive(Clone, Debug, PartialEq)]
 pub enum PlayBeat {
-    /// The player chooses a number, from one to another by a step (at
-    /// most `ASKED_NUMBERS` of them): kept by that name.
-    AskNumber { var: String, from: i32, to: i32, step: i32 },
-    /// The player writes words, kept by a name (then `{name}` in words);
-    /// the words written in the box to begin with.
-    AskText { var: String, given: String },
-    /// The next question waits so many frames for its answer, then this
-    /// one is taken (by its place among all of them).
-    AskTimer { frames: Frames, default: usize },
     /// The player walks someone about with the arrows (none: no one any
     /// more); see `Stage::steer`.
     Control(Option<Who>),
@@ -52,7 +43,7 @@ pub enum PlayBeat {
 
 declare! {
     PlayBeat;
-    hand: "asknumber", "asktext", "asktimer", "bounds", "control",
+    hand: "bounds", "control",
         "gauge", "hud", "swapcontrol", "wall";
     "listen" => Listen(on: OnOff),
     "collisions" => Collisions(on: OnOff),
@@ -62,13 +53,6 @@ declare! {
 /// part between brackets left out, `rest...` the words left) and what it
 /// does, for the language and the docs (see `forms`).
 pub(in crate::beat) const FORMS: &[Form] = &[
-    Form::new("asknumber", &["[text...]"], ""),
-    Form::new(
-        "asktext",
-        &["name:word [words...]"],
-        "the player writes words (the game's letter grid), kept under this name: a nickname (`{nickname}` afterwards); compared in a condition: `if answer == pikachu`",
-    ),
-    Form::new("asktimer", &["[text...]"], ""),
     Form::new("bounds", &["left:word top:word right:word bottom:word", "off"], "they stay in this rectangle"),
     Form::new(
         "collisions",
@@ -134,16 +118,6 @@ pub(super) fn read(fields: &Fields) -> Option<PlayBeat> {
             };
             PlayBeat::Hud { at, text: words.filter(|text| *text != "off").map(|text| text.trim_start().replace("\\n", "\n")) }
         }
-        "asktext" => {
-            PlayBeat::AskText { var: fields.named(1, "a name")?.to_string(), given: fields.word(2).map_or(String::new(), |given| given.trim().to_string()) }
-        }
-        "asknumber" => {
-            let (from, to) = (fields.whole(2)?, fields.whole(3)?);
-            let step = fields.has(4).then(|| fields.whole(4)).flatten().unwrap_or(1).max(1);
-            let var = fields.named(1, "a name")?.to_string();
-            ((to - from) / step < ASKED_NUMBERS as i32 && to >= from).then_some(PlayBeat::AskNumber { var, from, to, step })?
-        }
-        "asktimer" => PlayBeat::AskTimer { frames: Frames(fields.frames(1)? as f32), default: fields.number(2).unwrap_or(0) as usize },
         "swapcontrol" => PlayBeat::ControlTeam(match fields.word(1) {
             Some("off") => Vec::new(),
             _ => fields.group(1)?,

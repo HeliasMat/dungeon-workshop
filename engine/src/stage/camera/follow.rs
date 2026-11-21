@@ -58,10 +58,7 @@ impl Camera {
             let offset = Vec2::Y * self.room;
             focus = match self.camera {
                 Some(Cam::At(ref at)) => Some(at.vec2() + offset),
-                Some(Cam::Who(who)) => match (standing(cast, who).map(|at| at + offset), focus) {
-                    (Some(there), Some(now)) if self.cam_lag > 0.0 => Some(now.lerp(there, (frames / self.cam_lag).min(1.0))),
-                    (there, now) => there.or(now),
-                },
+                Some(Cam::Who(who)) => standing(cast, who).map(|at| at + offset).or(focus),
                 None => focus,
             };
         }

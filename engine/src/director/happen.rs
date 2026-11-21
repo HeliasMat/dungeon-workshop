@@ -19,8 +19,7 @@ impl Director {
                 | BodyBeat::LookAt { who, .. }
                 | BodyBeat::TurnAround(who)
                 | BodyBeat::TurnBy { who, .. }
-                | BodyBeat::TurnSlow { who, .. }
-                | BodyBeat::TurnAway { who, .. },
+                | BodyBeat::TurnSlow { who, .. },
             ) => stage.turned_by_a_line(*who, true),
             Beat::Body(BodyBeat::Pose { who, pose: Pose::Idle }) => stage.turned_by_a_line(*who, false),
             _ => {}
@@ -176,7 +175,6 @@ impl Director {
         match beat {
             PlayBeat::Hud { at, text } => self.kept.hud[at.min(2)] = text,
             PlayBeat::Gauge { at, gauge } => self.kept.gauges[at.min(2)] = gauge,
-            PlayBeat::AskTimer { frames, default } => self.asking.ask_timer = Some(Timed { left: frames.0.max(1.0), answer: default }),
             beat => calls.push(Call::Show(beat.into())),
         }
     }
@@ -272,12 +270,6 @@ impl Director {
             DataBeat::Sees { var, who, other, distance, angle } => {
                 let seen = stage.sees(who, other, distance, angle);
                 self.vars.insert(var, f64::from(u8::from(seen)));
-            }
-            DataBeat::Facing { x, y, who, far, goer } => {
-                if let Some(at) = stage.before(who, far, goer) {
-                    self.vars.insert(x, at.x.round() as f64);
-                    self.vars.insert(y, at.y.round() as f64);
-                }
             }
             DataBeat::Position { who, x, y } => {
                 if let Some(at) = stage.cast.get(&who).map(|actor| actor.position) {

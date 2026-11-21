@@ -33,9 +33,6 @@ impl Director {
         }
         self.lines_go_by(stage, frames);
         self.play_scheduled(at, stage, frames, focus, &mut calls);
-        if self.question_ran_out(frames, &mut calls) {
-            return calls;
-        }
         self.run_clocks(stage, frames);
         self.keep_words(stage);
         if self.hold.is_some() {
@@ -92,7 +89,7 @@ impl Director {
             (self.pause, self.reading, self.timed) = (0.0, false, None);
             (self.schedule.later, self.schedule.returns, self.schedule.every, self.schedule.parallels) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
             (self.manner.last_speaker, self.kept.hud, self.kept.gauges) = (None, Default::default(), Default::default());
-            (self.asking.ask_timer, self.asking.ask_left, self.clocks.timers, self.asking.number_asked) = (None, None, Vec::new(), None);
+            self.clocks.timers = Vec::new();
         }
         self.clocks.scene_clock = 0.0;
         // (Who may be talked to and the ways out: the scene's own.)
@@ -172,28 +169,6 @@ impl Director {
             parallels.append(&mut self.schedule.parallels);
             self.schedule.parallels = parallels;
         }
-    }
-
-    /// A question given its time: whether that time just ran out.
-    fn question_ran_out(&mut self, frames: f32, calls: &mut Vec<Call>) -> bool {
-        // (A question given its time: the seconds left, then the answer
-        // taken for the player.)
-        if self.hold == Some(Hold::Question)
-            && let Some(Timed { left, answer: default }) = self.asking.ask_left
-        {
-            let left = left - frames;
-            self.vars.insert(TIME_LEFT.to_string(), (left.max(0.0) / 60.0).ceil() as f64);
-            self.asking.ask_left = Some(Timed { left, answer: default });
-            if left <= 0.0 {
-                let shown = self.asking.offered.iter().position(|&place| place == default).unwrap_or(0);
-                self.answer(Some(shown));
-                self.vars.insert(TOO_LATE.to_string(), 1.0);
-                calls.push(Call::LineGone);
-                // (On along that answer's way from the next frame.)
-                return true;
-            }
-        }
-        false
     }
 
     fn run_clocks(&mut self, stage: &Stage, frames: f32) {

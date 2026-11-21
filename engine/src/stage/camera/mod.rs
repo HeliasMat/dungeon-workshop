@@ -59,9 +59,6 @@ pub struct Camera {
     /// A glance (see `ViewBeat::Glance`): where the view goes back to, in how
     /// many frames, and the frames before it does.
     pub glance: Option<Glance>,
-    /// The view following someone catches up with them in about that many
-    /// frames (0: keeps on them).
-    pub cam_lag: f32,
     /// Who the view keeps in sight (none: it goes as it was told).
     pub framing: Vec<Who>,
     /// How big those it was told of show, wide and high.
@@ -160,7 +157,7 @@ impl Camera {
     /// Another place: the view as it usually is, not as close, aside or
     /// framing as the last place had it. (Where it looks stays.)
     pub(crate) fn new_place(&mut self) {
-        (self.zoom, self.pan, self.cam_lag) = (Zoom::default(), None, 0.0);
+        (self.zoom, self.pan) = (Zoom::default(), None);
         self.framing.clear();
         (self.roomy, self.room, self.pan_stays) = (false, 0.0, false);
     }

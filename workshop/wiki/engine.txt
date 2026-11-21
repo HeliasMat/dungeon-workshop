@@ -69,14 +69,6 @@ pikachu: Sparks!
 > The engine's tracks stopped; no word of the films starts them.
 !retired
 
-== asknumber
-> The player chooses a number, kept under a name.
-!retired
-
-== asktimer
-> Before a question: it waits only so long.
-!retired
-
 == attr
 > Raw flags of someone: 32 blinks, 64 transparent, 128 hidden, 8 on top (better: blink, opacity, layer).
 scene: beach pikachu piplup
@@ -195,10 +187,6 @@ scene: beach pikachu piplup
 every 1s as hops: pikachu jump
 wait 3s
 cease hops
-
-== facing
-> Puts into two numbers the free point at a distance in front of someone.
-!retired
 
 == find
 > Finds a free place for someone near a spot, in two numbers (find_place in a film).

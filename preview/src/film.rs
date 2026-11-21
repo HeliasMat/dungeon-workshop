@@ -483,7 +483,6 @@ impl Film {
             Call::Host { fields, .. } if POKEMON.host_holds.contains(&fields[0].as_str()) => self.play.sim.director.menu_done(false),
             Call::Host { .. } => {}
             Call::Game { ask, .. } => self.asked(GameRequest::Ask(ask)),
-            Call::AskText(given) => self.play.sim.director.text_given(given),
             Call::Over => {
                 self.over = true;
                 self.words = None;

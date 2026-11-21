@@ -612,7 +612,7 @@ mod tests {
         assert_eq!(who_first("fight"), Some(false));
         assert_eq!(who_first("dungeon_hud"), None);
         assert_eq!(family_of("walk"), "Movement");
-        assert_eq!(family_of("camlag"), ADVANCED);
+        assert_eq!(family_of("musicspeed"), ADVANCED);
         assert_eq!(replaced("fadein"), Some("transition fade in [d]"));
         assert_eq!(replaced("walk"), None);
         assert_eq!(replaced("rank"), None);

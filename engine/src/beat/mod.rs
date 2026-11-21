@@ -160,10 +160,6 @@ fn frames_of(field: &str) -> Option<u32> {
     }
 }
 
-/// How many numbers a scene may offer to choose from at most (see
-/// `PlayBeat::AskNumber`): what the box shows.
-pub(crate) const ASKED_NUMBERS: usize = 20;
-
 /// Whether a line is to be read when it is played, the numbers it names
 /// put in first: braces in a field other than its words (`put roc {x}
 /// {y}`, `set note n{i}`, `halo @ {x} {y}`). Not the lines that shape the
@@ -183,7 +179,7 @@ fn braced(line: &[String]) -> Vec<&String> {
         )
         | None => return Vec::new(),
         Some("bubble" | "think" | "shout" | "popup") => Some(3),
-        Some("caption" | "typecaption" | "credits" | "settext" | "asktext") => Some(2),
+        Some("caption" | "typecaption" | "credits" | "settext") => Some(2),
         Some("banner" | "log") => Some(1),
         Some("battlelog") => Some(2),
         Some("hud") => Some(if line.get(1).is_some_and(|place| hud_place(place).is_some()) { 2 } else { 1 }),

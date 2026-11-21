@@ -72,7 +72,6 @@ impl Director {
         }
         match beat {
             Beat::Flow(beat) => self.play_flow(beat, at, stage, focus, calls),
-            Beat::Play(beat) => self.play_asked(beat, stage, focus, calls),
             // (The line on screen is not read yet.)
             Beat::Speech(SpeechBeat::Said) => Step::of(self.reading),
             beat => {
@@ -219,41 +218,6 @@ impl Director {
         Step::of(waits)
     }
 
-    /// A beat of the player's: what it asks waits for an answer.
-    fn play_asked(&mut self, beat: PlayBeat, stage: &mut Stage, focus: Vec2, calls: &mut Vec<Call>) -> Step {
-        let waits = match beat {
-            // (A key asked for as a line is, without one: see `read`.)
-            // (A number to choose: asked as a question; hurried, the
-            // first.)
-            PlayBeat::AskNumber { var, from, .. } if self.hurrying() => {
-                self.vars.insert(var, from.into());
-                false
-            }
-            // (Words to write: the game's box; hurried, those given.)
-            PlayBeat::AskText { var, given } if self.hurrying() => {
-                self.texts.insert(var, given);
-                false
-            }
-            PlayBeat::AskText { var, given } => {
-                (self.asking.text_asked, self.hold) = (Some(var), Some(Hold::Host));
-                calls.push(Call::AskText(given));
-                return Step::Leave;
-            }
-            PlayBeat::AskNumber { var, from, to, step } => {
-                let values: Vec<i32> = (from..=to).step_by(step.max(1) as usize).collect();
-                calls.push(Call::Ask(values.iter().map(i32::to_string).collect()));
-                self.asking.offered = (0..values.len()).collect();
-                (self.asking.number_asked, self.hold) = (Some(NumberAsked { var, values }), Some(Hold::Question));
-                return Step::Leave;
-            }
-            beat => {
-                self.happen(Beat::Play(beat), stage, focus, calls);
-                false
-            }
-        };
-        Step::of(waits)
-    }
-
     /// On to what the scene does next; past its end, the next scene.
     pub(super) fn take_course(&mut self, at: Mark, stage: &mut Stage, focus: Vec2, calls: &mut Vec<Call>) {
         // (What comes next waits for the line on screen to be read; but a
@@ -326,7 +290,6 @@ impl Director {
             }
             Course::Ask(answers) => {
                 self.hold = Some(Hold::Question);
-                self.asking.ask_left = self.asking.ask_timer.take();
                 let offered = self.offered(&answers);
                 self.asking.offered = offered.iter().map(|(place, _)| *place).collect();
                 calls.push(Call::Ask(offered.iter().map(|(_, answer)| emphasis(&self.fill(answer))).collect()));

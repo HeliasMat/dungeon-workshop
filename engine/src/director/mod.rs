@@ -90,9 +90,6 @@ pub enum Call {
     Over,
     /// The story is to be saved now (see `FlowBeat::Checkpoint`).
     Checkpoint,
-    /// The player is to write words, these to begin with (see
-    /// [`Director::text_given`]).
-    AskText(String),
 }
 
 /// A passage of the scene played along with the rest (see
@@ -138,17 +135,9 @@ struct FilmLines {
 /// The questions at hand.
 #[derive(Clone, Debug, Default)]
 struct Asking {
-    /// The time the next question is given, and the answer then taken;
-    /// the time left to the one asked (see `PlayBeat::AskTimer`).
-    ask_timer: Option<Timed>,
-    ask_left: Option<Timed>,
     /// The answers of the question asked that are offered, by their
     /// places among all of them (see `answer_test`).
     offered: Vec<usize>,
-    /// A number being chosen: its name, and the numbers offered; the name
-    /// the words being written go to.
-    number_asked: Option<NumberAsked>,
-    text_asked: Option<String>,
 }
 
 /// What is to happen other than next.
@@ -275,20 +264,6 @@ pub(crate) struct Manner {
     /// Whom a line does not turn.
     pub(crate) held_gaze: HashSet<Who>,
     lines_heard: usize,
-}
-
-/// The frames left to a question, and the answer then taken.
-#[derive(Clone, Copy, Debug)]
-struct Timed {
-    left: f32,
-    answer: usize,
-}
-
-/// A number being chosen: its name, and the numbers offered.
-#[derive(Clone, Debug)]
-struct NumberAsked {
-    var: String,
-    values: Vec<i32>,
 }
 
 /// What is to happen later: the frames left, and the beat.

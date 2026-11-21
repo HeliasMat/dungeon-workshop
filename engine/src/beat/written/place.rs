@@ -145,10 +145,6 @@ impl PlaceBeat {
                 line.extend(point(step));
                 line.extend(who.iter().map(|who| who.map_or(word("-"), |who| who.to_string())));
             }
-            PlaceBeat::Wave(who) => {
-                line.push(word("wavethrough"));
-                line.extend(group(who));
-            }
             PlaceBeat::Advance { who, by } => {
                 line.push(word("advance"));
                 line.extend(point(by));
@@ -232,7 +228,6 @@ mod tests {
             PlaceBeat::Flock { who: vec![a, b], to: Spot::Written(at.into()), run: true },
             PlaceBeat::Flock { who: vec![a], to: Spot::Named("throne".into()), run: false },
             PlaceBeat::Gathers { var: "g".into(), spot: Spot::Of(a), step: Vec2::new(16.0, 0.0), who: vec![Some(a), None, Some(b)] },
-            PlaceBeat::Wave(vec![a, b]),
             PlaceBeat::Advance { who: vec![a], by: Vec2::new(-20.0, 0.0) },
             PlaceBeat::Seats { var: "table".into(), who: vec![a, b], seats: vec![at, Vec2::new(1.0, 2.0)] },
             PlaceBeat::Shot { close: 1.5, who: Some(a) },
