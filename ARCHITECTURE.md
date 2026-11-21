@@ -174,7 +174,7 @@ Two ways still go through words, by design:
 What is left to type, in order:
 
 1. The three lines the front writes for the engine as text (`film/src/text/front/`: `position` in `values.rs`, `measure` in `values.rs`, `waitmoves` in `blocks.rs`), as `Shape::Engine`: they name someone by the film's name, which only the film knows when it plays. A `Shape` carrying the names and a closure making the beat once they are codes would end them.
-2. The Advanced words whose form is the engine's (`film/src/verbs/engine.rs`, `commands.rs`): they could each get a constructor in `emit/` as the core families have, if one is ever worth more than its form.
+2. The Advanced words whose form is the engine's (`film/src/verbs/engine.rs`, 79 words, and `commands.rs`, every other command): left on purpose. They are already typed end to end: their words bound by the engine's own form (`grammar::bind`), handed over as `engine::Arg`s and built by `Beat::build`, which for a `declare!`d command is the reading generated from its one line (`zoom`, `letterbox`, `float`, `spin`, `jump`...), with the film's waits (`.lasts()`, `.until()`) and its found numbers (`{x}`) handled once in `Film::engine_command`. A constructor in `emit/` for one of them would be a second reading of the same form, to keep in step by hand; one is worth writing only when the word grows a meaning of its own beyond the command (as `frame`, `music` or `pose` did).
 3. `Beat::Host` and `Course::Host` (a game's lines of words) and `FlowBeat::Filled` (see "Known debt").
 
 Every core family (Structure to Story) and the optional ones build their beats themselves; since wave 4 the `music` and `pose` words no longer let a plain line (`music peace 1s`, `pose a attack`) fall through to the engine's command.
