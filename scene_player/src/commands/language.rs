@@ -116,12 +116,14 @@ pub fn analyze(context: &Context, name: &str, as_json: bool) -> Result<(), Strin
     Ok(())
 }
 
-/// The films of the project: the library's, then each game's.
+/// The films of the project: the library's, then each game's, then each
+/// test game's (`tests/games/`).
 fn everything(context: &Context) -> Vec<PathBuf> {
     let root = context.root();
     let mut found = Vec::new();
     let mut folders = vec![root.join("library/films")];
-    if let Ok(games) = std::fs::read_dir(root.join("games")) {
+    for games in [root.join("games"), root.join("tests/games")] {
+        let Ok(games) = std::fs::read_dir(games) else { continue };
         let mut games: Vec<PathBuf> = games.flatten().map(|entry| entry.path().join("films")).filter(|films| films.is_dir()).collect();
         games.sort();
         folders.extend(games);
@@ -198,8 +200,10 @@ pub fn fingerprint(context: &Context, compare: bool, by_word: bool) -> Result<()
     let (mut same, mut changed, mut new, mut left) = (0, Vec::new(), 0, Vec::new());
     for path in everything(context) {
         // (A game's film by its game too: `my_game.my_film.film.txt`.)
-        let game =
-            path.strip_prefix(context.root().join("games")).ok().and_then(|inside| inside.iter().next()).map(|game| format!("{}.", game.to_string_lossy()));
+        let game = [context.root().join("games"), context.root().join("tests/games")]
+            .iter()
+            .find_map(|games| path.strip_prefix(games).ok().and_then(|inside| inside.iter().next()))
+            .map(|game| format!("{}.", game.to_string_lossy()));
         let name = format!(
             "{}{}.{}.txt",
             game.unwrap_or_default(),
