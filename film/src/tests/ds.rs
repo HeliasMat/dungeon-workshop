@@ -54,6 +54,9 @@ fn too_many_at_once_says_who_is_left_out() {
     assert!(wrong[0].contains("26 Pokémon at once") && wrong[0].contains("leaves out 5 of the 25 idle ones"), "{wrong:?}");
     assert!(told("for ds\nscene: beach krabby\ncrowd pidgey 12\n", codes::DS_ACTORS).is_empty());
     assert!(told("scene: beach krabby\ncrowd pidgey 25\n", codes::DS_ACTORS).is_empty());
+    // (Each scene counted alone: the bodies of every scene told at the start are no one there.)
+    let two = "for ds\nscene: beach krabby\ncrowd pidgey 12\ntransition fade\nscene: forest caterpie\ncrowd weedle 12\n";
+    assert!(told(two, codes::DS_ACTORS).is_empty(), "{:?}", coded(two));
 }
 
 #[test]
