@@ -797,6 +797,7 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `emit/` | the `Beat`s the words make, one file per kind (as in the engine); points found while playing (`Point`, `film.on_point`); what the film says is wrong (`film.not_a`, `film.unread`); `adapter.rs`: engine commands written in a film, read as beats |
 | `compile/` | the film's scenes (`scenes.rs`), a scene from its opening to its fade (`scene.rs`), a line (`said.rs`), the whole film and its events (`mod.rs`) |
 | `tables/` | the game's files, read once: Pokémon and variants, places and grounds, pictures, objects, what the story's scenes say |
+| `ds.rs` | what each word becomes on the DS: the table `scene_player export-ds` writes by, and `--table` prints |
 | `words.rs`, `screen.rs`, `check.rs` | the little words (faces, emotions, spots), the words on screen (box, bubble, colours), what is wrong, with the film's line and the closest names |
 | `tests/` | what each word gives, where it leaves everyone on the real scene |
 
