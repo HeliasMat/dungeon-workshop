@@ -130,5 +130,6 @@ fn in_ds_mode_only_what_exports_is_offered() {
     assert!(dodge.1.contains("DS with loss"), "{dodge:?}");
     let models =
         super::completion::for_ds(vec![("fight".to_string(), "model — a directed fight".to_string()), ("scene".to_string(), "model — a scene".to_string())]);
-    assert_eq!(models.iter().map(|(word, _)| word.as_str()).collect::<Vec<_>>(), ["scene"]);
+    // (A directed fight exports now, as blows: its model stays.)
+    assert_eq!(models.iter().map(|(word, _)| word.as_str()).collect::<Vec<_>>(), ["fight", "scene"]);
 }
