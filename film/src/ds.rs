@@ -25,6 +25,23 @@ pub fn written_for_ds(text: &str) -> bool {
     text.lines().map(str::trim).take_while(|line| !line.starts_with("scene")).any(|line| line == HEADER || line.starts_with("for ds "))
 }
 
+/// The film's text with its line `for ds` (`on`) or without it: written
+/// after its title, if it has one, else first (the Workshop's DS Mode).
+pub fn with_ds(text: &str, on: bool) -> String {
+    if written_for_ds(text) == on {
+        return text.to_string();
+    }
+    let mut lines: Vec<&str> = text.split('\n').collect();
+    let head = lines.iter().position(|line| line.trim_start().starts_with("scene")).unwrap_or(lines.len());
+    if on {
+        let after = lines[..head].iter().position(|line| line.trim_start().starts_with("title:")).map_or(0, |at| at + 1);
+        lines.insert(after, HEADER);
+    } else if let Some(at) = lines[..head].iter().position(|line| line.trim() == HEADER || line.trim().starts_with("for ds ")) {
+        lines.remove(at);
+    }
+    lines.join("\n")
+}
+
 /// Pokémon Sky shows at once in a scene (`export-ds` makes room as
 /// `Writer::fit` says): the game's 24, less the hero's,
 /// the partner's and a third party member's, kept for them.
@@ -343,6 +360,12 @@ impl Export {
     }
 }
 
+/// How any word stands on the DS: the table's, else none (an engine's
+/// command, not a word of the plan, isn't exported).
+pub fn status(word: &str) -> Export {
+    export_of(word).unwrap_or(Export::None)
+}
+
 /// What it is written as on the DS: the game's operations.
 pub fn how(word: &str) -> Option<&'static str> {
     WORDS.iter().find(|(name, _, _)| *name == word).map(|(_, _, how)| *how)
@@ -401,6 +424,18 @@ mod tests {
             assert!(!export_of(word).is_some_and(Export::exports), "{word} exports: no fix needed");
         }
         assert!(refused("fight").contains("attack"));
+    }
+
+    #[test]
+    fn the_ds_mode_puts_its_line_after_the_title_and_takes_it_off() {
+        let film = "title: The Bet\nscene: beach krabby\nkrabby: Hi.\n";
+        let on = with_ds(film, true);
+        assert_eq!(on, "title: The Bet\nfor ds\nscene: beach krabby\nkrabby: Hi.\n");
+        assert!(written_for_ds(&on));
+        assert_eq!(with_ds(&on, true), on);
+        assert_eq!(with_ds(&on, false), film);
+        assert_eq!(with_ds("scene: beach krabby\n", true), "for ds\nscene: beach krabby\n");
+        assert_eq!(with_ds("for ds scene\nscene: beach krabby\n", false), "scene: beach krabby\n");
     }
 
     #[test]

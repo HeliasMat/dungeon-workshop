@@ -136,6 +136,15 @@ impl Body<'_> {
             scripts.wiki_shown = !scripts.wiki_shown;
         }
         let Body { scripts, open, path, .. } = self;
+        // (DS Mode: the line `for ds`, and what the DS can't play told, the completion and the Wiki by it.)
+        let for_ds = film::ds::written_for_ds(&open.text);
+        if ui
+            .selectable_label(for_ds, "DS Mode")
+            .on_hover_text("the film written for Explorers of Sky on DS (the line “for ds”): what the DS can't play is told, the completion offers only what exports, the Wiki shows each word's DS badge")
+            .clicked()
+        {
+            open.change(film::ds::with_ds(&open.text, !for_ds));
+        }
         egui::ComboBox::from_id_salt(("story view", *path))
             .selected_text(scripts.view.name())
             .width(96.0)

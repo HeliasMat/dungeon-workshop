@@ -79,6 +79,14 @@ impl Scripts {
 /// put on another screen), to read while writing; what it inserts goes to
 /// the film at the cursor. Closed, the Wiki is put away.
 pub(super) fn wiki_window(ctx: &egui::Context, scripts: &mut Scripts) {
+    // (For a picture, `WORKSHOP_CAPTURE`: over the Workshop's own window, where the picture sees it.)
+    if scripts.session.launch.capture.is_some() {
+        egui::Window::new("Wiki")
+            .default_size([1100.0, 700.0])
+            .frame(egui::Frame::window(&ctx.style()).fill(theme::PANEL).inner_margin(10.0))
+            .show(ctx, |ui| wiki_panel(ui, scripts));
+        return;
+    }
     let id = egui::ViewportId::from_hash_of("the wiki's window");
     let builder = egui::ViewportBuilder::default().with_title("Wiki · Dungeon Workshop").with_inner_size([1280.0, 820.0]).with_min_inner_size([640.0, 420.0]);
     ctx.show_viewport_immediate(id, builder, |ctx, _| {
@@ -106,6 +114,12 @@ pub(super) fn wiki_panel(ui: &mut egui::Ui, scripts: &mut Scripts) {
     if field.changed() && !scripts.wiki_sought.trim().is_empty() {
         scripts.wiki_page = None;
     }
+    // (DS Mode, the film written `for ds`: each word's DS badge, and the words that export alone if asked.)
+    let for_ds = scripts.open.as_ref().is_some_and(|open| film::ds::written_for_ds(&open.text));
+    if for_ds {
+        ui.checkbox(&mut scripts.wiki_ds_only, "DS only").on_hover_text("only the words that export to the DS (direct, or with a loss)");
+    }
+    let ds = Ds { shown: for_ds, only: for_ds && scripts.wiki_ds_only };
     ui.add_space(4.0);
     let pages = crate::wiki::pages(&scripts.session);
     let asked = match scripts.wiki_page.clone().and_then(|word| pages.iter().find(|page| page.word == word)) {
@@ -123,7 +137,7 @@ pub(super) fn wiki_panel(ui: &mut egui::Ui, scripts: &mut Scripts) {
             let asked = egui::ScrollArea::vertical()
                 .id_salt(("wiki page", &page.word))
                 .auto_shrink(false)
-                .show(&mut text_ui, |ui| page_view(ui, scripts, page, &related, source.as_deref()))
+                .show(&mut text_ui, |ui| page_view(ui, scripts, page, &related, source.as_deref(), ds))
                 .inner;
             if played {
                 let right = egui::Rect::from_min_max(egui::pos2(left.max.x + 14.0, full.min.y), full.max);
@@ -133,7 +147,7 @@ pub(super) fn wiki_panel(ui: &mut egui::Ui, scripts: &mut Scripts) {
             ui.allocate_rect(full, Sense::hover());
             asked
         }
-        None => word_list(ui, &pages, &scripts.wiki_sought),
+        None => word_list(ui, &pages, &scripts.wiki_sought, ds),
     };
     match asked {
         Some(Asked::Open(word)) => scripts.wiki_open(&word),
@@ -146,15 +160,47 @@ pub(super) fn wiki_panel(ui: &mut egui::Ui, scripts: &mut Scripts) {
     }
 }
 
+/// How the Wiki shows the DS: each word's badge (DS Mode), only the words
+/// that export.
+#[derive(Clone, Copy)]
+struct Ds {
+    shown: bool,
+    only: bool,
+}
+
+/// A word's DS badge: `DS direct`, `DS with loss`, `not on DS`, coloured so;
+/// what is lost or why, on hover.
+fn ds_badge(ui: &mut egui::Ui, word: &str, size: f32) {
+    let status = film::ds::status(word);
+    let colour = match status {
+        film::ds::Export::Direct => theme::DUNGEON,
+        film::ds::Export::Close => theme::FILM,
+        _ => theme::WRONG,
+    };
+    let why = match status {
+        film::ds::Export::Close => film::ds::lost(word).map(|lost| format!("lost on DS: {lost}")),
+        film::ds::Export::Direct => film::ds::how(word).map(|how| format!("on DS: {how}")),
+        _ => Some(film::ds::refused(word)),
+    };
+    let badge = egui::Frame::new().stroke(Stroke::new(1.0_f32, colour)).corner_radius(3.0).inner_margin(egui::Margin::symmetric(4, 0));
+    let shown = badge.show(ui, |ui| ui.label(theme::text(status.badge(), size, colour))).response;
+    if let Some(why) = why {
+        shown.on_hover_text(why);
+    }
+}
+
 /// The words found, the best first; nothing sought: by family, each family folded.
-fn word_list(ui: &mut egui::Ui, pages: &[Page], sought: &str) -> Option<Asked> {
+fn word_list(ui: &mut egui::Ui, pages: &[Page], sought: &str, ds: Ds) -> Option<Asked> {
     let mut asked = None;
-    let found = crate::wiki::search::ranked(pages, &FAMILIES, sought);
+    let mut found = crate::wiki::search::ranked(pages, &FAMILIES, sought);
+    if ds.only {
+        found.retain(|page| film::ds::status(&page.word).exports());
+    }
     ui.label(theme::text(format!("{} word{}", found.len(), if found.len() == 1 { "" } else { "s" }), theme::SMALL, theme::FAINT));
     egui::ScrollArea::vertical().id_salt("wiki words").auto_shrink(false).show(ui, |ui| {
         if !sought.trim().is_empty() {
             for page in found.iter().take(80) {
-                if word_row(ui, page, true) {
+                if word_row(ui, page, true, ds) {
                     asked = Some(Asked::Open(page.word.clone()));
                 }
             }
@@ -170,7 +216,7 @@ fn word_list(ui: &mut egui::Ui, pages: &[Page], sought: &str) -> Option<Asked> {
                 ui,
                 |ui| {
                     for page in inner {
-                        if word_row(ui, page, false) {
+                        if word_row(ui, page, false, ds) {
                             asked = Some(Asked::Open(page.word.clone()));
                         }
                     }
@@ -182,7 +228,7 @@ fn word_list(ui: &mut egui::Ui, pages: &[Page], sought: &str) -> Option<Asked> {
 }
 
 /// A word in the list: its name, what it does in a line (its family too, when found); whether it was clicked.
-fn word_row(ui: &mut egui::Ui, page: &Page, with_family: bool) -> bool {
+fn word_row(ui: &mut egui::Ui, page: &Page, with_family: bool, ds: Ds) -> bool {
     let response = ui
         .vertical(|ui| {
             ui.spacing_mut().item_spacing.y = 0.0;
@@ -190,6 +236,9 @@ fn word_row(ui: &mut egui::Ui, page: &Page, with_family: bool) -> bool {
                 ui.label(RichText::new(&page.word).monospace().color(theme::FILM));
                 if with_family {
                     ui.label(theme::text(family_name(page.family), theme::SMALL - 1.0, theme::FAINT));
+                }
+                if ds.shown {
+                    ds_badge(ui, &page.word, theme::SMALL - 2.0);
                 }
             });
             ui.add(egui::Label::new(theme::text(page.one_line(), theme::SMALL - 1.0, theme::WEAK)).truncate());
@@ -205,7 +254,7 @@ fn word_row(ui: &mut egui::Ui, page: &Page, with_family: bool) -> bool {
 
 /// A word's page: its name and family, what it does, its forms, its example
 /// (played, inserted, copied), the words it goes with, a recipe's source.
-fn page_view(ui: &mut egui::Ui, scripts: &mut Scripts, page: &Page, related: &[String], source: Option<&str>) -> Option<Asked> {
+fn page_view(ui: &mut egui::Ui, scripts: &mut Scripts, page: &Page, related: &[String], source: Option<&str>, ds: Ds) -> Option<Asked> {
     let mut asked = None;
     ui.horizontal(|ui| {
         if ui.add(egui::Button::new(theme::text("‹ All the words", theme::SMALL, theme::WEAK)).frame(false)).clicked() {
@@ -213,8 +262,23 @@ fn page_view(ui: &mut egui::Ui, scripts: &mut Scripts, page: &Page, related: &[S
         }
         ui.label(theme::text(format!("· {}", family_name(page.family)), theme::SMALL, theme::FAINT));
     });
-    ui.label(RichText::new(&page.word).monospace().size(theme::BODY + 4.0).color(theme::STRONG));
+    ui.horizontal(|ui| {
+        ui.label(RichText::new(&page.word).monospace().size(theme::BODY + 4.0).color(theme::STRONG));
+        if ds.shown {
+            ds_badge(ui, &page.word, theme::SMALL - 1.0);
+        }
+    });
     ui.label(theme::text(page.origin_said(), theme::SMALL - 1.0, theme::FAINT));
+    if ds.shown {
+        let said = match film::ds::status(&page.word) {
+            film::ds::Export::Direct => film::ds::how(&page.word).map(|how| format!("On DS: {how}.")),
+            film::ds::Export::Close => film::ds::lost(&page.word).map(|lost| format!("On DS, with a loss: {lost}.")),
+            _ => Some(format!("{}.", film::ds::refused(&page.word))),
+        };
+        if let Some(said) = said {
+            ui.add(egui::Label::new(theme::text(said, theme::SMALL - 1.0, theme::WEAK)).wrap());
+        }
+    }
     ui.add_space(4.0);
     ui.label(theme::text(&page.explained, theme::BODY, theme::TEXT));
     ui.add_space(8.0);
