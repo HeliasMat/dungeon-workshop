@@ -3,7 +3,7 @@
 
 # The finishing blow: time slowed, the screen white, the move; the one
 # struck faints, and the music falls silent a moment over them.
-define finish who:pokemon target:pokemon move:word
+define finish who:pokemon target:pokemon move...
   who face target
   tempo 0.5
   flash white
