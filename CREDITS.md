@@ -13,6 +13,7 @@ Dungeon Workshop is free software, under the **GPL-3.0 or later** license (see [
 | A Pokémon's sheets written out and read back in SpriteBot's layout, the 5×4 sheet of faces (`spritecollab/src/lib.rs`) | [skytemple-files](https://github.com/SkyTemple/skytemple-files)' `kao/sprite_bot_sheet.py`, by SkyTemple | GPL-3.0 |
 | The addresses, numbers and data layout of the cartridge (`rom_formats/src/sym.rs`, written from its symbols by `rom_formats/examples/rom_symbols.rs`) | [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) | GPL-3.0 |
 | The guests' tables of the EditGuestPokemon patch and the symbols SkyTemple's patches add (`rom_formats/src/guests.rs`, `rom_symbols.rs`) | [skytemple-files](https://github.com/SkyTemple/skytemple-files), by SkyTemple | GPL-3.0 |
+| The names of each sprite's ground animations, in the table the DS export picks a species' poses from (`data/extra/ds_animations.txt`, written from one's own ROM by `tools/ds/animations.py`, never committed) | [skytemple-files](https://github.com/SkyTemple/skytemple-files)' `pmd2spritedata.xml`, by SkyTemple | GPL-3.0 |
 | Reading the scripts (jumps, branches, variables) | [ExplorerScript](https://github.com/SkyTemple/ExplorerScript), by SkyTemple | MIT |
 | Notes on the audio formats | [ppmdu](https://github.com/PsyCommando/ppmdu), by PsyCommando | public domain |
 

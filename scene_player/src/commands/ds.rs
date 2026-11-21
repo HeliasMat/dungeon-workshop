@@ -107,8 +107,8 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     // Body
     (
         "pose",
-        Export::Close,
-        "SetAnimation<actor>(n): the sprite's group through Sky's table (once or looped); off: 2. Some species' ground sprites order their groups otherwise",
+        Export::Direct,
+        "SetAnimation<actor>(n): the group of that species' own sprite showing it (ds_animations.txt: Dusknoir lies with its 27), through Sky's table (once or looped); off: 2",
     ),
     ("sleep", Export::Direct, "SetAnimation(62), as Sky's INIT_SLEEP; off: its waking, once (63)"),
     ("eat", Export::Direct, "SetAnimation (eat), SetEffect(EFFECT_EATING); no item shown"),
@@ -137,11 +137,15 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("jingle", Export::Direct, "me_Play(n)"),
     // Effects
     ("effect", Export::Close, "SetEffect<actor>(n), WaitEffect: a script effect of the move's type (fire, water, lightning…), not the move's own"),
-    ("weather", Export::Close, "SetEffect<performer 3>(rain 16 / hail 20; snow as hail); sand, fog, sun…: none in scripts"),
+    (
+        "weather",
+        Export::Close,
+        "SetEffect<performer 3>(rain 698, Sky's very heavy rain of its scenes / hail 20; snow as hail); sand, fog, sun…: none in scripts",
+    ),
     (
         "daytime",
         Export::Close,
-        "screen_FlushOut(1, d, 4, 255, 128, 64) evening, (…, 6, 0, 32, 128) night; day: screen_FlushIn; the light's own colour is lost; as a scene opens, the place's own level gives it",
+        "screen_FlushOut(1, d, 4, 224, 176, 136) evening, (…, 4, 80, 112, 144) night (the light of Sky's own evening and night guild crossroads); day: screen_FlushIn; the light's own colour is lost; as a scene opens, the place's own level gives it",
     ),
     (
         "status",
@@ -153,21 +157,25 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("drop", Export::None, "no held item on an actor"),
     ("give", Export::None, "no held item on an actor"),
     ("throw", Export::None, "no thrown item in scripts"),
-    ("open", Export::Work, "SetAnimation<object>: needs the place's objects in the .ssa"),
-    ("close", Export::Work, "SetAnimation<object>: needs the place's objects in the .ssa"),
+    ("open", Export::Direct, "the thing put in the scene's layout (an object of the game); SetAnimation<object>(17): its animation once"),
+    ("close", Export::Direct, "SetAnimation<object>(9): its first picture, held"),
     // Fights
     ("fight", Export::None, "the game fights in dungeons only: main_EnterDungeon to a boss floor"),
     (
         "attack",
         Export::Close,
-        "SetAnimation(28) wind-up, (48) lunge, a script effect of the move's type on the target, a small shake: not the move's own animation (dungeons only)",
+        "its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target, a small shake: not the move's own animation (dungeons only)",
     ),
-    ("evolve", Export::Work, "the evolution scene of the game"),
-    ("join", Export::Work, "the game's join functions (party)"),
+    (
+        "evolve",
+        Export::Close,
+        "a stats-up shine, the screen white, the evolved one (an actor of its own) put where it stood and shown, the other hidden; no change of species (Sky's scripts have none)",
+    ),
+    ("join", Export::Direct, "its emote and hop, then as Sky: me_Play(5), message_Mail(\"[CN]… joined the team!\"), WaitMe(5)"),
     // Time
     ("wait", Export::Direct, "Wait(frames) / WaitExecuteLives / all: each one moving, WaitExecutePerformer(0)"),
     ("together", Export::Direct, "each one's moves told at once (actors move on their own), then their WaitExecuteLives; its waits are lost"),
-    ("mark", Export::Work, "positions and frame counts kept by the exporter"),
+    ("mark", Export::Direct, "a @label; what is timed from it is already written as waits"),
     ("at", Export::Work, "positions and frame counts kept by the exporter"),
     ("pace", Export::Direct, "nothing: the waits are written already paced"),
     // Story
@@ -301,6 +309,7 @@ impl Game {
         };
         let levels = rows("levels.txt").into_iter().filter_map(|row| Some((row.first()?.parse().ok()?, row.get(1)?.clone()))).collect();
         let actors = rows("entities.txt").into_iter().filter_map(|row| Some((row.get(1)?.clone(), row.get(2)?.parse().ok()?))).collect();
+        _ = DATA.set(data.to_string());
         Game { levels, actors, data: data.to_string(), move_types }
     }
 
@@ -350,11 +359,105 @@ const TOP_SCREENS: [(&str, &str); 22] = [
     ("S17P02A", "S02P01A"),
 ];
 
+/// The evening and night lights (`screen_FlushOut`'s mode and colour).
+const EVENING: &str = "4, 224, 176, 136";
+const NIGHT: &str = "4, 80, 112, 144";
+/// Dawn, softer and warm; a cave's dimness, grey.
+const DAWN: &str = "4, 248, 224, 208";
+const DIM: &str = "4, 160, 160, 160";
+
+/// The light of the engine's tint (its colour and strength), as Sky's.
+fn light(colour: &[f32; 4]) -> Option<&'static str> {
+    Some(match colour {
+        [.., much] if *much <= 0.0 => return None,
+        [red, green, blue, _] if red.max(*green).max(*blue) < 10.0 => DIM,
+        [red, _, blue, _] if blue > red => NIGHT,
+        [.., much] if *much < 64.0 => DAWN,
+        _ => EVENING,
+    })
+}
+
 /// The script variables a film's own may use (local to the scene).
 const LOCALS: [&str; 4] = ["$LOCAL0", "$LOCAL1", "$LOCAL2", "$LOCAL3"];
 
 /// The output attribute that hides an actor (`SetOutputAttribute<actor>(128)`).
 const HIDDEN: u16 = 128;
+
+/// The groups past 12 in the order the starters' sprites share (the
+/// engine's `AnimId`s are these): 13 EventSleep ... 34 HitGround.
+const SHARED: &str =
+    "EventSleep Wake Eat Tumble Pose Pull Pain Float DeepBreath Nod Sit LookUp Sink Trip Laying LeapForth Head Cringe LostBalance TumbleBack Faint HitGround";
+
+/// Where each species whose sprite orders its groups past 12 its own way is
+/// told: the groups it has and their names, read from one's own ROM by
+/// `tools/ds/animations.py` into the data (never in the repository; the
+/// names are SkyTemple's). Without it, every species shares the starters'
+/// order.
+const OWN_ORDER: &str = "extra/ds_animations.txt";
+
+/// The data folder the exporter reads, for the table of the sprites' own
+/// orders.
+static DATA: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+/// What shows a pose when a sprite has no group of that name, in turn
+/// (a name of the first thirteen groups, which every sprite has, ends it).
+fn instead(name: &str) -> &'static [&'static str] {
+    match name {
+        "EventSleep" => &["Sleep"],
+        "Wake" => &["StandingUp", "Idle"],
+        "Tumble" | "TumbleBack" | "Trip" => &["Tumble", "TumbleBack", "Trip", "Hurt"],
+        "Pose" | "Float" | "LeapForth" => &["Hop"],
+        "Pull" => &["Charge"],
+        "Pain" | "Cringe" | "LostBalance" => &["Pain", "Hurt"],
+        "Laying" => &["Fainted", "Sleep"],
+        // (Their own "Faint" may rise again, as Dusknoir's 25: their lying one, held, reads better.)
+        "Sink" | "Faint" | "HitGround" => &["Fainted", "Laying", "Sleep"],
+        _ => &["Idle"],
+    }
+}
+
+/// The first thirteen groups, the same in every sprite.
+fn common_group(name: &str) -> Option<u16> {
+    Some(match name {
+        "Walk" => 0,
+        "Attack" => 1,
+        "Sleep" => 5,
+        "Hurt" => 6,
+        "Idle" => 7,
+        "Hop" => 10,
+        "Charge" => 11,
+        _ => return None,
+    })
+}
+
+/// The group of that species' own sprite that shows what the engine's
+/// group shows (the starters' order): itself for most of the story's
+/// heroes, another one, or a close one, for the sprites ordered their own
+/// way (Dusknoir's faint is its 25). `None`: it would only stand.
+fn own_group(species: u16, group: u16) -> Option<u16> {
+    use std::sync::OnceLock;
+    static TABLE: OnceLock<HashMap<u16, Vec<(u16, String)>>> = OnceLock::new();
+    let table = TABLE.get_or_init(|| {
+        let told = DATA.get().map(|data| std::fs::read_to_string(game_file(data, OWN_ORDER)).unwrap_or_default()).unwrap_or_default();
+        told.lines()
+            .filter(|line| !line.starts_with('#'))
+            .filter_map(|line| {
+                let (species, groups) = line.split_once('\t')?;
+                let groups =
+                    groups.split(',').filter_map(|pair| pair.split_once('=')).filter_map(|(at, name)| Some((at.parse().ok()?, name.to_string()))).collect();
+                Some((species.parse().ok()?, groups))
+            })
+            .collect()
+    });
+    let Some(own) = table.get(&species).filter(|_| species != 0) else { return Some(group) };
+    let Some(name) = group.checked_sub(13).and_then(|at| SHARED.split(' ').nth(usize::from(at))) else { return Some(group) };
+    // (Sky's table reaches groups 0 to 34 only.)
+    let named = |name: &str| own.iter().find(|(at, own)| *own == name && *at <= 34).map(|(at, _)| *at);
+    if let Some(at) = named(name).filter(|_| name != "Faint") {
+        return Some(at);
+    }
+    instead(name).iter().find_map(|name| common_group(name).or_else(|| named(name))).filter(|at| *at != 7)
+}
 
 /// The sprite's animation groups (the engine's `AnimId`) as Sky's
 /// `SetAnimation` numbers (its table `SETANIMATION_TABLE`): played once
@@ -467,6 +570,10 @@ struct Writer<'a> {
     said_over: bool,
     /// How long the emotes showing have been waited on.
     shown_for: f32,
+    /// The place's things (the game's objects) and where each first stands.
+    objects: BTreeMap<u16, (f32, f32)>,
+    /// Who has become whom (`evolve`): the later lines' name, the new one's actor.
+    became: HashMap<Who, Who>,
     /// The words each line of the film was given, by its number.
     words: HashMap<i32, Vec<String>>,
     problems: Vec<String>,
@@ -629,9 +736,25 @@ impl<'a> Writer<'a> {
             said_over: false,
             shown_for: 0.0,
             words: HashMap::new(),
+            objects: BTreeMap::new(),
+            became: HashMap::new(),
             problems: Vec::new(),
             notes: Vec::new(),
         }
+    }
+
+    /// The light on the screen. (Not on the top one: `screen2_Flush…` at
+    /// the same time fights it, both screens flickering, as seen.)
+    fn flush(&mut self, way: &str, frames: i32, tint: &str) {
+        self.line(&format!("screen_Flush{way}(1, {frames}, {tint});"));
+    }
+
+    /// Sky's `SetAnimation` number for the engine's group on that one's
+    /// own sprite (`own_group`).
+    fn set(&self, who: Who, group: u16, looped: bool) -> Option<u16> {
+        let who = self.became.get(&who).copied().unwrap_or(who);
+        let species = self.actors.get(&who).map_or(0, |actor| actor.kind);
+        animation(own_group(species, group)?, looped)
     }
 
     fn line(&mut self, text: &str) {
@@ -680,11 +803,14 @@ impl<'a> Writer<'a> {
     /// as the game has them, a species by the game's own actor of it, else
     /// a free test actor given that species.
     fn actor(&mut self, who: Who) -> Option<String> {
+        let who = self.became.get(&who).copied().unwrap_or(who);
         if let Some(actor) = self.actors.get(&who) {
             return Some(format!("ACTOR_{}", actor.name));
         }
+        // (Past the free ones, a name `patch_rom.py --more-actors` gives a new actor.)
         let free = |cast: &BTreeMap<Who, (String, Option<u16>, u16)>| {
-            FREE_ACTORS.get(cast.values().filter(|one| one.1.is_some()).count()).map(|name| name.to_string())
+            let given = cast.values().filter(|one| one.1.is_some()).count();
+            Some(FREE_ACTORS.get(given).map_or_else(|| format!("NPC_FREE{given:03}"), |name| name.to_string()))
         };
         let (name, species, kind) = match who {
             _ if self.cast.contains_key(&who) => self.cast[&who].clone(),
@@ -910,6 +1036,8 @@ impl<'a> Writer<'a> {
                 }
             }
             Beat::Flow(FlowBeat::Return) => self.thread = false,
+            // A mark (`at name + 2s:`): a label; its times are already written as waits.
+            Beat::Data(DataBeat::Set { var, .. }) if var.starts_with("_mark_") => self.label(&format!("mark_{}", &var["_mark_".len()..])),
             Beat::Data(DataBeat::Set { var, .. }) if var.starts_with("thread") => {}
             Beat::Flow(FlowBeat::WaitUntil(test)) if test.any.iter().flatten().all(|condition| condition.var.starts_with("thread")) => {
                 for actor in std::mem::take(&mut self.kept) {
@@ -1007,7 +1135,7 @@ impl<'a> Writer<'a> {
             // Eating, as Sky shows it: the eating animation and its effect, no item.
             Beat::Body(BodyBeat::PutNear { other, .. }) if word == Some("eat") => {
                 let Some(actor) = self.who(number, *other) else { return true };
-                if let Some(set) = animation(15, false) {
+                if let Some(set) = self.set(*other, 15, false) {
                     self.line(&format!("SetAnimation<actor {actor}>({set});"));
                 }
                 self.line(&format!("SetEffect<actor {actor}>(EFFECT_EATING, 3);"));
@@ -1051,24 +1179,82 @@ impl<'a> Writer<'a> {
 
     fn plain(&mut self, number: i32, word: Option<&str>, beat: &Beat) {
         match beat {
+            // The place's things: objects of the game in the scene's layout.
+            Beat::Body(BodyBeat::Put { who: Who::Thing { object, .. }, at, .. }) => {
+                let Some(point) = self.point(at) else { return };
+                if self.objects.contains_key(object) {
+                    let position = self.position(point);
+                    self.line(&format!("SetPositionMark<object OBJECT_N{object}>({position});"));
+                } else {
+                    self.objects.insert(*object, point);
+                }
+            }
+            // Opened: its animation once (Sky's objects' table: 17); closed: its first picture held (9).
+            Beat::Body(BodyBeat::Anim { who: Who::Thing { object, .. }, play, .. }) => {
+                if !self.objects.contains_key(object) {
+                    self.problems.push(format!("line {number}: the thing {object} is not put in the scene"));
+                    return;
+                }
+                let set = match play {
+                    Play::Hold(_) => 9,
+                    Play::Loop => 1,
+                    _ => 17,
+                };
+                self.line(&format!("SetAnimation<object OBJECT_N{object}>({set});"));
+            }
+            Beat::Body(BodyBeat::ThingName { who: Who::Thing { .. }, .. }) => {}
+            // The engine's evolution (slowed, shining, growing): Sky's white flash instead, below.
+            Beat::View(ViewBeat::Tempo(_)) | Beat::Body(BodyBeat::Colour { .. } | BodyBeat::Scale { .. }) | Beat::Screen(ScreenBeat::Particles { .. })
+                if word == Some("evolve") => {}
+            // Evolving: a shine, the screen white, the evolved one (an actor of its
+            // own) put where the other stood, the other hidden, the screen back.
+            Beat::Body(BodyBeat::Disguise { who, like: Some(like) }) if word == Some("evolve") => {
+                let (Some(old), Some(&at)) = (self.who(number, *who), self.at.get(who)) else { return };
+                let Some(new) = self.who(number, *like) else { return };
+                let facing = direction(self.facing.get(who).copied().unwrap_or(Direction::Down));
+                let position = self.position(at);
+                self.line(&format!("SetEffect<actor {old}>(691, 3);"));
+                self.line("Wait(40);");
+                self.line("screen_WhiteOut(1, 30);");
+                self.line("WaitScreenFade();");
+                self.line(&format!("SetEffect<actor {old}>(EFFECT_NONE, 3);"));
+                self.line(&format!("SetOutputAttribute<actor {old}>({HIDDEN});"));
+                self.line(&format!("SetPositionMark<actor {new}>({position});"));
+                self.line(&format!("SetDirection<actor {new}>({facing});"));
+                self.line(&format!("ResetOutputAttribute<actor {new}>({HIDDEN});"));
+                self.line("screen_FadeIn(1, 30);");
+                self.line("WaitScreenFade();");
+                self.became.insert(*who, *like);
+            }
             Beat::Screen(ScreenBeat::Grey(_)) if !self.started => {}
             // The light: Sky's screen_FlushOut, evening orange or night blue
             // (the memory's sepia is its own, below).
-            // (As a scene opens, its place gives its light: Sky draws evening as a level of its own.)
-            Beat::Screen(ScreenBeat::Tint { .. }) if !self.started => {}
+            // As a scene opens: the light from the start (the screen tinted before it
+            // fades in, as seen), unless the place is one of Sky's own evening or
+            // night levels (lettered past A: `D01P11B` is the beach at sunset).
+            Beat::Screen(ScreenBeat::Tint { colour, .. }) if !self.started => {
+                let own = self.level.as_deref().and_then(|level| level.chars().last()).is_some_and(|last| last.is_ascii_alphabetic() && last != 'A');
+                self.tint = light(colour).filter(|_| !own);
+            }
             Beat::Screen(ScreenBeat::Tint { colour, frames }) if !self.memory => {
                 let frames = if self.started { frames.0.round() as i32 } else { 0 };
-                if colour[3] <= 0.0 {
+                // (Mode 4 multiplies the screen by the colour, as Sky's own warm tint
+                // `128, 96, 64` does; the colours are those its evening and night
+                // levels of the guild's crossroads have against the day's.)
+                let Some(tint) = light(colour) else {
                     if let Some(tint) = self.tint.take() {
-                        self.line(&format!("screen_FlushIn(1, {frames}, {tint});"));
+                        self.flush("In", frames, tint);
                     }
                     return;
+                };
+                // (The same light again, as after the rain: kept; FlushIn then FlushOut would flash.)
+                if self.tint == Some(tint) {
+                    return;
                 }
-                let tint = if colour[2] > colour[0] { "6, 0, 32, 128" } else { "4, 255, 128, 64" };
                 if let Some(old) = self.tint.take() {
-                    self.line(&format!("screen_FlushIn(1, 0, {old});"));
+                    self.flush("In", 0, old);
                 }
-                self.line(&format!("screen_FlushOut(1, {frames}, {tint});"));
+                self.flush("Out", frames, tint);
                 self.tint = Some(tint);
             }
             Beat::Screen(ScreenBeat::Tint { .. }) => {}
@@ -1078,6 +1264,10 @@ impl<'a> Writer<'a> {
                     self.line("screen_FlushOut(1, 0, 8, 0, 0, 0);");
                 } else if !*on && self.memory {
                     self.line("screen_FlushIn(1, 0, 1, 0, 0, 0);");
+                    // (The sepia took the light's place: the light again.)
+                    if let Some(tint) = self.tint {
+                        self.flush("Out", 0, tint);
+                    }
                 }
                 self.memory = *on;
             }
@@ -1169,7 +1359,7 @@ impl<'a> Writer<'a> {
                 self.at.insert(*who, point);
                 self.facing.insert(*who, *way);
                 let facing = direction(*way);
-                match self.actors.get_mut(who) {
+                match self.actors.get_mut(&self.became.get(who).copied().unwrap_or(*who)) {
                     Some(one) if !self.started || (one.hidden && one.first.is_none()) => one.first = Some((point.0, point.1, facing)),
                     _ => {
                         let position = self.position(point);
@@ -1427,8 +1617,8 @@ impl<'a> Writer<'a> {
             Beat::Body(BodyBeat::Anim { who, anim, play }) => {
                 let Some(actor) = self.who(number, *who) else { return };
                 let looped = matches!(play, Play::Loop);
-                let Some(set) = animation(anim.0, looped) else {
-                    self.notes.push(format!("line {number}: the animation {} (no such one in Sky's scripts)", anim.0));
+                let Some(set) = self.set(*who, anim.0, looped) else {
+                    self.notes.push(format!("line {number}: the animation {} (none of this sprite's shows it)", anim.0));
                     return;
                 };
                 match play {
@@ -1450,7 +1640,7 @@ impl<'a> Writer<'a> {
                 let set = match pose {
                     Pose::Idle => 2,
                     Pose::Walk => 1,
-                    Pose::Sleep => 62,
+                    Pose::Sleep => self.set(*who, 13, true).unwrap_or(6),
                     Pose::Hurt => 14,
                     Pose::Attack => 13,
                 };
@@ -1460,8 +1650,8 @@ impl<'a> Writer<'a> {
             // A trembling: Sky shows pain (its looped animation), never a shiver.
             Beat::Body(BodyBeat::Tremble { who, frames, .. }) => {
                 let Some(actor) = self.who(number, *who) else { return };
-                // (26: its strain, sweat above the head, as seen in the game.)
-                let set = if frames.0 > 0.0 { 26 } else { 2 };
+                // (Its pain looped, or its hurt one: sweat over the head, as seen in the game.)
+                let set = if frames.0 > 0.0 { self.set(*who, 19, true).unwrap_or(14) } else { 2 };
                 self.line(&format!("SetAnimation<actor {actor}>({set});"));
             }
             Beat::Body(BodyBeat::Jump { who, height, frames }) => {
@@ -1504,9 +1694,11 @@ impl<'a> Writer<'a> {
             Beat::Body(BodyBeat::Move { who, id, target }) => {
                 let Some(actor) = self.who(number, *who) else { return };
                 let kind = self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1);
-                self.line(&format!("SetAnimation<actor {actor}>(28);"));
+                // Its pain once, crouched, then its own attack (group 1, which every sprite has).
+                let crouch = self.set(*who, 19, false).unwrap_or(11);
+                self.line(&format!("SetAnimation<actor {actor}>({crouch});"));
                 self.line("Wait(12);");
-                self.line(&format!("SetAnimation<actor {actor}>(48);"));
+                self.line(&format!("SetAnimation<actor {actor}>(13);"));
                 let on = match target.and_then(|target| self.who(number, target)) {
                     Some(target) => target,
                     None => actor.clone(),
@@ -1551,6 +1743,9 @@ impl<'a> Writer<'a> {
                 let frames = frames.0.round() as i32;
                 if first && self.top.is_some() {
                     self.line(&format!("screen2_FadeIn(0, {frames});"));
+                }
+                if let Some(tint) = self.tint.filter(|_| first) {
+                    self.flush("Out", 0, tint);
                 }
                 // (Sky comes back from white with a fade in: it has no WhiteIn of its own.)
                 let fade = "screen_FadeIn";
@@ -1633,7 +1828,8 @@ impl<'a> Writer<'a> {
                 }
                 return;
             }
-            Weather::Rain => 16,
+            // (Sky's own rain in its scenes: its 16 shows nothing seen over a place.)
+            Weather::Rain => 698,
             Weather::Hail | Weather::Snow => 20,
             other => {
                 self.notes.push(format!("line {number}: the weather {other:?} (Sky has no such effect)"));
@@ -1650,6 +1846,13 @@ impl<'a> Writer<'a> {
         let text = quoted(text.trim_end());
         let text = if text.starts_with(' ') || text.starts_with('[') { text } else { format!(" {text}") };
         match (entity, word) {
+            // Someone joins, as Sky tells it: its jingle, the line centred in the box.
+            (None, Some("join")) => {
+                self.line("me_Play(5);");
+                self.line("message_ResetActor();");
+                self.line(&format!("message_Mail(\"[CN]{}\");", text.trim_start()));
+                self.line("WaitMe(5);");
+            }
             (None, Some("narrate")) if text.trim_start().starts_with("[CN]") => {
                 self.line(&format!("message_Explanation(\"{}\");", text.trim_start()));
             }
@@ -1659,7 +1862,7 @@ impl<'a> Writer<'a> {
             }
             (Some(who), _) => {
                 let Some(actor) = self.who(number, who) else { return };
-                let kind = self.actors.get(&who).map_or(0, |one| one.kind);
+                let kind = self.actors.get(&self.became.get(&who).copied().unwrap_or(who)).map_or(0, |one| one.kind);
                 let face = face.unwrap_or(0);
                 let shown = if self.game.has_face(kind, face) {
                     Some(face)
@@ -1705,6 +1908,7 @@ impl<'a> Writer<'a> {
         next.problems = std::mem::take(&mut self.problems);
         next.notes = std::mem::take(&mut self.notes);
         next.vars = std::mem::take(&mut self.vars);
+        next.became = std::mem::take(&mut self.became);
         *self = next;
     }
 
@@ -1728,6 +1932,9 @@ impl<'a> Writer<'a> {
             let (x, y, facing) = actor.first.unwrap_or((middle.0, middle.1, "DIR_DOWN"));
             let species = actor.species.map_or(String::new(), |species| format!(" species {species}"));
             let _ = writeln!(out, "// ds-export actor ACTOR_{}{species} x {} y {} facing {facing}", actor.name, tiles(x), tiles(y));
+        }
+        for (object, (x, y)) in &self.objects {
+            let _ = writeln!(out, "// ds-export object OBJECT_N{object} x {} y {}", tiles(*x), tiles(*y));
         }
         // The camera, and the weather over the screen.
         let _ = writeln!(out, "// ds-export performer 0 type 0 x {} y {}", tiles(middle.0), tiles(middle.1));
@@ -1796,6 +2003,25 @@ mod tests {
         // A group with no looped entry plays once.
         assert_eq!(animation(33, true), Some(81));
         assert_eq!(animation(12, false), None);
+    }
+
+    #[test]
+    fn each_species_poses_with_its_own_sprites_group() {
+        // (The table is read from one's own ROM into the data: where it is.)
+        let data = concat!(env!("CARGO_MANIFEST_DIR"), "/../data");
+        if !game_file(data, OWN_ORDER).exists() {
+            return;
+        }
+        _ = DATA.set(data.to_string());
+        // Pikachu and Piplup share the starters' order.
+        assert_eq!(own_group(25, 33), Some(33));
+        assert_eq!(own_group(428, 33), Some(33));
+        // Dusknoir faints lying with its 27 (its own "Faint", 25, rises again).
+        assert_eq!(own_group(519, 33), Some(27));
+        assert_eq!(own_group(519, 27), Some(27));
+        // Snorlax has none of them: asleep for lying, nothing for a nod.
+        assert_eq!(own_group(143, 33), Some(5));
+        assert_eq!(own_group(143, 22), None);
     }
 
     #[test]

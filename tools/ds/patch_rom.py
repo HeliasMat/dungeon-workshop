@@ -1,8 +1,8 @@
 """Put a film exported by `scene_player export-ds` into the user's own
 Explorers of Sky ROM, and write the patched copy.
 
-    python tools/ds/patch_rom.py <rom> <film.exps> --boot <out.nds> [--patch out.bps]
-    python tools/ds/patch_rom.py <rom> <film.exps> <MAP/scene> <out.nds> [--patch out.bps]
+    python tools/ds/patch_rom.py <rom> <film.exps> --boot <out.nds> [--more-actors] [--patch out.bps]
+    python tools/ds/patch_rom.py <rom> <film.exps> <MAP/scene> <out.nds> [--more-actors] [--patch out.bps]
 
 - `--boot`: the film plays as soon as a new game starts (after the title,
   before the personality quiz), and the game then goes on as usual. Each
@@ -23,6 +23,15 @@ Explorers of Sky ROM, and write the patched copy.
   script names (FREE_ACTORS, 45 in all), its species changed in the game's
   actor table. The exporter may name such an actor `ACTOR_NPC_TEST001` or any
   placeholder (`ACTOR_FREE07`): it is renamed here.
+- The place's things (`// ds-export object OBJECT_N<number> x .. y ..`)
+  are objects of the game put in the layout; the script names them by
+  number and they are renamed here to the game's names.
+- `--more-actors`: any number of Pokémon of their own. SkyTemple's
+  ActorAndLevelLoader patch (assembled by armips: `SKYTEMPLE_ARMIPS_EXEC`
+  names armips.exe) moves the game's actor table to
+  `BALANCE/actor_list.bin`; each Pokémon without an actor then gets a new
+  actor there (`NPC_DW<n>`), none of the story's touched. Beyond 45 the
+  exporter names them `ACTOR_NPC_FREE<n>`, which only this option casts.
 - `--patch`: also a BPS patch from the ROM to the copy, to share without
   sharing the game.
 
@@ -39,11 +48,14 @@ import warnings
 from ndspy.rom import NintendoDSRom
 from skytemple_files.common import string_codec
 from skytemple_files.common.types.file_types import FileType
+from skytemple_files.common.ppmdu_config.script_data import Pmd2ScriptEntity
 from skytemple_files.common.util import create_file_in_rom, create_folder_in_rom, get_ppmdu_config_for_rom
+from skytemple_files.list.actor.model import ActorListBin
 from skytemple_files.script.ssa_sse_sss.actor import SsaActor
 from skytemple_files.script.ssa_sse_sss.layer import SsaLayer
 from skytemple_files.script.ssa_sse_sss.performer import SsaPerformer
 from skytemple_files.script.ssa_sse_sss.model import Ssa
+from skytemple_files.script.ssa_sse_sss.object import SsaObject
 from skytemple_files.script.ssa_sse_sss.position import SsaPosition
 from skytemple_files.script.ssb.script_compiler import ScriptCompiler
 
@@ -82,6 +94,7 @@ class Scene:
         self.level = level
         self.actors = []  # (name, fields)
         self.performers = []  # fields: type, x, y (the camera, the weather)
+        self.objects = []  # (name, fields): the place's things, objects of the game
         self.lines = []
 
     @property
@@ -101,6 +114,8 @@ def scenes_of(source):
             continue
         if words[:3] == ['//', 'ds-export', 'performer'] and scenes:
             scenes[-1].performers.append(dict(zip(words[4::2], words[5::2])))
+        if words[:3] == ['//', 'ds-export', 'object'] and scenes:
+            scenes[-1].objects.append((words[3], dict(zip(words[4::2], words[5::2]))))
         if words[:3] == ['//', 'ds-export', 'actor'] and scenes:
             fields = dict(zip(words[4::2], words[5::2]))
             scenes[-1].actors.append((words[3].removeprefix('ACTOR_'), fields))
@@ -147,6 +162,40 @@ def cast(config, scenes):
     return {renamed.get(name, name): species for name, species in wanted.items()}
 
 
+def more_actors(rom, config, scenes):
+    """SkyTemple's ActorAndLevelLoader, then a new actor of its own for each
+    Pokémon without one, renamed in the scripts. Returns {actor: species}."""
+    from skytemple_files.patch.patches import Patcher
+    if not os.environ.get('SKYTEMPLE_ARMIPS_EXEC'):
+        raise SystemExit('--more-actors: set SKYTEMPLE_ARMIPS_EXEC to armips.exe (SkyTemple assembles its patch with it)')
+    patcher = Patcher(rom, config)
+    if not patcher.is_applied('ActorAndLevelLoader'):
+        patcher.apply('ActorAndLevelLoader')
+    path = 'BALANCE/actor_list.bin'
+    actors = FileType.SIR0.unwrap_obj(FileType.SIR0.deserialize(rom.getFileByName(path)), ActorListBin)
+    like = next(entry for entry in actors.list if entry.name == 'NPC_TEST001')
+    wanted = {}
+    for scene in scenes:
+        for name, fields in scene.actors:
+            if 'species' in fields:
+                if wanted.setdefault(name, int(fields['species'])) != int(fields['species']):
+                    raise SystemExit(f'{name}: two species in one film')
+    renamed = {}
+    for name, species in wanted.items():
+        new = f'NPC_DW{len(actors.list):03d}'
+        actors.list.append(Pmd2ScriptEntity(len(actors.list), species, new, like.type, like.unk3, like.unk4))
+        renamed[name] = new
+    rom.setFileByName(path, FileType.SIR0.serialize(FileType.SIR0.wrap_obj(actors)))
+    config.script_data.level_entities = list(actors.list)
+    for scene in scenes:
+        text = scene.source
+        for old, new in renamed.items():
+            text = re.sub(rf'\bACTOR_{old}\b', f'ACTOR_{new}', text)
+        scene.lines = text.splitlines()
+        scene.actors = [(renamed.get(name, name), fields) for name, fields in scene.actors]
+    return {renamed[name]: species for name, species in wanted.items()}
+
+
 def set_species(rom, config, region, actor_id, species):
     """The actor of that number is now of that species, in the actor table."""
     arm9 = bytearray(rom.arm9)
@@ -161,8 +210,21 @@ def set_species(rom, config, region, actor_id, species):
     return f'poke={address:X}={int(species).to_bytes(2, "little").hex()}'
 
 
-def layer(config, actors, performers=()):
-    """The scene's only layer: the film's actors, where they first stand."""
+def object_names(config, scene):
+    """The exporter names an object by its number (`OBJECT_N186`): the
+    game's name for it (pmd2data's, as the script compiler knows them)."""
+    objects = config.script_data.objects__by_id
+    text = scene.source
+    for name, _ in scene.objects:
+        number = int(name.removeprefix('OBJECT_N'))
+        if number not in objects:
+            raise SystemExit(f'{name}: no object {number} in the game')
+        text = re.sub(rf'\b{name}\b', 'OBJECT_' + objects[number].unique_name.upper(), text)
+    scene.lines = text.splitlines()
+
+
+def layer(config, actors, performers=(), objects=()):
+    """The scene's only layer: the film's actors and things, where they first stand."""
     data = config.script_data
     directions = {d.name.upper(): d.ssa_id for d in data.directions.values()}
     placed = []
@@ -179,18 +241,24 @@ def layer(config, actors, performers=()):
         y, y_offset = tile(fields['y'])
         position = SsaPosition(data, x, y, x_offset, y_offset, directions['DOWN'])
         shown.append(SsaPerformer(int(fields.get('type', 0)), 1, 1, position, -1, -1))
-    return SsaLayer.new(placed, [], shown, [], [])
+    things = []
+    for name, fields in objects:
+        x, x_offset = tile(fields['x'])
+        y, y_offset = tile(fields['y'])
+        position = SsaPosition(data, x, y, x_offset, y_offset, directions['DOWN'])
+        things.append(SsaObject(data, int(name.removeprefix('OBJECT_N')), 1, 1, position, -1, -1))
+    return SsaLayer.new(placed, things, shown, [], [])
 
 
-def replaced_layout(rom, config, path, actors, performers=()):
-    """A story scene's layout with only the film's actors."""
+def replaced_layout(rom, config, path, actors, performers=(), objects=()):
+    """A story scene's layout with only the film's actors and things."""
     ssa = FileType.SSA.deserialize(rom.getFileByName(path), config.script_data)
-    ssa.layer_list = [layer(config, actors, performers)]
+    ssa.layer_list = [layer(config, actors, performers, objects)]
     return FileType.SSA.serialize(ssa)
 
 
-def new_layout(config, actors, performers=()):
-    return FileType.SSA.serialize(Ssa.new(config.script_data, [layer(config, actors, performers)], [], []))
+def new_layout(config, actors, performers=(), objects=()):
+    return FileType.SSA.serialize(Ssa.new(config.script_data, [layer(config, actors, performers, objects)], [], []))
 
 
 def compile_script(config, source, path):
@@ -217,7 +285,7 @@ def add_scenes(rom, config, scenes, film_path):
         place = scene.level.removeprefix('LEVEL_')
         name = f'dwscen{number:02d}'
         base = f'SCRIPT/{place}/{name}'
-        put_file(rom, base + '.ssa', new_layout(config, scene.actors, scene.performers))
+        put_file(rom, base + '.ssa', new_layout(config, scene.actors, scene.performers, scene.objects))
         put_file(rom, base + '.ssb', compile_script(config, scene.source, film_path))
         plays.append(f"    supervision_ExecuteActingSub({scene.level}, '{name.upper()}', 0);\n")
         print(f'  scene {number}: {base} ({len(scene.actors)} actors)')
@@ -249,6 +317,9 @@ def main():
     boot = '--boot' in args
     if boot:
         args.remove('--boot')
+    extra = '--more-actors' in args
+    if extra:
+        args.remove('--more-actors')
     if len(args) != (3 if boot else 4):
         print(__doc__)
         return 2
@@ -260,10 +331,15 @@ def main():
     region = original[0xF:0x10].decode('ascii')
     with open(film_path, encoding='utf-8') as file:
         scenes = scenes_of(file.read())
-    for name, species in cast(config, scenes).items():
+    if extra:
+        for name, species in more_actors(rom, config, scenes).items():
+            print(f'ACTOR_{name}: species {species} (a new actor)')
+    for name, species in ({} if extra else cast(config, scenes)).items():
         actor = config.script_data.level_entities__by_name[name]
         poke = set_species(rom, config, region, actor.id, species)
         print(f'ACTOR_{name}: species {species} (for a savestate: emu.py "1:{poke}")')
+    for scene in scenes:
+        object_names(config, scene)
     if boot:
         plays = add_scenes(rom, config, scenes, film_path)
 
@@ -278,7 +354,7 @@ def main():
         map_name, scene_name = args[2].split('/')
         base = f'SCRIPT/{map_name}/{scene_name}'
         first, rest = scenes[0], scenes[1:]
-        rom.setFileByName(base + '.ssa', replaced_layout(rom, config, base + '.ssa', first.actors, first.performers))
+        rom.setFileByName(base + '.ssa', replaced_layout(rom, config, base + '.ssa', first.actors, first.performers, first.objects))
         rom.setFileByName(base + '.ssb', compile_script(config, first.source, film_path))
         if rest:
             plays = add_scenes(rom, config, rest, film_path)

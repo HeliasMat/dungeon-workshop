@@ -42,7 +42,7 @@ chapter 2 without one is a whole playthrough.
 
 ## Actors
 
-- **45 free actors** without code: the 10 test actors (placed only in the
+- **45 free actors** without code (any number with `--more-actors`, below): the 10 test actors (placed only in the
   debug map `T00P01`) and 35 story NPC actors of a fixed species that no
   layout of the ROM places and no script names (`FREE_ACTORS` in
   `patch_rom.py`). Their species is changed in the actor table (2 bytes
@@ -73,7 +73,7 @@ chapter 2 without one is a whole playthrough.
 | follow | **Fake works** (seen) | `MovePositionMark<actor A>(1, mark); Wait(16); MovePositionLives<actor B>(1, ACTOR_A);` B walks to where A is (actions given to an actor run alongside the script; `WaitExecuteLives(ACTOR_B)` waits). A longer walk: a few legs. |
 | chase | **Fake works** (seen) | The same with speed 3 for both (`MovePositionMark<actor A>(3, …)`, `MovePositionLives<actor B>(3, ACTOR_A)`). |
 | wander | **Fake works** (seen) | `ExecuteCommon<actor X>(CORO_MOVE_RANDOM, 0)`: Sky's own random stroll (turn, step, wait 48 frames, for ever, until the scene ends or another action is given). |
-| daytime | **Fake works** (seen) | Evening: `screen_FlushOut(1, 30, 4, 255, 128, 64)`; night: `screen_FlushOut(1, 30, 6, 0, 32, 128)` (dims to a blue dusk); back to day: `screen_FlushIn` with the same numbers. The tint stays until then. Mode 3 fills the screen with the colour and `FlushIn` did not undo it: avoid. Sky also has evening variants of some places as levels of their own (`LEVEL_D01P11B` is the beach at sunset): the exporter can pick the level when the film's light says evening. |
+| daytime | **Fake works** (seen) | Sky's scripts never tint for dusk: they switch to the place's evening or night level (`G01P01B`, `G01P01C`; `LEVEL_D01P11B` is the beach at sunset), and dim a room at bedtime with `screen_FadeChange(1, 60, 0, 192)`. Their only warm tint, `screen_FlushOut(1, 4, 4, 128, 96, 64)`, shows mode 4 multiplies the screen by the colour (seen: 255, 128, 64 turned the sand orange and the sea green: far too strong). So mid-scene: evening `screen_FlushOut(1, 30, 4, 224, 176, 136)`, night `screen_FlushOut(1, 30, 4, 80, 112, 144)`, the factors measured between the guild's crossroads by day and its evening and night levels (**seen** side by side: `target/ds/lab/tint2_grid.png`); back to day: `screen_FlushIn` with the same numbers. The tint stays until then. Mode 3 fills the screen with the colour and `FlushIn` did not undo it: avoid. Sky also has evening variants of some places as levels of their own (`LEVEL_D01P11B` is the beach at sunset): the exporter can pick the level when the film's light says evening. |
 | status | **Fake works** (seen) | Effects on the actor: `EFFECT_CONFUSE` (stars), `EFFECT_POISION_BUBBLE` (sic), `EFFECT_GIANT_Z` (asleep), `EFFECT_TRAPPED_IN_ICE` (frozen), `EFFECT_STATS_DOWN_EFFECT`, `EFFECT_STATS_UP_EFFECT` and `EFFECT_YAWN` (not tried); with poses below (asleep: animation 25 or 33; shivering: 27 or 47). |
 | attack | **Fake works** (parts seen) | Wind-up `SetAnimation<actor A>(28)`, strike `SetAnimation<actor A>(48)` (a lunge), then on the target an effect: `EFFECT_PUNCH_ATTACK`, `EFFECT_LIGHTNING_STRIKE` (a bolt from the sky), `EFFECT_FIRE_ATTACK` (a tall flame), `EFFECT_SLASH_ATTACK`, `EFFECT_EXPLOSION_SMALL` (seen; `EFFECT_WATER_EXPLOSION`, `EFFECT_AIR_BLADES` and others of the table not tried); the target's hurt pose `SetAnimation(22)` or `(36)`; a shake `camera_SetEffect(2, 1, 1.0)` ... `camera_SetEffect(0, 0, 0)`; back to standing `SetAnimation(2)`. Real move animations (Thunderbolt as in a dungeon) need code: the dungeon's effect system is not loaded in ground mode. |
 | fight | **Fake works** | Attacks traded (above), with steps back (`MovePositionOffset`) and the loser's faint: `SetAnimation(34)` (falls) then `(35)` (lies). |
@@ -93,8 +93,23 @@ any place.
 
 ## Poses (`SetAnimation<actor X>(n)`)
 
-Seen on Pikachu, facing down. The numbers are the game's ground animation
-ids, not the sprite's groups; 50 to 62 repeat 30 to 42.
+`n` goes through overlay 11's `SETANIMATION_TABLE` to a group of the
+actor's sprite (`ChangeActorAnimation`), with no lookup by species: 22-41
+play groups 13-32 once, 42-61 loop them, 81 and 82 play 33 and 34; 2 is
+the species' standing. Groups past 12 are each sprite's own. The starters
+(Pikachu, Piplup...: 42 species) share one order (13 EventSleep ... 33
+Faint, 34 HitGround); the other 1113 order theirs their own way (Dusknoir
+lies down with its 27, Grovyle with its 20, Wigglytuff's 13 is a roll,
+Snorlax has none). A group the sprite lacks shows it standing; the groups
+of `monster.bin` and `m_attack.bin` show too (Wigglytuff sleeps with 5).
+So the exporter picks each species' own group by name, or a close one
+(`own_group` in `ds.rs`, the table `data/extra/ds_animations.txt` (never committed) written by
+`tools/ds/animations.py` with SkyTemple's names). **Seen**: faint, waking,
+hurt, trembling and sleep on Piplup, Pikachu and Dusknoir
+(`target/ds/lab/poses_sheet.png`).
+
+The table below was seen on Pikachu, facing down, in that light; its
+pictures are the starters' order.
 
 | n | pose | n | pose |
 |---|---|---|---|
@@ -132,3 +147,57 @@ Needs armips (SkyTemple's patches) or an ARM gcc + make (c-of-time):
   e.g. a dungeon move's animation in a cutscene, items drawn by the item
   code, a custom title-screen entry;
 - a title-screen hook ("Watch the film" next to "New Game").
+
+## Things, joining, evolving, marks
+
+- **open / close** (seen): a thing put in the film (`put object chest`) is
+  an object of the game in the scene's layout (`// ds-export object
+  OBJECT_N<number>`, renamed by `patch_rom.py` to the game's name).
+  Objects have a table of their own (`ov11_02321DC8`, EU `0x23228F8`):
+  1-8 loop groups 0-7, 9-16 hold their first picture, 17-24 play them
+  once. Open: `SetAnimation<object>(17)`; close: `(9)`. A chest opened
+  and closed on the beach. One of each object per scene (a script names
+  an object by its kind).
+- **join** (seen): as Sky's recruitment scenes, `me_Play(5);
+  message_Mail("[CN]… joined the team!"); WaitMe(5)`.
+- **evolve** (seen): no script operation changes an actor's species, so
+  the evolved one is an actor of its own, hidden until then: a stats-up
+  shine, `screen_WhiteOut`, the old one hidden, the new one put in its
+  place and shown, `screen_FadeIn`. The film's later lines naming the old
+  one go to the new one. Pikachu became Raichu on the beach.
+- **mark**: a `@label`; what the film times from it is already written as
+  waits.
+
+## A demo made for the DS (seen, cold boot)
+
+Three places (beach, forest, beach), 110 s from the title to the last
+line: evening light, a sepia memory, rain and night in the forest, emotes,
+Sky's own routines (looking around, shaking the head), two attacks with
+their effects, a faint, an evolution, the beach's top-screen picture.
+What it taught the exporter:
+
+- a light said as a scene opens is put on before the screen fades in
+  (`screen_FlushOut(1, 0, …)` then `screen_FadeIn`: tinted from its
+  first frame; after the fade in, one plain frame shows first), except on
+  Sky's own evening and night levels (lettered past A);
+- the same light again (after the rain) is kept: `FlushIn` then
+  `FlushOut` flashed the plain scene;
+- the memory's sepia replaces the light: the light is put back after it;
+- rain is Sky's `EFFECT_VERY_HEAVY_RAIN` (698), as its scenes have it on
+  performer 3; the effect named Rain (16) showed nothing;
+- the top screen cannot share the light: `screen2_FlushOut` with
+  `screen_FlushOut` made both screens flicker.
+
+## More actors with armips (`patch_rom.py --more-actors`, seen)
+
+With armips (`SKYTEMPLE_ARMIPS_EXEC` naming armips.exe), `--more-actors`
+applies SkyTemple's ActorAndLevelLoader to the copy: the actor table
+moves to `BALANCE/actor_list.bin`, and every Pokémon of the film without
+an actor of its own gets a new actor there (`NPC_DW386`, ...), none of
+the story's changed. Past the 45 free ones the exporter names them
+`ACTOR_NPC_FREE045`, ... (without the option `patch_rom.py` refuses them).
+**Seen**: 48 species in two scenes of 24 from a cold boot, the last ones
+(Clefairy, Golbat, Parasect, Golduck) shown right
+(`target/ds/lab/many_grid.png`). It unlocks any number of species in a
+film (still 24 at once in a scene), and the level list moves too
+(`BALANCE/level_list.bin`): new places become possible, not done yet.
