@@ -24,6 +24,8 @@ use engine::{
     ScreenBeat, SoundBeat, SoundOf, SpeechBeat, Spot, Test, Value, ViewBeat, Weather, Who,
 };
 
+use scenes::fight::Sight;
+
 use super::Piece;
 use film::Context;
 
@@ -34,8 +36,6 @@ pub enum Export {
     Direct,
     /// Written, with less than the film shows (said in the table).
     Close,
-    /// The game can do it; the exporter does not write it yet.
-    Work,
     /// The game has no operation for it: it needs a patch of the game's code.
     None,
 }
@@ -160,7 +160,11 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("open", Export::Direct, "the thing put in the scene's layout (an object of the game); SetAnimation<object>(17): its animation once"),
     ("close", Export::Direct, "SetAnimation<object>(9): its first picture, held"),
     // Fights
-    ("fight", Export::None, "the game fights in dungeons only: main_EnterDungeon to a boss floor"),
+    (
+        "fight",
+        Export::Close,
+        "staged as Sky's scenes stage fights: each blow the rules played (a directed fight's as written) as attack, the one struck stepping back (SlidePositionMark) in pain, a knock out its faint; the lines said in it kept; no bars, no log (dungeons only)",
+    ),
     (
         "attack",
         Export::Close,
@@ -196,16 +200,27 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("wait", Export::Direct, "Wait(frames) / WaitExecuteLives / all: each one moving, WaitExecutePerformer(0)"),
     ("together", Export::Direct, "each one's moves told at once (actors move on their own), then their WaitExecuteLives; its waits are lost"),
     ("mark", Export::Direct, "a @label; what is timed from it is already written as waits"),
-    ("at", Export::Work, "positions and frame counts kept by the exporter"),
+    (
+        "at",
+        Export::Close,
+        "its line in a routine of its own (as beside), a Wait first: so long from where the line is written, not from the mark nor the scene's start",
+    ),
     ("pace", Export::Direct, "nothing: the waits are written already paced"),
     // Story
     ("option", Export::Direct, "case menu(\"…\"):"),
-    ("{if}", Export::Work, "message_SwitchTalk on a variable"),
-    ("{value}", Export::Work, "[value:…] in the text"),
+    ("{if}", Export::Direct, "if ( $LOCALn … ) { } else { } round the line, one way each"),
+    ("{value}", Export::Close, "the number as last written in the script before the line: Sky's texts print no script variable"),
     ("go", Export::Close, "go moment: jump @label; go scene: one scene a film on DS"),
-    ("seen()", Export::Work, "a game variable counted"),
+    ("seen()", Export::Close, "a scene's own variable ($LOCALn += 1 at the moment), lost once the scene ends"),
     ("#id", Export::Direct, "nothing: an id for translators"),
-    ("keep", Export::Work, "a game variable"),
+    // Advanced words the export writes too
+    (
+        "beside",
+        Export::Close,
+        "each actor's lines in a routine of its own (def n for actor), started with Unlock and joined with WaitLockLives, as Sky's scenes do; one the script tells something before plays its lines in the script, at once",
+    ),
+    ("float", Export::Close, "a routine of its own: forever { MoveHeight up; MoveHeight down }, until it lands (MoveHeight 0)"),
+    ("keep", Export::Close, "a scene's own variable ($LOCALn): not kept past the scene (no game variable of the story's taken)"),
 ];
 
 /// The families the export table covers: the core ones (not the optional
@@ -228,13 +243,19 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     }
     let piece = Piece::find(context, name)?;
     let written = piece.written.as_ref().ok_or(format!("{name}: a film only"))?;
-    if !written.problems.is_empty() {
-        return Err(format!("{name}: {} problems; scene_player check {name} first", written.problems.len()));
+    // (Remarks and details don't stop it: only what keeps the film from playing.)
+    let wrong = written.problems.iter().filter(|problem| problem.severity == engine::Severity::Error).count();
+    if wrong > 0 {
+        return Err(format!("{name}: {wrong} problems; scene_player check {name} first"));
     }
-    let move_types = piece.art().map(|art| art.tables.move_slots.iter().map(|slot| slot.type_id).collect()).unwrap_or_default();
+    let art = piece.art().ok();
+    let move_types = art.as_ref().map(|art| art.tables.move_slots.iter().map(|slot| slot.type_id).collect()).unwrap_or_default();
     let game = Game::read(&piece.tables.data, move_types);
     let mut writer = Writer::new(&game);
     writer.tall_asked = tall;
+    if let Some(art) = &art {
+        writer.fights = fights_played(written, art, &game);
+    }
     for (number, read) in &written.read_as {
         match export_of(&read.word) {
             Some(Export::Direct | Export::Close) => {}
@@ -284,7 +305,31 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     Ok(())
 }
 
-/// The table, and how many core words map directly, closely, need work, or can't.
+/// What the fights' rules played and how it ended, by the fight's line.
+type Played = HashMap<Vec<String>, ([Vec<Who>; 2], Vec<Sight>)>;
+
+/// Each fight of the film played by its rules, as the engine plays it (a
+/// directed one as written): what the export stages as Sky's attacks.
+fn fights_played(written: &::film::Written, art: &preview::art::Art, game: &Game) -> Played {
+    let rules = |species: &[u16]| Some(scenes::fight::Rules::of_kin(&art.tables, species, &|id| art.kin(id)));
+    let other = |who: Who| match who {
+        Who::Character(number) => game.actors.get(usize::from(number)).map_or(0, |(_, species)| *species),
+        Who::Monster(species) | Who::Another { species, .. } => species,
+        _ => 0,
+    };
+    let mut played = HashMap::new();
+    for beat in written.events.iter().flat_map(|event| &event.scenes).flat_map(|scene| &scene.beats) {
+        let (Beat::Host(fields) | Beat::Course(Course::Host(fields))) = beat else { continue };
+        if fields.first().is_some_and(|first| first == "fight") && fields.get(1).is_some_and(|second| second != "end") {
+            if let Some(fight) = scenes::fight::host::played(fields, &rules, &other) {
+                played.insert(fields.clone(), fight);
+            }
+        }
+    }
+    played
+}
+
+/// The table, and how many core words map directly, closely, or can't.
 fn told_table() -> String {
     let mut out = String::new();
     let mut counts: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
@@ -293,7 +338,6 @@ fn told_table() -> String {
         let kind = match export {
             Some(Export::Direct) => "direct",
             Some(Export::Close) => "close",
-            Some(Export::Work) => "work",
             Some(Export::None) => "none",
             None => "missing",
         };
@@ -642,6 +686,151 @@ struct Writer<'a> {
     tall: bool,
     /// The place's size in pixels.
     size: Option<(f32, f32)>,
+    /// The blocks played beside the script (`beside`, `float`), each
+    /// actor's part of each: Sky's routines (`def n for actor`).
+    besides: Vec<Vec<Part>>,
+    /// A `beside` being written.
+    capture: Option<Capture>,
+    /// The film's threads written as such blocks, by name: their number.
+    threads: HashMap<String, usize>,
+    /// Those hovering (`float`).
+    floating: Vec<String>,
+    /// The fights as their rules played them, by their line.
+    fights: Played,
+    /// What a fight's moments say (its passages), by label; the one being written.
+    passages: HashMap<String, String>,
+    passage: Option<(String, usize)>,
+    /// The film's numbers as last written (`{value}` in a line), and when
+    /// lines beside it play (`at`), by name.
+    values: HashMap<String, f64>,
+}
+
+/// An actor's part of a block played beside the script.
+#[derive(Clone, Debug, Default)]
+struct Part {
+    actor: String,
+    /// Its lines as the script tells them to the actor (if it can't have a routine).
+    told: Vec<String>,
+    /// As its own routine says them.
+    own: Vec<String>,
+    /// Hovering at its end, for ever (`MoveHeight`'s speed and height).
+    float: Option<(String, String)>,
+}
+
+/// A `beside` being written: its thread, where it starts in the body, where
+/// each of its lines starts.
+struct Capture {
+    thread: String,
+    start: usize,
+    lines: Vec<usize>,
+}
+
+/// The common routines Sky's own routines call (`CallCommon`), for those a
+/// script runs on an actor (`ExecuteCommon<actor>(…_SERIES, 0)`).
+const CALLED: [&str; 8] = [
+    "CORO_JUMP_HAPPY_FUNC",
+    "CORO_JUMP_SURPRISE_FUNC",
+    "CORO_JUMP_ANGRY_FUNC",
+    "CORO_LOOK_AROUND_FUNC",
+    "CORO_LOOK_AROUND_DOWN_FUNC",
+    "CORO_LOOK_AROUND_LEFT_FUNC",
+    "CORO_LOOK_AROUND_RIGHT_FUNC",
+    "CORO_HEAD_SHAKE_FUNC",
+];
+
+/// The actor a script line tells something to (`<actor ACTOR_X>`).
+fn target_of(line: &str) -> Option<&str> {
+    let at = line.find("<actor ")? + "<actor ".len();
+    let end = line[at..].find('>')?;
+    Some(&line[at..at + end])
+}
+
+/// A line told to an actor, as its own routine says it (none: nothing to
+/// say there); Err: a routine can't.
+fn own_line(line: &str, actor: &str) -> Result<Option<String>, ()> {
+    if line == format!("WaitExecuteLives({actor});") {
+        return Ok(None);
+    }
+    let targeted = format!("<actor {actor}>");
+    if let Some(rest) = line.strip_prefix(&format!("ExecuteCommon{targeted}(")) {
+        let routine = rest.strip_suffix("_SERIES, 0);").filter(|routine| CALLED.contains(routine)).ok_or(())?;
+        return Ok(Some(format!("CallCommon({routine});")));
+    }
+    Ok(Some(line.replace(&targeted, "")))
+}
+
+/// A block played beside the script, as each actor's part: a line of the
+/// film's goes to the one it tells something; one telling no one goes with
+/// the one before. Also what goes before it in the script (others' emotes
+/// put away). None: no routines (a line said, the camera, two actors in a
+/// line, a routine Sky's own can't call).
+fn parts_of(chunks: &[&str]) -> Option<(Vec<String>, Vec<Part>)> {
+    let mut before = Vec::new();
+    let mut parts: Vec<Part> = Vec::new();
+    let mut settled: Vec<(String, String)> = Vec::new();
+    let mut last: Option<usize> = None;
+    let mut pending: Vec<String> = Vec::new();
+    for chunk in chunks {
+        let mut owner: Option<String> = None;
+        let mut mine: Vec<String> = Vec::new();
+        for line in chunk.lines().map(str::trim).filter(|line| !line.is_empty()) {
+            // (Standing again, an emote put away: of whoever it is.)
+            let settle = line.ends_with("(EFFECT_NONE, 3);") || (line.starts_with("SetAnimation<") && line.ends_with(">(2);"));
+            match target_of(line) {
+                Some(target) if settle && owner.as_deref() != Some(target) => settled.push((target.to_string(), line.to_string())),
+                Some(target) => {
+                    if owner.as_deref().is_some_and(|owner| owner != target) {
+                        return None;
+                    }
+                    owner = Some(target.to_string());
+                    mine.push(line.to_string());
+                }
+                None if ["Wait(", "WaitExecuteLives(", "se_Play(", "camera_SetEffect("].iter().any(|start| line.starts_with(start)) => mine.push(line.to_string()),
+                None => return None,
+            }
+        }
+        // (What tells no one before anyone: with the next one, as a wait before its lines.)
+        let Some(owner) = owner.or_else(|| last.map(|at| parts[at].actor.clone())) else {
+            pending.extend(mine);
+            continue;
+        };
+        let mine: Vec<String> = std::mem::take(&mut pending).into_iter().chain(mine).collect();
+        let at = parts.iter().position(|part| part.actor == owner).unwrap_or_else(|| {
+            parts.push(Part { actor: owner.clone(), ..Part::default() });
+            parts.len() - 1
+        });
+        last = Some(at);
+        let part = &mut parts[at];
+        for line in mine {
+            if let Some(height) = line.strip_suffix(" // float") {
+                let told = height.to_string();
+                let (pace, up) = told.split_once('(')?.1.trim_end_matches(");").split_once(", ")?;
+                part.float = Some((pace.to_string(), up.to_string()));
+                part.told.push(told);
+                continue;
+            }
+            if let Some(own) = own_line(&line, &owner).ok()? {
+                part.own.push(own);
+            }
+            part.told.push(line);
+        }
+    }
+    for (actor, line) in settled {
+        match parts.iter_mut().find(|part| part.actor == actor) {
+            Some(part) => {
+                part.own.push(own_line(&line, &actor).ok()??);
+                part.told.push(line);
+            }
+            None => before.push(line),
+        }
+    }
+    // (An emote of its own put away at the end of its part, as the engine's last a while.)
+    for part in &mut parts {
+        if part.float.is_none() && part.own.iter().rev().find(|line| line.starts_with("SetEffect(")).is_some_and(|line| !line.contains("EFFECT_NONE")) {
+            part.own.push("SetEffect(EFFECT_NONE, 3);".to_string());
+        }
+    }
+    Some((before, parts))
 }
 
 /// The actors the game never uses, given the film's species: the ten test
@@ -787,6 +976,11 @@ fn pan(points: &[(f32, f32)]) -> Option<((f32, f32), (f32, f32))> {
     (across >= 24.0).then_some((from, to))
 }
 
+/// A fight's own label (`fight1_said0`, `fight1_past`): its passages.
+fn fight_label(label: &str) -> bool {
+    label.strip_prefix("fight").is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()) && rest.contains('_'))
+}
+
 /// Whether a script line names that actor (`ACTOR_X`, not `ACTOR_X2`).
 fn names(line: &str, actor: &str) -> bool {
     line.match_indices(actor).any(|(at, _)| !line[at + actor.len()..].starts_with(|c: char| c.is_ascii_alphanumeric() || c == '_'))
@@ -848,7 +1042,331 @@ impl<'a> Writer<'a> {
             tall_asked: false,
             tall: false,
             size: None,
+            besides: Vec::new(),
+            capture: None,
+            threads: HashMap::new(),
+            floating: Vec::new(),
+            fights: HashMap::new(),
+            passages: HashMap::new(),
+            passage: None,
+            values: HashMap::new(),
         }
+    }
+
+    /// A `beside` starts: what it writes is kept apart, to be each one's routine.
+    fn start_beside(&mut self, thread: &str) {
+        self.capture = Some(Capture { thread: thread.to_string(), start: self.body.len(), lines: Vec::new() });
+    }
+
+    /// A `beside` written: each actor's part in a routine of its own (see
+    /// `routines`), the script starting them here; or, if it can't, its
+    /// lines told at once in the script, waited for when it is.
+    fn end_beside(&mut self) {
+        self.stand();
+        let Some(capture) = self.capture.take() else { return };
+        let text = self.body.split_off(capture.start);
+        let mut cuts: Vec<usize> = vec![0];
+        cuts.extend(capture.lines.iter().map(|at| at - capture.start));
+        cuts.push(text.len());
+        cuts.dedup();
+        let chunks: Vec<&str> = cuts.windows(2).map(|cut| &text[cut[0]..cut[1]]).collect();
+        match parts_of(&chunks) {
+            Some((before, parts)) if !parts.is_empty() => {
+                self.kept.retain(|actor| !parts.iter().any(|part| part.actor == *actor));
+                self.showing.retain(|actor| !parts.iter().any(|part| part.actor == *actor));
+                for line in before {
+                    self.line(&line);
+                }
+                self.begin_block(capture.thread, parts);
+            }
+            _ => {
+                // (Each line told at once, its waits when the script waits for it.)
+                for line in text.lines().filter(|line| !line.trim_start().starts_with("Wait(")) {
+                    self.body.push_str(line);
+                    self.body.push('\n');
+                }
+            }
+        }
+    }
+
+    /// A block beside the script starts here (its routines are written with the scene).
+    fn begin_block(&mut self, thread: String, parts: Vec<Part>) {
+        let block = self.besides.len();
+        let names: Vec<&str> = parts.iter().map(|part| part.actor.as_str()).collect();
+        self.line(&format!("// dw-beside {block} {}", names.join(" ")));
+        for part in parts.iter().filter(|part| part.float.is_some()) {
+            if !self.floating.contains(&part.actor) {
+                self.floating.push(part.actor.clone());
+            }
+        }
+        self.besides.push(parts);
+        self.threads.insert(thread, block);
+    }
+
+    /// `float`: a hover up and down, for ever, in a routine of its own;
+    /// height 0: it lands.
+    fn float(&mut self, number: i32, who: Who, height: f32, frames: f32) {
+        let Some(actor) = self.who(number, who) else { return };
+        if height <= 0.0 {
+            self.floating.retain(|one| *one != actor);
+            self.line(&format!("MoveHeight<actor {actor}>(1, 0);"));
+            self.wait_for(&actor);
+            return;
+        }
+        // (A little higher than the engine's 4: Sky's sprites are as small, and its shadow shows it.)
+        let up = height.max(8.0).round();
+        let pace = speed(up * 2.0, frames.max(8.0));
+        if self.capture.is_some() {
+            self.line(&format!("MoveHeight<actor {actor}>({pace}, {up}); // float"));
+            return;
+        }
+        let part = Part { actor: actor.clone(), told: vec![format!("MoveHeight<actor {actor}>({pace}, {up});")], own: Vec::new(), float: Some((pace, up.to_string())) };
+        self.begin_block(format!("float_{actor}_{}", self.besides.len()), vec![part]);
+    }
+
+    /// A step back from a blow (`Recoil`): a slide away from who struck (from
+    /// oneself: back the way it looks), facing as it was.
+    fn recoil(&mut self, number: i32, who: Who, from: Who, distance: f32) {
+        let (Some(actor), Some(&at)) = (self.who(number, who), self.at.get(&who)) else { return };
+        let ahead = |way: Direction| {
+            let (x, y) = match way {
+                Direction::Down => (0.0, 1.0),
+                Direction::DownRight => (0.7, 0.7),
+                Direction::Right => (1.0, 0.0),
+                Direction::UpRight => (0.7, -0.7),
+                Direction::Up => (0.0, -1.0),
+                Direction::UpLeft => (-0.7, -0.7),
+                Direction::Left => (-1.0, 0.0),
+                Direction::DownLeft => (-0.7, 0.7),
+            };
+            (-x, -y)
+        };
+        let away = match self.at.get(&from).copied().filter(|_| from != who) {
+            Some(there) => {
+                let (dx, dy) = (at.0 - there.0, at.1 - there.1);
+                let long = (dx * dx + dy * dy).sqrt();
+                if long < 1.0 { ahead(self.facing.get(&who).copied().unwrap_or(Direction::Down)) } else { (dx / long, dy / long) }
+            }
+            None => ahead(self.facing.get(&who).copied().unwrap_or(Direction::Down)),
+        };
+        let to = (at.0 + away.0 * distance, at.1 + away.1 * distance);
+        self.go(who, &actor, to, &speed(distance, 10.0), true);
+        self.wait_for(&actor);
+    }
+
+    /// A fight, staged as Sky stages them: each blow the rules played as an
+    /// attack, the one struck stepping back in pain, a fall its faint, the
+    /// lines said in its moments where they come; no bars, no log.
+    fn fight(&mut self, number: i32, fields: &[String]) {
+        if fields.get(1).is_some_and(|second| second == "end") {
+            return;
+        }
+        let Some((sides, sights)) = self.fights.get(fields).cloned() else {
+            // (Its blows can't be read: a short exchange between the first of each side.)
+            let side: Vec<Who> = fields.windows(2).filter(|pair| pair[0] == "side").filter_map(|pair| pair[1].strip_prefix('m')?.parse().ok().map(Who::Monster)).collect();
+            if let [first, second, ..] = side[..] {
+                for (who, target) in [(first, second), (second, first)] {
+                    self.blow(number, who, 0, Some(target), false, false);
+                }
+            }
+            self.notes.push(format!("line {number}: the fight's blows (not played by its rules here): a short exchange instead"));
+            return;
+        };
+        let _ = sides;
+        for sight in sights {
+            match sight {
+                Sight::Blow(blow) => {
+                    if blow.landings.is_empty() {
+                        self.blow(number, blow.who, blow.power.slot.id, None, false, false);
+                    }
+                    for landing in &blow.landings {
+                        self.blow(number, blow.who, blow.power.slot.id, Some(landing.target), landing.missed, landing.critical);
+                    }
+                }
+                Sight::Deed(deed) => self.blow(number, deed.who, deed.power.slot.id, deed.landing.as_ref().map(|landing| landing.target), true, false),
+                Sight::Falls { who, .. } => {
+                    self.plain(number, Some("fight"), &Beat::Body(BodyBeat::Anim { who, anim: engine::AnimId(33), play: Play::Once }));
+                    self.line("Wait(40);");
+                }
+                Sight::Passage(label) => {
+                    if let Some(text) = self.passages.get(&label).cloned() {
+                        self.body.push_str(&text);
+                    }
+                }
+                _ => {}
+            }
+        }
+        self.told.push(format!("line {number}: the fight staged as its blows, with Sky's attacks (no bars, no log)"));
+    }
+
+    /// A blow of a fight: who strikes turns to its target and attacks
+    /// (`attack`'s staging); the one struck steps back in pain, further
+    /// for a critical one, the view shaking; missed: it hops aside.
+    fn blow(&mut self, number: i32, who: Who, id: u16, target: Option<Who>, missed: bool, critical: bool) {
+        let word = Some("fight");
+        if let Some(target) = target.filter(|target| *target != who) {
+            self.plain(number, word, &Beat::Body(BodyBeat::Face { who, other: target }));
+        }
+        self.plain(number, word, &Beat::Body(BodyBeat::Move { who, id: engine::MoveId(id), target: if missed { None } else { target } }));
+        let Some(target) = target.filter(|target| *target != who) else {
+            self.line("Wait(20);");
+            return;
+        };
+        if missed {
+            self.plain(number, word, &Beat::Body(BodyBeat::Anim { who: target, anim: engine::AnimId(10), play: Play::Times(1) }));
+        } else {
+            if critical {
+                self.line("camera_SetEffect(2, 2, 3.0);");
+            }
+            let stood = self.at.get(&target).copied();
+            self.recoil(number, target, who, if critical { 20.0 } else { 12.0 });
+            self.plain(number, word, &Beat::Body(BodyBeat::Anim { who: target, anim: engine::AnimId(19), play: Play::Times(1) }));
+            self.line("Wait(24);");
+            if critical {
+                self.line("camera_SetEffect(0, 0, 0);");
+            }
+            self.stand();
+            // (Back to its place, as the fighters of Sky's scenes keep theirs: a long fight would push them apart.)
+            if let (Some(there), Some(actor)) = (stood, self.who(number, target)) {
+                self.go(target, &actor, there, "1", true);
+                self.wait_for(&actor);
+            }
+        }
+        self.line("Wait(12);");
+    }
+
+    /// The blocks played beside the script as Sky's routines: each actor's
+    /// parts in a `def n for actor` of its own, started and joined with
+    /// locks as Sky's scenes do (`WaitLockLives`, `Unlock`, `Lock`). One the
+    /// script tells something before its last part plays its parts in the
+    /// script instead, at once (an order given to an actor ends its
+    /// routine). Who is hidden from the start hides in its routine.
+    fn routines(&mut self, hidden: &mut Vec<String>) -> String {
+        if self.besides.is_empty() {
+            return String::new();
+        }
+        let lines: Vec<String> = self.body.lines().map(str::to_string).collect();
+        let starts = |block: usize| lines.iter().position(|line| line.trim_start().starts_with(&format!("// dw-beside {block} ")));
+        let mut of: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+        for (block, parts) in self.besides.iter().enumerate() {
+            for part in parts {
+                of.entry(part.actor.clone()).or_default().push(block);
+            }
+        }
+        let part = |block: usize, actor: &str| self.besides[block].iter().find(|part| part.actor == actor).cloned().unwrap_or_default();
+        let mut own: Vec<String> = of
+            .iter()
+            .filter(|(actor, blocks)| {
+                let last = blocks.last().and_then(|block| starts(*block)).unwrap_or(0);
+                let told = format!("<actor {actor}>");
+                let waited = format!("WaitExecuteLives({actor});");
+                let before = lines[..last].iter().any(|line| line.contains(&told) || line.contains(&waited));
+                let floats_early = blocks[..blocks.len() - 1].iter().any(|block| part(*block, actor).float.is_some());
+                !before && !floats_early
+            })
+            .map(|(actor, _)| actor.clone())
+            .collect();
+        // Locks: one for all at the end, one for each block for those starting there, one after each part another follows.
+        let mut next = 1;
+        let park = next;
+        next += 1;
+        let mut starting: HashMap<usize, u16> = HashMap::new();
+        let mut gate: HashMap<(usize, String), u16> = HashMap::new();
+        let mut done: HashMap<(usize, String), u16> = HashMap::new();
+        for actor in &own {
+            let blocks = &of[actor];
+            for (at, block) in blocks.iter().enumerate() {
+                let opens = match at {
+                    0 => *starting.entry(*block).or_insert_with(|| {
+                        next += 1;
+                        next - 1
+                    }),
+                    _ => done[&(blocks[at - 1], actor.clone())],
+                };
+                gate.insert((*block, actor.clone()), opens);
+                let ends = if at + 1 < blocks.len() {
+                    next += 1;
+                    next - 1
+                } else {
+                    park
+                };
+                done.insert((*block, actor.clone()), ends);
+            }
+        }
+        // (Sky's scripts use locks 0 to 19.)
+        if next > 20 {
+            self.told.push(format!("{}: too many routines beside the script for Sky's locks: played in it", self.level.as_deref().unwrap_or("?")));
+            own.clear();
+        }
+        let mut body = String::new();
+        for line in &lines {
+            let indent: String = line.chars().take_while(|c| c.is_whitespace()).collect();
+            let bare = line.trim_start();
+            let (begins, rest) = match (bare.strip_prefix("// dw-beside "), bare.strip_prefix("// dw-join ")) {
+                (Some(rest), _) => (true, rest),
+                (_, Some(rest)) => (false, rest),
+                _ => {
+                    body.push_str(line);
+                    body.push('\n');
+                    continue;
+                }
+            };
+            let block: usize = rest.split_whitespace().next().and_then(|number| number.parse().ok()).unwrap_or(0);
+            let mut put = Vec::new();
+            for part in &self.besides[block] {
+                let mine = own.contains(&part.actor);
+                match (begins, mine) {
+                    (true, true) => put.push(format!("WaitLockLives({}, {});", gate[&(block, part.actor.clone())], part.actor)),
+                    (true, false) => put.extend(part.told.iter().filter(|line| !line.starts_with("Wait(")).cloned()),
+                    (false, _) if part.float.is_some() => {}
+                    (false, true) => put.push(format!("WaitLockLives({}, {});", done[&(block, part.actor.clone())], part.actor)),
+                    (false, false) => put.push(format!("WaitExecuteLives({});", part.actor)),
+                }
+            }
+            if begins {
+                let mut opened: Vec<u16> = Vec::new();
+                for part in self.besides[block].iter().filter(|part| own.contains(&part.actor)) {
+                    let lock = gate[&(block, part.actor.clone())];
+                    if !opened.contains(&lock) {
+                        opened.push(lock);
+                    }
+                }
+                put.extend(opened.iter().map(|lock| format!("Unlock({lock});")));
+            }
+            for text in put {
+                let _ = writeln!(body, "{indent}{text}");
+            }
+        }
+        self.body = body;
+        let mut defs = String::new();
+        for (count, actor) in own.iter().enumerate() {
+            let _ = writeln!(defs, "\ndef {} for actor {actor} {{", count + 1);
+            let name = actor.trim_start_matches("ACTOR_");
+            if hidden.iter().any(|one| one == name) {
+                hidden.retain(|one| one != name);
+                let _ = writeln!(defs, "    SetOutputAttribute({HIDDEN});");
+            }
+            for block in &of[actor] {
+                let part = part(*block, actor);
+                let _ = writeln!(defs, "    Lock({});", gate[&(*block, actor.clone())]);
+                for line in &part.own {
+                    let _ = writeln!(defs, "    {line}");
+                }
+                match &part.float {
+                    Some((pace, up)) => {
+                        let _ = writeln!(defs, "    forever {{\n        MoveHeight({pace}, {up});\n        MoveHeight({pace}, 0);\n    }}");
+                    }
+                    None => {
+                        let _ = writeln!(defs, "    Lock({});", done[&(*block, actor.clone())]);
+                    }
+                }
+            }
+            defs.push_str("    hold;\n}\n");
+        }
+        if !own.is_empty() {
+            self.told.push(format!("{}: {} routines beside the script, as Sky's (def n for actor)", self.level.as_deref().unwrap_or("?"), own.len()));
+        }
+        defs
     }
 
     /// The light on the screen. (Not on the top one: `screen2_Flush…` at
@@ -866,6 +1384,15 @@ impl<'a> Writer<'a> {
     }
 
     fn line(&mut self, text: &str) {
+        // (One hovering told something else lands first: an order ends its routine where it is.)
+        if self.capture.is_none() && !text.starts_with("MoveHeight") {
+            let landing: Vec<String> = self.floating.iter().filter(|actor| text.contains(&format!("<actor {actor}>"))).cloned().collect();
+            for actor in landing {
+                self.floating.retain(|one| *one != actor);
+                let _ = writeln!(self.body, "{}MoveHeight<actor {actor}>(1, 0);", "    ".repeat(self.indent));
+                let _ = writeln!(self.body, "{}WaitExecuteLives({actor});", "    ".repeat(self.indent));
+            }
+        }
         let _ = writeln!(self.body, "{}{text}", "    ".repeat(self.indent));
     }
 
@@ -1138,6 +1665,11 @@ impl<'a> Writer<'a> {
             if self.shown_for >= 30.0 {
                 self.calm();
             }
+            // (In a `beside`: where each of its lines starts.)
+            let at = self.body.len();
+            if let Some(capture) = self.capture.as_mut() {
+                capture.lines.push(at);
+            }
             if self.skip != Some(*line) {
                 self.skip = None;
             }
@@ -1160,15 +1692,38 @@ impl<'a> Writer<'a> {
             // What only our engine needs: its grid, its light, how it spaces
             // and turns people by itself, the sizes of the bodies.
             Beat::View(ViewBeat::Body { .. } | ViewBeat::KeepSpeaker(_) | ViewBeat::KeepFrame(_))
-            | Beat::Place(PlaceBeat::Spread { .. })
             | Beat::Motion(MotionBeat::Spacing(_) | MotionBeat::Speed { .. })
             | Beat::Speech(SpeechBeat::AutoFace(_) | SpeechBeat::Audience(_))
             | Beat::Flow(FlowBeat::Parallel(_)) => {}
-            Beat::Flow(FlowBeat::Label(label)) => self.label(label),
-            Beat::Flow(FlowBeat::Goto(label)) if label.starts_with("thread") => {}
+            Beat::Flow(FlowBeat::Label(label)) => self.label(label, word),
+            // Those the scene opens with, spread out in a row round its middle, turned to each other.
+            Beat::Place(PlaceBeat::Spread { who, .. }) if !self.started => {
+                let Some((x, y)) = self.middle else { return };
+                let many = who.len() as f32;
+                for (at, one) in who.iter().enumerate() {
+                    let along = (at as f32 - (many - 1.0) / 2.0) * 2.0 * BESIDE;
+                    let facing = if along < 0.0 { Direction::Right } else if along > 0.0 || many > 1.0 { Direction::Left } else { Direction::Down };
+                    let at = Point { x: Num::Lit(x + along), y: Num::Lit(y) };
+                    self.plain(number, word, &Beat::Body(BodyBeat::Put { who: *one, at, direction: facing }));
+                }
+            }
+            Beat::Place(PlaceBeat::Spread { .. }) => {}
+            Beat::Flow(FlowBeat::Goto(label)) if label.starts_with("thread") || fight_label(label) => {}
             Beat::Flow(FlowBeat::Goto(label)) => self.line(&format!("jump @{};", label.trim_start_matches('_'))),
             // How often a moment was seen: the film's own count, no `seen()` on DS.
-            Beat::Data(DataBeat::Calc { var, .. }) if var.starts_with("seen_") => {}
+            // When a line beside the film plays (`at mark + 2s:`): so long after (from where it is).
+            Beat::Data(DataBeat::Calc { var, b: Value::Number(after), .. }) if var.starts_with("_at_") => {
+                self.values.insert(var.clone(), *after);
+            }
+            Beat::Flow(FlowBeat::WaitUntil(test)) if test.any.iter().flatten().any(|condition| condition.var == "clock" || condition.var == engine::MUSIC_CLOCK) => {
+                let frames = test.any.iter().flatten().find_map(|condition| match &condition.value {
+                    Value::Number(frames) => Some(*frames),
+                    Value::Var(name) => self.values.get(name).copied(),
+                });
+                if let Some(frames) = frames.filter(|frames| *frames >= 1.0) {
+                    self.line(&format!("Wait({});", frames.round() as i64));
+                }
+            }
             Beat::Data(DataBeat::Calc { var, a, op, b }) => {
                 let by = match (a, b) {
                     (Value::Var(of), Value::Number(by)) if of == var && (*op == "+" || *op == "-") => Some(*by as i64),
@@ -1176,15 +1731,32 @@ impl<'a> Writer<'a> {
                 };
                 let Some(name) = self.var(number, var) else { return };
                 match by {
-                    Some(by) => self.line(&format!("{name} {op}= {by};")),
+                    Some(by) => {
+                        let now = self.values.get(var).copied().unwrap_or(0.0);
+                        self.values.insert(var.clone(), if *op == "+" { now + by as f64 } else { now - by as f64 });
+                        self.line(&format!("{name} {op}= {by};"));
+                    }
                     None => self.problems.push(format!("line {number}: the calculation {a:?} {op} {b:?} doesn't export to DS (only adding to a variable)")),
                 }
             }
-            Beat::Flow(FlowBeat::Return) => self.thread = false,
+            Beat::Flow(FlowBeat::Return) => {
+                // (The end of a fight's passage: kept for where the fight plays it.)
+                if let Some((label, at)) = self.passage.take() {
+                    let text = self.body.split_off(at.min(self.body.len()));
+                    self.passages.insert(label, text);
+                }
+                self.thread = false;
+            }
             // A mark (`at name + 2s:`): a label; its times are already written as waits.
-            Beat::Data(DataBeat::Set { var, .. }) if var.starts_with("_mark_") => self.label(&format!("mark_{}", &var["_mark_".len()..])),
+            Beat::Data(DataBeat::Set { var, .. }) if var.starts_with("_mark_") => self.label(&format!("mark_{}", &var["_mark_".len()..]), None),
             Beat::Data(DataBeat::Set { var, .. }) if var.starts_with("thread") => {}
             Beat::Flow(FlowBeat::WaitUntil(test)) if test.any.iter().flatten().all(|condition| condition.var.starts_with("thread")) => {
+                // (A block of routines: joined where the film waits for it.)
+                for condition in test.any.iter().flatten() {
+                    if let Some(block) = self.threads.remove(condition.var.trim_end_matches("_done")) {
+                        self.line(&format!("// dw-join {block}"));
+                    }
+                }
                 for actor in std::mem::take(&mut self.kept) {
                     self.wait_for(&actor);
                 }
@@ -1192,7 +1764,10 @@ impl<'a> Writer<'a> {
             Beat::Data(DataBeat::Set { var, value }) => {
                 let Some(name) = self.var(number, var) else { return };
                 match value {
-                    Value::Number(value) => self.line(&format!("{name} = {};", *value as i64)),
+                    Value::Number(value) => {
+                        self.values.insert(var.clone(), *value);
+                        self.line(&format!("{name} = {};", *value as i64));
+                    }
                     Value::Var(_) => self.problems.push(format!("line {number}: a variable set from another doesn't export to DS")),
                 }
             }
@@ -1256,7 +1831,14 @@ impl<'a> Writer<'a> {
 
     /// A moment of the film (`moment: name`) as a label of the script; the
     /// scenes' and the threads' own are the export's.
-    fn label(&mut self, label: &str) {
+    fn label(&mut self, label: &str, word: Option<&str>) {
+        // A fight's passages (what is said in its moments): kept for the fight.
+        if fight_label(label) {
+            if !label.ends_with("_past") {
+                self.passage = Some((label.to_string(), self.body.len()));
+            }
+            return;
+        }
         // A scene of the film: an acting scene of its own (`// ds-export level`).
         if label.starts_with("scene") && self.level.is_some() {
             self.next_scene();
@@ -1264,6 +1846,13 @@ impl<'a> Writer<'a> {
         }
         if let Some(name) = label.strip_prefix("thread") {
             self.thread = !name.ends_with("_past");
+            // (`beside`: each one's lines in a routine of its own.)
+            match self.capture.as_ref() {
+                Some(capture) if label == format!("{}_past", capture.thread) => self.end_beside(),
+                // (Not `together`'s: each of its lines told at once is as Sky does.)
+                None if self.thread && word != Some("together") && self.started => self.start_beside(label),
+                _ => {}
+            }
             return;
         }
         if label.starts_with("scene") {
@@ -1827,6 +2416,8 @@ impl<'a> Writer<'a> {
                 self.line(&format!("WaitEffect<{on}>();"));
                 self.line(&format!("SetEffect<{on}>(EFFECT_NONE, 3);"));
             }
+            // A move's shot from one to another: Sky's effect of its type on the one it reaches.
+            Beat::Body(BodyBeat::MoveShot { to, id, .. }) => self.plain(number, word, &Beat::Body(BodyBeat::MoveEffect { who: *to, id: *id })),
             Beat::Screen(ScreenBeat::Weather(weather)) => self.weather(number, *weather),
             // Hops: Sky's own jumps (`CORO_JUMP_…`), happy, surprised or angry.
             Beat::Body(BodyBeat::Anim { who, anim, play }) if anim.0 == 10 => {
@@ -1948,9 +2539,9 @@ impl<'a> Writer<'a> {
             }
             // What comes so long after: at once, the script going on as it plays.
             Beat::Flow(FlowBeat::After { beat, .. }) => self.plain(number, word, beat),
-            Beat::Body(BodyBeat::Recoil { .. }) => {
-                self.notes.push(format!("line {number}: {beat:?}"));
-            }
+            Beat::Body(BodyBeat::Recoil { who, from, distance }) => self.recoil(number, *who, *from, *distance),
+            Beat::Body(BodyBeat::Float { who, height, frames }) => self.float(number, *who, *height, frames.0),
+            Beat::Course(Course::Host(fields)) | Beat::Host(fields) if fields.first().is_some_and(|first| first == "fight") => self.fight(number, fields),
             Beat::Course(Course::Say { entity, face, text, .. }) => self.say(number, word, *entity, *face, text),
             Beat::Speech(SpeechBeat::Said) => {
                 // (Where a question would be asked, in the same box.)
@@ -1967,7 +2558,7 @@ impl<'a> Writer<'a> {
                 // in a thread of `together`: its moves go on alone.
                 if std::mem::take(&mut self.said_over) {
                     // (The time a caption shows: the game waits for its key.)
-                } else if self.started && !self.thread && !(self.talking && frames.0 < 15.0) {
+                } else if self.started && (!self.thread || self.capture.is_some()) && !(self.talking && frames.0 < 15.0) {
                     self.line(&format!("Wait({});", frames.0.round() as i32));
                     self.shown_for += frames.0;
                 }
@@ -2079,6 +2670,11 @@ impl<'a> Writer<'a> {
     /// A line said: its face (or the species' normal one, or its name
     /// alone), its box, as Sky's message operations show it.
     fn say(&mut self, number: i32, word: Option<&str>, entity: Option<Who>, face: Option<u16>, text: &str) {
+        // (`{value}`: Sky's texts print no variable of a script: the number as last written before.)
+        let mut text = text.to_string();
+        for (name, value) in &self.values {
+            text = text.replace(&format!("{{{name}}}"), &format!("{value}"));
+        }
         let text = quoted(text.trim_end());
         let text = if text.starts_with(' ') || text.starts_with('[') { text } else { format!(" {text}") };
         match (entity, word) {
@@ -2147,6 +2743,9 @@ impl<'a> Writer<'a> {
         next.tall_asked = self.tall_asked;
         next.vars = std::mem::take(&mut self.vars);
         next.became = std::mem::take(&mut self.became);
+        next.values = std::mem::take(&mut self.values);
+        next.fights = std::mem::take(&mut self.fights);
+        next.passages = std::mem::take(&mut self.passages);
         *self = next;
     }
 
@@ -2305,7 +2904,8 @@ impl<'a> Writer<'a> {
             out.push_str("    screen_FadeIn(1, 30);\n    Wait(120);\n    screen_FadeOut(1, 30);\n    Wait(15);\n");
         }
         // Who comes in later is hidden until then.
-        let hidden: Vec<String> = self.actors.values().filter(|actor| actor.hidden && actor.layer == 0).map(|actor| actor.name.clone()).collect();
+        let mut hidden: Vec<String> = self.actors.values().filter(|actor| actor.hidden && actor.layer == 0).map(|actor| actor.name.clone()).collect();
+        let routines = self.routines(&mut hidden);
         let mut body = std::mem::take(&mut self.body);
         if !hidden.is_empty() {
             let hide: String = hidden.iter().map(|name| format!("    SetOutputAttribute<actor ACTOR_{name}>({HIDDEN});\n")).collect();
@@ -2329,6 +2929,7 @@ impl<'a> Writer<'a> {
             out.push_str("    screen_FadeInAll(1, 0);\n    screen_FadeOut(1, 0);\n");
         }
         out.push_str("    end;\n}\n");
+        out.push_str(&routines);
         out
     }
 }
@@ -2404,6 +3005,34 @@ mod tests {
         let (from, to) = pan(&[(100.0, 100.0), (400.0, 110.0)]).expect("too wide");
         assert_eq!((from.0, to.0), (100.0 - 16.0 + 128.0, 400.0 + 16.0 - 128.0));
         assert_eq!(from.1, to.1);
+    }
+
+    #[test]
+    fn a_beside_is_each_actors_routine_as_sky_writes_them() {
+        let chunks = [
+            "    SetAnimation<actor ACTOR_A>(46);\n    Wait(6);\n",
+            "    SetEffect<actor ACTOR_B>(EFFECT_ANGRY, 3);\n    ExecuteCommon<actor ACTOR_B>(CORO_JUMP_ANGRY_FUNC_SERIES, 0);\n    WaitExecuteLives(ACTOR_B);\n",
+            "    SetEffect<actor ACTOR_C>(EFFECT_NONE, 3);\n    MoveHeight<actor ACTOR_A>(0.25, 8); // float\n",
+        ];
+        let (before, parts) = parts_of(&chunks).expect("routines");
+        // (An emote of someone else's put away before the block, in the script.)
+        assert_eq!(before, ["SetEffect<actor ACTOR_C>(EFFECT_NONE, 3);"]);
+        assert_eq!(parts[0].actor, "ACTOR_A");
+        assert_eq!(parts[0].own, ["SetAnimation(46);", "Wait(6);"]);
+        assert_eq!(parts[0].float, Some(("0.25".to_string(), "8".to_string())));
+        // Sky's routines call the common ones (`CallCommon`), the scripts run them on an actor.
+        assert_eq!(parts[1].own, ["SetEffect(EFFECT_ANGRY, 3);", "CallCommon(CORO_JUMP_ANGRY_FUNC);", "SetEffect(EFFECT_NONE, 3);"]);
+        // A line said, or two actors told in one line: no routines.
+        assert!(parts_of(&["    message_Talk(\" Hi.\");\n"]).is_none());
+        assert!(parts_of(&["    SetDirection<actor ACTOR_B>(DIR_UP);\n    SetDirection<actor ACTOR_A>(DIR_UP);\n"]).is_none());
+    }
+
+    #[test]
+    fn a_fights_passages_are_its_own_labels() {
+        assert!(fight_label("fight1_said0"));
+        assert!(fight_label("fight12_past"));
+        assert!(!fight_label("fighters"));
+        assert!(!fight_label("fight_club"));
     }
 
     #[test]

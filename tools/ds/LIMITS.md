@@ -110,7 +110,7 @@ chapter 2 without one is a whole playthrough.
 | daytime | **Fake works** (seen) | Sky's scripts never tint for dusk: they switch to the place's evening or night level (`G01P01B`, `G01P01C`; `LEVEL_D01P11B` is the beach at sunset), and dim a room at bedtime with `screen_FadeChange(1, 60, 0, 192)`. Their only warm tint, `screen_FlushOut(1, 4, 4, 128, 96, 64)`, shows mode 4 multiplies the screen by the colour (seen: 255, 128, 64 turned the sand orange and the sea green: far too strong). So mid-scene: evening `screen_FlushOut(1, 30, 4, 224, 176, 136)`, night `screen_FlushOut(1, 30, 4, 80, 112, 144)`, the factors measured between the guild's crossroads by day and its evening and night levels (**seen** side by side: `target/ds/lab/tint2_grid.png`); back to day: `screen_FlushIn` with the same numbers. The tint stays until then. Mode 3 fills the screen with the colour and `FlushIn` did not undo it: avoid. Sky also has evening variants of some places as levels of their own (`LEVEL_D01P11B` is the beach at sunset): the exporter can pick the level when the film's light says evening. |
 | status | **Fake works** (seen) | Effects on the actor: `EFFECT_CONFUSE` (stars), `EFFECT_POISION_BUBBLE` (sic), `EFFECT_GIANT_Z` (asleep), `EFFECT_TRAPPED_IN_ICE` (frozen), `EFFECT_STATS_DOWN_EFFECT`, `EFFECT_STATS_UP_EFFECT` and `EFFECT_YAWN` (not tried); with poses below (asleep: animation 25 or 33; shivering: 27 or 47). |
 | attack | **Fake works** (parts seen) | Wind-up `SetAnimation<actor A>(28)`, strike `SetAnimation<actor A>(48)` (a lunge), then on the target an effect: `EFFECT_PUNCH_ATTACK`, `EFFECT_LIGHTNING_STRIKE` (a bolt from the sky), `EFFECT_FIRE_ATTACK` (a tall flame), `EFFECT_SLASH_ATTACK`, `EFFECT_EXPLOSION_SMALL` (seen; `EFFECT_WATER_EXPLOSION`, `EFFECT_AIR_BLADES` and others of the table not tried); the target's hurt pose `SetAnimation(22)` or `(36)`; a shake `camera_SetEffect(2, 1, 1.0)` ... `camera_SetEffect(0, 0, 0)`; back to standing `SetAnimation(2)`. Real move animations (Thunderbolt as in a dungeon) need code: the dungeon's effect system is not loaded in ground mode. |
-| fight | **Fake works** | Attacks traded (above), with steps back (`MovePositionOffset`) and the loser's faint: `SetAnimation(34)` (falls) then `(35)` (lies). |
+| fight | **Exported** (seen) | Each blow the fights' rules played (a directed fight's as written: `scenes::fight::host::played`, the same battle the engine plays) staged as `attack`: the fighter turns to its target, its wind-up and lunge, the move type's effect on the target, a shake; the target slides back (`SlidePositionMark`, further and the view shaking hard for a critical), its pain once, and back to its place; missed: the target hops. A knock out: its faint. The lines said in the fight's moments play where they come; no bars, no log, no "Missed!". Below, "Routines, floating, fights". |
 | hold | **Partly** | No generic held-item sprite in ground mode. `EFFECT_APPLE_ON_HEAD` shows an apple above the actor (seen); `EFFECT_EATING` for eating (seen). Any other item needs a sprite (below). |
 | give | **Partly** | Walk to the other (`MovePositionLives`), the apple effect passes from one to the other, the jingle (`me_Play`) and a line. |
 | drop | **Needs a sprite** | Objects (`<object>` in a layout) are the only free-standing sprites, and Sky's are place-specific props (`OBJECT_D01P11B2_12`...). |
@@ -124,6 +124,59 @@ picture (`skytemple_files.graphics.chara_wan` imports sprite sheets), would
 give "an item" that can be placed, moved and lifted. Not done: it means
 choosing the object, drawing the sheet and checking the game loads it in
 any place.
+
+## Routines, floating, fights (`beside`, `float`, `fight`, recoils)
+
+- **Lines beside the film** (`beside … end`, `at …:`, a line ended by `&`,
+  seen): as Sky's scenes run their actors at once. Each actor's lines of
+  the block go to a routine of its own, `def n for actor X { … }` after
+  `def 0` (Sky's `m01a0301` wakes the hero and the partner that way). The
+  routine starts when the scene loads and waits on a lock (`Lock(n)`); the
+  script starts it where the block is (`WaitLockLives(n, X); Unlock(n);`)
+  and goes on; `wait name` (or the scene's end) joins it
+  (`WaitLockLives(m, X)`: X waits on its next lock once its lines are
+  done). Inside, the lines are Sky's targetless ones (`SetAnimation(28)`,
+  `MovePositionMark(…)`), each waiting for the last, and Sky's common
+  routines are called (`CallCommon(CORO_JUMP_ANGRY_FUNC)`) instead of run
+  (`ExecuteCommon<actor>(…_SERIES, 0)`). Locks: one where all routines end,
+  one per block for those starting there, one after each part another
+  follows; Sky's scripts use 0 to 19. `together` stays as it was (each line
+  told at once: Sky's lives operations already run alongside the script).
+  - **Seen, in the game**: an order given to an actor (`<actor X>`) replaces
+    its routine (`target/ds/p1b`: a `SetDirection` before the `Unlock`, and
+    the routine never ran; `WaitLockLives` on it did not hang). So an actor
+    the script tells anything before its last block plays its lines in the
+    script instead, all at once, waited for at the join (as before), and
+    one hidden from the start hides in its routine (`SetOutputAttribute`
+    before its first `Lock`).
+  - **Not possible**: `with (actor X) { jump @label; }` to start a routine
+    on demand: the script itself jumped (seen: the scene skipped to its end).
+  - A block falls back to the script, at once, when a line in it is said,
+    moves the camera, tells two actors in one line, or runs a routine Sky
+    calls no other way (`CORO_MOVE_RANDOM`, `wander`).
+  - `at mark + 2s:` waits 2 s from where the line is written, not from the
+    mark nor the scene's start (the export has no clock of the scene).
+  - `when a arrives:` does not wait for `a` in the routine: its lines start
+    at once.
+- **float** (seen: Dragonite and Altaria over the tower's floor, their
+  shadows below): a routine of its own, `forever { MoveHeight(pace, 8);
+  MoveHeight(pace, 0); }`, 8 pixels at least (the engine's 4 hardly shows on
+  Sky's sprites). `float 0`, or any order the script gives it later, lands it
+  first (`MoveHeight<actor X>(1, 0)`).
+- **Recoils** (`hurt`, a blow): a slide back from who struck (from oneself:
+  back the way it looks), `SlidePositionMark`, facing as it was, over 10
+  frames.
+- **A plain `fight a vs b`** (by the rules) is played to its end when the
+  film is exported, with the seed the line has, so the blows are those the
+  engine plays (with clear weather and no one choosing: a `Played` fight's
+  menu is never asked). A fight its rules can't play (a crowd, a line of
+  one's own) becomes a short exchange of two blows, and it is said.
+- **Seen** (`a_world_full_of_pokemon`, `--partial`, all ten scenes from a
+  cold boot, 16 000 frames, then the quiz as usual): the tower's two
+  `beside` blocks as nine routines (the young dragons' emote shown while
+  Kyogre's Water Pulse lands), the lake's floating Latias and Latios, and the
+  amphitheater's directed final: six blows, the lines said between them,
+  Hitmonlee's faint.
 
 ## Poses (`SetAnimation<actor X>(n)`)
 

@@ -372,6 +372,36 @@ fn left_numbers(battle: &Battle, director: &mut Director) {
     director.set_number("hp2".to_string(), battle.teams[1].bodies.iter().filter(|body| !body.down).count() as i32);
 }
 
+/// What a fight's line shows, played by its rules to its end with no one
+/// choosing, as [`settled`] plays it: its two sides, then each blow, fall
+/// and passage, round after round. For who shows a fight elsewhere
+/// (`scene_player export-ds` stages it with the game's own operations).
+/// None: a line it cannot read, a fight not played by rules (by hand, a
+/// crowd) or with no rules for its species.
+pub fn played(fields: &[String], rules: &dyn Fn(&[u16]) -> Option<Rules>, other: &dyn Fn(Who) -> u16) -> Option<([Vec<Who>; 2], Vec<Sight>)> {
+    let asked = Asked::read(fields)?;
+    if asked.by_hand() || asked.sort == Sort::Crowd {
+        return None;
+    }
+    let rules: Shared = Arc::new(rules(&asked.species(other))?);
+    let rounds = if asked.sort == Sort::Tournament { asked.sides[1].len() } else { 1 };
+    let mut seen = Vec::new();
+    for round in 0..rounds {
+        let mut battle = Battle::new(&asked.setup(round, weather::CLEAR, other), rules.clone());
+        // (Until a side has won; a few hundred turns at most.)
+        for _ in 0..400 {
+            if battle.over().is_some() {
+                break;
+            }
+            seen.extend(battle.step(None));
+        }
+        if battle.over() != Some(0) {
+            break;
+        }
+    }
+    Some((asked.sides.clone(), seen))
+}
+
 /// A fight nobody sees, of a talk with no stage: settled at once, each
 /// side's by itself.
 pub fn settled(asked: &Asked, rules: Rules, other: &dyn Fn(Who) -> u16, director: &mut Director) {

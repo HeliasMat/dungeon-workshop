@@ -55,3 +55,31 @@ window and writes its last frame (both screens) as a PNG, with the core's
 options listed: the quickest check that a core works. The Python tools
 (`tools/ds/boot_and_watch.py`, `record.py`) do the same with py-desmume and
 make contact sheets and videos.
+
+## The quality gate
+
+`python tools/ds/gate.py <rom> [family...]` checks every word of the
+language on the real game at once. For each family of the plan
+(`film/src/plan.rs`: the core ones, the optional ones, the advanced
+words), it takes each word's example from the Wiki (`workshop/wiki/*.txt`;
+a line said, `option`, `{if}`, `{value}`, `seen()`, `#id` and `keep`, which
+have no page, get a short one of the script's own), exports it with
+`scene_player export-ds --partial`, makes the examples that export the
+scenes of one film (the word said on black before each), patches it into a
+copy of your ROM (`patch_rom.py --boot --more-actors`) and plays it from
+power on in py-desmume, A pressed every 60 frames. It writes, under
+`target/ds/gate/`:
+
+- `<family>_sheet.png`: a contact sheet of both screens, a shot every 30
+  frames (`--every N`), the frame above each;
+- `<family>.txt`: each word, whether it exported, and what the export left
+  out or changed;
+- `report.txt`: a line a family.
+
+Give family names to run only those (`gate.py <rom> fights time`);
+`--no-play` stops after the export and the patch (a minute for all). The
+whole gate takes about twenty minutes. It needs a release build of
+`scene_player`, Python 3 with `skytemple_files` and py-desmume, and armips
+(`SKYTEMPLE_ARMIPS_EXEC`). Everything it writes is made from your game:
+never commit it. What the sheets showed, family by family, is in
+`tools/ds/LIMITS.md` ("The gate's sheets").
