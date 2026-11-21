@@ -100,7 +100,7 @@ pub const WORDS: &[Planned] = &[
     word("Presence", "spot", "spot name x y"),
     word("Presence", "enter", "who enter [from side] [to where]"),
     word("Presence", "exit", "who exit [via side]"),
-    word("Presence", "appear", "who appear [where] smoke|fade|flash|vision"),
+    word("Presence", "appear", "who appear [where] smoke|fade|flash|vision|light"),
     word("Presence", "vanish", "who vanish smoke|fade|flash"),
     word("Presence", "crowd", "crowd species n area"),
     // Formations

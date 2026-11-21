@@ -103,6 +103,10 @@ pub const EMOTES: [(&str, u16, Option<&str>); 9] = [
 /// The game's puff of smoke, and its white light.
 const SMOKE: u16 = 99;
 const LIGHT: u16 = 551;
+/// The sparkles that gather into a ring (Sky's EFFECT_LIGHT_ENGULFING2),
+/// and their sound, as Uxie appears in Sky (D10P41A/m10a1101).
+const GATHERING: u16 = 638;
+const GATHERING_SOUND: &str = "6920";
 
 /// The sprites' animations by clear names, each played once, held at its
 /// end, or looped when nothing is said.
@@ -150,13 +154,15 @@ pub enum Plays {
     Loop,
 }
 
-/// How someone comes or goes: in the game's smoke, a fade, a white flash, a vision.
+/// How someone comes or goes: in the game's smoke, a fade, a white flash, a
+/// vision, the light that gathers into a ring.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Manner {
     Smoke,
     Fade,
     Flash,
     Vision,
+    Light,
 }
 
 /// The manner a line says, smoke if none.
@@ -165,6 +171,7 @@ pub fn manner(args: &crate::grammar::Bound) -> Manner {
         _ if args.has("fade") => Manner::Fade,
         _ if args.has("flash") => Manner::Flash,
         _ if args.has("vision") => Manner::Vision,
+        _ if args.has("light") => Manner::Light,
         _ => Manner::Smoke,
     }
 }
@@ -202,6 +209,21 @@ pub fn shows(film: &mut Film, who: &str, manner: Manner, coming: bool) {
             film.wait(8);
             film.on(who, |who| emit::opacity(who, to, 50.0));
             film.wait(50);
+        }
+        // (As Sky brings Uxie: a double blink 10 frames apart, half a
+        // second, the sparkles gathering into a ring with their sound, and
+        // in 1.8 s the body fades in at its centre.)
+        Manner::Light => {
+            for blink in 0..2 {
+                film.sound("flash");
+                film.beat(emit::flash([255.0, 255.0, 255.0], 12.0));
+                film.wait(if blink == 0 { 10 } else { 30 });
+            }
+            film.sound(GATHERING_SOUND);
+            film.on(who, |who| emit::emote(who, EmoteId(GATHERING), None));
+            film.wait(108);
+            film.on(who, |who| emit::opacity(who, to, 40.0));
+            film.wait(40);
         }
     }
 }

@@ -68,11 +68,11 @@ pub const WORDS: &[Word] = &[
         &[
             "row|column|triangle *who [where:place] [look to:word] [slowly|fast] [in time:duration] [arrives arrival:duration]",
             "face to face *who [where:place] [look to:word] [slowly|fast] [in time:duration] [arrives arrival:duration]",
-            "who:pokemon [where:place] smoke|fade|flash|vision",
+            "who:pokemon [where:place] smoke|fade|flash|vision|light",
             "who:pokemon [where:place]",
             "rest...",
         ],
-        "find, put; in the game's smoke (by default), a fade, a flash or a vision",
+        "find, put; in the game's smoke (by default), a fade, a flash, a vision, or the light that gathers into a ring (light)",
     )
     .does(appeared)
     .arrives(&["who"]),
@@ -120,7 +120,8 @@ fn place(film: &mut Film, line: &Line, who: &str) {
 }
 
 /// Out of nowhere, but as the game shows it: in its puff of smoke (by
-/// default), fading in, in a white flash, or in a vision.
+/// default), fading in, in a white flash, in a vision, or in the light
+/// that gathers into a ring (hidden there until it does).
 fn appears(film: &mut Film, line: &Line, who: &str) {
     dreamt(film, who);
     let spot = somewhere(film, line.args.words("where"), line.number);

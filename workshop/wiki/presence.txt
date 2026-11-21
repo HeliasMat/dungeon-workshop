@@ -29,11 +29,14 @@ piplup exit via right
 pikachu (sad): Bye...
 
 == appear
-> Someone appears where they are told, as the game shows it: in its puff of smoke (smoke, the default), fading in (fade), in a white flash (flash) or in a vision (vision). Not someone walking in: enter does that.
+> Someone appears where they are told, as the game shows it: in its puff of smoke (smoke, the default), fading in (fade), in a white flash (flash), in a vision (vision) or in the light (light): a double flash, then sparkles that gather into a ring, and they fade in at its centre. Not someone walking in: enter does that.
 scene: beach pikachu piplup
 pikachu: Where did he go?
 piplup appear left_of pikachu smoke
 pikachu (surprised): Whoa!
+piplup vanish fade
+piplup appear center light
+pikachu (surprised): What a light!
 
 == vanish
 > Someone disappears where they stand: fading away (fade, the default), in the game's puff of smoke (smoke), a white flash (flash) or a vision (vision). They are gone from the scene after it.
