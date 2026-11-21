@@ -334,7 +334,16 @@ fn the_fog_over_lanternport_is_solved_by_its_zones_its_map_and_a_fight_lost_then
     // (Pelipper's ferry: the map, the garden chosen; back down by its path.)
     driver.talk_to("pelipper", 3_000)?;
     driver.wait_until(60, |game| matches!(game.screen, Some((GameScreen::Map { .. }, _))))?;
-    driver.keys(&["down", "down", "enter"]);
+    // (The garden by its name, wherever the map lists it.)
+    let garden = match &driver.game.screen {
+        Some((GameScreen::Map { ways, .. }, _)) => ways.iter().position(|way| way.to_lowercase().contains("garden")),
+        _ => None,
+    };
+    let garden = garden.ok_or_else(|| driver.lost("no garden on the map"))?;
+    for _ in 0..garden {
+        driver.press("down");
+    }
+    driver.press("enter");
     driver.read_to_roaming(3_000)?;
     assert_eq!(driver.game.story.place.as_deref(), Some("test_garden"), "{:?}", driver.game.log);
     driver.walk_until(glam::Vec2::new(256.0, 400.0), 3_000, |game| game.story.place.as_deref() == Some("test_harbour"))?;

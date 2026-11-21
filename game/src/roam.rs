@@ -103,14 +103,16 @@ pub fn scene_text(place: &str, decor: &Decor, making: &Making) -> String {
     text.push_str(&format!("scene: {place} {}\n", names.join(" ")));
     for resident in &residents {
         text.push_str(&format!("{} put {} {} facing {}\n", resident.name, resident.x, resident.y, resident.facing));
-        if resident.wanders > 0 {
-            text.push_str(&format!("{} wander {}\n", resident.name, resident.wanders));
-        }
     }
     let (at, behind, way) = standing(decor, &making.arrival);
     text.push_str(&format!("{hero} put {} {} facing {way}\n", at.0, at.1));
     if let Some(partner) = &partner {
         text.push_str(&format!("{partner} put {} {} facing {way}\n", behind.0, behind.1));
+    }
+    // (Who wanders, once all are put: a `put` after a line not of the
+    // scene's head would walk in, not stand there.)
+    for resident in residents.iter().filter(|resident| resident.wanders > 0) {
+        text.push_str(&format!("{} wander {}\n", resident.name, resident.wanders));
     }
     match &partner {
         Some(partner) => text.push_str(&format!("player {hero} followed by {partner}\n")),

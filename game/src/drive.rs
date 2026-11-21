@@ -157,7 +157,7 @@ impl<'a> Driver<'a> {
         let Some(mut last) = self.game.walked_at() else {
             return Err(self.lost("nobody walks"));
         };
-        let (mut stuck, mut around) = (0, 0usize);
+        let (mut stuck, mut around, mut detours) = (0, 0usize, 0usize);
         let name = name.to_string();
         let near = |game: &Game| match (game.walked_at(), someone_at(game, &name)) {
             (Some(at), Some(there)) => at.distance(there) <= NEAR,
@@ -172,13 +172,16 @@ impl<'a> Driver<'a> {
                 let way = (there - at).normalize_or_zero();
                 stuck = if at.distance(last) < 0.25 { stuck + 1 } else { 0 };
                 last = at;
+                // (Stuck: aside, one side then the other, each time a little
+                // longer, until round what is in the way.)
                 if stuck > 12 {
-                    (stuck, around) = (0, 24);
+                    detours += 1;
+                    (stuck, around) = (0, (24 * (1 + detours / 2)).min(120));
                 }
                 let toward = match around.checked_sub(1) {
                     Some(left) => {
                         around = left;
-                        Vec2::new(-way.y, way.x)
+                        if detours % 2 == 1 { Vec2::new(-way.y, way.x) } else { Vec2::new(way.y, -way.x) }
                     }
                     None => way,
                 };
@@ -201,7 +204,7 @@ impl<'a> Driver<'a> {
         let Some(mut last) = self.game.walked_at() else {
             return Err(self.lost("nobody walks"));
         };
-        let (mut stuck, mut around) = (0, 0usize);
+        let (mut stuck, mut around, mut detours) = (0, 0usize, 0usize);
         self.until(
             most,
             |game, _| {
@@ -211,13 +214,16 @@ impl<'a> Driver<'a> {
                 let way = (point - at).normalize_or_zero();
                 stuck = if at.distance(last) < 0.25 { stuck + 1 } else { 0 };
                 last = at;
+                // (Stuck: aside, one side then the other, each time a little
+                // longer, until round what is in the way.)
                 if stuck > 12 {
-                    (stuck, around) = (0, 24);
+                    detours += 1;
+                    (stuck, around) = (0, (24 * (1 + detours / 2)).min(120));
                 }
                 let toward = match around.checked_sub(1) {
                     Some(left) => {
                         around = left;
-                        Vec2::new(-way.y, way.x)
+                        if detours % 2 == 1 { Vec2::new(-way.y, way.x) } else { Vec2::new(way.y, -way.x) }
                     }
                     None => way,
                 };
