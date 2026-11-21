@@ -122,6 +122,9 @@ pub struct Tables {
     pub usual_spots: HashMap<String, Vec<(i32, i32)>>,
     pub map_spots: HashMap<String, (i32, i32)>,
     pub levels: BTreeMap<String, Level>,
+    /// Every level of Explorers of Sky's, by its number (`levels.txt`): what
+    /// a film `for ds` can show.
+    pub sky_levels: HashSet<u16>,
     /// The places made by the `decor` builder, by their names: level, where a
     /// group stands (`data/extra/decors.txt`).
     pub decors: BTreeMap<String, (u16, i32, i32)>,

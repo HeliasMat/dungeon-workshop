@@ -125,6 +125,7 @@ fn told_stmt(out: &mut String, stmt: &Stmt, depth: usize, line: &impl Fn(languag
         Kind::Moment(moment) => format!("moment: {moment}"),
         Kind::Uses(name) => format!("uses {}", name.text),
         Kind::Includes(name) => format!("include {}", name.text),
+        Kind::For(target) => format!("written for {}", target.text),
         Kind::Naming { name, species } => format!("name given: {} = {}", name.text, species.text),
         Kind::Said(said) => format!("line of {}: “{}”", said.who.text, said.text),
         Kind::Call(call) => {

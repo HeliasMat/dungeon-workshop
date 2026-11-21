@@ -255,6 +255,10 @@ fn compile_as(text: &str, tables: std::sync::Arc<crate::tables::Tables>, made_by
     }
     let played = with_lines(std::mem::take(&mut film.written), &film.plan);
     let events = vec![StoryEvent { number: 0, name: EVENT.to_string(), moment: (1, 1), scenes: scenes_of(&played), film: true }];
+    // (Written for the DS: what it can't play, told.)
+    if let Some(mode) = film.for_ds {
+        crate::ds::tell(&mut film, mode, &events[0].scenes);
+    }
     // (As lines, for a file the engine reads and for those who look at them.)
     let lines: engine::Lines = played.iter().filter(|(_, made)| !matches!(made, Sortie::Champs(_))).map(|(number, made)| (*number, made.fields())).collect();
     let event = (0, fields!["event", 0, EVENT, 1, 1]);

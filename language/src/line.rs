@@ -200,6 +200,7 @@ fn statement(text: &str, start: usize, before_scenes: bool, diagnostics: &mut Ve
         }
         "repeat" => opens(Opening::Repeat(expr_or_nothing(rest, rest_start, diagnostics))),
         "while" => opens(Opening::While(expr_or_nothing(rest, rest_start, diagnostics))),
+        "for" if rest.split_whitespace().next() == Some("ds") => written_for(rest, rest_start, span, before_scenes, diagnostics)?,
         "for" => for_each(rest, rest_start, span, diagnostics)?,
         "together" | "choice" => {
             if !rest.is_empty() {
@@ -332,6 +333,23 @@ fn assignment(text: &str, start: usize, diagnostics: &mut Vec<Diagnostic>) -> Op
 }
 
 /// `for each x[, rank] in list`
+/// The machines a film can be written for (`for ds`), and how.
+pub const WRITTEN_FOR: [&str; 2] = ["ds", "ds scene"];
+
+/// `for ds`: what the film is written for, a line of its head.
+fn written_for(rest: &str, start: usize, span: Span, before_scenes: bool, diagnostics: &mut Vec<Diagnostic>) -> Option<Read> {
+    let target = rest.split_whitespace().collect::<Vec<_>>().join(" ");
+    if !WRITTEN_FOR.contains(&target.as_str()) {
+        diagnostics.push(Diagnostic::error(codes::UNREADABLE, span, format!("“for {target}”: a film is written “for ds” or “for ds scene”")));
+        return None;
+    }
+    if !before_scenes {
+        diagnostics.push(Diagnostic::error(codes::UNREADABLE, span, "“for ds” is written before the first scene"));
+        return None;
+    }
+    Some(Read::Stmt(Kind::For(name_at(rest, start)), None))
+}
+
 fn for_each(rest: &str, start: usize, span: Span, diagnostics: &mut Vec<Diagnostic>) -> Option<Read> {
     let Some(each) = rest.strip_prefix("each ") else {
         let told = if rest.contains(':') {

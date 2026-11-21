@@ -2,6 +2,48 @@
 //! export-ds`): Explorers of Sky's own operations, with less than the film
 //! shows, not written yet, or none. One table, read by the export, the
 //! language's DS mode (`for ds`) and the Workshop's Wiki and completion.
+//! A film `for ds` is told what the DS can't play of it (`told`).
+
+mod told;
+pub(crate) use told::tell;
+
+/// A film written `for ds`: `boot`, played as a new game starts (`for
+/// ds`), else in place of a scene of a game going on (`for ds scene`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Mode {
+    pub boot: bool,
+    /// The line that says so.
+    pub line: usize,
+}
+
+/// The header line that writes a film for the DS.
+pub const HEADER: &str = "for ds";
+
+/// Whether a film's text is written for the DS (a line `for ds` before its
+/// first scene).
+pub fn written_for_ds(text: &str) -> bool {
+    text.lines().map(str::trim).take_while(|line| !line.starts_with("scene")).any(|line| line == HEADER || line.starts_with("for ds "))
+}
+
+/// Pokémon Sky shows at once in a scene: the game's 24, less the hero's,
+/// the partner's and a third party member's, kept for them.
+pub const AT_ONCE: usize = 21;
+
+/// The DS's screen, pixels, and how far round someone's feet its sprite
+/// shows (sideways, above, below).
+pub const SCREEN: (f32, f32) = (256.0, 192.0);
+pub const SPRITE: (f32, f32, f32) = (16.0, 32.0, 8.0);
+
+/// Whether those points are wider or taller than the screen shows, their
+/// sprites with them: Sky has no zoom to step back.
+pub fn wider_than_the_screen(points: &[(f32, f32)]) -> bool {
+    if points.is_empty() {
+        return false;
+    }
+    let (left, right) = points.iter().fold((f32::MAX, f32::MIN), |(lo, hi), point| (lo.min(point.0), hi.max(point.0)));
+    let (top, bottom) = points.iter().fold((f32::MAX, f32::MIN), |(lo, hi), point| (lo.min(point.1), hi.max(point.1)));
+    right - left + 2.0 * SPRITE.0 > SCREEN.0 || bottom - top + SPRITE.1 + SPRITE.2 > SCREEN.1
+}
 
 /// How a word of the language exports to the game.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

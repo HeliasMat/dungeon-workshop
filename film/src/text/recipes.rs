@@ -514,6 +514,11 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
             }
             _ => (verb, words),
         };
+        // (`for ds`: what the film is written for, told once it is read.)
+        if verb == "for" && words.first().is_some_and(|word| word == "ds") {
+            film.for_ds = Some(crate::ds::Mode { boot: words.len() == 1, line: number });
+            continue;
+        }
         // (`uses fishing`: the recipes of a file; `include intro`: all its
         // lines, here, as if written on this one.)
         if let ("uses" | "include", [name]) = (verb.as_str(), words.as_slice()) {

@@ -271,3 +271,15 @@ fn answers_words_chosen_and_ids() {
     let wrong = parse("scene: beach a\nchoice\noption \"Go\" when it rains\nend\na: {if met know}\n");
     assert_eq!(wrong.diagnostics.iter().map(|wrong| wrong.code).collect::<Vec<_>>(), [Some(codes::EXTRA), Some(codes::EXPRESSION)]);
 }
+
+#[test]
+fn a_film_is_written_for_the_ds_before_its_first_scene() {
+    let parsed = parse("for ds\nscene: beach krabby\n");
+    assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    assert!(matches!(&parsed.file.head[0].kind, Kind::For(target) if target.text == "ds"));
+    assert!(matches!(&parse("for ds scene\nscene: beach krabby\n").file.head[0].kind, Kind::For(target) if target.text == "ds scene"));
+    assert_eq!(formatted("for ds\nscene: beach krabby\n"), "for ds\nscene: beach krabby\n");
+    assert!(!parse("for ds tomorrow\nscene: beach krabby\n").diagnostics.is_empty());
+    assert!(!parse("scene: beach krabby\nfor ds\n").diagnostics.is_empty(), "in the head only");
+    assert!(parse("scene: beach krabby\nfor each one in all\n  one hop\nend\n").diagnostics.is_empty(), "still a loop");
+}

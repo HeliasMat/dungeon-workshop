@@ -59,6 +59,10 @@ pub enum Kind {
     Uses(Name),
     /// `include name`: the scenes of another film, here.
     Includes(Name),
+    /// `for ds`: what the film is written for, before its first scene
+    /// (`ds`: played on the DS, from a new game; `ds scene`: in place of a
+    /// scene of a game going on, the hero and partner chosen).
+    For(Name),
     /// `name = species`, before the first scene.
     Naming {
         name: Name,

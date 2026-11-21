@@ -88,6 +88,7 @@ fn read_levels(tables: &mut Tables, heroes: &Counted<(i32, i32)>) {
     let names = by_number("place_names.txt");
     let sizes: HashMap<String, (i32, i32)> =
         assets::tables::backdrops(&tables.data).into_iter().map(|backdrop| (backdrop.level.to_string(), (backdrop.width, backdrop.height))).collect();
+    tables.sky_levels = table(&tables.data, "levels.txt").iter().filter_map(|row| row.first()?.parse().ok()).collect();
     for row in table(&tables.data, "levels.txt").into_iter().filter(|row| row.len() > 3) {
         let place = number(&row[3]);
         let name = names.get(&place);

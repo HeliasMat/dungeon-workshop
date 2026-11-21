@@ -72,6 +72,8 @@ In the window: `P` pauses, then `.` steps one frame; `Page Up` and `Page Down` g
 
 The words come in families: Structure, Speech, Presence, Formations, Movement, Turning, Body, Emotions, Camera, Screen, Sound, Effects, Objects, Fights, Time, Story; Dungeon, Guild and Fishing come with `uses dungeon`, `uses guild`, `uses fishing` (their words without it: a remark `R-USES`, its fix the `uses` line); the Advanced words (the engine's commands) are folded. A word of the old vocabulary is refused (`E-OLD-WORD`), with the form that says it now.
 
+**Written for the DS**: a line `for ds` before the first scene says the film is to play in Explorers of Sky (`scene_player export-ds`, docs/DS.md), as a new game starts; `for ds scene`, in place of a scene of a game going on. Then what the DS can't play is told, by the table of `film/src/ds.rs` (`export-ds --table`): a word it has nothing for (`E-DS-WORD`, with how to write it another way: `fight` as blows of `attack`), a word that exports with a loss (`R-DS-LOSS`, what is lost, once a word), more than 21 Pokémon at once in a scene (`E-DS-ACTORS`, who the export leaves out), a place that is no map of Sky's (`E-DS-PLACE`), the hero or the partner before the player chose them (`E-DS-HERO`, as a new game starts), a zoom or a frame wider than the screen (`R-DS-ZOOM`: Sky has no zoom). Without the line, nothing of it is said.
+
 **The Story family**, the logic of a story told:
 
 | Written | What it does |
@@ -619,6 +621,12 @@ Every problem has its code, a stable one: `E-…` an error (the film does not pl
 | `E-ORDER` | a line written the word first, said of someone: who acts comes first |
 | `E-OLD-WORD` | a word of the old vocabulary: the form of the plan that says it now |
 | `R-USES` | a word of an optional family in a film that does not take its library in (uses dungeon, guild, fishing) |
+| `E-DS-WORD` | in a film for ds: a word the DS has nothing for, with how to write it another way |
+| `R-DS-LOSS` | in a film for ds: a word that exports with less than the film shows, what it loses |
+| `E-DS-ACTORS` | in a film for ds: more than 21 Pokémon at once in a scene, who would be left out |
+| `E-DS-PLACE` | in a film for ds: a place that is no map of Explorers of Sky's |
+| `E-DS-HERO` | in a film for ds: the hero or the partner, before the player chose them |
+| `R-DS-ZOOM` | in a film for ds: a zoom, or a frame wider than the screen: Sky has no zoom |
 | `E-SERVER-REQUEST` | server: a line that is not a request |
 | `E-SERVER-COMMAND` | server: no command of this name |
 | `E-SERVER-NO-FILM` | server: no film loaded (load one first) |
