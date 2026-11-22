@@ -26,6 +26,7 @@ mod floor;
 mod form;
 mod layout;
 mod lists;
+mod live;
 mod state;
 #[cfg(test)]
 mod tests;
@@ -248,6 +249,9 @@ pub struct DungeonMaking {
     team: Option<(u16, u16, i32)>,
     /// The fight in numbers, for the text it was read from.
     numbers: (String, Option<layout::Numbers>),
+    /// The fight drawn live under the arena, and whether it is shown.
+    live: Option<live::Live>,
+    live_shown: bool,
     /// The middle shows the trial (else the arena).
     trying_shown: bool,
     /// The floor shown as the game lays it out.
