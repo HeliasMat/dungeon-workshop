@@ -105,6 +105,10 @@ pub struct Emulate {
     /// The Keys window open, and the button waiting for its new key.
     keys_shown: bool,
     keys_waiting: Option<usize>,
+    /// The frames run since `fps_since`, and the game's frames a second.
+    fps_count: u64,
+    fps_since: Instant,
+    fps: f32,
 }
 
 impl Emulate {
@@ -116,6 +120,9 @@ impl Emulate {
             keys,
             keys_shown: false,
             keys_waiting: None,
+            fps_count: 0,
+            fps_since: Instant::now(),
+            fps: 0.0,
             root: session.root().to_path_buf(),
             data: session.data().to_string(),
             core_typed: String::new(),
@@ -323,10 +330,12 @@ impl Emulate {
     }
 
     /// The keys held now, as the DS's, and the stylus where the mouse holds the bottom screen.
-    fn input(&self, context: &egui::Context, touch: Option<(f32, f32)>) -> Input {
+    fn input(&self, context: &egui::Context, touch: Option<(f32, f32)>, screen: egui::Id) -> Input {
         let mut input = Input { touch, ..Input::default() };
-        // (While a key is being chosen, the game hears none.)
-        if !context.wants_keyboard_input() && self.keys_waiting.is_none() {
+        // (The keys are the game's while the screen holds the focus, or nothing
+        // does: not while a field is typed in, nor while a key is being chosen.)
+        let ours = context.memory(|memory| memory.focused().is_none_or(|focused| focused == screen));
+        if ours && self.keys_waiting.is_none() {
             context.input(|keys| {
                 for (button, key) in &self.keys {
                     if keys.key_down(*key) {
@@ -348,10 +357,11 @@ impl Emulate {
     }
 
     /// The frames owed to the clock run (or one, stepped), their sound played, the last one shown.
-    fn run(&mut self, context: &egui::Context, touch: Option<(f32, f32)>, step: bool) {
+    fn run(&mut self, context: &egui::Context, touch: Option<(f32, f32)>, step: bool, screen: egui::Id) {
         let elapsed = self.clock.elapsed().as_secs_f64().min(0.1);
         self.clock = Instant::now();
-        let input = self.input(context, touch);
+        let input = self.input(context, touch, screen);
+        let ran_before = self.frames;
         let Some(core) = &mut self.core else {
             return;
         };
@@ -370,6 +380,13 @@ impl Emulate {
         }
         if self.pressing_until.is_some_and(|until| self.frames >= until) {
             self.pressing_until = None;
+        }
+        // (How many frames a second the game really runs, over the last second.)
+        self.fps_count += self.frames - ran_before;
+        let since = self.fps_since.elapsed().as_secs_f64();
+        if since >= 1.0 {
+            self.fps = (self.fps_count as f64 / since) as f32;
+            (self.fps_count, self.fps_since) = (0, Instant::now());
         }
         let audio = core.take_audio();
         if let Some(sound) = &self.sound {
@@ -556,15 +573,30 @@ pub fn page(ui: &mut egui::Ui, emulate: &mut Emulate) {
         }
     }
     if emulate.core.is_some() {
-        response.request_focus();
-        emulate.run(ui.ctx(), touch, step);
+        // (The screen takes the focus when clicked, or when nothing has it, and
+        // keeps the arrows and Tab for the game rather than moving the focus.)
+        if response.clicked() || response.drag_started() || ui.memory(|memory| memory.focused().is_none()) {
+            response.request_focus();
+        }
+        ui.memory_mut(|memory| {
+            memory.set_focus_lock_filter(
+                response.id,
+                egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: false },
+            )
+        });
+        emulate.run(ui.ctx(), touch, step, response.id);
     }
     keys_window(ui.ctx(), emulate);
     ui.horizontal(|ui| {
         ui.label(theme::text(key_map(&emulate.keys), theme::SMALL, theme::FAINT));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let state = match &emulate.core {
-                Some(_) => format!("frame {}{}", emulate.frames, if emulate.paused { " · paused" } else { "" }),
+                Some(_) => format!(
+                    "{:.0} fps · frame {}{}",
+                    emulate.fps,
+                    emulate.frames,
+                    if emulate.paused { " · paused" } else { "" }
+                ),
                 None => String::new(),
             };
             ui.label(theme::weak(state));
@@ -593,10 +625,18 @@ fn keys_window(context: &egui::Context, emulate: &mut Emulate) {
         if let Some(key) = pressed {
             emulate.keys_waiting = None;
             if key != egui::Key::Escape {
-                emulate.keys[at].1 = key;
-                let (_, name, _) = BUTTONS[at];
-                if let Err(why) = emulate.settings.set(&setting_of(name), key.name()) {
-                    emulate.said = why;
+                // (A key another button had: the two swap, no key does two things.)
+                let old = emulate.keys[at].1;
+                let mut changed = vec![(at, key)];
+                if let Some(other) = (0..emulate.keys.len()).find(|&other| other != at && emulate.keys[other].1 == key) {
+                    changed.push((other, old));
+                }
+                for (which, key) in changed {
+                    emulate.keys[which].1 = key;
+                    let (_, name, _) = BUTTONS[which];
+                    if let Err(why) = emulate.settings.set(&setting_of(name), key.name()) {
+                        emulate.said = why;
+                    }
                 }
             }
         }
