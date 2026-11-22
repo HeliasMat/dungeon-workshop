@@ -287,11 +287,6 @@ pub(super) fn arena_column(ui: &mut egui::Ui, making: &mut DungeonMaking, audio:
         }
         ui.add(egui::DragValue::new(&mut making.boss_life).range(1..=100).prefix("the boss at ").suffix(" % of its HP"))
             .on_hover_text("to see right away what it does as its HP drops: its phases");
-        if ui.checkbox(&mut making.live_shown, "Live render").on_hover_text("beside the arena, the fight as the game draws it, made again after each change").changed()
-            && !making.live_shown
-        {
-            making.live = None;
-        }
     });
     ui.separator();
     if making.trying_shown {
@@ -322,23 +317,7 @@ pub(super) fn arena_column(ui: &mut egui::Ui, making: &mut DungeonMaking, audio:
         }
     });
     arena_tools(ui, making_arena(&mut making.arena_tool, &mut making.arena_item, &mut making.arena_trap, &mut making.trap_hidden), boss, offered);
-    if !making.live_shown {
-        arena_drawn(ui, boss, making.arena_tool, (&making.arena_item, &making.arena_trap, making.trap_hidden));
-        return;
-    }
-    // (The arena and, beside it, the fight drawn live: under it when narrow.)
-    if ui.available_width() >= 560.0 {
-        ui.columns(2, |halves| {
-            if let Some(boss) = making.form.boss.as_mut() {
-                arena_drawn(&mut halves[0], boss, making.arena_tool, (&making.arena_item, &making.arena_trap, making.trap_hidden));
-            }
-            super::live::live_view(&mut halves[1], making);
-        });
-    } else {
-        arena_drawn(ui, boss, making.arena_tool, (&making.arena_item, &making.arena_trap, making.trap_hidden));
-        ui.add_space(8.0);
-        super::live::live_view(ui, making);
-    }
+    arena_drawn(ui, boss, making.arena_tool, (&making.arena_item, &making.arena_trap, making.trap_hidden));
 }
 
 /// The right: its name and look, its title and cry, its words, its music;

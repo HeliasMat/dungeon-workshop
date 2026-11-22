@@ -110,8 +110,6 @@ impl DungeonMaking {
             team: kept_team(session.root()),
             numbers: (String::new(), None),
             trying_shown: false,
-            live: None,
-            live_shown: true,
             floor_shown: super::floor::FloorShown::new(&session.launch),
             tile_import: None,
             pointed: None,
