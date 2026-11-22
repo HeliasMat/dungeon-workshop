@@ -143,8 +143,9 @@ fn header_line(scene: &Scene, lines: &[(usize, &str)]) -> usize {
     (1..=first.min(lines.len())).rev().find(|number| lines[number - 1].1.trim_start().starts_with("scene:")).unwrap_or(first)
 }
 
-/// `E-DS-PLACE`: a place that is no map of Sky's (one of one's own decors,
-/// made of several): the DS has nothing to show it.
+/// `E-DS-PLACE`: a place that is neither a map of Sky's nor a decor of the
+/// Workshop's: the DS has nothing to show it. A decor exports as a map of
+/// its own (`export-ds`, `patch_rom.py`), with a loss (`R-DS-LOSS`).
 fn place(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
     let sky = &film.tables.sky_levels;
     // (No data: what the game has is not known.)
@@ -156,10 +157,19 @@ fn place(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
         _ => None,
     });
     let level = shown.unwrap_or(scene.level);
-    if !sky.contains(&level) {
-        let message = format!("this place is no map of Explorers of Sky's (level {level}): the DS has nothing to show; choose a place of the game's");
-        film.problems.push(Diagnostic::at(header_line(scene, lines), message).coded(codes::DS_PLACE));
+    if sky.contains(&level) {
+        return;
     }
+    // (A decor of the Workshop's exports as a map of its own, with less.)
+    if let Some(name) = film.tables.decors.iter().find(|(_, (own, ..))| *own == level).map(|(name, _)| name.clone()) {
+        let message = format!("“{name}”, a place of your own, exports to DS with a loss: {}", lost("decor").unwrap_or("less than the film shows"));
+        film.problems.push(Diagnostic::at(header_line(scene, lines), message).as_remark().coded(codes::DS_LOSS));
+        return;
+    }
+    let message = format!(
+        "this place is no map of Explorers of Sky's nor a decor of yours (level {level}): the DS has nothing to show; choose a place of the game's or a decor"
+    );
+    film.problems.push(Diagnostic::at(header_line(scene, lines), message).coded(codes::DS_PLACE));
 }
 
 /// The film's Pokémon by their codes (`m25`, `m25.1`): those the game

@@ -50,7 +50,11 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     }
     let art = piece.art().ok();
     let move_types = art.as_ref().map(|art| art.tables.move_slots.iter().map(|slot| slot.type_id).collect()).unwrap_or_default();
-    let game = Game::read(&piece.tables.data, move_types);
+    let mut game = Game::read(&piece.tables.data, move_types);
+    // (Two decors built on one level: the first by name.)
+    for (name, (level, ..)) in &piece.tables.decors {
+        game.decors.entry(*level).or_insert_with(|| name.clone());
+    }
     let mut writer = Writer::new(&game);
     writer.tall_asked = tall;
     if let Some(art) = &art {
@@ -91,7 +95,7 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     if !writer.problems.is_empty() {
         return Err(format!("{name} doesn't export to DS:\n  {}", writer.problems.join("\n  ")));
     }
-    let text = writer.finish(&piece.name);
+    let mut text = writer.finish(&piece.name);
     for note in &writer.notes {
         eprintln!("  left out: {note}");
     }
@@ -102,9 +106,65 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     if let Some(folder) = std::path::Path::new(&out).parent() {
         let _ = std::fs::create_dir_all(folder);
     }
+    // The decors the scenes are in, each as a map beside the export.
+    let maps = decor_maps(&game, &piece.tables, &text, &out)?;
+    if !maps.is_empty() {
+        let at = text.find('\n').map_or(0, |end| end + 1);
+        text.insert_str(at, &maps);
+    }
     std::fs::write(&out, text).map_err(|error| format!("{out}: {error}"))?;
     println!("{out}: {} actors, place {}", writer.actors.len(), writer.level.as_deref().unwrap_or("?"));
     Ok(())
+}
+
+/// Each decor the export's scenes are in (`LEVEL_DECOR_<n>`), written as a
+/// map beside `out` (`super::ds_map`): its line for `patch_rom.py`, `// ds-export
+/// map LEVEL_DECOR_<n> <name> <width> <height> <lower> <upper> <walls>`.
+fn decor_maps(game: &Game, tables: &::film::tables::Tables, text: &str, out: &str) -> Result<String, String> {
+    let mut levels: Vec<u16> = text
+        .match_indices(DECOR_LEVEL)
+        .filter_map(|(at, _)| {
+            let rest = &text[at + DECOR_LEVEL.len()..];
+            rest[..rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len())].parse().ok()
+        })
+        .collect();
+    levels.sort_unstable();
+    levels.dedup();
+    let mut lines = String::new();
+    for level in levels {
+        let name = game.decors.get(&level).cloned().unwrap_or_else(|| level.to_string());
+        let picture = |part: &str| -> Result<Option<(usize, usize, Vec<u8>)>, String> {
+            let path = game_file(&game.data, &format!("grounds/pictures/{level}_{part}0.png"));
+            if !path.exists() {
+                return Ok(None);
+            }
+            let image = image::open(&path).map_err(|error| format!("{}: {error}", path.display()))?.to_rgba8();
+            Ok(Some((image.width() as usize, image.height() as usize, image.into_raw())))
+        };
+        let (w, h, lower) = picture("f")?.ok_or(format!("{name}: the decor is not built (no grounds/pictures/{level}_f0.png): build it first"))?;
+        let upper = picture("u")?.filter(|(uw, uh, _)| (*uw, *uh) == (w, h)).map(|(_, _, pixels)| pixels);
+        let solid = tables.grounds.get(&level).map(|ground| ground.rows().to_vec());
+        let map = super::ds_map::map_of(w, h, &lower, upper.as_deref(), solid.as_deref());
+        let files = map.write(std::path::Path::new(&format!("{out}.decor{level}")))?;
+        eprintln!(
+            "  {name}: a map of its own, {}x{} pixels ({}x{} chunks), {} palettes{}; its animations and changing colours as they first are, the top screen black",
+            map.width,
+            map.height,
+            map.width / super::ds_map::CHUNK,
+            map.height / super::ds_map::CHUNK,
+            map.palettes.len(),
+            if map.requantized > 0 { format!(", {} tiles brought to their palette's nearest colours", map.requantized) } else { String::new() },
+        );
+        let _ = writeln!(
+            lines,
+            "// ds-export map {DECOR_LEVEL}{level} {} {} {} {}",
+            name.replace(char::is_whitespace, "_"),
+            map.width,
+            map.height,
+            files.join(" ")
+        );
+    }
+    Ok(lines)
 }
 
 /// `export-ds <file.dungeon> --out <file.json>`: a dungeon of the Workshop
@@ -221,7 +281,14 @@ struct Game {
     move_types: Vec<u8>,
     /// The species' names, to tell who is left out.
     names: HashMap<u16, String>,
+    /// The Workshop's own places (decors), by level: each exports as a map
+    /// of its own (`ds_map`), its level named `LEVEL_DECOR_<level>` until
+    /// `patch_rom.py` gives it one of the game's.
+    decors: HashMap<u16, String>,
 }
+
+/// How the export names a decor's level, for `patch_rom.py` to rename.
+const DECOR_LEVEL: &str = "LEVEL_DECOR_";
 
 impl Game {
     fn read(data: &str, move_types: Vec<u8>) -> Game {
@@ -236,14 +303,14 @@ impl Game {
         let actors = rows("entities.txt").into_iter().filter_map(|row| Some((row.get(1)?.clone(), row.get(2)?.parse().ok()?))).collect();
         let names = rows("monsters.txt").into_iter().filter_map(|row| Some((row.first()?.parse().ok()?, row.get(1)?.clone()))).collect();
         _ = DATA.set(data.to_string());
-        Game { levels, actors, data: data.to_string(), move_types, names }
+        Game { levels, actors, data: data.to_string(), move_types, names, decors: HashMap::new() }
     }
 
-    /// A level's size in pixels (its picture's, as the extraction wrote it:
-    /// two numbers of 8 bytes first).
-    fn size(&self, level: &str) -> Option<(f32, f32)> {
-        let id = self.levels.iter().find(|(_, name)| *name == level)?.0;
-        let info = std::fs::read(game_file(&self.data, &format!("rom/grounds/info/{id}.bin"))).ok()?;
+    /// A level's size in pixels (its picture's, as the extraction or the
+    /// decor builder wrote it: two numbers of 8 bytes first).
+    fn size(&self, id: u16) -> Option<(f32, f32)> {
+        let layer = if self.levels.contains_key(&id) { "rom/" } else { "" };
+        let info = std::fs::read(game_file(&self.data, &format!("{layer}grounds/info/{id}.bin"))).ok()?;
         let number = |at: usize| Some(u64::from_le_bytes(info.get(at..at + 8)?.try_into().ok()?) as f32);
         Some((number(0)?, number(8)?))
     }
@@ -1941,10 +2008,17 @@ impl<'a> Writer<'a> {
                 }
                 self.memory = *on;
             }
-            Beat::Screen(ScreenBeat::Backdrop(level, ..)) => match self.game.levels.get(level).cloned() {
+            // (A decor of the Workshop's: a map of its own, `LEVEL_DECOR_<n>` until patch_rom.py gives it a level.)
+            Beat::Screen(ScreenBeat::Backdrop(id, ..)) => match self
+                .game
+                .levels
+                .get(id)
+                .cloned()
+                .or_else(|| self.game.decors.contains_key(id).then(|| format!("{}{id}", DECOR_LEVEL.trim_start_matches("LEVEL_"))))
+            {
                 Some(level) => {
                     self.top = TOP_SCREENS.iter().find(|(place, _)| *place == level).map(|(_, top)| *top);
-                    self.size = self.game.size(&level);
+                    self.size = self.game.size(*id);
                     // (`--tall`: the place itself on the top screen, a screen above, where it is tall enough.)
                     // (A place Sky pairs with a picture of its own keeps it: the beach's is its sky and
                     // rock, where the place above the sand is only sea, its foam blank on the top screen.)
@@ -1966,7 +2040,7 @@ impl<'a> Writer<'a> {
                     self.line("supervision_Acting(0);");
                     self.level = Some(level);
                 }
-                None => self.problems.push(format!("line {number}: no level {level} in the game's data")),
+                None => self.problems.push(format!("line {number}: no level {id} in the game's data")),
             },
             Beat::Place(PlaceBeat::Ground { middle, .. }) => {
                 self.middle = Some((middle.x, middle.y));
@@ -1976,6 +2050,12 @@ impl<'a> Writer<'a> {
                     let above = self.above((middle.x, middle.y));
                     let position = self.position(above);
                     self.line(&format!("camera2_SetPositionMark({position});"));
+                }
+            }
+            // A decor's ways in and out (`south`, `west`): places named, nothing to write.
+            Beat::Place(PlaceBeat::Entrances(ways)) => {
+                for (name, at) in ways {
+                    self.places.insert(name.clone(), (at.x, at.y));
                 }
             }
             // A place named (`name rock 300 200`): read into positions, as a place found.

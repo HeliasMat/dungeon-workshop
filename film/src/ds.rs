@@ -332,6 +332,11 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("when", "its lines start at once, not when the other arrives"),
     ("random", "drawn in tenths of the range: within a tenth of it"),
     ("beside", "one told something by the script before its lines plays them in the script, at once"),
+    // (Not a word: a scene whose place is a decor of the Workshop's, `told::place`.)
+    (
+        "decor",
+        "a map of its own, still: its animated tiles and changing colours as they first are, a tile of too many colours brought to its palette's nearest; the top screen black",
+    ),
 ];
 
 /// How to write a word the DS doesn't have another way (its fix in a film

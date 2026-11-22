@@ -23,4 +23,5 @@ game = { path = "../game" }
 glam.workspace = true
 serde_json.workspace = true
 image.workspace = true
+png = "0.18"
 bincode.workspace = true

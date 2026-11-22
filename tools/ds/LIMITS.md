@@ -99,6 +99,52 @@ chapter 2 without one is a whole playthrough.
   not done. With armips installed, `skytemple_files`' patcher applies it as
   is.
 
+## A place of your own (seen)
+
+A scene in a decor of the Workshop's plays on DS in that decor, made a map
+of Sky's (`scene_player export-ds` writes it beside the export,
+`tools/ds/decor_map.py` makes the BPC, BPL and BMA with skytemple_files).
+**Seen** (2026-11-22): `test_square` (896 × 672) from a cold boot, its paths,
+trees and pots as the Workshop shows them, Pikachu and Piplup where the
+film puts them, Pikachu's walk.
+
+How Sky keeps a map, and what the export does to fit:
+
+- **Tiles of 8, one palette each.** A map is 4-bit tiles, each with one of
+  16 palettes of 16 colours (colour 0 clear), shared by both layers. A
+  decor is RGBA: its colours are brought to the DS's 5 bits a channel, and
+  the tiles of both layers share out 16 palettes of 15 colours (the tiles of
+  most colours first, each in the palette it adds the fewest to). A tile of
+  more than 15 colours (a shadow over two grounds, a blend), or whose
+  colours no palette has room for, takes its palette's nearest. test_square:
+  13 palettes, no tile changed.
+- **Chunks of 3 × 3 tiles** (24 pixels): the decor is padded right and
+  down, clear and solid there (test_square: 912 × 672, 38 × 28 chunks).
+- **At most 1024 tiles a layer** (a tile's number in a map is 10 bits; the
+  most in Sky, `D54P11A`, has 1024), checked after flipped tiles are shared:
+  test_square has 189 on its lower layer, 412 on its upper. Over it,
+  `patch_rom.py` stops and says so. **Chunks**: Sky's most is 917 a layer
+  (`T00P01`); more is refused, unproven (test_square: 154 and 216). **Size**:
+  Sky's largest map is 60 × 40 chunks (1440 × 960), refused beyond.
+- **A level of its own.** Sky's levels are a table in arm9; a level's
+  map is its entry of `MAP_BG/bg_list.dat`. The export takes debug levels no
+  story scene plays, each with an entry no other level shares, of map type
+  6 (as the story's towns): `T00P04A`, `T00P04A2` (no script names them),
+  then `T00P03`, `T00P02` (named only by the debug maps' scripts). Four
+  decors a film. Their entries point to new files (`MAP_BG/dwmap0.*`), the
+  game's own untouched. With ActorAndLevelLoader (`--more-actors`) new
+  levels could be added instead; not needed.
+- **Walls**: the decor's (`decor_ground.txt`) as the map's collision.
+
+Lost (`R-DS-LOSS` on the scene, `film/src/ds.rs` LOSSES `decor`):
+
+- the animated tiles (water, torches: Sky's BPA) and the colours that change
+  with time (palette animation): the decor's first frame, still;
+- a tile of too many colours, its palette's nearest;
+- the top screen: black, as most of Sky's scenes (no picture of its own;
+  `--tall` should show the place there when it is 384 pixels tall or more:
+  not tried with a decor).
+
 ## The 12 words judged impossible
 
 | Word | Verdict | How (script operations, as Sky's scripts use them) |
@@ -395,7 +441,7 @@ the story's changed. Past the 45 free ones the exporter names them
 (Clefairy, Golbat, Parasect, Golduck) shown right
 (`target/ds/lab/many_grid.png`). It unlocks any number of species in a
 film (still 21 at once in a scene), and the level list moves too
-(`BALANCE/level_list.bin`): new places become possible, not done yet.
+(`BALANCE/level_list.bin`): new levels become possible, not needed so far: a decor of the Workshop takes a spare level of the game's (below, "A place of your own").
 
 ## The gate's sheets (`tools/ds/gate.py`, 2026-11-21)
 

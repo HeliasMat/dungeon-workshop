@@ -60,16 +60,18 @@ fn too_many_at_once_says_who_is_left_out() {
 }
 
 #[test]
-fn a_place_of_ones_own_has_no_map_on_ds() {
+fn a_place_of_ones_own_is_a_map_of_its_own_on_ds() {
     let tables = crate::tests::tables();
     // (Without one's own game's data, what Sky has is not known.)
     if tables.sky_levels.is_empty() {
         return;
     }
     assert!(told("for ds\nscene: beach krabby\nkrabby: Hi.\n", codes::DS_PLACE).is_empty());
-    let Some(own) = tables.decors.keys().find(|name| tables.decors[*name].0 as usize >= tables.sky_levels.len()) else { return };
+    let Some(own) = tables.decors.keys().find(|name| !tables.sky_levels.contains(&tables.decors[*name].0)) else { return };
     let film = format!("for ds\nscene: {own} krabby\nkrabby: Hi.\n");
-    assert_eq!(told(&film, codes::DS_PLACE).len(), 1, "{:?}", coded(&film));
+    assert!(told(&film, codes::DS_PLACE).is_empty(), "{:?}", coded(&film));
+    let lost = told(&film, codes::DS_LOSS);
+    assert!(lost.iter().any(|said| said.contains("a place of your own")), "{:?}", coded(&film));
 }
 
 #[test]

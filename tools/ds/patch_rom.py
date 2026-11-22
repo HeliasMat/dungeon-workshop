@@ -34,6 +34,10 @@ Explorers of Sky ROM, and write the patched copy.
   `BALANCE/actor_list.bin`; each Pokémon without an actor then gets a new
   actor there (`NPC_DW<n>`), none of the story's touched. Beyond 45 the
   exporter names them `ACTOR_NPC_FREE<n>`, which only this option casts.
+- A scene in a decor of the Workshop's (`// ds-export map LEVEL_DECOR_<n> ...`,
+  its pictures and walls beside the export): made a map of the game's and
+  put on a level the story never plays (`tools/ds/decor_map.py`), the
+  scenes' `LEVEL_DECOR_<n>` renamed to it.
 - `--patch`: also a BPS patch from the ROM to the copy, to share without
   sharing the game.
 - `--dungeon <dungeon.json>` (with `--boot`): after the film, the game's
@@ -66,6 +70,7 @@ from skytemple_files.script.ssa_sse_sss.position import SsaPosition
 from skytemple_files.script.ssb.script_compiler import ScriptCompiler
 
 from bps import apply_bps, bps
+import decor_map
 import dungeon
 
 # The script engine's actor table in arm9 (pmdsky-debug's ENTITIES): 386
@@ -374,7 +379,14 @@ def main():
             raise SystemExit('no film (-): only with --dungeon')
     else:
         with open(film_path, encoding='utf-8') as file:
-            scenes = scenes_of(file.read())
+            source = file.read()
+        scenes = scenes_of(source)
+        # The decors of the Workshop's the scenes are in: maps of their own, on spare levels.
+        for old, new in decor_map.put(rom, config, decor_map.maps_of(source), os.path.dirname(os.path.abspath(film_path))).items():
+            for scene in scenes:
+                scene.lines = [re.sub(rf'\b{old}\b', new, line) for line in scene.lines]
+                if scene.level == old:
+                    scene.level = new
     boss = []
     if dungeon_json:
         dump = dungeon.load(dungeon_json)

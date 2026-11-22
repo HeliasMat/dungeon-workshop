@@ -16,10 +16,33 @@ export-ds --table` prints (`film/src/ds.rs`): a word the DS has nothing for
 (`E-DS-WORD`, with how to write it: a `fight` as blows of `attack`), a word
 that exports with a loss (`R-DS-LOSS`: what is lost), more than 21 Pokémon at
 once in a scene (`E-DS-ACTORS`: who the export leaves out), a place that is
-no map of Sky's (`E-DS-PLACE`), the hero or the partner before the player
+neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor is a
+`R-DS-LOSS`, below), the hero or the partner before the player
 chose them (`E-DS-HERO`), a zoom or a frame wider than the screen
 (`R-DS-ZOOM`: Sky has no zoom). In DS Mode the completion offers only what
 exports, and the Wiki shows each word's DS badge.
+
+## A place of your own
+
+A scene may be in a decor made with the Workshop (a `.decor`, built): the
+export makes it a map of Sky's own. Beside `x.exps`, `export-ds` writes
+`x.exps.decor<level>.lower.png` and `.upper.png` (8-bit indexed: index =
+palette × 16 + colour, colour 0 clear, each tile of 8 pixels in one palette
+of 16 colours, 16 palettes shared by both layers), `.walls.txt` (its walls,
+a tile a character), and a line `// ds-export map LEVEL_DECOR_<level> ...`;
+the decor is padded right and down to whole chunks (3 × 3 tiles, 24
+pixels). `patch_rom.py` makes the game's files of them (`MAP_BG/dwmap0.bpc`,
+`.bpl`, `.bma`, with skytemple_files), points a level no story scene plays
+(`T00P04A`, then `T00P04A2`, `T00P03`, `T00P02`: four decors a film) at
+them, and the scenes' `LEVEL_DECOR_<level>` becomes that level. Positions
+are the decor's pixels, as in the film.
+
+What is lost (`R-DS-LOSS` on the scene's line): the decor is still, its
+animated tiles and changing colours as they first are; a tile of more
+colours than its palette holds (a shadow, a blend) takes its palette's
+nearest; the top screen is black (`--tall` should show the place there, a screen
+above, when it is 384 pixels tall or more: not tried with a decor). Too many different tiles for
+the DS (1024 a layer) and `patch_rom.py` stops, and says it.
 
 ## A core for the Emulator space
 

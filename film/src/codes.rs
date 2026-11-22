@@ -29,7 +29,8 @@ pub const DS_LOSS: &str = "R-DS-LOSS";
 /// In a film `for ds`: more Pokémon at once in a scene than Sky shows (21),
 /// who would be left out said.
 pub const DS_ACTORS: &str = "E-DS-ACTORS";
-/// In a film `for ds`: a place that is no map of Explorers of Sky's.
+/// In a film `for ds`: a place that is no map of Explorers of Sky's nor a decor of
+/// the Workshop's (a decor exports as a map of its own, `R-DS-LOSS`).
 pub const DS_PLACE: &str = "E-DS-PLACE";
 /// In a film `for ds` (played as a new game starts): the hero or the
 /// partner, not chosen yet.
@@ -57,7 +58,7 @@ pub const ALL: &[(&str, &str)] = &[
     (DS_WORD, "in a film for ds: a word the DS has nothing for, with how to write it another way"),
     (DS_LOSS, "in a film for ds: a word that exports with less than the film shows, what it loses"),
     (DS_ACTORS, "in a film for ds: more than 21 Pokémon at once in a scene, who would be left out"),
-    (DS_PLACE, "in a film for ds: a place that is no map of Explorers of Sky's"),
+    (DS_PLACE, "in a film for ds: a place that is neither a map of Explorers of Sky's nor a decor of yours"),
     (DS_HERO, "in a film for ds: the hero or the partner, before the player chose them"),
     (DS_ZOOM, "in a film for ds: a zoom, or a frame wider than the screen: Sky has no zoom"),
 ];
