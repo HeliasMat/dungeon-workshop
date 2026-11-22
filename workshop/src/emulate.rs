@@ -579,10 +579,7 @@ pub fn page(ui: &mut egui::Ui, emulate: &mut Emulate) {
             response.request_focus();
         }
         ui.memory_mut(|memory| {
-            memory.set_focus_lock_filter(
-                response.id,
-                egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: false },
-            )
+            memory.set_focus_lock_filter(response.id, egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: false })
         });
         emulate.run(ui.ctx(), touch, step, response.id);
     }
@@ -591,12 +588,7 @@ pub fn page(ui: &mut egui::Ui, emulate: &mut Emulate) {
         ui.label(theme::text(key_map(&emulate.keys), theme::SMALL, theme::FAINT));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let state = match &emulate.core {
-                Some(_) => format!(
-                    "{:.0} fps · frame {}{}",
-                    emulate.fps,
-                    emulate.frames,
-                    if emulate.paused { " · paused" } else { "" }
-                ),
+                Some(_) => format!("{:.0} fps · frame {}{}", emulate.fps, emulate.frames, if emulate.paused { " · paused" } else { "" }),
                 None => String::new(),
             };
             ui.label(theme::weak(state));

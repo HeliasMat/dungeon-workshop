@@ -23,6 +23,8 @@ pub const COLOURS: usize = 15;
 
 /// A colour as the DS shows it: 5 bits a channel.
 type Colour = [u8; 3];
+/// A tile that shows something: its layer, where (x, y in tiles), its colours by how many pixels.
+type Shown = (usize, usize, usize, Vec<(Colour, usize)>);
 
 /// A decor made a map: its size (whole chunks), each layer's pixels as
 /// `palette * 16 + colour`, the palettes, the walls by tiles.
@@ -63,7 +65,7 @@ pub fn map_of(w: usize, h: usize, lower: &[u8], upper: Option<&[u8]>, solid: Opt
     };
     let layers: Vec<&[u8]> = std::iter::once(lower).chain(upper).collect();
     // Each tile that shows something: its layer, where, its colours by how many pixels.
-    let mut tiles: Vec<(usize, usize, usize, Vec<(Colour, usize)>)> = Vec::new();
+    let mut tiles: Vec<Shown> = Vec::new();
     for (layer, pixels) in layers.iter().enumerate() {
         for ty in 0..height / TILE {
             for tx in 0..width / TILE {
