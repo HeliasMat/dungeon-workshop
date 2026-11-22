@@ -38,6 +38,9 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
         print!("{}", told_table());
         return Ok(());
     }
+    if name.ends_with(".dungeon") {
+        return export_dungeon(context, name, out);
+    }
     let piece = Piece::find(context, name)?;
     let written = piece.written.as_ref().ok_or(format!("{name}: a film only"))?;
     // (Remarks and details don't stop it: only what keeps the film from playing.)
@@ -101,6 +104,59 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     }
     std::fs::write(&out, text).map_err(|error| format!("{out}: {error}"))?;
     println!("{out}: {} actors, place {}", writer.actors.len(), writer.level.as_deref().unwrap_or("?"));
+    Ok(())
+}
+
+/// `export-ds <file.dungeon> --out <file.json>`: a dungeon of the Workshop
+/// (and the fight it ends with) as the rules read it, in JSON, for
+/// `tools/ds/dungeon.py`: each floor's foes (species, level, weights as
+/// thresholds out of 10,000), its items, tileset and song, the arena laid
+/// out (tiles, who stands where, the boss's life already multiplied), what
+/// the boss says.
+fn export_dungeon(context: &Context, path: &str, out: Option<&String>) -> Result<(), String> {
+    let file = std::path::Path::new(path);
+    let text = std::fs::read_to_string(file).map_err(|error| format!("{path}: {error}"))?;
+    // (Its game's folder: the one above `dungeons/`, for its fight's file.)
+    let game_folder = file.parent().and_then(std::path::Path::parent).unwrap_or(std::path::Path::new("."));
+    let project = context.library.at(game_folder);
+    let book = game::playthrough::book(&context.data).map_err(|error| error.to_string())?;
+    let own = rules::own::read(&game::dive::resolved_for(&project, &text), &book.tables)
+        .map_err(|wrong| format!("{path}: {}", wrong.iter().map(ToString::to_string).collect::<Vec<_>>().join("; ")))?;
+    let boss = own.boss.as_ref().map(|says| {
+        let phases: Vec<serde_json::Value> = says
+            .phases
+            .iter()
+            .map(|phase| {
+                serde_json::json!({
+                    "share": phase.share, "says": phase.says, "fiercer": phase.fiercer, "heal": phase.heal,
+                    "weather": phase.weather, "help": phase.help.iter().map(|enemy| enemy.species).collect::<Vec<_>>(),
+                    "moves": phase.moves, "shake": phase.shake,
+                })
+            })
+            .collect();
+        serde_json::json!({
+            "species": says.species, "name": says.name, "title": says.title, "begins": says.begins, "falls": says.falls,
+            "moves": says.moves, "joins": says.joins, "phases": phases,
+        })
+    });
+    // (The team its game says, `team: chikorita totodile`, by the species' numbers.)
+    let games = std::fs::read_dir(game_folder).into_iter().flatten().flatten().map(|entry| entry.path());
+    let said = games.filter(|path| path.extension().is_some_and(|extension| extension == "game")).find_map(|path| {
+        let text = std::fs::read_to_string(path).ok()?;
+        text.lines().find_map(|line| line.trim().strip_prefix("team:").map(str::to_string))
+    });
+    let species_of = |word: &str| book.tables.species.iter().position(|kind| rules::own::plain(&kind.name) == rules::own::plain(word));
+    let team: Vec<usize> = said.iter().flat_map(|said| said.split_whitespace()).filter_map(species_of).collect();
+    let dump = serde_json::json!({ "name": own.name, "team_level": own.team_level, "team": team, "dungeon": own.table, "boss": boss });
+    let stem = file.file_stem().and_then(|stem| stem.to_str()).unwrap_or("dungeon");
+    let out = out.cloned().unwrap_or_else(|| format!("target/ds/{stem}.json"));
+    if let Some(folder) = std::path::Path::new(&out).parent() {
+        let _ = std::fs::create_dir_all(folder);
+    }
+    let written = serde_json::to_string_pretty(&dump).map_err(|error| error.to_string())?;
+    std::fs::write(&out, written).map_err(|error| format!("{out}: {error}"))?;
+    let fight = if own.boss.is_some() { ", the last a boss fight" } else { "" };
+    println!("{out}: {} ({} floors{fight})", own.name, own.table.floors.len());
     Ok(())
 }
 

@@ -36,6 +36,10 @@ Explorers of Sky ROM, and write the patched copy.
   exporter names them `ACTOR_NPC_FREE<n>`, which only this option casts.
 - `--patch`: also a BPS patch from the ROM to the copy, to share without
   sharing the game.
+- `--dungeon <dungeon.json>` (with `--boot`): after the film, the game's
+  team goes into a dungeon of the Workshop, exported by `scene_player
+  export-ds <file.dungeon>`, and its boss fight (`tools/ds/dungeon.py`).
+  `--boss`: straight into the fight. The film may be `-` (none).
 
 Never run it on the original cartridge dump: it only reads `<rom>` and
 writes `<out.nds>`. Nothing it writes may be committed.
@@ -62,6 +66,7 @@ from skytemple_files.script.ssa_sse_sss.position import SsaPosition
 from skytemple_files.script.ssb.script_compiler import ScriptCompiler
 
 from bps import apply_bps, bps
+import dungeon
 
 # The script engine's actor table in arm9 (pmdsky-debug's ENTITIES): 386
 # entries of 12 bytes (kind, species, name, two unknowns).
@@ -290,12 +295,12 @@ def put_file(rom, path, data):
     create_file_in_rom(rom, path, data)
 
 
-def add_scenes(rom, config, scenes, film_path):
+def add_scenes(rom, config, scenes, film_path, prefix='dwscen'):
     """Each scene as an acting scene of its own; the lines playing them."""
     plays = []
     for number, scene in enumerate(scenes, 1):
         place = scene.level.removeprefix('LEVEL_')
-        name = f'dwscen{number:02d}'
+        name = f'{prefix}{number:02d}'
         base = f'SCRIPT/{place}/{name}'
         put_file(rom, base + '.ssa', new_layout(config, scene.actors, scene.performers, scene.objects))
         put_file(rom, base + '.ssb', compile_script(config, scene.source, film_path))
@@ -319,6 +324,18 @@ def edit_unionall(rom, config, edit):
     rom.setFileByName(path, compile_script(config, edit(source), 'unionall.exps'))
 
 
+def boss_place(scenes):
+    """Where the boss scenes are played: the film's last place, around
+    where its view was (else Beach Cave Pit's, where Sky's first boss talks)."""
+    if not scenes:
+        return 'LEVEL_D01P41A', (28, 22)
+    last = scenes[-1]
+    spots = [(float(f['x']), float(f['y'])) for f in last.performers] or [(float(f['x']), float(f['y'])) for _, f in last.actors]
+    if not spots:
+        return last.level, (32, 24)
+    return last.level, (round(sum(x for x, _ in spots) / len(spots)), round(sum(y for _, y in spots) / len(spots)))
+
+
 def main():
     args = sys.argv[1:]
     patch = None
@@ -332,6 +349,16 @@ def main():
     extra = '--more-actors' in args
     if extra:
         args.remove('--more-actors')
+    dungeon_json = None
+    if '--dungeon' in args:
+        at = args.index('--dungeon')
+        dungeon_json = args[at + 1]
+        del args[at:at + 2]
+    boss_first = '--boss' in args
+    if boss_first:
+        args.remove('--boss')
+    if dungeon_json and not boot:
+        raise SystemExit('--dungeon: with --boot only')
     if len(args) != (3 if boot else 4):
         print(__doc__)
         return 2
@@ -341,12 +368,23 @@ def main():
     rom = NintendoDSRom(original)
     config = get_ppmdu_config_for_rom(rom)
     region = original[0xF:0x10].decode('ascii')
-    with open(film_path, encoding='utf-8') as file:
-        scenes = scenes_of(file.read())
+    if film_path == '-':
+        scenes = []
+        if not dungeon_json:
+            raise SystemExit('no film (-): only with --dungeon')
+    else:
+        with open(film_path, encoding='utf-8') as file:
+            scenes = scenes_of(file.read())
+    boss = []
+    if dungeon_json:
+        dump = dungeon.load(dungeon_json)
+        for lost in dungeon.put(rom, config, dump):
+            print(f'  lost: {lost}')
+        boss = [scene for text in dungeon.boss_scenes(dump, *boss_place(scenes)) for scene in scenes_of(text)]
     if extra:
-        for name, species in more_actors(rom, config, scenes).items():
+        for name, species in more_actors(rom, config, scenes + boss).items():
             print(f'ACTOR_{name}: species {species} (a new actor)')
-    for name, species in ({} if extra else cast(config, scenes)).items():
+    for name, species in ({} if extra else cast(config, scenes + boss)).items():
         actor = config.script_data.level_entities__by_name[name]
         poke = set_species(rom, config, region, actor.id, species)
         print(f'ACTOR_{name}: species {species} (for a savestate: emu.py "1:{poke}")')
@@ -354,11 +392,18 @@ def main():
         object_names(config, scene)
     if boot:
         plays = add_scenes(rom, config, scenes, film_path)
+        if dungeon_json:
+            fight = [line.strip() for line in add_scenes(rom, config, boss, 'dungeon.py', 'dwboss')]
+            before, after = (fight[:1], fight[1:]) if fight else ([], [])
+            plays += dungeon.team_lines() + dungeon.enter_lines(dungeon.BOSS_OF if boss_first else dungeon.FLOORS_OF)
 
         def edit(source):
             if BOOT_EVENT not in source:
                 raise SystemExit('unionall: the new game event was not found')
-            return source.replace(BOOT_EVENT, BOOT_EVENT + ''.join(plays), 1)
+            source = source.replace(BOOT_EVENT, BOOT_EVENT + ''.join(plays), 1)
+            if dungeon_json:
+                source = dungeon.getout_edit(source, before, after)
+            return source
 
         edit_unionall(rom, config, edit)
         what = 'plays when a new game starts'

@@ -282,6 +282,67 @@ Needs armips (SkyTemple's patches) or an ARM gcc + make (c-of-time):
   code, a custom title-screen entry;
 - a title-screen hook ("Watch the film" next to "New Game").
 
+## Dungeons and boss fights (`patch_rom.py --dungeon`, seen 2026-11-22)
+
+Seen from a cold boot (`tests/games/test_rescue`'s Test Woods): the film,
+then "Test Woods B1F" in Mystifying Forest's tileset, Chikorita and
+Totodile at level 6, Hoothoot and Spinarak met on floor 1; with `--boss`,
+Ursaring and its two Teddiursa in the arena, Ursaring's life doubled (88),
+and once it falls its `boss_falls` line, then the title. The scene before
+the fight (Beach Cave's end) is the same code path, not reached by the key
+script (it would need the four floors walked).
+
+What holds: the floor count, each floor's tileset, song, layout figures
+(the look's), Pokémon (species, level, weights from the counts), traps and
+items (weights from the counts, by Sky's categories), recruiting and the
+other rules Sky's restrictions have, the team and its level, the dungeon's
+name (every language), the arena's size and walls/water, the boss and its
+guards where the arena puts them, their level and stats, the boss's life
+multiplied, the fight's song, the lines before and after the fight.
+
+What is lost:
+
+- **One slot**: the dungeon replaces Beach Cave and its pit, so one dungeon
+  (and one fight) a ROM; the story's own Beach Cave is gone (harmless while
+  the film starts the game). The game's dungeon is entered at once after the
+  film; the `.game`'s other steps (chapters, talks, shop, recruit) are not
+  played.
+- **Floors counted up** (`goes_up`), a dungeon of 0 floors (a fight alone):
+  not done.
+- **One level a species a floor**: Sky lists a species once a floor.
+- **The boss's moves** (`boss_moves`): fixed-room Pokémon know their
+  species' level-up moves. **Its item** (`boss_item`): they hold nothing.
+  **Its title and cry**: the title is said in its first line; no cry.
+- **The arena's allies, watchers, items and traps**: not placed (only the
+  boss and its guards).
+- **Phases** (`boss_phase`: lines, `anger`, `shake`, weather, reinforcements,
+  heals at HP thresholds): Sky has nothing for them; no script runs during a
+  dungeon. Lost.
+- **The boss joining the team** after the fight: not done.
+- **Lost fight**: the game's own way back (`CORO_EVENT_DIVIDE`), which,
+  before the quiz, starts the new game (and the film) again.
+- The hero and partner have Sky's default names (no quiz, no naming).
+
+What code would add (c-of-time or armips):
+
+- **Phases**: a hook in the dungeon's turn loop (c-of-time's
+  `CustomScriptSpecialProcessCall` is for ground scripts; dungeons need an
+  overlay 29 patch, as SkyTemple's "dungeon interrupts" do): read the boss's
+  HP each turn, and at a threshold show a message (`LogMessage` /
+  `DisplayMessage`), raise its stats (`BoostOffensiveStat`), call
+  `SpawnMonster` for reinforcements, `TryIncreaseHp`, `TryActivateWeather`,
+  shake the screen. All exist as functions in pmdsky-debug's overlay 29;
+  none is reachable from a script.
+- **Boss moves and items**: set the boss's moves and held item after it
+  spawns (a fixed-room hook, same patch).
+- **More dungeon slots**: SkyTemple's dungeon list can grow (its "Add
+  dungeon" patches the list's size in arm9 with armips), so a game's every
+  dungeon could get one of its own instead of Beach Cave.
+- **New tilesets**: a tileset of the Workshop's own (`tileset:` a picture)
+  needs SkyTemple's dungeon tileset import (`dungeon.bin`'s DMA/DPC/DPCI/DPL
+  files), doable in Python without code, but not done here: the look of a
+  Sky dungeon only.
+
 ## Things, joining, evolving, marks
 
 - **open / close** (seen): a thing put in the film (`put object chest`) is

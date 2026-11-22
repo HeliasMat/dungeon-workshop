@@ -63,6 +63,31 @@ committed to this project.
 The patched copy, its savestates and screenshots are your game's: never
 commit them (`target/` and the settings folder are out of the repository).
 
+## A film that leads into its dungeon (a trial)
+
+A dungeon of the Workshop (`.dungeon`) and the boss fight it ends with
+(`.fight`) can follow the film on DS, in place of Beach Cave:
+
+    scene_player export-ds games/<game>/dungeons/<name>.dungeon --out target/ds/<name>.json
+    scene_player export-ds <film> --out target/ds/<film>.exps --partial
+    python tools/ds/patch_rom.py <rom> target/ds/<film>.exps --boot target/ds/<name>.nds --dungeon target/ds/<name>.json
+
+- `export-ds <file.dungeon>` writes the dungeon as the rules read it (JSON):
+  its floors (Pokémon, levels, weights, items, tileset, song), the arena,
+  what the boss says, and the team its `.game` names.
+- `--dungeon`: a new game plays the film, makes the game's team (the
+  `.game`'s `team:`, at the dungeon's `level:`) and goes into the dungeon.
+  Its floors are Beach Cave's, renamed; at its end, the boss says its
+  `boss_says` line in the film's last place, the fight is Beach Cave Pit
+  (its arena, the boss and guards placed, the boss's life multiplied), and
+  the boss says its `boss_falls` line after it. Then back to the title.
+- `--boss`: straight into the fight, for a quick look (the film is `-` to
+  play none).
+
+`python tools/ds/boot_and_watch.py target/ds/<name>.nds` plays it from power
+on. What is lost is in `tools/ds/LIMITS.md` ("Dungeons and boss fights"),
+how Sky keeps its dungeons in `tools/ds/DUNGEONS.md`.
+
 ## Without a window
 
 `emulator <core> <rom> [frames] [out.png] [--press A:90] [--every N]` runs a game with no

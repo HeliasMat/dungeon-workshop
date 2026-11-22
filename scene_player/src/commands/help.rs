@@ -293,6 +293,7 @@ Nothing of data/: a picture or a sound from the game's data is refused. Whoever 
 --table: each core word and the game's operations it becomes, direct, close (what is lost) or impossible (why).
 --partial: what doesn't export is left out, and told, instead of an error.
 --tall: both screens show the place, the top one a screen above the bottom one (the actors show on the bottom one only).
+A .dungeon file instead of a film: the dungeon and its boss fight as the rules read them, in JSON, for patch_rom.py --dungeon.
 scene_player export-ds my_film --out target/ds/my_film.exps",
         )
     },
