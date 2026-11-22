@@ -19,24 +19,38 @@ use crate::session::Session;
 use crate::settings::{self, Settings};
 use crate::theme;
 
-/// The keyboard as the DS's keys: the key, the button, as shown.
-const KEYS: [(egui::Key, Button); 12] = [
-    (egui::Key::ArrowUp, Button::Up),
-    (egui::Key::ArrowDown, Button::Down),
-    (egui::Key::ArrowLeft, Button::Left),
-    (egui::Key::ArrowRight, Button::Right),
-    (egui::Key::X, Button::A),
-    (egui::Key::Z, Button::B),
-    (egui::Key::S, Button::X),
-    (egui::Key::A, Button::Y),
-    (egui::Key::Q, Button::L),
-    (egui::Key::W, Button::R),
-    (egui::Key::Enter, Button::Start),
-    (egui::Key::Backspace, Button::Select),
+/// The DS's buttons, their name, and the key that plays each one unless
+/// the settings say another (`key_<name> = <key>`, the Keys window).
+const BUTTONS: [(Button, &str, egui::Key); 12] = [
+    (Button::Up, "Up", egui::Key::ArrowUp),
+    (Button::Down, "Down", egui::Key::ArrowDown),
+    (Button::Left, "Left", egui::Key::ArrowLeft),
+    (Button::Right, "Right", egui::Key::ArrowRight),
+    (Button::A, "A", egui::Key::X),
+    (Button::B, "B", egui::Key::Z),
+    (Button::X, "X", egui::Key::S),
+    (Button::Y, "Y", egui::Key::A),
+    (Button::L, "L", egui::Key::Q),
+    (Button::R, "R", egui::Key::W),
+    (Button::Start, "Start", egui::Key::Enter),
+    (Button::Select, "Select", egui::Key::Backspace),
 ];
 
-/// The key map, in one line.
-pub const KEY_MAP: &str = "Arrows: D-pad · X: A · Z: B · S: X · A: Y · Q/W: L/R · Enter: Start · Shift: Select · mouse on the bottom screen: stylus";
+/// The settings' key of a button's key.
+fn setting_of(name: &str) -> String {
+    format!("key_{}", name.to_lowercase())
+}
+
+/// The keyboard as the DS's buttons: each button's key, the settings' or its own.
+fn keys_of(settings: &Settings) -> Vec<(Button, egui::Key)> {
+    BUTTONS.iter().map(|(button, name, default)| (*button, settings.get(&setting_of(name)).and_then(egui::Key::from_name).unwrap_or(*default))).collect()
+}
+
+/// The key map, in one line, as the keys are now.
+fn key_map(keys: &[(Button, egui::Key)]) -> String {
+    let named: Vec<String> = BUTTONS.iter().zip(keys).map(|((_, name, _), (_, key))| format!("{}: {name}", key.name())).collect();
+    format!("{} · Shift: Select too · mouse on the bottom screen: stylus", named.join(" · "))
+}
 
 /// The patched copy the film is played in, and its film's export, under `<root>/target/ds/`.
 const PLAYED: &str = "workshop_play";
@@ -86,13 +100,22 @@ pub struct Emulate {
     core_typed: String,
     /// One frame asked by Step.
     step_asked: bool,
+    /// Each DS button's key on the keyboard.
+    keys: Vec<(Button, egui::Key)>,
+    /// The Keys window open, and the button waiting for its new key.
+    keys_shown: bool,
+    keys_waiting: Option<usize>,
 }
 
 impl Emulate {
     pub fn new(session: &Session) -> Emulate {
         let launch = &session.launch;
         let settings = Settings::read(launch.settings.clone());
+        let keys = keys_of(&settings);
         let mut emulate = Emulate {
+            keys,
+            keys_shown: false,
+            keys_waiting: None,
             root: session.root().to_path_buf(),
             data: session.data().to_string(),
             core_typed: String::new(),
@@ -302,11 +325,12 @@ impl Emulate {
     /// The keys held now, as the DS's, and the stylus where the mouse holds the bottom screen.
     fn input(&self, context: &egui::Context, touch: Option<(f32, f32)>) -> Input {
         let mut input = Input { touch, ..Input::default() };
-        if !context.wants_keyboard_input() {
+        // (While a key is being chosen, the game hears none.)
+        if !context.wants_keyboard_input() && self.keys_waiting.is_none() {
             context.input(|keys| {
-                for (key, button) in KEYS {
-                    if keys.key_down(key) {
-                        input = input.with(button);
+                for (button, key) in &self.keys {
+                    if keys.key_down(*key) {
+                        input = input.with(*button);
                     }
                 }
                 if keys.modifiers.shift {
@@ -469,6 +493,9 @@ pub fn tools(ui: &mut egui::Ui, emulate: &mut Emulate, film: Option<&Path>) {
     if ui.add_enabled(has, egui::Button::new("Screenshot")).on_hover_text("both screens as a PNG, in the Workshop's settings folder").clicked() {
         emulate.screenshot();
     }
+    if ui.button("Keys…").on_hover_text("which key of the keyboard plays each button of the DS").clicked() {
+        emulate.keys_shown = true;
+    }
     ui.separator();
     let busy = emulate.making.as_ref().is_some_and(|making| making.done.is_none());
     let can = film.is_some() && emulate.core_path().is_some() && !busy;
@@ -532,8 +559,9 @@ pub fn page(ui: &mut egui::Ui, emulate: &mut Emulate) {
         response.request_focus();
         emulate.run(ui.ctx(), touch, step);
     }
+    keys_window(ui.ctx(), emulate);
     ui.horizontal(|ui| {
-        ui.label(theme::text(KEY_MAP, theme::SMALL, theme::FAINT));
+        ui.label(theme::text(key_map(&emulate.keys), theme::SMALL, theme::FAINT));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let state = match &emulate.core {
                 Some(_) => format!("frame {}{}", emulate.frames, if emulate.paused { " · paused" } else { "" }),
@@ -544,6 +572,66 @@ pub fn page(ui: &mut egui::Ui, emulate: &mut Emulate) {
     });
     if let Some(making) = &emulate.making {
         making_log(ui, making);
+    }
+}
+
+/// The Keys window: each DS button and its key; a click on a key, then the
+/// key pressed, changes it (Escape leaves it as it was); kept in the
+/// Workshop's settings.
+fn keys_window(context: &egui::Context, emulate: &mut Emulate) {
+    if !emulate.keys_shown {
+        return;
+    }
+    // (A button waiting for its key takes the next one pressed.)
+    if let Some(at) = emulate.keys_waiting {
+        let pressed = context.input(|input| {
+            input.events.iter().find_map(|event| match event {
+                egui::Event::Key { key, pressed: true, .. } => Some(*key),
+                _ => None,
+            })
+        });
+        if let Some(key) = pressed {
+            emulate.keys_waiting = None;
+            if key != egui::Key::Escape {
+                emulate.keys[at].1 = key;
+                let (_, name, _) = BUTTONS[at];
+                if let Err(why) = emulate.settings.set(&setting_of(name), key.name()) {
+                    emulate.said = why;
+                }
+            }
+        }
+    }
+    let mut open = true;
+    egui::Window::new("DS Keys").open(&mut open).collapsible(false).resizable(false).show(context, |ui| {
+        ui.label(theme::weak("Click a key, then press the one you want (Escape: keep it)."));
+        ui.add_space(4.0);
+        egui::Grid::new("ds keys").num_columns(2).spacing([16.0, 6.0]).show(ui, |ui| {
+            for (at, (_, name, _)) in BUTTONS.iter().enumerate() {
+                ui.label(*name);
+                let waiting = emulate.keys_waiting == Some(at);
+                let word = if waiting { "press a key…".to_string() } else { emulate.keys[at].1.name().to_string() };
+                let button = egui::Button::new(word).min_size(egui::vec2(120.0, 0.0));
+                let button = if waiting { button.fill(theme::EMULATOR) } else { button };
+                if ui.add(button).clicked() {
+                    emulate.keys_waiting = Some(at);
+                }
+                ui.end_row();
+            }
+        });
+        ui.add_space(6.0);
+        if ui.button("Back to the Defaults").clicked() {
+            for (at, (_, name, default)) in BUTTONS.iter().enumerate() {
+                emulate.keys[at].1 = *default;
+                if let Err(why) = emulate.settings.set(&setting_of(name), "") {
+                    emulate.said = why;
+                }
+            }
+            emulate.keys_waiting = None;
+        }
+    });
+    if !open {
+        emulate.keys_shown = false;
+        emulate.keys_waiting = None;
     }
 }
 
@@ -598,4 +686,25 @@ fn no_core(ui: &mut egui::Ui, emulate: &mut Emulate) {
             ui.label(theme::text(format!("remembered in {}", file.display()), theme::SMALL, theme::FAINT));
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn each_button_has_its_key_and_the_settings_change_it() {
+        let file = std::env::temp_dir().join(format!("workshop_keys_{}.txt", std::process::id()));
+        let mut settings = Settings::read(Some(file.clone()));
+        let keys = keys_of(&settings);
+        assert_eq!(keys.len(), BUTTONS.len());
+        assert_eq!(keys[4], (Button::A, egui::Key::X), "A on X by default");
+        settings.set(&setting_of("A"), egui::Key::K.name()).unwrap();
+        assert_eq!(keys_of(&Settings::read(Some(file.clone())))[4], (Button::A, egui::Key::K));
+        // (Emptied: its own again.)
+        settings.set(&setting_of("A"), "").unwrap();
+        assert_eq!(keys_of(&Settings::read(Some(file.clone())))[4], (Button::A, egui::Key::X));
+        assert!(key_map(&keys).contains("X: A"));
+        _ = std::fs::remove_file(file);
+    }
 }
