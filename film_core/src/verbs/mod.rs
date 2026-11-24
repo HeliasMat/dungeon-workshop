@@ -1,8 +1,10 @@
-//! The words of a film, by what they do: a file a theme, each with its own
-//! words (`WORDS`), the one table of them: a word, its forms, what it writes
-//! for the engine, who it names, how it plays. A line goes to the families
-//! whose form of its word fits, the narrower first; what none plays is the
-//! engine's own command (`engine`), or a recipe of the film's.
+//! The words of a film, by what they do: a family a theme, each with its
+//! own words (`WORDS`, its `FAMILY`): a word, its forms, what it writes for
+//! the engine, who it names, how it plays. The families here are those the
+//! core leans on; the others are a crate each (`film_fishing`...), and
+//! `film` gathers them all in their order (`Lexicon`). A line goes to the
+//! families whose form of its word fits, the narrower first; what none plays
+//! is the engine's own command (`engine`), or a recipe of the film's.
 //!
 //! What a form says, word by word (one reader, `crate::grammar`, checks each
 //! line against them and says what is wrong):

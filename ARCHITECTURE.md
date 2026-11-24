@@ -23,8 +23,10 @@
     with no window
 
 4   stage_view                 film
-    everything that is drawn   the films' language whole:
-                               every family of its words
+    everything that is drawn   the films' language whole; under it a crate a
+                               family of words (film_acting, film_moving,
+                               film_fishing, film_dungeon, film_fights), each on
+                               film_core
 
 3   film_core                  shell                          rom_formats            decor
     what the words say: the    window, sound played,          the ROM's formats      places made for films
@@ -269,7 +271,7 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | Bubbles on screen | `stage_view/src/overlay/bubbles.rs` |
 | The dialogue box: a line typed out letter by letter, portrait, choices (the game and the player) | `stage_view/src/ui/message.rs` (`Words`, `Said`); a scene's line: `Play::said` (`stage_view/src/stage/said.rs`) |
 | Lights, pictures, weather on screen | `stage_view/src/overlay/marks.rs` |
-| The films' words | `film_core/src/verbs/`, one file per theme, each with its words (`WORDS`): `acting`, `fishing/`, `dungeon/`, `things`, `heard`, `view`, `sky`, `effects`, `fights/`, `items`, `moving/`, `pictures`, `rituals`, `crowds`, `said`, `timing`, `nodes`, `game`, `guild`; the engine's commands in `engine.rs` and `commands.rs` (the advanced words); the vocabulary, its families and the old words refused in `film_core/src/plan.rs`; all of them in the "All the words" table of `film/FILMS.md`, checked by `film/src/tests/docs.rs`; what is wrong, with the closest name: `film_core/src/check.rs` |
+| The films' words | a family a theme, each with its words (`WORDS`) and its `FAMILY`: those the core leans on in `film_core/src/verbs/` (`things`, `heard`, `view`, `sky`, `effects`, `items`, `pictures`, `rituals`, `crowds`, `said`, `timing`, `nodes`, `game`, `aura`), the others a crate each (`film_acting`, `film_moving`: moving, swimming, flying, riding, contact, hiding, body; `film_fishing`, `film_dungeon`: the dungeon and the guild, `film_fights`); their order, the narrower first, in `film/src/lib.rs` (`FAMILIES`, the `LEXICON`); the engine's commands in `engine.rs` and `commands.rs` (the advanced words); the vocabulary, its families and the old words refused in `film_core/src/plan.rs`; all of them in the "All the words" table of `film/FILMS.md`, checked by `film/src/tests/docs.rs`; what is wrong, with the closest name: `film_core/src/check.rs` |
 | The game's pictures, their categories, their animations | `library/tables/images.txt` |
 | An object on stage: a game item, a decor piece, a picture of our own | `engine/src/stage/thing.rs` (`Thing`); its words: `film_core/src/verbs/things.rs`, `items.rs`; the word for each decor piece: `library/tables/objects.txt`; our pictures: `library/images/` |
 | A Pokémon variant | painted by hand in `data/hand/`, its line in `data/extra/variants.txt` (none is provided) |
@@ -292,7 +294,7 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | The engine in detail | [engine/README.md](engine/README.md) |
 | The player and packs | [scene_player/README.md](scene_player/README.md) |
 | Make a place | [decor/DECORS.md](decor/DECORS.md) |
-| Add a word to films | the `WORDS` list and the `match` of its theme's file in `film_core/src/verbs/` (and `.brings`, `.puts` or `.arrives` if its line brings someone onto the stage), and a test in `film/src/tests/` |
+| Add a word to films | the `WORDS` list and the `match` of its theme's file (`film_core/src/verbs/`, or its family's crate: `film_fishing/src/`...; and `.brings`, `.puts` or `.arrives` if its line brings someone onto the stage), and a test in `film/src/tests/`; a new family: its `FAMILY` in `FAMILIES` (`film/src/lib.rs`), where its words go in the order; what it keeps from one line to the next, a type of its own kept by the film (`Film::kept`, `film_core::film::Kept`) |
 | Add a command to the engine | its family's file in `beat/`, then `stage/direct/` or `director/happen.rs` |
 
 ## Checking

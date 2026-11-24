@@ -865,20 +865,20 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 
 ## How it is built
 
-`film/` (a single source of truth: the engine and the films' words are in Rust), one home per subject:
+`film_core/` (a single source of truth: the engine and the films' words are in Rust), one home per subject; the families of words that stand alone a crate each (`film_acting/`, `film_moving/`, `film_fishing/`, `film_dungeon/`, `film_fights/`); `film/` gathers them all in their order (`LEXICON`), and holds the language's service (`service.rs`) and the tests:
 
 | Folder | Role |
 |---|---|
 | `text/` | reads the text through the language (`front/`): what each line is (`ir.rs`), a recipe kept as written and written out at each call; recipes, `repeat`, `uses`, `include` played (`recipes.rs`), whom each scene names (`cast.rs`) |
 | `names/` | names: someone, a Pokémon, a variant, a crowd (`mod.rs`), an object (`things.rs`), a place, an entrance, a picture, a move (`places.rs`) |
 | `spots/` | where a line says: a word of the place, pixels, a tile, `front_of a` (`mod.rs`), getting there and at what pace (`routes.rs`), formations (`formations.rs`) |
-| `verbs/` | the words, one file per theme, each with its `WORDS` list (the word, what it writes): `acting`, `fishing/`, `dungeon/`, `things`, `heard`, `view`, `sky`, `effects`, `fights/`, `items`, `moving/`, `pictures`, `rituals`, `crowds`, `said`, `timing`, `nodes`, `game`, `guild`; the engine's commands in `engine.rs` and `commands.rs` |
+| `verbs/` | what a word is (`Word`, `Family`, `Lexicon`: `mod.rs`, `lexicon.rs`), a line played by the family whose form fits; the families the core leans on, one file per theme, each with its `WORDS` list (the word, what it writes) and its `FAMILY`: `things`, `heard`, `view`, `sky`, `effects`, `items`, `pictures`, `rituals`, `crowds`, `said`, `timing`, `nodes`, `game`, `aura`; the engine's commands in `engine.rs` and `commands.rs` |
 | `emit/` | the `Beat`s the words make, one file per kind (as in the engine); points found while playing (`Point`, `film.on_point`); what the film says is wrong (`film.not_a`, `film.unread`); `adapter.rs`: engine commands written in a film, read as beats |
 | `compile/` | the film's scenes (`scenes.rs`), a scene from its opening to its fade (`scene.rs`), a line (`said.rs`), the whole film and its events (`mod.rs`) |
 | `tables/` | the game's files, read once: Pokémon and variants, places and grounds, pictures, objects, what the story's scenes say |
 | `ds.rs` | what each word becomes on the DS: the table `scene_player export-ds` writes by, and `--table` prints |
 | `words.rs`, `screen.rs`, `check.rs` | the little words (faces, emotions, spots), the words on screen (box, bubble, colours), what is wrong, with the film's line and the closest names |
-| `tests/` | what each word gives, where it leaves everyone on the real scene |
+| `film/src/tests/` | what each word gives, where it leaves everyone on the real scene |
 
 What depends on the scene is not decided here: `front_of a`, `to b`, formations, who comes in, crowds, the path, the free tile are written as they are (`find`, `goes`, `arrives`, `crowd`... see `engine/src/beat/place.rs`) and are worked out on the `Stage` when the line plays (`stage/placing/`, `stage/ground.rs`). The same goes for the view: `view.rs` only translates the words into camera beats (`engine/src/stage/camera/`), which frames, picks the distance and glides. A `.film` goes through no text file: `.txt` and the engine's language remain for `story.txt`, `>` lines and packs.
 
@@ -886,7 +886,7 @@ What depends on the scene is not decided here: `front_of a`, `to b`, formations,
 
 **When something is badly written**, each problem carries its line of the film, and the words it quotes between “ ” are pointed out in place (the Workshop and `analyze` underline them); an unknown name is always told the same way: `unknown item “aple”. Closest: apple (scene_player items)`.
 
-To add a word, add it to the `WORDS` list of its theme's file in `film_core/src/verbs/`, with its forms, what it makes play and its function, which receives its values already read and makes its `Beat`s:
+To add a word, add it to the `WORDS` list of its theme's file (in `film_core/src/verbs/`, or in its family's crate: `film_fishing/src/`...), with its forms, what it makes play and its function, which receives its values already read and makes its `Beat`s:
 
 ```rust
 Word::new("greet", &["who:pokemon other:pokemon"], "face, jump").does(greets),
