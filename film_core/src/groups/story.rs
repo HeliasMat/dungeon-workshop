@@ -90,7 +90,7 @@ pub(crate) fn scene_shows(film: &mut Film, at: usize) {
 }
 
 /// A moment starts (`moment: the bet`): its label, counted.
-pub(crate) fn moment_starts(film: &mut Film, title: &str) {
+pub fn moment_starts(film: &mut Film, title: &str) {
     if !film.story.used {
         return;
     }

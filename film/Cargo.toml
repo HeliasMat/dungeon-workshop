@@ -18,6 +18,7 @@ film_moving = { path = "../film_moving" }
 film_dungeon = { path = "../film_dungeon" }
 film_fights = { path = "../film_fights" }
 film_fishing = { path = "../film_fishing" }
+film_view = { path = "../film_view" }
 language = { path = "../language" }
 scenes = { path = "../scenes" }
 story = { path = "../story" }

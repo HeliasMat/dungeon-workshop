@@ -314,7 +314,7 @@ impl Film {
 
 /// Before a boss, as the game does: the screen flashes white three times
 /// with the shock's sound, then all goes white.
-pub(crate) fn boss_flashes(film: &mut Film) {
+pub fn boss_flashes(film: &mut Film) {
     film.sound("boss");
     for _ in 0..3 {
         film.beat(flash(light(engine::Colour::White), 8.0));

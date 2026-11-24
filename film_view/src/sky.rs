@@ -1,10 +1,10 @@
 //! The sky and the light: the weather, the hour. Nothing lays a light on a
 //! scene but what is written here.
 
-use crate::emit;
-use crate::film::Film;
-use crate::verbs::{Line, Word};
-use crate::words::{DAY, of, plain};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::verbs::{Line, Word};
+use film_core::words::{DAY, of, plain};
 
 pub const WORDS: &[Word] = &[
     Word::new("daytime", &["moment:word [stars] [d:duration]"], "light (morning, day, evening, night; dawn); tint (18h30); stars: the stars twinkling (weather sparkles)").family("Effects").ds_close("screen_FlushOut(1, d, 4, 224, 176, 136) evening, (…, 4, 80, 112, 144) night (the light of Sky's own evening and night guild crossroads); day: screen_FlushIn; the light's own colour is lost; as a scene opens, the place's own level gives it", "the light's own colour").maybe(hour_said),
@@ -23,7 +23,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("sky", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("sky", WORDS);
 
 /// The light of each moment of the day.
 const HOURS: [(&str, &str); 5] = [("dawn", "dawn"), ("morning", "dawn"), ("day", "normal"), ("evening", "evening"), ("night", "night")];
@@ -76,7 +76,7 @@ fn stat_sights(stat: &str, up: bool) -> Option<&'static [u16]> {
 /// game's own arrows, a stat rising (or falling).
 fn status_said(film: &mut Film, line: &Line) {
     let args = &line.args;
-    let who = crate::verbs::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if args.has("up") || args.has("down") {
         let stat = args.word("stat").map(plain).unwrap_or_default();
         match stat_sights(&stat, args.has("up")) {
@@ -148,7 +148,7 @@ fn hour_said(film: &mut Film, line: &Line) -> bool {
     }
     if let Some(light) = of(&HOURS, &moment) {
         // (Its time as written, `2s` or `40i`; 2 seconds untold.)
-        let frames = args.word("d").and_then(crate::words::frames_of).unwrap_or(120) as f32;
+        let frames = args.word("d").and_then(film_core::words::frames_of).unwrap_or(120) as f32;
         match engine::light_named(light) {
             Some(colour) => {
                 film.staging.daylight = Some(colour);

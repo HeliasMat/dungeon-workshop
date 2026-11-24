@@ -1,0 +1,19 @@
+[package]
+name = "film_view"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "What the films show: the view, the sky and its light, effects, the game's pictures, the nodes"
+readme = "../README.md"
+publish.workspace = true
+
+[dependencies]
+engine = { path = "../engine" }
+film_core = { path = "../film_core" }
+scenes = { path = "../scenes" }
+glam.workspace = true
+
+[lints]
+workspace = true

@@ -39,7 +39,7 @@ fn aura_type(film: &mut Film, who: &str) -> Option<u8> {
 }
 
 /// `aura on pikachu`, `aura off pikachu`.
-pub(super) fn aura(film: &mut Film, line: &Line) {
+pub fn aura(film: &mut Film, line: &Line) {
     let who = plain(line.args.word("who").unwrap_or_default());
     if line.args.has("off") {
         if film.staging.auras.remove(&who) == Some(FIRE) {

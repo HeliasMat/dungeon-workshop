@@ -109,9 +109,9 @@ const GROUPS: [film_core::verbs::Group; 26] = [
     film_dungeon::guild::GROUP,
     film_core::groups::things::GROUP,
     film_core::groups::heard::GROUP,
-    film_core::groups::view::GROUP,
-    film_core::groups::sky::GROUP,
-    film_core::groups::effects::GROUP,
+    film_view::view::GROUP,
+    film_view::sky::GROUP,
+    film_view::effects::GROUP,
     film_fights::GROUP,
     film_core::groups::items::GROUP,
     film_moving::swimming::GROUP,
@@ -121,12 +121,12 @@ const GROUPS: [film_core::verbs::Group; 26] = [
     film_moving::hiding::GROUP,
     film_moving::GROUP,
     film_moving::body::GROUP,
-    film_core::groups::pictures::GROUP,
+    film_view::pictures::GROUP,
     film_core::groups::rituals::GROUP,
     film_core::groups::crowds::GROUP,
     film_core::groups::said::GROUP,
     film_core::groups::timing::GROUP,
-    film_core::groups::nodes::GROUP,
+    film_view::nodes::GROUP,
 ];
 
 /// The library's recipes, a file a theme: what the groups' words lean on

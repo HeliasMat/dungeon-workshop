@@ -251,7 +251,7 @@ fn used(film: &mut Film, line: &Line) {
         }
         // (A point: an unseen mark there, faced, the move aimed at it.)
         (None, Some((x, y))) => {
-            let mark = format!("p{}", film_core::groups::effects::FIRST_MARK + film.timing.marks);
+            let mark = format!("p{}", film_view::effects::FIRST_MARK + film.timing.marks);
             film.timing.marks += 1;
             film.on(&mark, |mark| emit::put(mark, x, y, engine::Direction::Down));
             film.face(&who, &mark);

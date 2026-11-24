@@ -51,7 +51,7 @@ pub struct Blow {
 /// once they have stepped aside: its code.
 fn where_stood(film: &mut Film, who: &str, me: Who) -> String {
     let at = found(film, who, Spot::Of(me), &["exact"]);
-    let mark = format!("p{}", film_core::groups::effects::FIRST_MARK + film.timing.marks);
+    let mark = format!("p{}", film_view::effects::FIRST_MARK + film.timing.marks);
     film.timing.marks += 1;
     film.on(&mark, |mark| emit::put_point(mark, at.clone(), Direction::Down));
     mark

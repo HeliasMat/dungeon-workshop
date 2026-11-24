@@ -6,12 +6,12 @@
 
 use engine::{Cam, Ease, LIFT};
 
-use crate::film::Film;
-use crate::spots::routes::found;
-use crate::spots::{Aim, nowhere, point_said};
-use crate::verbs::{Line, Names, Word};
-use crate::words::{SHOTS, plain, spot};
-use crate::{emit, fields};
+use film_core::film::Film;
+use film_core::spots::routes::found;
+use film_core::spots::{Aim, nowhere, point_said};
+use film_core::verbs::{Line, Names, Word};
+use film_core::words::{SHOTS, plain, spot};
+use film_core::{emit, fields};
 
 pub const WORDS: &[Word] = &[
     Word::new("frame", &["free", "members... snap", "members... [follows]"], "frame, waitcam; keepframe (follows); camera (snap: at once); a place: pan")
@@ -30,7 +30,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("view", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("view", WORDS);
 
 /// The words that frame the view: one in a moment.
 const FRAMING_WORDS: [&str; 7] = ["camera", "view", "frame", "shot", "glide", "scroll", "dolly"];
@@ -324,7 +324,7 @@ fn view_word(film: &mut Film, line: &Line) -> bool {
             }
             pan(film, fields!["@", x1, y1], args.frames("d").unwrap_or(0), false, false);
             let length = args.word("d").unwrap_or_default();
-            match crate::words::frames_of(length) {
+            match film_core::words::frames_of(length) {
                 Some(frames) => film.wait(i64::from(frames)),
                 None => film.not_a(length, "a duration"),
             }
@@ -355,7 +355,7 @@ fn viewed(film: &mut Film, line: &Line) -> bool {
     // (`moment: the gust`: a moment of the scene; its view is framed once.)
     if line.verb == "moment" {
         let title = line.args.words("title").join(" ");
-        super::story::moment_starts(film, &title);
+        film_core::groups::story::moment_starts(film, &title);
         film.moment = Some((title, false));
         return true;
     }

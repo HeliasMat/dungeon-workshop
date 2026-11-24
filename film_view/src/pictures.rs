@@ -1,11 +1,11 @@
 //! The game's pictures: looks at them, visions, what is made of them.
 
-use crate::emit;
-use crate::film::Film;
-use crate::screen::{BREAK, on_screen};
-use crate::tables::Picture;
-use crate::verbs::{Line, Names, Word};
-use crate::words::plain;
+use film_core::emit;
+use film_core::film::Film;
+use film_core::screen::{BREAK, on_screen};
+use film_core::tables::Picture;
+use film_core::verbs::{Line, Names, Word};
+use film_core::words::plain;
 
 pub const WORDS: &[Word] = &[
     Word::new("memory", &[""], "whiteout, a sepia tint, whitein; at its end, the same back")
@@ -30,7 +30,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("pictures", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("pictures", WORDS);
 
 /// A picture in the place of the scene, at once.
 fn show(film: &mut Film, shown: &Picture) {
@@ -72,7 +72,7 @@ fn screen_goes(film: &mut Film, line: &Line) {
     let frames = args.frames("d").unwrap_or(30) as f32;
     match plain(args.word("kind").unwrap_or_default()).as_str() {
         "white" => film.beat(emit::fade(out, true, frames)),
-        "boss" if out => crate::emit::boss_flashes(film),
+        "boss" if out => film_core::emit::boss_flashes(film),
         "boss" => film.beat(emit::fade(false, true, frames)),
         "iris" => {
             let on = film.speaking.last_speaker.clone().and_then(|last| film.other(&last));

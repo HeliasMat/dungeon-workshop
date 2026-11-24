@@ -117,12 +117,13 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `rom_formats` | `media`, `rules` |
 | `decor` | `assets`, `diagnostics`, `media` |
 | `film_core` | `assets`, `engine`, `language`, `rules`, `scenes`, `story` |
+| `film_view` | `engine`, `film_core`, `scenes` |
 | `film_fishing` | `engine`, `film_core`, `rules`, `scenes` |
-| `film_fights` | `assets`, `engine`, `film_core`, `film_dungeon`, `rules`, `scenes` |
-| `film_dungeon` | `engine`, `film_core`, `scenes` |
+| `film_fights` | `assets`, `engine`, `film_core`, `film_dungeon`, `film_view`, `rules`, `scenes` |
+| `film_dungeon` | `engine`, `film_core`, `film_view`, `scenes` |
 | `film_moving` | `engine`, `film_acting`, `film_core` |
 | `film_acting` | `engine`, `film_core`, `scenes` |
-| `film` | `assets`, `engine`, `film_acting`, `film_core`, `film_dungeon`, `film_fights`, `film_fishing`, `film_moving`, `language`, `scenes`, `story` |
+| `film` | `assets`, `engine`, `film_acting`, `film_core`, `film_dungeon`, `film_fights`, `film_fishing`, `film_moving`, `film_view`, `language`, `scenes`, `story` |
 | `stage_view` | `assets`, `engine`, `media`, `rules`, `scenes`, `shell` |
 | `preview` | `assets`, `engine`, `film`, `media`, `rules`, `scenes`, `shell`, `stage_view` |
 | `dive` | `rules`, `scenes`, `shell`, `stage_view` |

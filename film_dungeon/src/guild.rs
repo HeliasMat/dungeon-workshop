@@ -25,12 +25,12 @@ fn job(film: &mut Film, line: &Line) {
     let name = line.args.words("name").join(" ");
     if line.args.has("take") {
         let shown = film.picture("job_board");
-        film_core::groups::pictures::cut_to(film, &shown);
+        film_view::pictures::cut_to(film, &shown);
         film.sound("click");
         film.narrate(&on_screen(&format!("Job accepted: {name}")));
         film.kept::<DungeonState>().mission = Some(name);
         film.beat(emit::jingle(7));
-        film_core::groups::pictures::cut_back(film);
+        film_view::pictures::cut_back(film);
     } else if line.args.has("done") {
         film.beat(emit::music(scenes::vocabulary::POKEMON.song("mission_accomplished").map(engine::SongId)));
         film.narrate(&on_screen(&format!("Job complete: {name}!")));

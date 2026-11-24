@@ -1,11 +1,11 @@
 //! What is shown of no one's doing, placed exactly: effects, particles, a
 //! flash, the screen trembling.
 
-use super::view::aim;
-use crate::film::Film;
-use crate::verbs::{Line, Names, Word};
-use crate::words::{frames_of, of, plain};
-use crate::{emit, fields};
+use crate::view::aim;
+use film_core::film::Film;
+use film_core::verbs::{Line, Names, Word};
+use film_core::words::{frames_of, of, plain};
+use film_core::{emit, fields};
 
 pub const WORDS: &[Word] = &[
     Word::new(
@@ -31,11 +31,11 @@ pub const WORDS: &[Word] = &[
         &["on who:pokemon", "off who:pokemon"],
         "an ambience of his kind's type, never by itself, in sharp pixels: a fire kind's cinders about him (emitter), a spark off an electric kind angry, a drop off a water kind scared, leaves off a grass kind dancing (particles); off: none",
     ).family("Effects").ds_close("nothing shown: the cinders, sparks, drops and leaves of a type are the engine's own particles", "no aura: Sky's scripts have no particles of their own")
-    .does(super::aura::aura),
+    .does(film_core::groups::aura::aura),
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("effects", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("effects", WORDS);
 
 /// The word that is no move: it has its own bolt.
 const BOLT: &str = "bolt";
@@ -109,7 +109,7 @@ fn effect_line(film: &mut Film, line: &Line) -> bool {
     let named = args.words("move").to_vec();
     if plain(&named.concat()) == BOLT {
         // (A bolt, a white flash, its thunder a little later.)
-        match super::view::cam_of(film, &goal) {
+        match crate::view::cam_of(film, &goal) {
             Some(on) => {
                 film.beat(emit::lightning(on));
                 film.beat(emit::flash(emit::colour(engine::Colour::White).map(f32::from), 8.0));

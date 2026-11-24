@@ -8,10 +8,10 @@ use engine::codes;
 use engine::props::{self, NodeKind};
 use engine::{NodeRef, Point, Sort};
 
-use crate::emit;
-use crate::film::Film;
-use crate::verbs::{Line, Names, Word};
-use crate::words::plain;
+use film_core::emit;
+use film_core::film::Film;
+use film_core::verbs::{Line, Names, Word};
+use film_core::words::plain;
 
 pub const WORDS: &[Word] = &[
     Word::new(
@@ -37,7 +37,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("nodes", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("nodes", WORDS);
 
 /// The nodes a word names, each with its kind if known before it plays:
 /// a node of the film's own, the caption, a halo by its rank, the emitter
@@ -73,7 +73,7 @@ pub(super) fn node_word(film: &Film, word: &str) -> String {
 /// No node by that name: told, with the names that are.
 pub(super) fn no_node(film: &mut Film, number: usize, word: &str) {
     let known: Vec<String> = film.staging.nodes.keys().cloned().chain(film.actors.keys().cloned()).collect();
-    let message = crate::check::unknown("unknown node", word, &crate::check::closest_of(word, known.iter().map(String::as_str)), "node <name> group");
+    let message = film_core::check::unknown("unknown node", word, &film_core::check::closest_of(word, known.iter().map(String::as_str)), "node <name> group");
     film.wrong_coded(number, codes::NODE_UNKNOWN, message);
 }
 
