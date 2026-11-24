@@ -25,8 +25,8 @@ fn one_not_known_yet_and_rituals_of_words() {
 
 #[test]
 fn a_new_face_is_acted_first_and_what_is_said_is_acted() {
-    let lines = clean(&scene(&["krabby (surprised): What?", "krabby (surprised): Again?"]));
-    assert_eq!(lines.iter().filter(|fields| starts(fields, &["emote", "krabby"])).count(), 1);
+    let lines = clean(&scene(&["piplup (surprised): What?", "piplup (surprised): Again?"]));
+    assert_eq!(lines.iter().filter(|fields| starts(fields, &["emote", "piplup"])).count(), 1);
     let lines = clean(&scene(&["krabby: No, never.", "krabby: What?!"]));
     assert_eq!(lines.iter().filter(|fields| starts(fields, &["turn", "krabby"])).count(), 3);
     // (A way by its name: a number is someone.)

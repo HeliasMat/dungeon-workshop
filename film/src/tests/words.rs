@@ -98,7 +98,8 @@ fn the_view_keeps_a_group_or_a_crowd() {
 #[test]
 fn a_line_said_fast_slowly_with_a_pause() {
     let said = |lines: &[Vec<String>]| said_lines(lines).into_iter().next().expect("a line");
-    let of = |manner: &str| clean(&scene(&[&format!("krabby ({manner}): No, I'm not coming!")]));
+    // (Pikachu: his portraits have every face; a face one lacks is another, see `face_had`.)
+    let of = |manner: &str| clean(&format!("scene: town pikachu\npikachu ({manner}): No, I'm not coming!\n"));
     let (fast, slow, usual) = (of("shouting, fast"), of("slow"), of("normal"));
     assert!(fast.contains(&line(&["textspeed", "1.6"])));
     assert!(slow.contains(&line(&["textspeed", "0.6"])) && slow.contains(&line(&["textspeed", "normal"])));
