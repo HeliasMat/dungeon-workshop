@@ -222,7 +222,7 @@ fn at_once(film: &mut Film, scene: &Scene) {
         }
         // (A body's size, told for the framings of every scene at the film's
         // start: not someone there.)
-        if matches!(beat, Beat::View(ViewBeat::Body { .. })) {
+        if matches!(beat, Beat::View(ViewBeat::Body { .. }) | Beat::Place(PlaceBeat::Footing { .. })) {
             continue;
         }
         let Some(fields) = beat.fields(&scenes::vocabulary::POKEMON) else { continue };

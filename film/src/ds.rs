@@ -342,7 +342,7 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("vanish", "no fading out: hidden at once"),
     ("crowd", "no fidgeting, and 24 at most a scene"),
     ("jump", "no arc to a place: a run there"),
-    ("ride", "the rider doesn't follow his mount: he stays up where he got on"),
+    ("ride", "the rider doesn't follow his mount: he stays up where he got on; the mount doesn't sink under a heavy one"),
     ("get_off", "no arc: a run down to the place"),
     ("swim", "drawn whole on the water: Sky sinks no body in it"),
     ("dive", "no going down: hidden at once"),

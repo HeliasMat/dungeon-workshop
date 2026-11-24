@@ -8,6 +8,8 @@ use super::*;
 const DOWN: u16 = 1;
 const RIGHT: u16 = 3;
 const LEFT: u16 = 7;
+/// How far apart those a scene opens with stand, at the least.
+const SPREAD: f32 = 44.0;
 /// The number a film puts its lines in.
 pub const LINE: &str = "_line";
 
@@ -116,15 +118,21 @@ impl Director {
             }
             PlaceBeat::Spread { who, picture } => {
                 let middle = stage.place.middle;
-                let count = who.len() as f32;
                 let mut lowest = stage
                     .cast
                     .iter()
                     .filter(|(one, _)| matches!(one, Who::Character(_) | Who::Monster(_) | Who::Another { .. }))
                     .map(|(_, actor)| actor.position.y)
                     .fold(f32::MIN, f32::max);
+                // (Side by side, 44 pixels apart, more for those who stand
+                // wide: by their shadows, or their bodies.)
+                let mut along = vec![0.0_f32];
+                for pair in who.windows(2) {
+                    along.push(along[along.len() - 1] + stage.spread_gap(pair[0], pair[1]).max(SPREAD));
+                }
+                let half = (along[along.len() - 1] / 2.0).floor();
                 for (place, one) in who.iter().enumerate() {
-                    let shift = (place as f32 - (count - 1.0) / 2.0) * 44.0;
+                    let shift = along[place] - half;
                     let look = if who.len() == 1 {
                         DOWN
                     } else if shift < 0.0 {
@@ -206,7 +214,7 @@ impl Director {
                             .collect();
                         (at, spots)
                     }
-                    _ => (asked, stage.crowd_shape(asked, who.len(), &form)),
+                    _ => (asked, stage.crowd_shape(asked, &who, &form)),
                 };
                 let gait = Gait { run: form.run, pace: Pace::Usual };
                 // (From a side of the view: all of them out of sight that way,
@@ -301,6 +309,7 @@ impl Director {
                 let close = stage.view.shot_close(close, who);
                 stage.direct(Beat::View(ViewBeat::Zoom { to: close, frames: Frames(40.0) }), focus);
             }
+            PlaceBeat::Footing { who, wide } => _ = stage.place.footings.insert(who, wide),
             PlaceBeat::Roams { who, wide } => {
                 if let Some(radius) = stage.room_to_roam(who, wide) {
                     stage.direct(Beat::Motion(MotionBeat::Wander { who, radius }), focus);

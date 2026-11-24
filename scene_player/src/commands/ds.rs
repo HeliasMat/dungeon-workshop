@@ -1627,6 +1627,7 @@ impl<'a> Writer<'a> {
             // What only our engine needs: its grid, its light, how it spaces
             // and turns people by itself, the sizes of the bodies.
             Beat::View(ViewBeat::Body { .. } | ViewBeat::KeepSpeaker(_) | ViewBeat::KeepFrame(_))
+            | Beat::Place(PlaceBeat::Footing { .. })
             | Beat::Motion(MotionBeat::Spacing(_) | MotionBeat::Speed { .. })
             | Beat::Speech(SpeechBeat::AutoFace(_) | SpeechBeat::Audience(_))
             | Beat::Flow(FlowBeat::Parallel(_)) => {}
@@ -1949,6 +1950,9 @@ impl<'a> Writer<'a> {
             // particles of their own (R-DS-LOSS).
             Beat::Screen(ScreenBeat::Particles { .. } | ScreenBeat::Emitter { .. } | ScreenBeat::EmitterOff(_))
                 if matches!(word, Some("swim" | "dive" | "plunge" | "surface" | "get_out" | "burrow" | "pop_out")) => {}
+            // A mount sunk under a heavy rider, and back up: Sky's actors carry no one (R-DS-LOSS).
+            Beat::Node(engine::NodeBeat::Set { prop: engine::props::PropId::Height, .. })
+                if matches!(word, Some("ride" | "get_off" | "dismount" | "carry" | "put_down")) => {}
             // Into the ground and out of it: no shadow taken away (R-DS-LOSS).
             Beat::Body(BodyBeat::Shadow { .. }) if matches!(word, Some("burrow" | "pop_out")) => {}
             // Bubbles (a line said in one, a crowd's chatter): Sky has none; the

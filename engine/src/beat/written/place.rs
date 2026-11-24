@@ -253,6 +253,7 @@ mod tests {
             PlaceBeat::Shot { close: 1.5, who: Some(a) },
             PlaceBeat::Shot { close: 2.0, who: None },
             PlaceBeat::Roams { who: a, wide: 48.0 },
+            PlaceBeat::Footing { who: a, wide: 24.0 },
         ]);
         for beat in beats {
             let fields = Beat::Place(beat.clone()).fields(&SAMPLE).expect("a line");

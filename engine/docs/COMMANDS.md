@@ -553,6 +553,7 @@ What `film/` writes for what depends on the stage at the moment the line plays (
 | `seats <var> <who...> ; <x> <y>...` | each goes to a seat they can reach; the middle of the table in `{var_x}` |
 | `shot <zoom> <who\|->` | this zoom, less if the body needs it |
 | `roams <who> <wide>` | they stroll around, as wide as the ground allows |
+| `footing <who> <wide>` | how wide someone stands on the ground (its shadow): how far the others keep from it when placed, in a crowd (`film/` writes it on its own) |
 
 ## Every command and its forms
 
@@ -638,6 +639,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `float` | `float who:code [height:number] [frames:duration]` |
 | `flock` | `flock spot:word walkrun:word who:code` |
 | `follow` | `follow who:code leader:code [gap:number]` · `follow who:code -` |
+| `footing` | `footing who:code wide:word` |
 | `frame` | `frame frames:duration rest... [rest2...]` |
 | `game` | `game talk who:code rest...` |
 | `gathers` | `gathers var:word spot:word step:word rest...` |

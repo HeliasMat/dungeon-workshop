@@ -17,6 +17,8 @@ const FACING_GAP: f32 = 72.0;
 const COLUMN_GAP: f32 = 36.0;
 /// The smallest ring a formation stands in.
 const RING_RADIUS: f32 = 30.0;
+/// How wide one stands on the ground usually (a middling shadow).
+const FOOTING: f32 = 24.0;
 /// How far from the middle of a place the view goes, about.
 const UNSEEN: Vec2 = Vec2::new(136.0, 104.0);
 /// How far from the middle what is out of sight stands where there is no ground.
@@ -52,6 +54,8 @@ pub struct Placing {
     pub ghosts: HashSet<Who>,
     /// Those who hover by nature, not yet set bobbing (see `PlaceBeat::Hovers`).
     pub hovering: HashSet<Who>,
+    /// How wide each stands on the ground (see `PlaceBeat::Footing`).
+    pub footings: HashMap<Who, f32>,
     pub spots: HashMap<String, Vec2>,
     /// The place's ways in and out, by name (see `PlaceBeat::Entrances`).
     pub entrances: Vec<(String, Vec2)>,
@@ -104,10 +108,31 @@ impl Stage {
         }
     }
 
-    /// How far apart two stand, by the size of their bodies.
+    /// How far apart two stand, by how wide they stand on the ground
+    /// (their shadows), never much closer than their bodies' sizes ask; else
+    /// by their bodies'.
     fn gap(&self, who: Option<Who>, other: Who) -> f32 {
         let wide = |one: Option<Who>| one.map_or(USUAL_BODY.x, |one| self.view.body(one).x);
-        (((wide(who) + wide(Some(other))) as i32 / 2 + 6) as f32).max(LEAST_GAP)
+        let bodies = (((wide(who) + wide(Some(other))) as i32 / 2 + 6) as f32).max(LEAST_GAP);
+        match (who.map_or(Some(FOOTING), |who| self.place.footings.get(&who).copied()), self.place.footings.get(&other)) {
+            (Some(mine), Some(theirs)) => (((mine + theirs) as i32 / 2 + 8) as f32).max(LEAST_GAP).max((bodies * 0.75).round()),
+            _ => bodies,
+        }
+    }
+
+    /// How far apart two stand side by side as a scene opens.
+    pub(crate) fn spread_gap(&self, one: Who, other: Who) -> f32 {
+        self.gap(Some(one), other)
+    }
+
+    /// How much wider than usual those stand on the ground, on the whole
+    /// (1 at the least: never closer than usual).
+    fn footing_of(&self, who: &[Who]) -> f32 {
+        let known: Vec<f32> = who.iter().filter_map(|one| self.place.footings.get(one).copied()).collect();
+        if known.is_empty() {
+            return 1.0;
+        }
+        (known.iter().sum::<f32>() / known.len() as f32 / FOOTING).clamp(1.0, 1.8)
     }
 
     /// Whether someone takes up room on the ground.
@@ -132,9 +157,11 @@ impl Stage {
     pub(crate) fn crowded(&self, who: Option<Who>, by_body: bool) -> Option<Ground> {
         let ground = self.place.ground.as_ref().filter(|_| !self.no_collisions)?;
         let reach = |other: Who| {
-            let wide = match who.filter(|_| by_body) {
-                Some(who) => ((self.view.body(other).x + self.view.body(who).x) as i32 / 2 - 8) as f32,
-                None => 16.0,
+            let footed = who.and_then(|who| Some((self.place.footings.get(&who)? + self.place.footings.get(&other)?) / 2.0 - 4.0));
+            let wide = match (who.filter(|_| by_body), footed) {
+                (Some(who), _) => ((self.view.body(other).x + self.view.body(who).x) as i32 / 2 - 8) as f32,
+                (None, Some(footed)) => footed.round(),
+                (None, None) => 16.0,
             }
             .max(16.0);
             (wide, (wide as i32 / 2) as f32)
@@ -377,7 +404,7 @@ impl Stage {
     /// A crowd's middle and how wide it stands: away from those who act.
     pub(crate) fn crowd_round(&self, who: &[Who], at: Vec2) -> (Vec2, f32) {
         let middle = self.place.middle;
-        let wide = 30.0 + who.len() as f32 * 5.0;
+        let wide = (30.0 + who.len() as f32 * 5.0 * self.footing_of(who)).round();
         let away = if at.x < middle.x { -1.0 } else { 1.0 };
         let others: Vec<Vec2> = self.standing(None).filter(|(one, _)| !who.contains(one) && !matches!(one, Who::Thing { .. })).map(|(_, at)| at).collect();
         let mut at = at;
@@ -390,9 +417,11 @@ impl Stage {
     /// Where those of a crowd stand about a point, in its form but a ring
     /// (`crowd_round`): a flock and a heap on free ground, the nearest to
     /// the middle first; a row side by side.
-    pub(crate) fn crowd_shape(&self, at: Vec2, count: usize, form: &crate::beat::CrowdForm) -> Vec<Vec2> {
+    pub(crate) fn crowd_shape(&self, at: Vec2, who: &[Who], form: &crate::beat::CrowdForm) -> Vec<Vec2> {
         use crate::beat::CrowdShape;
-        let tight = if form.tight { 0.75 } else { 1.0 };
+        let count = who.len();
+        // (Those who stand wide, wider apart.)
+        let tight = if form.tight { 0.75 } else { 1.0 } * self.footing_of(who);
         if form.shape == CrowdShape::Line {
             let step = match form.wide {
                 Some(wide) if count > 1 => 2.0 * wide / (count - 1) as f32,

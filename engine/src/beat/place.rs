@@ -327,6 +327,9 @@ pub enum PlaceBeat {
     Shot { close: f32, who: Option<Who> },
     /// Someone strolls, as wide as the ground leaves it.
     Roams { who: Who, wide: f32 },
+    /// How wide someone stands on the ground (its shadow, as the game's
+    /// tables give it): how far the others keep from it when placed.
+    Footing { who: Who, wide: f32 },
 }
 
 fn point_of(fields: &Fields, at: usize) -> Option<Vec2> {
@@ -361,6 +364,7 @@ declare! {
         "seats", "setspot", "spread", "swims";
     "shot" => Shot { close: f32, who: Opt<Who> },
     "roams" => Roams { who: Who, wide: f32 },
+    "footing" => Footing { who: Who, wide: f32 },
 }
 
 /// Each of these commands as a film writes it: its forms (`name:kind`, a
@@ -399,6 +403,11 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "(`run`: running, scared) leaves the place by the nearest entrance on that side (the place's, otherwise its ground nearest the edge) or by that one, going around what is in the way, in a line behind whoever leaves that way, and disappears once outside",
     ),
     Form::new("roams", &["who:code wide:word"], "they stroll around, as wide as the ground allows"),
+    Form::new(
+        "footing",
+        &["who:code wide:word"],
+        "how wide someone stands on the ground (its shadow): how far the others keep from it when placed, in a crowd (`film/` writes it on its own)",
+    ),
     Form::new("roundcheck", &["who:code spot:word"], "says what is in the way of a round"),
     Form::new("seats", &["var:word who:code rest..."], "each goes to a seat they can reach; the middle of the table in `{var_x}`"),
     Form::new("setspot", &["rest..."], "names a place, found now"),

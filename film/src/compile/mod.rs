@@ -285,14 +285,25 @@ fn compile_as(text: &str, tables: std::sync::Arc<crate::tables::Tables>, made_by
     }
 }
 
+/// How wide one stands on the ground, by its shadow (small, middling, big).
+const FOOTINGS: [f32; 3] = [16.0, 24.0, 40.0];
+
 /// The size of each one the film names, once.
 fn bodies(film: &Film) -> Vec<Beat> {
     let mut seen = HashSet::new();
     let mut bodies = Vec::new();
     for name in &film.names {
         let code = &film.actors[name];
-        if let (Some((wide, high)), Some(who)) = (film.body_of(code).filter(|_| seen.insert(code.clone())), Who::parse(code)) {
+        if !seen.insert(code.clone()) {
+            continue;
+        }
+        if let (Some((wide, high)), Some(who)) = (film.body_of(code), Who::parse(code)) {
             bodies.push(Beat::View(ViewBeat::Body { who, size: glam::Vec2::new(wide as f32, high as f32) }));
+        }
+        // (How wide each stands on the ground, by its shadow: how far the
+        // others keep from it.)
+        if let (Some(shadow), Some(who)) = (film.kind_of(code).and_then(|kind| kind.shadow), Who::parse(code)) {
+            bodies.push(Beat::Place(engine::PlaceBeat::Footing { who, wide: FOOTINGS[usize::from(shadow.min(2))] }));
         }
     }
     bodies

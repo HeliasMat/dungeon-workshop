@@ -20,7 +20,7 @@ pub const WORDS: &[Word] = &[
             "who:pokemon on mount:pokemon [back|head] [high h:number] [behind b:number]",
             "who:pokemon mount:pokemon [h:number] [b:number]",
         ],
-        "face, throw onto it, ride: on its back (as high as its middle, by the game's points) or its head; he follows his mount, turns with it as it goes, rises and sinks with it; high, behind: so many pixels up, behind its middle",
+        "face, throw onto it, ride: on its back (as high as its middle, by the game's points) or its head; he follows his mount, turns with it as it goes, rises and sinks with it; high, behind: so many pixels up, behind its middle; a heavy rider sinks his mount 1 to 3 pixels (the game's weights), one much heavier is remarked",
     )
     .maybe(rode),
     Word::new(
@@ -87,13 +87,54 @@ fn rode(film: &mut Film, line: &Line) -> bool {
     let (high, behind) = seat(film, &mount, line.args.has("head"));
     let high = line.args.number("h").unwrap_or(high);
     let behind = line.args.number("b").unwrap_or(behind);
-    gets_on(film, &who, &mount, high, behind);
+    gets_on(film, &who, &mount, high, behind, line.number);
     film.wait_frames(10, line.wait);
     true
 }
 
+/// How many pixels a mount sinks under a rider so heavy, against its own
+/// weight: none under one a quarter of it, then 1, 2, 3 (as heavy as it).
+const SINKS: [(f32, f32); 3] = [(0.25, 1.0), (0.6, 2.0), (1.0, 3.0)];
+/// A rider so many times heavier than his mount: remarked.
+const CRUSHING: f32 = 2.0;
+
+/// A mount under a rider: so many pixels lower, with him, by their weights
+/// (the game's tables); one much heavier than it, remarked.
+fn weighs_on(film: &mut Film, who: &str, mount: &str, number: usize) {
+    let weight = |film: &mut Film, one: &str| film.actor(one).and_then(|code| film.weight_of(&code)).map(f32::from);
+    let (Some(rider), Some(under)) = (weight(film, who), weight(film, mount).filter(|weight| *weight > 0.0)) else {
+        return;
+    };
+    let ratio = rider / under;
+    if ratio >= CRUSHING {
+        film.remark(number, format!("{who} is much heavier than {mount} ({ratio:.1} times): {mount} could not bear him"));
+    }
+    let Some(&(_, sinks)) = SINKS.iter().rev().find(|(least, _)| ratio >= *least) else {
+        return;
+    };
+    let Some(node) = film.one(mount) else {
+        return;
+    };
+    film.beat(emit::set_prop(engine::NodeRef::Who(node), engine::props::PropId::Height, engine::props::Given::Plus(engine::props::Value::Number(-sinks))));
+    *film.fishing.sunk.entry(mount.to_string()).or_default() += sinks;
+    film.fishing.sunk.insert(format!("{who}>"), sinks);
+}
+
+/// A rider off: his mount as high as it was before him.
+fn eased(film: &mut Film, who: &str, mount: &str) {
+    let Some(sinks) = film.fishing.sunk.remove(&format!("{who}>")) else {
+        return;
+    };
+    if let Some(sunk) = film.fishing.sunk.get_mut(mount) {
+        *sunk -= sinks;
+    }
+    if let Some(node) = film.one(mount) {
+        film.beat(emit::set_prop(engine::NodeRef::Who(node), engine::props::PropId::Height, engine::props::Given::Plus(engine::props::Value::Number(sinks))));
+    }
+}
+
 /// He hops onto the other, and rides there.
-fn gets_on(film: &mut Film, who: &str, mount: &str, high: f32, behind: f32) {
+fn gets_on(film: &mut Film, who: &str, mount: &str, high: f32, behind: f32, number: usize) {
     let Some(under) = film.one(mount) else {
         return;
     };
@@ -102,6 +143,7 @@ fn gets_on(film: &mut Film, who: &str, mount: &str, high: f32, behind: f32) {
     film.sound("hop");
     film.wait(HOP_FRAMES as i64);
     film.on(who, |who| emit::ride(who, Some(under), high, behind));
+    weighs_on(film, who, mount, number);
     film.sound("click");
     film.fishing.mounts.insert(who.to_string(), mount.to_string());
 }
@@ -135,6 +177,9 @@ fn hops_down(film: &mut Film, line: &Line, who: &str, beside: Option<String>) {
 fn got_off(film: &mut Film, line: &Line) {
     let who = super::super::who_said(line);
     let mount = film.fishing.mounts.remove(&who);
+    if let Some(mount) = &mount {
+        eased(film, &who, mount);
+    }
     if mount.is_none() {
         film.remark(line.number, format!("{who} get_off: he is on nobody's back ({who} ride on <who>)"));
     }
@@ -150,7 +195,7 @@ fn carried(film: &mut Film, line: &Line) {
         Some(points) => (-points[HEAD].1) as f32 + OVER_HEAD,
         None => 22.0,
     };
-    gets_on(film, &what, &who, high, 0.0);
+    gets_on(film, &what, &who, high, 0.0, line.number);
     film.wait_frames(10, line.wait);
 }
 
@@ -161,7 +206,9 @@ fn put_down(film: &mut Film, line: &Line) {
     if film.fishing.mounts.get(&what) != Some(&who) {
         film.remark(line.number, format!("{who} put_down {what}: he is not carrying him ({who} carry {what})"));
     }
-    film.fishing.mounts.remove(&what);
+    if film.fishing.mounts.remove(&what).is_some() {
+        eased(film, &what, &who);
+    }
     hops_down(film, line, &what, Some(who));
     film.wait_frames(10, line.wait);
 }

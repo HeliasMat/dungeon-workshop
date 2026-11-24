@@ -76,7 +76,7 @@ pikachu wander off
 pikachu: It is!
 
 == ride
-> Someone hops onto another's back (or head, with head) and rides there: they go where it goes, turn with it as it walks, rise and sink with it. How high they sit is the mount's own, from the game's points of its body; high and behind set it by hand.
+> Someone hops onto another's back (or head, with head) and rides there: they go where it goes, turn with it as it walks, rise and sink with it. How high they sit is the mount's own, from the game's points of its body; high and behind set it by hand. A heavy rider sinks the mount a pixel or three (the game's weights), back up when he gets off; one much heavier than his mount is remarked.
 scene: beach pikachu lapras
 pikachu put left
 lapras put center

@@ -310,6 +310,12 @@ pikachu attack Thunderbolt at piplup
 scene: beach pikachu piplup eevee
 ring 240 180 40 pikachu piplup eevee
 
+== footing
+> How wide someone stands on the ground, in pixels: how far the others keep from them when placed (the film does it for everyone, by the shadows of the game's tables).
+scene: beach pikachu piplup
+pikachu footing 40
+piplup put right_of pikachu
+
 == roams
 > They stroll around, as wide as the ground allows (wander in a film).
 scene: beach pikachu piplup

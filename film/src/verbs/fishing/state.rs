@@ -29,6 +29,8 @@ pub struct FishingState {
     /// Who rides on whose back (`ride`), and where those swimming were last
     /// sent (`swim`).
     pub mounts: BTreeMap<String, String>,
+    /// How many pixels each mount has sunk under its riders (by weight).
+    pub sunk: BTreeMap<String, f32>,
     pub swum: BTreeMap<String, (i32, i32)>,
     /// The net basket each swimmer tows (`swim ... with net`): its code.
     pub nets: BTreeMap<String, String>,
