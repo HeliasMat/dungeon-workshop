@@ -27,7 +27,7 @@
 
 
 # The Workshop's safe saves: the last version, a save cut short, what a file
-# was before being taken back (workshop/src/safe.rs).
+# was before being taken back (workshop_base/src/safe.rs).
 *.bak
 *.tmp
 *.tmp.abandoned

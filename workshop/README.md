@@ -152,7 +152,7 @@ And also:
 
 The whole Decor space (Scene, Hierarchy, Inspector, Library, terrains, walls, walking): `decor/DECORS.md`. Wherever a decor is chosen (Home's Decors shelf, the Game space's home, `scene:` in the Script), the decors and places come grouped by kind of place (Town, Beach & sea, Forest & grove, Cave & mountain, Guild & interiors, Dungeon entrances, Other: `library/tables/place_kinds.txt`), each by its name.
 
-- **The Library** (under the Scene, `workshop/src/library/`):
+- **The Library** (under the Scene, `workshop_decor/src/library/`):
   - **one search at the top**, always there (Ctrl+F over the Library or the Scene, or `/` anywhere in the space; Esc empties it): elements, backdrops, models and the project's decors at once, each kind in its own group, the best first (by name, tag, place; a decor found opens with a click);
   - on the left: **This Decor's Place** (the elements of the place it is made from), Favourites, Recently Laid, All Elements, **Backdrops**, Models, the categories, the game's places by kind;
   - pointed at, an element shows **at its own size** (×2, ×3… while it fits), playing, on a checkerboard.
@@ -189,7 +189,7 @@ The project at a glance (`workshop/src/home.rs`).
 
 ## Resources
 
-Everything a film and a decor are made of, like a studio's asset browser (`workshop/src/resources/`).
+Everything a film and a decor are made of, like a studio's asset browser (`workshop_resources/`).
 - **The Library** (on the left), groups › shelves, how many on each; a group folds:
   - **Characters**: Pokémon, Variants, **Portraits** (each face of each Pokémon its own card, named as a film names it: `pikachu (happy)`; the faces 14 and 18, which no film word names, left out);
   - **Objects**: Drawn, The Game's, **Items** (the game's items, by their names, with their 16×16 icon of the dungeon floors, from `dungeons.bin`);
@@ -216,11 +216,11 @@ Everything a film and a decor are made of, like a studio's asset browser (`works
   - **Used in** n films and m decors, and which (a click opens it in its space);
   - ★ Favourite (kept in `target/workshop/resource_favourites.txt`), **Paint** (the picture opened in the drawing program), **Duplicate**, **In the Folder**, **Copy the Word**.
 
-### The Dungeon space (`workshop/src/dungeons.rs`)
+### The Dungeon space (`workshop_dungeon/src/dungeons.rs`)
 
 Between Decor and Resources, the **Dungeon** space gathers the dungeon editor and the boss fight editor. **All Dungeons** lists, side by side, every dungeon (its floors, its look, how many Pokémon, its boss) and every boss fight (its boss, its level, its guards, its phases); a click on one opens it, **+ New Dungeon** and **+ New Boss Fight** make one. Each one open is a tab in the tools bar (• not saved yet; × or a middle click closes it; Ctrl+Tab the next); they stay open while the list or another space is shown.
 
-### Making a dungeon (`workshop/src/dungeon/`, its layout: `dungeon/layout.rs`)
+### Making a dungeon (`workshop_dungeon/`, its layout: `layout.rs`)
 
 In the Library, the **Dungeons** group has two shelves: **Dungeons** (each `.dungeon`, with its floors, its look, its boss, those met there; the portrait of its boss or of its first Pokémon) and **Boss Fights** (each fight written apart, by its boss: its level, its title, its guards, its phases). In the Inspector, **Edit** and **Edit the Fight** open it in the **Dungeon** space; "In a film" gives the line `dungeon <word>`.
 
@@ -238,7 +238,7 @@ In the **Dungeon** space, **+ New Boss Fight** or a fight of the list (or **Edit
   - **The trial**: **▶ Try the Fight** plays the arena at once with the trial team (chosen above); "the boss at … % of its HP" starts it already hurt, to see its phases at once.
 - **On the right, its staging**: its **name** and **its arena's look** (a game dungeon and one of its floors; none: that of the dungeon that names it); **its entrance**: its title (under its name, in the banner), its cry (the screen shakes), what it says at the start and as it falls; **its music**, to listen to (▶); **its phases** on a band of its HP (full on the left, each phase marked where it comes, orange from its first anger on), then a card for each phase: under what share of its HP, what it says, its anger, its heal, the weather, its cry, the shake, its reinforcements (six at most), new moves; **+ a phase**; then **what is wrong** and **its file**.
 
-### Making an image, an animation, a sound (`workshop/src/making/`)
+### Making an image, an animation, a sound (`workshop_picture/`, `workshop_sound/`)
 
 In place of the grid, until **Close**. Thought out like the best tools of their kind: Aseprite for pixel art, sfxr for sound effects.
 
@@ -364,33 +364,46 @@ The Workshop's **settings** (`settings.rs`) are a small `key = value` file of th
 
 ## The code
 
-`workshop/src/`, a module a subject; a big one is a folder, its `mod.rs` holding its state and what its files share. Under the building-block rule (`tools/rule.sh`): it uses `assets`, `decor`, `emulator`, `rules`, `dive`, `game`, `scenes`, `film`, `preview`, `engine`, `shell` and `stage_view`, by their public side.
+The Workshop is several crates, a part each, so that a change to one part builds only that part and the window over it. In each, a module a subject; a big one is a folder, its `mod.rs` (or the crate's `lib.rs`) holding its state and what its files share. Each crate's `lib.rs` says what it holds and what it uses; `tools/rule.sh` (the building-block rule) lists the crates each may use.
 
-| Module | What it holds |
+```text
+workshop                       the window: menus, spaces, Home, first launch, Game space, Emulator, Tools
+├── workshop_resources         the Resources space and its makings
+│   ├── workshop_picture       the painter
+│   ├── workshop_music         the music maker
+│   │   └── workshop_sound     the sound maker, the instruments
+│   └── workshop_dungeon       the dungeon and boss fight editor, the Dungeon space
+├── workshop_film              the Film space played
+│   ├── workshop_script        the Script
+│   │   └── workshop_wiki      the Wiki, the words' catalogue
+│   └── workshop_decor         the Decor space
+└── workshop_base              what all of them share: the session, the look, the project's files
+```
+
+| Crate, module | What it holds |
 |---|---|
-| `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state |
-| `theme.rs`, `icons.rs` | the look: colours, sizes, icons drawn with lines |
-| `home.rs`, `first.rs`, `project.rs`, `safe.rs`, `pick.rs` | the Home, the first launch (the resources extracted), the project's files, safe saves, the system's dialogs |
-| `games.rs`, `game.rs` | the Game space, and the `.game` file it reads and writes |
-| `script/` | the Film's Script: `mod.rs` (the film open, its state, the language's thread), `body.rs` (the text drawn and typed in, part after part), `head.rs` (the tabs, the head, the story view), `keys.rs` (the keys taken before the editor), `margin.rs` (the margin, the ends of lines, the ruler), `offers.rs` (what is offered as one types), `popups.rs` (the small windows over the text), `problems.rs` (the problems, the line's box, the status), `highlight.rs` (each piece in its colour), `completion.rs` (what may be typed), `knowledge.rs` (what is known of a word, portraits), `cast.rs` (who is in a scene), `text.rs` and `edits.rs` (where things are, the text changed), `plan.rs` (the film's plan), `wiki.rs` (the Wiki beside the text), `windows.rs` (the project's windows), `editor.rs` (laid out), `heard.rs` (sounds named) |
-| `films/` | the Film played: `mod.rs` (its state), `playing.rs` (its thread), `scene/` (the Scene: `mod.rs` the order of its parts and the view, `marks.rs` what is drawn over the picture, `mouse.rs` what the mouse does on it, `bar.rs` the line played, the bar, the keys, `script.rs` the text read and written again), `timeline.rs` (its axis), `bands.rs` (the timeline's bands), `inspector.rs`, `state.rs` (the panels), `lines.rs` (lines written again) |
-| `story.rs`, `catalogue.rs`, `example.rs`, `typography.rs`, `workspace.rs`, `debug.rs` | beside the Script: the film as a story, the words by family, a line played as an example, what is well written, the whole project's films, a film looked into |
-| `wiki/` | the Wiki's pages, a word each: `mod.rs` (a page made of a word and what is written of it, the words it goes with, a recipe's source), `written.rs` (the pages written by hand, `workshop_wiki/wiki/*.txt`: what a word does, its example), `made.rs` (a form as an author reads it, its parts, an example made from it), `search.rs` (the pages found, the best first) |
-| `decors.rs`, `scene/` (the Scene: `mod.rs` the view, `drawn.rs`, `marks.rs`, `moving.rs`, `choosing.rs`, `hints.rs` the hint bar), `edit.rs`, `placing.rs`, `terrains.rs`, `library/` (`mod.rs` its parts, `search.rs` what is shown and found, `cards.rs`, `backdrops.rs`), `walk.rs`, `workshop.rs` | the Decor space: the decor open, its Scene, its text changed by what is done there, where things land (snap, stamp, nudge, layers), the brushes, the Library, a Pokémon walked, the decors' thread |
-| `panels/` | the Decor's panels: `hierarchy.rs` (the Elements' tree), `layers.rs` (the Hierarchy's layers), `history.rs`, `inspector.rs`, `piece.rs` (a piece), `resident.rs` (someone who lives there), `landmark.rs`, `fields.rs` |
-| `dungeons.rs` | the Dungeon space: all the dungeons and fights |
-| `dungeon/` | a dungeon or a boss fight made: `mod.rs` (its forms and state), `form.rs` (read, written), `lists.rs`, `state.rs`, `editor.rs`, `layout.rs` (the three columns, the fight in numbers), `fight_columns.rs` (a boss fight's), `dungeon_columns.rs` (a dungeon's, its floors' grid), `arena.rs`, `choosers.rs`, `check.rs`, `floor.rs` (a floor as the game makes it) |
-| `resources/` | the Resources space: `mod.rs` (shelves, their groups, things, state), `shelves.rs`, `game_shelves.rs` (the game's attacks, statuses, weathers, effects, portraits, items, backdrops, tilesets), `pictures.rs`, `tree.rs` (the Library), `grid.rs` (a shelf's cards), `toolbar.rs` (the tools, the head, the filters over them), `inspector/` (the Inspector: `mod.rs` the order of its parts, `large.rs` the one chosen in large, `about.rs` what it is, how a film writes it, where it is used, `actions.rs` what to do with it, `pokemon.rs` a Pokémon's own actions), `studio.rs` (what is being made, in tabs), `dropped.rs` |
-| `making/` | what is made in the Resources: `mod.rs` (`Maker`), `picture/` (the painting: `canvas.rs`, `pointer.rs` (what the pointer does with each tool), `panels.rs`, `editor.rs`, `simple.rs`, `strokes.rs`, `selection.rs`, `effects.rs`, `steps.rs`, `pixels.rs`, `files.rs`), `sound/` (the sound maker: `synth.rs`, `render.rs`, `voices.rs`, `mix.rs`, `presets.rs`, `instruments.rs`, `versions.rs`, `controls.rs`, `views.rs`, `editor.rs` (the expert's), `settings.rs` (a layer's settings, the mix), `simple.rs`) |
-| `music/` | the music maker: `mod.rs` (its state), `project.rs` (the song rendered), `midi.rs`, `editor.rs`, `transport.rs`, `tracks.rs`, `notes.rs`, `mixer.rs`, `keys.rs`, `wave.rs` |
-| `spritecollab.rs`, `quant_tool.rs`, `level_csv.rs`, `tool_run.rs` | the Tools: SpriteCollab, an image converted, a species exported as CSV, a long piece of work on its thread |
-| `emulate.rs`, `settings.rs` | the Emulator space (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), the Workshop's own settings |
-| `capture.rs` | a picture of the window without a mouse |
-| `session.rs`, `launch.rs` | what every space works with (`Session`: the library, the data, what is read of them, `reload`), how the Workshop was launched (`LaunchOptions`) |
+| `workshop/`: `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state |
+| `workshop/`: `home.rs`, `first.rs`, `games.rs` | the Home, the first launch (the resources extracted), the Game space |
+| `workshop/`: `spritecollab.rs`, `quant_tool.rs` | the Tools: SpriteCollab, an image converted |
+| `workshop/`: `emulate.rs`, `settings.rs` | the Emulator space (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), the Workshop's own settings |
+| `workshop/`: `capture.rs`, `bug.rs` | a picture of the window without a mouse; a panic told as a bug |
+| `workshop_base/`: `session.rs`, `launch.rs` | what every space works with (`Session`: the library, the data, what is read of them and kept, `reload`), how the Workshop was launched (`LaunchOptions`) |
+| `workshop_base/`: `theme.rs`, `icons.rs` | the look: colours, sizes, icons drawn with lines |
+| `workshop_base/`: `project.rs`, `game.rs`, `safe.rs`, `pick.rs` | the project's files (and the kinds of places), the `.game` file the Game space reads and writes, safe saves, the system's dialogs |
+| `workshop_base/`: `example.rs`, `tool_run.rs`, `own_sounds.rs`, `done.rs` | a line played as an example, a long piece of work on its thread, the own sounds read as samples, what a making asks of the Resources |
+| `workshop_script/` | the Film's Script: `lib.rs` (the film open, its state, the language's thread), `body.rs` (the text drawn and typed in, part after part), `head.rs` (the tabs, the head, the story view), `keys.rs` (the keys taken before the editor), `margin.rs` (the margin, the ends of lines, the ruler), `offers.rs` (what is offered as one types), `popups.rs` (the small windows over the text), `problems.rs` (the problems, the line's box, the status), `highlight.rs` (each piece in its colour), `completion.rs` (what may be typed), `knowledge.rs` (what is known of a word, portraits), `cast.rs` (who is in a scene), `text.rs` and `edits.rs` (where things are, the text changed), `plan.rs` (the film's plan), `wiki.rs` (the Wiki beside the text), `windows.rs` (the project's windows), `editor.rs` (laid out), `heard.rs` (sounds named); beside it `story.rs` (the film as a story), `typography.rs` (what is well written), `workspace.rs` (the whole project's films), `debug.rs` (a film looked into) |
+| `workshop_wiki/` | the Wiki's pages, a word each: `lib.rs` (a page made of a word and what is written of it, the words it goes with, a recipe's source), `written.rs` (the pages written by hand, `workshop_wiki/wiki/*.txt`: what a word does, its example), `made.rs` (a form as an author reads it, its parts, an example made from it), `search.rs` (the pages found, the best first), `catalogue.rs` (the words by family) |
+| `workshop_film/` | the Film played: `lib.rs` (its state), `playing.rs` (its thread), `scene/` (the Scene: `mod.rs` the order of its parts and the view, `marks.rs` what is drawn over the picture, `mouse.rs` what the mouse does on it, `bar.rs` the line played, the bar, the keys, `script.rs` the text read and written again), `timeline.rs` (its axis), `bands.rs` (the timeline's bands), `inspector.rs`, `state.rs` (the panels), `lines.rs` (lines written again) |
+| `workshop_decor/` | the Decor space: `lib.rs` (the decor open), `scene/` (the Scene: `mod.rs` the view, `drawn.rs`, `marks.rs`, `moving.rs`, `choosing.rs`, `hints.rs` the hint bar), `edit.rs` (its text changed by what is done there), `placing.rs` (where things land: snap, stamp, nudge, layers), `terrains.rs` (the brushes), `library/` (`mod.rs` its parts, `search.rs` what is shown and found, `cards.rs`, `backdrops.rs`), `walk.rs` (a Pokémon walked), `workshop.rs` (the decors' thread); `panels/`, the Decor's panels: `hierarchy.rs` (the Elements' tree), `layers.rs` (the Hierarchy's layers), `history.rs`, `inspector.rs`, `piece.rs` (a piece), `resident.rs` (someone who lives there), `landmark.rs`, `fields.rs` |
+| `workshop_dungeon/` | a dungeon or a boss fight made: `lib.rs` (its forms and state), `form.rs` (read, written), `lists.rs`, `state.rs`, `editor.rs`, `layout.rs` (the three columns, the fight in numbers), `fight_columns.rs` (a boss fight's), `dungeon_columns.rs` (a dungeon's, its floors' grid), `arena.rs`, `choosers.rs`, `check.rs`, `floor.rs` (a floor as the game makes it); `dungeons.rs`, the Dungeon space: all the dungeons and fights; `level_csv.rs`, a species exported as CSV |
+| `workshop_resources/` | the Resources space: `lib.rs` (shelves, their groups, things, state), `maker.rs` (what is being made: `Maker`), `shelves.rs`, `game_shelves.rs` (the game's attacks, statuses, weathers, effects, portraits, items, backdrops, tilesets), `pictures.rs`, `tree.rs` (the Library), `grid.rs` (a shelf's cards), `toolbar.rs` (the tools, the head, the filters over them), `inspector/` (the Inspector: `mod.rs` the order of its parts, `large.rs` the one chosen in large, `about.rs` what it is, how a film writes it, where it is used, `actions.rs` what to do with it, `pokemon.rs` a Pokémon's own actions), `studio.rs` (what is being made, in tabs), `dropped.rs` |
+| `workshop_picture/` | the painting: `canvas.rs`, `pointer.rs` (what the pointer does with each tool), `panels.rs`, `editor.rs`, `simple.rs`, `strokes.rs`, `selection.rs`, `effects.rs`, `steps.rs`, `pixels.rs`, `files.rs` |
+| `workshop_sound/` | the sound maker: `synth.rs`, `render.rs`, `voices.rs`, `mix.rs`, `presets.rs`, `instruments.rs`, `versions.rs`, `controls.rs`, `views.rs`, `editor.rs` (the expert's), `settings.rs` (a layer's settings, the mix), `simple.rs` |
+| `workshop_music/` | the music maker: `lib.rs` (its state), `project.rs` (the song rendered), `midi.rs`, `editor.rs`, `transport.rs`, `tracks.rs`, `notes.rs`, `mixer.rs`, `keys.rs`, `wave.rs` |
 
 ## Launch options
 
-The Workshop's `main` reads, once, what it is launched with (`workshop/src/launch.rs`, `LaunchOptions`) and hands it to every space through the session (`Session::launch`); nothing else in the Workshop reads an environment variable.
+The Workshop's `main` reads, once, what it is launched with (`workshop_base/src/launch.rs`, `LaunchOptions`) and hands it to every space through the session (`Session::launch`); nothing else in the Workshop reads an environment variable.
 
 | Option | Effect |
 |---|---|
