@@ -1,0 +1,15 @@
+[package]
+name = "workshop_wiki"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Dungeon Workshop's wiki: a page for each word of the films' language"
+publish.workspace = true
+
+[dependencies]
+engine = { path = "../engine" }
+film = { path = "../film" }
+preview = { path = "../preview" }
+workshop_base = { path = "../workshop_base" }

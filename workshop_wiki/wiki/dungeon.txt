@@ -1,4 +1,4 @@
-# The Wiki's pages: dungeons, the guild, hunting, the game's rituals (workshop/src/wiki/written.rs).
+# The Wiki's pages: dungeons, the guild, hunting, the game's rituals (workshop_wiki/src/written.rs).
 
 == stairs
 > The game's stairs on the floor (on the right, or where said), under the bodies; stairs take: the team goes up them, one after another, and the floor ends.

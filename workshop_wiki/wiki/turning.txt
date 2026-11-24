@@ -1,4 +1,4 @@
-# The Wiki's pages: the Turning family, where someone looks (workshop/src/wiki/written.rs).
+# The Wiki's pages: the Turning family, where someone looks (workshop_wiki/src/written.rs).
 
 == face
 > Someone turns to a side (left, right, up, down…), to someone, or round (away, their back to where they looked); fast turns at once; slow goes through each way in between, a step at a time, as the game's slow turns.

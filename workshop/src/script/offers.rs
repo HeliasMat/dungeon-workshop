@@ -32,7 +32,7 @@ pub(super) fn forms_of_line(text: &str, completion: &Completion) -> Vec<String> 
 /// word said of someone, after someone of the scene; else the word. Whether
 /// what follows is offered.
 pub(super) fn family_word_written(session: &Session, text: &str, cursor: usize, word: &str) -> (String, bool) {
-    let subject = crate::catalogue::catalogue(session).iter().any(|entry| entry.word == word && entry.subject);
+    let subject = workshop_wiki::catalogue::catalogue(session).iter().any(|entry| entry.word == word && entry.subject);
     match word.strip_prefix('\u{1}') {
         Some(example) => (example.to_string(), false),
         None if subject => (format!("{} {word} ", someone_here(text, cursor)), true),
@@ -160,7 +160,7 @@ impl Body<'_> {
         let Some(browse) = &mut scripts.browsing else { return };
         let at = written.at(open.cursor);
         let examples = &mut scripts.examples;
-        let words = crate::catalogue::of_family(&scripts.session, browse.family);
+        let words = workshop_wiki::catalogue::of_family(&scripts.session, browse.family);
         let mut take: Option<String> = None;
         let area =
             egui::Area::new(egui::Id::new("script words")).order(egui::Order::Foreground).fixed_pos(at.left_bottom() + vec2(-4.0, 2.0)).show(ui.ctx(), |ui| {
@@ -168,7 +168,7 @@ impl Body<'_> {
                     ui.horizontal_top(|ui| {
                         ui.vertical(|ui| {
                             ui.set_width(150.0);
-                            for (index, name) in crate::catalogue::FAMILIES.iter().enumerate() {
+                            for (index, name) in workshop_wiki::catalogue::FAMILIES.iter().enumerate() {
                                 if ui.selectable_label(browse.family == index, *name).clicked() {
                                     (browse.family, browse.chosen) = (index, 0);
                                 }
@@ -293,10 +293,10 @@ impl Body<'_> {
 /// A word of a family, all of it: its name, its family, its forms, what it
 /// does, an example (played); the word or the example asked to be written
 /// (the example after a `\u{1}`).
-fn word_explained(ui: &mut egui::Ui, examples: &mut workshop_base::example::Examples, entry: &crate::catalogue::Entry) -> Option<String> {
+fn word_explained(ui: &mut egui::Ui, examples: &mut workshop_base::example::Examples, entry: &workshop_wiki::catalogue::Entry) -> Option<String> {
     let mut take = None;
     ui.label(RichText::new(&entry.word).monospace().size(theme::BODY + 1.0).color(theme::STRONG));
-    ui.label(theme::text(crate::catalogue::family_shown(entry.family), theme::SMALL, theme::FILM));
+    ui.label(theme::text(workshop_wiki::catalogue::family_shown(entry.family), theme::SMALL, theme::FILM));
     ui.add_space(4.0);
     ui.label(RichText::new(entry.shown()).monospace().size(theme::SMALL).color(KEYWORD));
     if !entry.doc.is_empty() {
@@ -304,7 +304,7 @@ fn word_explained(ui: &mut egui::Ui, examples: &mut workshop_base::example::Exam
     }
     ui.add_space(6.0);
     ui.label(theme::weak("Example"));
-    let example = crate::catalogue::example(entry);
+    let example = workshop_wiki::catalogue::example(entry);
     ui.label(RichText::new(&example).monospace().size(theme::SMALL).color(theme::TEXT));
     examples.show(ui, &workshop_base::example::film_of(&example), 300.0);
     ui.add_space(4.0);

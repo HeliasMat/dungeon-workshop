@@ -1,4 +1,4 @@
-# The Wiki's pages: the view, pictures, time (workshop/src/wiki/written.rs).
+# The Wiki's pages: the view, pictures, time (workshop_wiki/src/written.rs).
 
 == frame
 > Frames those named (or a place, or both: frame pikachu piplup left) once, whole, above the dialogue box, the view gliding there; snap: at once, a cut; follows: keeps them framed as they move. One framing per moment, as in the game's scenes.

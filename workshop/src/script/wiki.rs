@@ -14,9 +14,9 @@ use super::completion::line_word;
 use super::edits::replaced;
 use super::highlight::{Lights, painted};
 use super::text::{line_at, word_at};
-use crate::catalogue::{FAMILIES, Origin};
-use crate::wiki::{Page, family_name};
 use workshop_base::theme;
+use workshop_wiki::catalogue::{FAMILIES, Origin};
+use workshop_wiki::{Page, family_name};
 
 /// What is asked on a page: another page, the list again, the example
 /// played or not, its line written at the cursor, the example copied, the recipe's source shown or not.
@@ -32,7 +32,7 @@ enum Asked {
 /// The word whose page F1 opens, at a place of the text: the word there if
 /// it has a page, else the word its line is said with.
 pub(super) fn wiki_word_at(session: &workshop_base::session::Session, text: &str, at: usize) -> Option<String> {
-    let pages = crate::wiki::pages(session);
+    let pages = workshop_wiki::pages(session);
     let has_page = |word: &str| pages.iter().any(|page| page.word == word);
     if let Some(word) = word_at(text, at).map(|word| film::words::plain(&word)).filter(|word| has_page(word)) {
         return Some(word);
@@ -45,14 +45,14 @@ pub(super) fn wiki_word_at(session: &workshop_base::session::Session, text: &str
 /// pointer's tooltip (F1 for the rest).
 pub(super) fn wiki_said_of(session: &workshop_base::session::Session, text: &str, at: usize) -> Option<String> {
     let word = word_at(text, at).map(|word| film::words::plain(&word))?;
-    let page = crate::wiki::page_of(session, &word)?;
+    let page = workshop_wiki::page_of(session, &word)?;
     Some(format!("{} — {}\nF1: its page in the wiki", page.word, page.one_line()))
 }
 
 /// An example's line made of the scene's own: Pikachu and Piplup made the
 /// first two of the scene where it is written (whole words).
 pub(super) fn line_for_scene(line: &str, a: &str, b: &str) -> String {
-    let [first, second] = crate::wiki::made::CAST;
+    let [first, second] = workshop_wiki::made::CAST;
     line.split(' ')
         .map(|word| {
             let (core, rest) = word.split_at(word.find(|letter: char| !(letter.is_alphanumeric() || letter == '_')).unwrap_or(word.len()));
@@ -121,12 +121,12 @@ pub(super) fn wiki_panel(ui: &mut egui::Ui, scripts: &mut Scripts) {
     }
     let ds = Ds { shown: for_ds, only: for_ds && scripts.wiki_ds_only };
     ui.add_space(4.0);
-    let pages = crate::wiki::pages(&scripts.session);
+    let pages = workshop_wiki::pages(&scripts.session);
     let asked = match scripts.wiki_page.clone().and_then(|word| pages.iter().find(|page| page.word == word)) {
         Some(page) => {
-            let related = crate::wiki::related(&pages, page, 10);
+            let related = workshop_wiki::related(&pages, page, 10);
             let source = match (&page.origin, scripts.wiki_source) {
-                (Some(Origin::Recipe { from, .. }), true) => crate::wiki::recipe_source(&scripts.session, from, &page.word),
+                (Some(Origin::Recipe { from, .. }), true) => workshop_wiki::recipe_source(&scripts.session, from, &page.word),
                 _ => None,
             };
             // (The page's text on the left, scrolled; its example on the right, large, where it stays.)
@@ -192,7 +192,7 @@ fn ds_badge(ui: &mut egui::Ui, word: &str, size: f32) {
 /// The words found, the best first; nothing sought: by family, each family folded.
 fn word_list(ui: &mut egui::Ui, pages: &[Page], sought: &str, ds: Ds) -> Option<Asked> {
     let mut asked = None;
-    let mut found = crate::wiki::search::ranked(pages, &FAMILIES, sought);
+    let mut found = workshop_wiki::search::ranked(pages, &FAMILIES, sought);
     if ds.only {
         found.retain(|page| film::ds::status(&page.word).exports());
     }
@@ -387,7 +387,7 @@ fn forms_view(ui: &mut egui::Ui, page: &Page) {
                 }
             });
     }
-    let parts = crate::wiki::made::all_parts(&page.forms);
+    let parts = workshop_wiki::made::all_parts(&page.forms);
     if parts.is_empty() {
         return;
     }

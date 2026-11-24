@@ -4251,6 +4251,7 @@ dependencies = [
  "workshop_music",
  "workshop_picture",
  "workshop_sound",
+ "workshop_wiki",
 ]
 
 [[package]]
@@ -4317,6 +4318,16 @@ dependencies = [
  "film",
  "rules",
  "shell",
+ "workshop_base",
+]
+
+[[package]]
+name = "workshop_wiki"
+version = "0.2.0"
+dependencies = [
+ "engine",
+ "film",
+ "preview",
  "workshop_base",
 ]
 

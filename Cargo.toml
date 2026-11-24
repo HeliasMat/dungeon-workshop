@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "engine", "film", "language", "dive", "scene_player", "preview", "game", "workshop", "workshop_dungeon", "workshop_music", "workshop_sound", "workshop_picture", "workshop_base", "decor", "rom_formats", "media", "shell", "spritecollab", "stage_view", "dungeon_lsp", "emulator"]
+members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "engine", "film", "language", "dive", "scene_player", "preview", "game", "workshop", "workshop_wiki", "workshop_dungeon", "workshop_music", "workshop_sound", "workshop_picture", "workshop_base", "decor", "rom_formats", "media", "shell", "spritecollab", "stage_view", "dungeon_lsp", "emulator"]
 
 # What every crate's manifest says alike (each takes it with `x.workspace = true`).
 [workspace.package]
@@ -165,5 +165,9 @@ opt-level = 3
 debug-assertions = false
 
 [profile.dev.package.workshop_dungeon]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.workshop_wiki]
 opt-level = 3
 debug-assertions = false

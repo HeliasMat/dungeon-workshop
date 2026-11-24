@@ -20,14 +20,14 @@ fn every_word_has_its_page() {
     let pages = pages(&session);
     let missing: Vec<String> = every_word().into_iter().filter(|word| !pages.iter().any(|page| &page.word == word)).collect();
     assert!(missing.is_empty(), "words with no page in the wiki: {missing:?}");
-    // (A word of the language says what it does for an author: a page written in workshop/wiki/, not what it
+    // (A word of the language says what it does for an author: a page written in workshop_wiki/wiki/, not what it
     // writes for the engine.)
     let unwritten: Vec<&str> = pages
         .iter()
         .filter(|page| matches!(page.origin, Some(Origin::Word(_))) && page.explained.starts_with(UNWRITTEN))
         .map(|page| page.word.as_str())
         .collect();
-    assert!(unwritten.is_empty(), "words of the language with no page written in workshop/wiki/: {unwritten:?}");
+    assert!(unwritten.is_empty(), "words of the language with no page written in workshop_wiki/wiki/: {unwritten:?}");
     for page in pages.iter() {
         assert!(!page.explained.trim().is_empty(), "“{}” says nothing of what it does", page.word);
         assert!(page.example.contains("scene:"), "“{}”: no scene in its example: {}", page.word, page.example);
@@ -72,7 +72,7 @@ fn the_pages_written_are_words_and_many() {
     let unknown: Vec<&String> = written.keys().filter(|word| !words.contains(word)).collect();
     assert!(unknown.is_empty(), "pages written of no word: {unknown:?}");
     let heads = written::PAGES.iter().map(|text| text.lines().filter(|line| line.starts_with("== ")).count()).sum::<usize>();
-    assert_eq!(heads, written.len(), "a word written twice in workshop/wiki/");
+    assert_eq!(heads, written.len(), "a word written twice in workshop_wiki/wiki/");
     assert!(written.values().filter(|page| !page.example.is_empty()).count() >= 60, "at least sixty examples by hand");
 }
 
@@ -183,7 +183,7 @@ fn every_word_of_the_v2_families_passes_the_gate() {
     for page in pages.iter().filter(|page| !page.retired) {
         let planned = film::plan::planned(&page.word).filter(|planned| planned.family != film::plan::ADVANCED);
         if planned.is_some() && !page.written {
-            wrong.push(format!("{}: no page written by hand in workshop/wiki/", page.word));
+            wrong.push(format!("{}: no page written by hand in workshop_wiki/wiki/", page.word));
         }
         let read = problems(&session, &page.example);
         if !read.is_empty() {

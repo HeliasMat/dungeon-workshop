@@ -1,4 +1,4 @@
-# The Wiki's pages: the Formations family, several standing in a shape (workshop/src/wiki/written.rs).
+# The Wiki's pages: the Formations family, several standing in a shape (workshop_wiki/src/written.rs).
 
 == form
 > Several stand in a shape round a place (the middle without one): side by side (row), one behind the other (column), in a ring facing its middle (ring), or side by side facing us (lineup). At the head of a scene they stand there; later on they walk there, or run with run (walk walks them there even at the head). look left, look piplup turn them all one way or to someone.

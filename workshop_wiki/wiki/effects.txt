@@ -1,4 +1,4 @@
-# The Wiki's pages: effects, light, weather (workshop/src/wiki/written.rs).
+# The Wiki's pages: effects, light, weather (workshop_wiki/src/written.rs).
 
 == effect
 > A move's own effect of the game, by the move's name: on someone, at a place, or from one to another, flying.

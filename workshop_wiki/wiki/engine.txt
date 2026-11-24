@@ -1,5 +1,5 @@
 # The Wiki's pages: nodes, tracks, the engine's own commands, the game's words
-# (workshop/src/wiki/written.rs).
+# (workshop_wiki/src/written.rs).
 
 == prop
 > Sets properties of someone or of a node, several on one line: angle 45 scale 1.5 opacity 50%, a tint, a position…

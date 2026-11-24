@@ -183,9 +183,9 @@ fn every_offer(session: &Session, text: &str, cursor: usize, asked: bool) -> Opt
     // (After `move <who> `: the game's moves, found by what is typed of them.)
     let (_, line_start, line) = line_at(text, cursor);
     let before: String = line.chars().take(cursor - line_start).collect();
-    if let Some((byte, who, typed_move)) = crate::catalogue::attack_rest(session, &before) {
+    if let Some((byte, who, typed_move)) = workshop_wiki::catalogue::attack_rest(session, &before) {
         let from = line_start + before[..byte].chars().count();
-        let moves: Vec<(String, String)> = crate::catalogue::move_choices(session, &typed_move).into_iter().take(200).collect();
+        let moves: Vec<(String, String)> = workshop_wiki::catalogue::move_choices(session, &typed_move).into_iter().take(200).collect();
         if !moves.is_empty() && !(moves.len() == 1 && moves[0].0 == typed_move) {
             let user = species_of(session, text, &who);
             return Some(Completion { letters: from..cursor, choices: moves, chosen: 0, user: Some(user) });
@@ -207,11 +207,11 @@ fn every_offer(session: &Session, text: &str, cursor: usize, asked: bool) -> Opt
         && names.contains(*who)
         && !film::is_word(who, text)
     {
-        let mut doing: Vec<(String, String)> = crate::catalogue::catalogue(session)
+        let mut doing: Vec<(String, String)> = workshop_wiki::catalogue::catalogue(session)
             .iter()
             .filter(|entry| entry.subject && film::words::plain(&entry.word).starts_with(&plain))
-            .filter(|entry| entry.family != crate::catalogue::ADVANCED || plain.len() >= 3)
-            .map(|entry| (entry.word.clone(), format!("{} · {}", crate::catalogue::family_shown(entry.family), entry.shown())))
+            .filter(|entry| entry.family != workshop_wiki::catalogue::ADVANCED || plain.len() >= 3)
+            .map(|entry| (entry.word.clone(), format!("{} · {}", workshop_wiki::catalogue::family_shown(entry.family), entry.shown())))
             .collect();
         // (The most used first, then the shortest.)
         const USUAL: [&str; 16] =

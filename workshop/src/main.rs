@@ -24,7 +24,6 @@
 mod app;
 mod bug;
 mod capture;
-mod catalogue;
 mod debug;
 mod decors;
 mod edit;
@@ -46,7 +45,6 @@ mod story;
 mod terrains;
 mod typography;
 mod walk;
-mod wiki;
 mod workshop;
 mod workspace;
 

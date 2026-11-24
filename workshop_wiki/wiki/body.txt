@@ -1,4 +1,4 @@
-# The Wiki's pages: the Body family, what the body does where it stands (workshop/src/wiki/written.rs).
+# The Wiki's pages: the Body family, what the body does where it stands (workshop_wiki/src/written.rs).
 
 == pose
 > Someone plays one of their sprite's animations, by a clear name: sit, lie, cringe, stagger, look_up, proud, breathe, attack, charge, doze… once (then standing again), loop (again and again) or hold (staying on its last picture); each has its own default. pose off: standing again.

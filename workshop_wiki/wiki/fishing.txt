@@ -1,4 +1,4 @@
-# The Wiki's pages: fishing, at sea (workshop/src/wiki/written.rs).
+# The Wiki's pages: fishing, at sea (workshop_wiki/src/written.rs).
 # A fisher's rod is drawn on a variant (pikachu_pecheur, painted from your own copy
 # of the game); with a plain Pokémon the line plays without the rod, and the
 # Script says so: the examples use Pikachu, so they play everywhere.

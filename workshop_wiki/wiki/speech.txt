@@ -1,5 +1,5 @@
 # The Wiki's pages written by hand: what a word does, said for an author,
-# and a little film of our own as its example (workshop/src/wiki/written.rs).
+# and a little film of our own as its example (workshop_wiki/src/written.rs).
 # A page: `== word`, its `> ` lines, then its example (a `scene:` in it).
 # A word with no page here gets one made from its forms.
 #

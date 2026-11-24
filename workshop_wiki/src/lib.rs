@@ -2,9 +2,14 @@
 //! the library's recipes, the engine's commands), each saying what it does
 //! for an author, its forms and what each part of them means, a little film
 //! as an example, the words it goes with. Written by hand where
-//! `workshop/wiki/*.txt` has the word (`written`), made from its forms
+//! `workshop_wiki/wiki/*.txt` has the word (`written`), made from its forms
 //! otherwise (`made`); searched by name, family and what it does (`search`).
 //! The Script shows it beside the text (`script/wiki.rs`).
+//!
+//! A crate of Dungeon Workshop: the pages (`pages`, `page_of`...) and the
+//! words' catalogue they are made of (`catalogue`). It uses `workshop_base`
+//! (the session, which keeps both) and `film` (the language's words, plan and
+//! recipes); the Script (`workshop_script`) shows it.
 
 use std::sync::Arc;
 
@@ -210,5 +215,6 @@ pub fn family_name(family: usize) -> String {
     crate::catalogue::family_shown(family)
 }
 
+pub mod catalogue;
 #[cfg(test)]
 mod tests;

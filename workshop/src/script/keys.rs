@@ -96,8 +96,8 @@ impl Body<'_> {
         let scripts = &mut *self.scripts;
         let browse = scripts.browsing.as_mut()?;
         let mut take = None;
-        let words = crate::catalogue::of_family(&scripts.session, browse.family);
-        let families = crate::catalogue::FAMILIES.len();
+        let words = workshop_wiki::catalogue::of_family(&scripts.session, browse.family);
+        let families = workshop_wiki::catalogue::FAMILIES.len();
         if pressed(ui, Modifiers::NONE, Key::ArrowDown) {
             (browse.chosen, browse.moved) = ((browse.chosen + 1).min(words.len().saturating_sub(1)), true);
         }

@@ -1,4 +1,4 @@
-# The Wiki's pages: words of the v2.1 core that had none written by hand yet (workshop/src/wiki/written.rs).
+# The Wiki's pages: words of the v2.1 core that had none written by hand yet (workshop_wiki/src/written.rs).
 
 == banner
 > A name on the screen, as the game shows them: banner chapter, a chapter's title typed alone on the dark; banner place, a place's name over the scene; banner dungeon, a dungeon's name on the dark as the team goes in.

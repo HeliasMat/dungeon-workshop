@@ -124,7 +124,7 @@ make contact sheets and videos.
 `python tools/ds/gate.py <rom> [family...]` checks every word of the
 language on the real game at once. For each family of the plan
 (`film/src/plan.rs`: the core ones, the optional ones, the advanced
-words), it takes each word's example from the Wiki (`workshop/wiki/*.txt`;
+words), it takes each word's example from the Wiki (`workshop_wiki/wiki/*.txt`;
 a line said, `option`, `{if}`, `{value}`, `seen()`, `#id` and `keep`, which
 have no page, get a short one of the script's own), exports it with
 `scene_player export-ds --partial`, makes the examples that export the

@@ -543,7 +543,8 @@ impl Scripts {
             (self.plan_shown, self.wiki_shown) = (self.plan_shown || beside.contains("layout"), self.wiki_shown || beside.contains("wiki"));
             // (`WORKSHOP_WORDS=family`: the words by family open, on that family.)
             if let Some(family) = self.session.launch.words.clone() {
-                let family = crate::catalogue::FAMILIES.iter().position(|name| film::words::plain(name).starts_with(&film::words::plain(&family))).unwrap_or(0);
+                let family =
+                    workshop_wiki::catalogue::FAMILIES.iter().position(|name| film::words::plain(name).starts_with(&film::words::plain(&family))).unwrap_or(0);
                 self.browsing = Some(Browse { family, chosen: 0, moved: true, fresh: true });
             }
         }

@@ -1,4 +1,4 @@
-//! The pages written by hand (`workshop/wiki/*.txt`): for a word, what
+//! The pages written by hand (`workshop_wiki/wiki/*.txt`): for a word, what
 //! it does said for an author, and an example, a little film of our own.
 //!
 //! ```text
@@ -25,27 +25,27 @@ pub struct Written {
     pub retired: bool,
 }
 
-/// The files of the pages written, in the Workshop (`workshop/wiki/`), a family or two each.
+/// The files of the pages written, beside this crate (`workshop_wiki/wiki/`), a family or two each.
 pub const PAGES: [&str; 19] = [
-    include_str!("../../wiki/speech.txt"),
-    include_str!("../../wiki/moving.txt"),
-    include_str!("../../wiki/gestures.txt"),
-    include_str!("../../wiki/camera.txt"),
-    include_str!("../../wiki/sound.txt"),
-    include_str!("../../wiki/effects.txt"),
-    include_str!("../../wiki/fights.txt"),
-    include_str!("../../wiki/items.txt"),
-    include_str!("../../wiki/fishing.txt"),
-    include_str!("../../wiki/dungeon.txt"),
-    include_str!("../../wiki/engine.txt"),
-    include_str!("../../wiki/story.txt"),
-    include_str!("../../wiki/core.txt"),
-    include_str!("../../wiki/presence.txt"),
-    include_str!("../../wiki/formations.txt"),
-    include_str!("../../wiki/movement.txt"),
-    include_str!("../../wiki/turning.txt"),
-    include_str!("../../wiki/body.txt"),
-    include_str!("../../wiki/emotions.txt"),
+    include_str!("../wiki/speech.txt"),
+    include_str!("../wiki/moving.txt"),
+    include_str!("../wiki/gestures.txt"),
+    include_str!("../wiki/camera.txt"),
+    include_str!("../wiki/sound.txt"),
+    include_str!("../wiki/effects.txt"),
+    include_str!("../wiki/fights.txt"),
+    include_str!("../wiki/items.txt"),
+    include_str!("../wiki/fishing.txt"),
+    include_str!("../wiki/dungeon.txt"),
+    include_str!("../wiki/engine.txt"),
+    include_str!("../wiki/story.txt"),
+    include_str!("../wiki/core.txt"),
+    include_str!("../wiki/presence.txt"),
+    include_str!("../wiki/formations.txt"),
+    include_str!("../wiki/movement.txt"),
+    include_str!("../wiki/turning.txt"),
+    include_str!("../wiki/body.txt"),
+    include_str!("../wiki/emotions.txt"),
 ];
 
 /// The pages of all the files written.

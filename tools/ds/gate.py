@@ -5,7 +5,7 @@ real game, one contact sheet per family.
     python tools/ds/gate.py <rom> [family...] [--every N] [--no-play]
 
 For each family of `film/src/plan.rs` (the core ones, the optional ones,
-the advanced words), each word's example in the Wiki (`workshop/wiki/*.txt`,
+the advanced words), each word's example in the Wiki (`workshop_wiki/wiki/*.txt`,
 under `== word`) is exported with `scene_player export-ds --partial`; the
 examples that export become the scenes of one film (its name shown on black
 before each, `message_Narration`), patched with `patch_rom.py --boot
@@ -71,7 +71,7 @@ def families():
 def examples():
     """Each word's example in the Wiki: its lines, by word."""
     pages = {}
-    folder = os.path.join(ROOT, 'workshop', 'wiki')
+    folder = os.path.join(ROOT, 'workshop_wiki', 'wiki')
     for name in sorted(os.listdir(folder)):
         if not name.endswith('.txt'):
             continue

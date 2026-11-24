@@ -1,4 +1,4 @@
-# The Wiki's pages: things held, given, put down; tools, crops (workshop/src/wiki/written.rs).
+# The Wiki's pages: things held, given, put down; tools, crops (workshop_wiki/src/written.rs).
 
 == hold
 > Someone holds an item in their hands, its icon from the game (on the side they face); it follows their jumps and walks.

@@ -1,4 +1,4 @@
-# The Wiki's pages: the Emotions family, the game's emote balloons (workshop/src/wiki/written.rs).
+# The Wiki's pages: the Emotions family, the game's emote balloons (workshop_wiki/src/written.rs).
 
 == emote
 > One of the game's emote balloons over someone, with its sound: exclaim, shock, sweat, joy, laugh, question, notice, anger, munch. silent leaves the sound out; emote off takes it away.

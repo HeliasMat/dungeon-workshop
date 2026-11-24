@@ -1,4 +1,4 @@
-# The Wiki's pages: moving about, crowds (workshop/src/wiki/written.rs).
+# The Wiki's pages: moving about, crowds (workshop_wiki/src/written.rs).
 
 == wait
 > Waits: so long (1s, 30f), until someone has arrived (wait pikachu), until what plays beside under that name ends, or until everything has stopped (wait all).

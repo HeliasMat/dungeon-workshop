@@ -1,4 +1,4 @@
-# The Wiki's pages: the Presence family, who is on the stage and how they come and go (workshop/src/wiki/written.rs).
+# The Wiki's pages: the Presence family, who is on the stage and how they come and go (workshop_wiki/src/written.rs).
 
 == put
 > Sets someone in a place, turned that way (facing a side, someone or a spot). At the head of a scene they are simply there; later on, they walk in from the nearest edge. Also puts things down: put object chest front_of pikachu.

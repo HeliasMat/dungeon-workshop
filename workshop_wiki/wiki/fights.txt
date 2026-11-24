@@ -1,4 +1,4 @@
-# The Wiki's pages: fights (workshop/src/wiki/written.rs).
+# The Wiki's pages: fights (workshop_wiki/src/written.rs).
 
 == fight
 > A fight, played by the fights' own rules, with the game's moves, bars and log: who... vs who...; a duel by default, double for two against two; boss, the foe looms first; level n. fight directed … end tells one by one, turn by turn.

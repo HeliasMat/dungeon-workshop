@@ -9,7 +9,7 @@
 //! command the plan does not name is an advanced word. A word of the old
 //! vocabulary ([`REPLACED`]) is refused, its new form given as the fix
 //! (`told_replaced`). A word of the plan the language does not have yet is
-//! "to build" ([`pending`]); the quality gate (`workshop/src/wiki/tests.rs`)
+//! "to build" ([`pending`]); the quality gate (`workshop_wiki/src/tests.rs`)
 //! asks the others a page and an example that plays with nothing to say.
 
 /// The families of the core, in their order.

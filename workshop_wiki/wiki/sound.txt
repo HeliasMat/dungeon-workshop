@@ -1,4 +1,4 @@
-# The Wiki's pages: sounds and music (workshop/src/wiki/written.rs).
+# The Wiki's pages: sounds and music (workshop_wiki/src/written.rs).
 
 == sound
 > Plays a sound of the game (or a move's, or one of ours): on someone, when they are hit; loop, over and over, until sound name off.
