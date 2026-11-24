@@ -11,7 +11,7 @@ use super::piece::piece;
 use crate::decors::{Decors, paint_thumb};
 use crate::edit::{self, Item, Kind};
 use crate::terrains::Tool;
-use crate::theme;
+use workshop_base::theme;
 
 /// How wide the labels are, left of the values.
 const LABEL: f32 = 96.0;
@@ -23,7 +23,7 @@ pub(super) fn component(ui: &mut egui::Ui, decors: &mut Decors, title: &str, bod
     ui.add_space(2.0);
     let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::click());
     ui.painter().rect_filled(rect, 0.0, if response.hovered() { theme::HOVERED } else { theme::TOOLS });
-    crate::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), open, theme::TEXT);
+    workshop_base::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), open, theme::TEXT);
     ui.painter().text(pos2(rect.min.x + 22.0, rect.center().y), egui::Align2::LEFT_CENTER, title, egui::FontId::proportional(theme::BODY), theme::STRONG);
     if response.clicked() && !decors.folded_parts.remove(title) {
         decors.folded_parts.insert(title.to_string());
@@ -49,7 +49,7 @@ pub(super) fn prop<R>(ui: &mut egui::Ui, label: &str, add: impl FnOnce(&mut egui
 /// The small arrow giving a property back its value by default (shown only when it has another).
 pub(super) fn reset(ui: &mut egui::Ui, differs: bool) -> bool {
     let (rect, _) = ui.allocate_exact_size(vec2(18.0, 18.0), Sense::hover());
-    differs && crate::icons::button(ui, rect, "default value", crate::icons::reset)
+    differs && workshop_base::icons::button(ui, rect, "default value", workshop_base::icons::reset)
 }
 
 /// The head: a picture (or a badge), a name, what it is and where.

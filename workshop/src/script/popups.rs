@@ -15,10 +15,10 @@ use super::knowledge::{Pictured, picture_of, portrait};
 use super::text::{index_of, spot_of, word_at};
 use super::wiki::wiki_said_of;
 use super::{Finding, HOVER_AFTER};
-use crate::theme;
+use workshop_base::theme;
 
 /// What is said of the place a word is at: what is wrong there, then what the language says of it.
-pub(super) fn said_of_word(session: &crate::session::Session, text: &str, told: &[film::service::Diagnostic], index: usize) -> String {
+pub(super) fn said_of_word(session: &workshop_base::session::Session, text: &str, told: &[film::service::Diagnostic], index: usize) -> String {
     let spot = spot_of(text, index);
     let wrong: Vec<String> = told
         .iter()
@@ -354,20 +354,20 @@ fn find_row(ui: &mut egui::Ui, finding: &mut Finding, count: usize, asked: &mut 
     }
     let icon = |ui: &mut egui::Ui, said: &str, draw: &dyn Fn(&egui::Painter, Rect, Color32)| {
         let (rect, _) = ui.allocate_exact_size(vec2(20.0, 20.0), Sense::hover());
-        crate::icons::button(ui, rect, said, draw)
+        workshop_base::icons::button(ui, rect, said, draw)
     };
-    if icon(ui, "the one before (Shift+Enter)", &|painter, at, tint| crate::icons::way(painter, at, 4, tint)) && count > 0 {
+    if icon(ui, "the one before (Shift+Enter)", &|painter, at, tint| workshop_base::icons::way(painter, at, 4, tint)) && count > 0 {
         finding.at = (finding.at + count - 1) % count;
         asked.jump = Some(finding.at);
     }
-    if icon(ui, "the next one (Enter)", &|painter, at, tint| crate::icons::way(painter, at, 0, tint)) && count > 0 {
+    if icon(ui, "the next one (Enter)", &|painter, at, tint| workshop_base::icons::way(painter, at, 0, tint)) && count > 0 {
         finding.at = (finding.at + 1) % count;
         asked.jump = Some(finding.at);
     }
     if ui.selectable_label(finding.replacing, "Replace").on_hover_text("Ctrl+H").clicked() {
         finding.replacing = !finding.replacing;
     }
-    if icon(ui, "close (Esc)", &crate::icons::cross) || ui.input(|input| input.key_pressed(Key::Escape)) {
+    if icon(ui, "close (Esc)", &workshop_base::icons::cross) || ui.input(|input| input.key_pressed(Key::Escape)) {
         asked.close = true;
     }
 }

@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use eframe::egui;
 
-use crate::session::Session;
+use workshop_base::session::Session;
 
 use super::highlight::names_of;
 use super::text::{line_at, spot_of, word_at};
@@ -57,7 +57,7 @@ pub(super) fn known_here(session: &Session, text: &str, head: &str, plain: &str)
         }
         // (By kind of place, `library/tables/place_kinds.txt`: each with its kind and its name.)
         let tables = session.tables();
-        let kinds = crate::project::place_kinds(session.library());
+        let kinds = workshop_base::project::place_kinds(session.library());
         let mut places: Vec<(decor::tags::PlaceKind, String, String)> = tables
             .decors
             .keys()

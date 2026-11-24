@@ -8,7 +8,7 @@ use eframe::egui::{self, Color32, Sense, vec2};
 
 use super::decors::Decors;
 use super::edit::{Item, Kind};
-use super::theme;
+use workshop_base::theme;
 
 mod fields;
 mod hierarchy;
@@ -73,5 +73,5 @@ fn paint_badge(painter: &egui::Painter, rect: egui::Rect, (letter, colour, _): (
 /// A small cross one clicks (taken out, closed).
 fn cross_button(ui: &mut egui::Ui, said: &str) -> bool {
     let (rect, _) = ui.allocate_exact_size(vec2(18.0, 18.0), Sense::hover());
-    crate::icons::button(ui, rect, said, crate::icons::cross)
+    workshop_base::icons::button(ui, rect, said, workshop_base::icons::cross)
 }

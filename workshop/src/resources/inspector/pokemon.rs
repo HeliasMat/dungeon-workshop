@@ -5,7 +5,7 @@ use eframe::egui;
 
 use super::super::shelves::dex_of;
 use super::super::{Item, Resources, SheetImport};
-use crate::theme;
+use workshop_base::theme;
 
 /// Its actions, the work on its thread told when done, the import asked.
 pub(super) fn actions(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {
@@ -28,8 +28,8 @@ pub(super) fn actions(ui: &mut egui::Ui, resources: &mut Resources, item: &Item)
         } else {
             spritecollab::Target::Monster(u32::try_from(item.number).unwrap_or(0))
         };
-        let places = crate::tool_run::places(&resources.session);
-        resources.run = Some(crate::tool_run::Run::spawn("import", move || spritecollab::import_from(&places, &source, into)));
+        let places = workshop_base::tool_run::places(&resources.session);
+        resources.run = Some(workshop_base::tool_run::Run::spawn("import", move || spritecollab::import_from(&places, &source, into)));
         done = true;
     }
     if done {
@@ -72,12 +72,12 @@ fn buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item, busy: bool
             .add_enabled(!busy, egui::Button::new("Export for SpriteBot…"))
             .on_hover_text("sprite/AnimData.xml and <Anim>-Anim.png, portrait/<Face>.png and portrait_sheet.png, as SpriteCollab serves them")
             .clicked()
-            && let Some(folder) = crate::pick::folder("Where to Write Its SpriteBot Sheets", None)
+            && let Some(folder) = workshop_base::pick::folder("Where to Write Its SpriteBot Sheets", None)
         {
             let target = folder.join(&item.word);
             let monster = u32::try_from(item.number).unwrap_or(0);
-            let places = crate::tool_run::places(&resources.session);
-            resources.run = Some(crate::tool_run::Run::spawn("export", move || spritecollab::export(&places, monster, &target)));
+            let places = workshop_base::tool_run::places(&resources.session);
+            resources.run = Some(workshop_base::tool_run::Run::spawn("export", move || spritecollab::export(&places, monster, &target)));
         }
         if ui
             .add_enabled(!busy, egui::Button::new("Import from SpriteBot…"))
@@ -101,12 +101,12 @@ fn import_form(ui: &mut egui::Ui, asked: &mut SheetImport, item: &Item) -> (bool
         ui.horizontal(|ui| {
             ui.add(egui::TextEdit::singleline(&mut asked.source).hint_text("folder or .zip").desired_width((ui.available_width() - 150.0).max(80.0)));
             if ui.button("Folder…").clicked()
-                && let Some(folder) = crate::pick::folder("A SpriteBot Folder (AnimData.xml…)", None)
+                && let Some(folder) = workshop_base::pick::folder("A SpriteBot Folder (AnimData.xml…)", None)
             {
                 asked.source = folder.display().to_string();
             }
             if ui.button("Zip…").clicked()
-                && let Some(file) = crate::pick::file("A SpriteBot Zip", &[("Zip", &["zip"])], None)
+                && let Some(file) = workshop_base::pick::file("A SpriteBot Zip", &[("Zip", &["zip"])], None)
             {
                 asked.source = file.display().to_string();
             }

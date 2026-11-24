@@ -30,12 +30,12 @@
 
 use std::sync::Arc;
 
-use crate::session::Session;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::Range;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::{Duration, Instant};
+use workshop_base::session::Session;
 
 use eframe::egui::{self, Color32};
 use film::service::{Diagnostic, Spot};
@@ -128,7 +128,7 @@ pub struct Script {
 
 impl Script {
     fn read(session: &Session, path: PathBuf) -> Script {
-        crate::safe::check(session, &path);
+        workshop_base::safe::check(session, &path);
         let text = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
         Script {
             path,
@@ -150,7 +150,7 @@ impl Script {
     }
 
     pub fn save(&mut self) -> Result<(), String> {
-        crate::safe::write(&self.path, &self.text).map_err(|why| format!("{}: {why}", self.path.display()))?;
+        workshop_base::safe::write(&self.path, &self.text).map_err(|why| format!("{}: {why}", self.path.display()))?;
         self.saved = self.text.clone();
         crate::workspace::keep_version(&self.root, &self.path, &self.text);
         Ok(())
@@ -289,7 +289,7 @@ pub struct Scripts {
     pub lit_who_scene: Option<String>,
     pub lit_who_track: Option<String>,
     /// The examples played apart (a word chosen, a move offered).
-    examples: crate::example::Examples,
+    examples: workshop_base::example::Examples,
     /// The cursors more than the editor's own (Alt+click): what is typed is written at each.
     extra: Vec<usize>,
     /// The Layout and the Wiki beside the text; the family last looked at; what is sought in the Wiki, the page
@@ -444,7 +444,7 @@ impl Scripts {
             lit_line: None,
             lit_who_scene: None,
             lit_who_track: None,
-            examples: crate::example::Examples::new(session, context),
+            examples: workshop_base::example::Examples::new(session, context),
             extra: Vec::new(),
             plan_shown: false,
             // (For a picture: `WORKSHOP_WIKI=walk`, `walk:play`, `joy:source`, `search:rain`, `all`.)

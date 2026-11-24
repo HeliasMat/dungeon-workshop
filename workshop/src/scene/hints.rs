@@ -7,7 +7,7 @@ use eframe::egui::{self, Color32, Rect, pos2, vec2};
 
 use crate::decors::Decors;
 use crate::terrains::Tool;
-use crate::theme;
+use workshop_base::theme;
 
 /// What the hints depend on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -16,9 +16,9 @@
 
 use std::sync::Arc;
 
-use crate::session::Session;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, channel};
+use workshop_base::session::Session;
 
 use ::game::game_file::GameFile;
 use ::game::project_check::{Report, file_of};
@@ -26,8 +26,8 @@ use eframe::egui::{self, Color32, RichText, Sense};
 use egui::text::{CCursor, CCursorRange};
 use engine::Diagnostic;
 
-use crate::game::{self, ChapterBox, Link};
-use crate::theme;
+use workshop_base::game::{self, ChapterBox, Link};
+use workshop_base::theme;
 
 /// What the Game space asks another space to show: a film (at a line), a
 /// decor (that line chosen), a dungeon or a fight.
@@ -70,7 +70,7 @@ impl Open {
 
     /// Its text written in its file.
     fn save(&mut self) -> Result<(), String> {
-        crate::safe::write(&self.path, &self.text).map_err(|why| format!("{}: {why}", self.path.display()))?;
+        workshop_base::safe::write(&self.path, &self.text).map_err(|why| format!("{}: {why}", self.path.display()))?;
         self.written = self.text.clone();
         self.reread();
         Ok(())
@@ -90,7 +90,7 @@ pub struct Games {
     from_chapter: u16,
     jump: Option<usize>,
     /// The game being packed.
-    packing: Option<crate::tool_run::Run>,
+    packing: Option<workshop_base::tool_run::Run>,
     pub asked: Option<Asked>,
     pub said: Option<String>,
 }
@@ -560,12 +560,12 @@ fn export_game(games: &mut Games, game: &Path) {
     let stem = game.file_stem().unwrap_or_default().to_string_lossy().into_owned();
     let dist = games.session.root().join("dist");
     _ = std::fs::create_dir_all(&dist);
-    let Some(out) = crate::pick::save("Export the Game", &format!("{stem}.dwpack"), &[("Game Pack", &["dwpack"])], Some(&dist)) else {
+    let Some(out) = workshop_base::pick::save("Export the Game", &format!("{stem}.dwpack"), &[("Game Pack", &["dwpack"])], Some(&dist)) else {
         return;
     };
     let game = game.to_path_buf();
     let context = games.session.context.clone();
-    games.packing = Some(crate::tool_run::Run::spawn("packing the game", move || {
+    games.packing = Some(workshop_base::tool_run::Run::spawn("packing the game", move || {
         let packed = ::game::pack::pack_game(&context, &game, &out)?;
         Ok(format!("exported: {} (“{}”, {} files, nothing of the cartridge)", packed.path.display(), packed.title, packed.files.len()))
     }));

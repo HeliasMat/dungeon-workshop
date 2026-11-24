@@ -5,7 +5,7 @@ use eframe::egui::{self, Rect, RichText, Sense, vec2};
 use super::Films;
 use super::playing::clock;
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 /// The State: the scene at the moment shown, as `scene_player state` tells
 /// it (`preview::state`): the camera, the bars, the line in the box, each

@@ -7,7 +7,7 @@ use eframe::egui::{self, Color32, Pos2, Rect, Stroke, StrokeKind, pos2, vec2};
 
 use super::{Read, View};
 use crate::decors::{Decors, tag};
-use crate::theme;
+use workshop_base::theme;
 
 /// The gaps between two boxes, across and down, where they do not overlap:
 /// each from where to where (at the height, or along the line, of their middles) and how wide.

@@ -7,7 +7,7 @@ use super::editor::fight_choice;
 use super::fight_columns::species_id;
 use super::layout::{hint, numbers, section};
 use super::*;
-use crate::session::Session;
+use workshop_base::session::Session;
 
 /// Whether a range of floors (none: all) holds that floor.
 pub(super) fn on_floor(floors: Floors, at: usize) -> bool {
@@ -150,7 +150,7 @@ fn tileset_row(
             ui.label(RichText::new("not found").size(theme::SMALL).color(theme::WRONG));
             // (Go to: what it should be, imported.)
             if ui.button("Import It…").clicked() {
-                let chosen = crate::pick::png("The tileset of this dungeon's “tileset:”", Some(templates));
+                let chosen = workshop_base::pick::png("The tileset of this dungeon's “tileset:”", Some(templates));
                 *importing = Some((chosen.unwrap_or_else(|| templates.join("template.png")).display().to_string(), false));
             }
         } else if !form.tileset.is_empty() {
@@ -198,7 +198,7 @@ fn tiles_written(
             });
         }
         if ui.button("Import a Tileset…").on_hover_text("a PNG drawn on the template (its versions <name>.1.png, <name>.2.png beside it); also: drop it on the window").clicked() {
-            let chosen = crate::pick::png("A Tileset Drawn on the Template", Some(templates));
+            let chosen = workshop_base::pick::png("A Tileset Drawn on the Template", Some(templates));
             *importing = Some((chosen.unwrap_or_else(|| templates.join("template.png")).display().to_string(), false));
         }
     });
@@ -217,7 +217,7 @@ fn tileset_imported(ui: &mut egui::Ui, session: &Session, form: &mut Form, said:
     ui.horizontal(|ui| {
         ui.add(egui::TextEdit::singleline(path).desired_width((ui.available_width() - 280.0).max(80.0)).hint_text("path of the PNG"));
         if ui.button("Browse…").clicked()
-            && let Some(chosen) = crate::pick::png("A Tileset Drawn on the Template", Some(std::path::Path::new(path.trim())))
+            && let Some(chosen) = workshop_base::pick::png("A Tileset Drawn on the Template", Some(std::path::Path::new(path.trim())))
         {
             *path = chosen.display().to_string();
         }

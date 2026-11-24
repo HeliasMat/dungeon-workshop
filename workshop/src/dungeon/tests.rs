@@ -116,7 +116,7 @@ fn a_fight_is_weighed_and_its_phases_placed() {
 
 #[test]
 fn a_game_s_own_dungeon_is_listed_as_its_own_and_written_back_in_its_folder() {
-    let session = std::sync::Arc::new(crate::session::Session::for_tests());
+    let session = std::sync::Arc::new(workshop_base::session::Session::for_tests());
     let game = session.library().at(session.root().join("tests/games/test_village"));
     let listed = summaries_in(&session, &game);
     let forest = listed.iter().find(|one| one.word == "test_forest").expect("the game's dungeon listed");

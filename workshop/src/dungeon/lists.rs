@@ -46,12 +46,12 @@ pub struct BossSummary {
 }
 
 /// Every dungeon written in the shared library, summed up.
-pub fn summaries(session: &crate::session::Session) -> Vec<Summary> {
+pub fn summaries(session: &workshop_base::session::Session) -> Vec<Summary> {
     summaries_in(session, session.library())
 }
 
 /// Every dungeon written in that project's folder (a game's, or the shared library), summed up; a fight it names, its own or the library's.
-pub fn summaries_in(session: &crate::session::Session, library: &assets::project::Project) -> Vec<Summary> {
+pub fn summaries_in(session: &workshop_base::session::Session, library: &assets::project::Project) -> Vec<Summary> {
     let own = !library.is_library();
     let kept = offered(session);
     let offered = kept.as_deref();
@@ -84,12 +84,12 @@ pub fn summaries_in(session: &crate::session::Session, library: &assets::project
 }
 
 /// Every boss fight written apart (`library/fights`), summed up as the library shows it.
-pub fn fight_summaries(session: &crate::session::Session) -> Vec<Summary> {
+pub fn fight_summaries(session: &workshop_base::session::Session) -> Vec<Summary> {
     fight_summaries_in(session, session.library())
 }
 
 /// Every boss fight written apart in that project's folder (a game's `fights/`, or the shared library's), summed up.
-pub fn fight_summaries_in(session: &crate::session::Session, library: &assets::project::Project) -> Vec<Summary> {
+pub fn fight_summaries_in(session: &workshop_base::session::Session, library: &assets::project::Project) -> Vec<Summary> {
     let own = !library.is_library();
     let kept = offered(session);
     let offered = kept.as_deref();

@@ -8,9 +8,9 @@ use std::sync::Arc;
 use eframe::egui::{self, RichText};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 
-use crate::project::{Entry, Kind, Project};
-use crate::session::Session;
-use crate::theme;
+use workshop_base::project::{Entry, Kind, Project};
+use workshop_base::session::Session;
+use workshop_base::theme;
 
 /// The spaces.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -502,7 +502,7 @@ impl App {
 
     /// A file restored by `safe` read again where it is open; one to offer to restore, asked.
     fn restore(&mut self, context: &egui::Context) {
-        for path in crate::safe::restored(&self.work.session) {
+        for path in workshop_base::safe::restored(&self.work.session) {
             if self.work.scripts.open.as_ref().is_some_and(|open| open.path == path) {
                 self.work.scripts.open = None;
             }
@@ -513,7 +513,7 @@ impl App {
             self.work.dungeons.reload(&path);
             self.work.resources.reload(&path);
         }
-        let Some((path, trouble)) = crate::safe::offered(&self.work.session) else {
+        let Some((path, trouble)) = workshop_base::safe::offered(&self.work.session) else {
             return;
         };
         let mut answer: Option<Option<&str>> = None;
@@ -521,9 +521,9 @@ impl App {
             ui.set_width(460.0);
             ui.label(theme::text(path.display().to_string(), theme::SMALL, theme::STRONG));
             ui.add_space(4.0);
-            let backup = crate::safe::beside(&path, "bak").is_file();
+            let backup = workshop_base::safe::beside(&path, "bak").is_file();
             match trouble {
-                crate::safe::Trouble::Interrupted => {
+                workshop_base::safe::Trouble::Interrupted => {
                     ui.label(theme::weak("Its last save did not finish: what was to be written was left beside it (.tmp)."));
                     ui.add_space(6.0);
                     if ui.button("Take Back the Interrupted Save (.tmp)").clicked() {
@@ -533,7 +533,7 @@ impl App {
                         answer = Some(Some("bak"));
                     }
                 }
-                crate::safe::Trouble::NewerBackup => {
+                workshop_base::safe::Trouble::NewerBackup => {
                     ui.label(theme::weak("Its backup (.bak) is newer than it: it may have been replaced by an older version."));
                     ui.add_space(6.0);
                     if ui.button("Take Back the Backup (.bak)").clicked() {
@@ -547,7 +547,7 @@ impl App {
             ui.label(theme::text("what it was before being taken back stays beside it (.before)", theme::SMALL, theme::FAINT));
         });
         if let Some(from) = answer {
-            self.work.said = match crate::safe::answer(&self.work.session, &path, from) {
+            self.work.said = match workshop_base::safe::answer(&self.work.session, &path, from) {
                 Ok(said) | Err(said) => said,
             };
         }

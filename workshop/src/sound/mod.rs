@@ -337,7 +337,7 @@ pub(crate) struct Sound {
 /// A sound being made: what it is made of, its versions, how it is heard and seen.
 pub struct SoundMaking {
     /// What the Workshop works with (`session`).
-    pub session: std::sync::Arc<crate::session::Session>,
+    pub session: std::sync::Arc<workshop_base::session::Session>,
     pub word: String,
     sound: Sound,
     voice: usize,

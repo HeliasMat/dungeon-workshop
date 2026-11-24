@@ -10,7 +10,7 @@ use super::super::grid::opened;
 use super::super::{Asked, Item, Resources, Shelf};
 use super::{plural, word_replaced};
 use crate::decors::Decors;
-use crate::theme;
+use workshop_base::theme;
 
 /// The row of what to do with it.
 pub(super) fn buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {
@@ -219,7 +219,7 @@ fn bin_row(ui: &mut egui::Ui, resources: &mut Resources, file: &Path, films: usi
 /// Its file moved into the bin (with the time before its name if one is
 /// already there); said.
 fn put_in_bin(resources: &mut Resources, file: &Path) -> String {
-    let bin = crate::project::bin(resources.session.root());
+    let bin = workshop_base::project::bin(resources.session.root());
     _ = std::fs::create_dir_all(&bin);
     let mut to = bin.join(file.file_name().unwrap_or_default());
     if to.exists() {

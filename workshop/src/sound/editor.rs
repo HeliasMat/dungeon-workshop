@@ -5,15 +5,15 @@
 use eframe::egui::{self, Rect, RichText, Sense, pos2, vec2};
 use shell::sound::Hears;
 
+use super::now_seed;
 use super::presets::{EASY_KINDS, KINDS, preset};
 use super::settings::{Touched, layer_settings};
 use super::simple::make_sound_simply;
 use super::versions::{hear, redo_sound, save_sound, undo_sound};
 use super::views::{draw_pitch, draw_spectrum, draw_wave, side_sound};
 use super::{Sound, SoundMaking, Synth, Voice};
-use super::now_seed;
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// Where the sound goes out: the card, how loud.
 struct Out<'a> {

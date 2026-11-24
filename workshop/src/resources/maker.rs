@@ -14,7 +14,7 @@ pub enum Maker {
 
 impl Maker {
     /// A new one of that kind: "image", "animation", "sound", "music", "dungeon", "fight".
-    pub fn new_of(session: &std::sync::Arc<crate::session::Session>, kind: &str) -> Maker {
+    pub fn new_of(session: &std::sync::Arc<workshop_base::session::Session>, kind: &str) -> Maker {
         match kind {
             "animation" => Maker::Picture(Box::new(Painting::new(session, "new_animation", 32, 32, 4))),
             "sound" => Maker::Sound(Box::new(SoundMaking::new(session, "new_sound"))),

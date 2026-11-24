@@ -159,7 +159,7 @@ struct Kept {
 /// A picture (or an animation) being painted.
 pub struct Painting {
     /// What the Workshop works with (`session`).
-    pub session: std::sync::Arc<crate::session::Session>,
+    pub session: std::sync::Arc<workshop_base::session::Session>,
     pub word: String,
     layers: Vec<Layer>,
     layer: usize,
@@ -226,13 +226,13 @@ pub struct Painting {
 
 impl Painting {
     /// A new one: its word, its size, how many steps.
-    pub fn new(session: &std::sync::Arc<crate::session::Session>, word: &str, wide: u32, high: u32, count: usize) -> Painting {
+    pub fn new(session: &std::sync::Arc<workshop_base::session::Session>, word: &str, wide: u32, high: u32, count: usize) -> Painting {
         let layer = Layer { name: "Layer 1".to_string(), visible: true, opacity: 255, blend: 0, cels: vec![RgbaImage::new(wide, high); count.max(1)] };
         Painting::made(session, word, vec![layer], None)
     }
 
     /// One of the things drawn, read to be painted again (its layers, if they were kept).
-    pub fn open(session: &std::sync::Arc<crate::session::Session>, word: &str, file: &std::path::Path, count: usize) -> Option<Painting> {
+    pub fn open(session: &std::sync::Arc<workshop_base::session::Session>, word: &str, file: &std::path::Path, count: usize) -> Option<Painting> {
         let whole = image::open(file).ok()?.to_rgba8();
         let count = count.max(1) as u32;
         let wide = whole.width() / count;
@@ -251,7 +251,7 @@ impl Painting {
         Some(painting)
     }
 
-    fn made(session: &std::sync::Arc<crate::session::Session>, word: &str, layers: Vec<Layer>, file: Option<PathBuf>) -> Painting {
+    fn made(session: &std::sync::Arc<workshop_base::session::Session>, word: &str, layers: Vec<Layer>, file: Option<PathBuf>) -> Painting {
         let count = layers[0].cels.len();
         let size = (layers[0].cels[0].width(), layers[0].cels[0].height());
         let zoom = (360.0 / size.0.max(size.1) as f32).floor().clamp(2.0, 32.0);

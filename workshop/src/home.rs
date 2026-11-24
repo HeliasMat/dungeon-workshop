@@ -11,17 +11,17 @@
 
 use std::sync::Arc;
 
-use crate::session::Session;
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+use workshop_base::session::Session;
 
 use decor::tags::PlaceKind;
 use eframe::egui::{self, Color32, FontId, Rect, RichText, Sense, Stroke, StrokeKind, pos2, vec2};
 
 use crate::app::{Space, Work};
-use crate::project::{Entry, Kind, Project};
-use crate::theme;
+use workshop_base::project::{Entry, Kind, Project};
+use workshop_base::theme;
 
 /// What the files show.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -66,7 +66,7 @@ pub struct Home {
     sort: (Column, bool),
     grid: bool,
     favourites: BTreeSet<PathBuf>,
-    pictures: crate::example::Examples,
+    pictures: workshop_base::example::Examples,
     /// What the language says of a film (when it was read: its errors, its remarks).
     problems: HashMap<PathBuf, (Option<SystemTime>, usize, usize)>,
     renaming: Option<(String, bool)>,
@@ -87,7 +87,7 @@ impl Home {
             sort: (Column::Changed, true),
             grid: false,
             favourites,
-            pictures: crate::example::Examples::with_room(session, context, 400),
+            pictures: workshop_base::example::Examples::with_room(session, context, 400),
             problems: HashMap::new(),
             renaming: None,
             trashing: false,
@@ -502,7 +502,7 @@ fn grid_card(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entry:
     let picture = Rect::from_min_size(rect.min + vec2(6.0, 6.0), vec2(CARD.x - 12.0, 96.0));
     paint_picture(ui.painter(), &mut work.home, context, entry, picture);
     if work.home.favourites.contains(&entry.path) {
-        crate::icons::star(ui.painter(), Rect::from_min_size(picture.min + vec2(4.0, 4.0), vec2(12.0, 12.0)), true, theme::FILM);
+        workshop_base::icons::star(ui.painter(), Rect::from_min_size(picture.min + vec2(4.0, 4.0), vec2(12.0, 12.0)), true, theme::FILM);
     }
     let painter = ui.painter_at(rect);
     painter.text(pos2(rect.min.x + 8.0, picture.max.y + 12.0), egui::Align2::LEFT_CENTER, &entry.title, FontId::proportional(theme::BODY), theme::STRONG);
@@ -806,7 +806,7 @@ fn section(ui: &mut egui::Ui, name: &str) {
     ui.add_space(8.0);
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::hover());
     ui.painter().rect_filled(rect, 0.0, theme::TOOLS);
-    crate::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), true, theme::WEAK);
+    workshop_base::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), true, theme::WEAK);
     ui.painter().text(pos2(rect.min.x + 20.0, rect.center().y), egui::Align2::LEFT_CENTER, name, FontId::proportional(theme::BODY), theme::STRONG);
     ui.add_space(4.0);
 }
@@ -973,7 +973,7 @@ fn bin_actions(ui: &mut egui::Ui, work: &mut Work, entry: &Entry) {
 
 /// A file put in the bin (another of the same name there: this one's time before it).
 fn binned(session: &Session, entry: &Entry) -> Result<PathBuf, String> {
-    let bin = crate::project::bin(session.root());
+    let bin = workshop_base::project::bin(session.root());
     std::fs::create_dir_all(&bin).map_err(|why| why.to_string())?;
     let name = entry.path.file_name().ok_or("no name")?.to_string_lossy().into_owned();
     let mut to = bin.join(&name);

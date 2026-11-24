@@ -8,18 +8,18 @@
 
 use std::sync::Arc;
 
-use crate::session::Session;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
+use workshop_base::session::Session;
 
 use decor::doc::Pose;
 use eframe::egui::{self, Color32, Pos2, Rect, RichText, Vec2, pos2, vec2};
 
 use crate::edit::{Item, Kind};
 use crate::terrains::Brushes;
-use crate::theme;
 use crate::workshop::{Answer, Art, Ask, Body, Picture, PieceInfo, Said, Workshop};
+use workshop_base::theme;
 
 /// How long after a change it is written out (and baked for the films).
 const WRITTEN_AFTER: Duration = Duration::from_millis(800);
@@ -67,7 +67,7 @@ pub struct Carry {
 
 impl Open {
     fn read(session: &Session, path: PathBuf) -> Open {
-        crate::safe::check(session, &path);
+        workshop_base::safe::check(session, &path);
         let text = std::fs::read_to_string(&path).unwrap_or_default();
         let mut open = Open {
             path,
@@ -146,7 +146,7 @@ impl Open {
 
     /// Written out now.
     pub fn save(&mut self) -> Result<(), String> {
-        crate::safe::write(&self.path, &self.text).map_err(|why| format!("{}: {why}", self.path.display()))?;
+        workshop_base::safe::write(&self.path, &self.text).map_err(|why| format!("{}: {why}", self.path.display()))?;
         self.saved = self.text.clone();
         Ok(())
     }
@@ -786,7 +786,7 @@ pub(crate) fn body_key(one: &Item) -> String {
     }
 }
 
-pub use crate::project::place_kinds;
+pub use workshop_base::project::place_kinds;
 
 /// A decor's kind of place: its own line in `place_kinds.txt`, else the place of the game it is built on (`level`).
 pub fn decor_kind(kinds: &decor::tags::PlaceKinds, name: &str, text: &str) -> decor::tags::PlaceKind {

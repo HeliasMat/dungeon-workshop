@@ -11,7 +11,7 @@ use super::plan::plan;
 use super::text::spot_of;
 use super::wiki::wiki_window;
 use super::{GUTTER, PLAIN, Scripts, Seen};
-use crate::theme;
+use workshop_base::theme;
 
 /// The Script; `playing`: the line the film plays now. The line whose number was clicked (the film goes there).
 pub fn script(ui: &mut egui::Ui, scripts: &mut Scripts, path: Option<&PathBuf>, seen: &Seen) -> Option<usize> {

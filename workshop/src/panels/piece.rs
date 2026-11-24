@@ -8,7 +8,7 @@ use super::inspector::{component, head, prop, raw, remarks, reset};
 use super::{badge_of, cross_button, resident};
 use crate::decors::Decors;
 use crate::edit::{self, Item};
-use crate::theme;
+use workshop_base::theme;
 
 /// A piece being changed in the Inspector: its line, the point chosen, the
 /// decor's text, whether someone lives there, its size; its pose as it was

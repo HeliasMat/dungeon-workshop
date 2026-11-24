@@ -5,8 +5,8 @@ use shell::sound::Hears;
 
 use super::editor::{redo, undo};
 use super::{MusicMaking, files_ending, own_sounds, songs_folder};
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// The transport: play, stop, record (keys, microphone), the loop, where it is, the tempo, the bars, swing, the
 /// click, undo; the word, written out (the song, its tracks apart, MIDI); MIDI read in.
@@ -110,7 +110,7 @@ fn song_settings(ui: &mut egui::Ui, making: &mut MusicMaking) {
 /// A MIDI's tracks or a sound read in: picked, of the songs' folder, of one's own sounds.
 fn import_menu(ui: &mut egui::Ui, making: &mut MusicMaking) {
     if ui.button("A File… (.mid, .wav)").on_hover_text("a MIDI's tracks, or a sound laid at the playhead; also: drop it on the window").clicked() {
-        let chosen = crate::pick::files("A MIDI or a Sound", &[("MIDI or WAV", &["mid", "midi", "wav"])], None);
+        let chosen = workshop_base::pick::files("A MIDI or a Sound", &[("MIDI or WAV", &["mid", "midi", "wav"])], None);
         making.take_files(chosen);
         ui.close();
     }

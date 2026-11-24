@@ -12,10 +12,10 @@
 
 use std::sync::Arc;
 
-use crate::session::Session;
 use std::collections::{BTreeSet, HashMap};
 use std::path::PathBuf;
 use std::time::Instant;
+use workshop_base::session::Session;
 
 use eframe::egui::{self, Rect, Vec2, pos2, vec2};
 use shell::sound::Hears;
@@ -222,7 +222,7 @@ impl Item {
     fn watched_film(&self) -> Option<String> {
         let line = self.line()?;
         match self.shelf {
-            Shelf::Attacks => Some(crate::example::film_of_move("pikachu", &self.label)),
+            Shelf::Attacks => Some(workshop_base::example::film_of_move("pikachu", &self.label)),
             Shelf::Portraits => {
                 let who = self.word.split_once(' ').map_or(self.word.as_str(), |(who, _)| who);
                 let other = if who == "eevee" { "pikachu" } else { "eevee" };
@@ -238,7 +238,7 @@ wait 1s
                     self.word
                 ))
             }
-            shelf if shelf.watched() => Some(crate::example::film_of(&line)),
+            shelf if shelf.watched() => Some(workshop_base::example::film_of(&line)),
             _ => None,
         }
     }
@@ -345,13 +345,13 @@ pub struct Resources {
     corpus: Option<(Instant, Vec<(PathBuf, String)>)>,
     /// Each word of them, and the files it is in.
     index: HashMap<String, BTreeSet<usize>>,
-    examples: crate::example::Examples,
+    examples: workshop_base::example::Examples,
     pub said: Option<String>,
     pub asked: Option<Asked>,
     /// The SpriteCollab window asked, on a Pokédex number or not.
     pub ask_spritecollab: Option<Option<u32>>,
     /// Work going on for the Pokémon chosen (its sheets written or read); a SpriteBot folder being imported.
-    run: Option<crate::tool_run::Run>,
+    run: Option<workshop_base::tool_run::Run>,
     sheet_import: Option<SheetImport>,
 }
 
@@ -416,7 +416,7 @@ impl Resources {
             heard: None,
             corpus: None,
             index: HashMap::new(),
-            examples: crate::example::Examples::new(session, context),
+            examples: workshop_base::example::Examples::new(session, context),
             said: None,
             asked: None,
             ask_spritecollab: None,
@@ -452,7 +452,7 @@ impl Resources {
         self.makings.iter().filter(|maker| !maker.saved()).count()
     }
 
-    /// A file restored (`crate::safe`): the open things written in it read again.
+    /// A file restored (`workshop_base::safe`): the open things written in it read again.
     pub fn reload(&mut self, path: &std::path::Path) {
         for maker in &mut self.makings {
             let reopened = match maker {

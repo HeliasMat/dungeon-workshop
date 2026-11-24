@@ -8,8 +8,8 @@ use super::canvas::{canvas, checkered, fitted};
 use super::editor::save_painting;
 use super::panels::swatch;
 use super::{PALETTE, Painting, Tool};
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// Where the parts lie under the first row: the tools on the left, the
 /// colours on the right, the canvas between, the last rows under them.

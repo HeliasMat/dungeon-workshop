@@ -20,8 +20,8 @@ use std::time::Instant;
 
 use eframe::egui::{self, RichText};
 
-use crate::session::Session;
-use crate::theme;
+use workshop_base::session::Session;
+use workshop_base::theme;
 
 /// Whether the game's data is there to work with.
 pub fn has_data(session: &Session) -> bool {
@@ -373,7 +373,8 @@ impl First {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             if ui.button(RichText::new("Choose Your .nds File…").strong()).clicked()
-                && let Some(path) = crate::pick::file("Your copy of Explorers of Sky", &[("Nintendo DS cartridge", &["nds"]), ("Any file", &["*"])], None)
+                && let Some(path) =
+                    workshop_base::pick::file("Your copy of Explorers of Sky", &[("Nintendo DS cartridge", &["nds"]), ("Any file", &["*"])], None)
             {
                 self.choose(path);
             }

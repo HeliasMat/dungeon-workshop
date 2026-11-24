@@ -3,8 +3,8 @@
 
 use std::f32::consts::{PI, TAU};
 
-use super::{MOD_TARGETS, Synth, VOWEL_FORMANTS};
 use super::Chance;
+use super::{MOD_TARGETS, Synth, VOWEL_FORMANTS};
 
 impl Synth {
     /// What its routes move at a moment: the LFOs and the random held at each of their cycles kept along.
@@ -509,4 +509,3 @@ impl Biquad {
         made
     }
 }
-

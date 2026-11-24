@@ -8,7 +8,7 @@ use eframe::egui::{self, Rect, RichText, Sense, Stroke, pos2, vec2};
 
 use super::controls::{Row, choice, group, piano_roll, setting, steps_editor};
 use super::{FILTER_MODES, GROUPS, LFO_SHAPES, MOD_SOURCES, MOD_TARGETS, Mix, Note, Sound, SoundMaking, Synth, VOWELS, Voice, WAVES, sine_drawn};
-use crate::theme;
+use workshop_base::theme;
 
 /// Whether a setting was taken (what the sound was is to be kept) and let go
 /// (a version to be made, if it moved).
@@ -121,7 +121,7 @@ fn wave_choice(ui: &mut egui::Ui, synth: &mut Synth, touched: &mut Touched) {
 }
 
 /// The wave's own settings: the plucked string's, the sample's (one of the sounds made, its pitch, its loop, its start).
-fn wave_own(ui: &mut egui::Ui, session: &crate::session::Session, voice: &mut Voice, touched: &mut Touched) {
+fn wave_own(ui: &mut egui::Ui, session: &workshop_base::session::Session, voice: &mut Voice, touched: &mut Touched) {
     match voice.synth.wave {
         8 => rows(
             ui,

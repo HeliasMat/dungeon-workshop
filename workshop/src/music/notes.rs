@@ -12,7 +12,7 @@ use super::project::{Clip, Kind, RATE, Region};
 use super::wave::pcm;
 use super::{ARPEGGIOS, CHORDS, MusicMaking, Playing, SCALES, TONICS, Tab, own_sounds, project};
 use crate::sound::{self, Note, open_audio};
-use crate::theme;
+use workshop_base::theme;
 
 /// The bottom: the region's notes (a piano roll, a step sequencer, a clip), the track's instrument (the sound
 /// maker), the mixer, the lanes drawn. Its rect.
@@ -309,7 +309,7 @@ fn velocities(ui: &mut egui::Ui, notes: &mut [Note], beats: f32) {
 }
 
 /// An audio region's sound: which, from where, how loud, how high, faded, backwards; the region as long as it.
-fn clip_view(ui: &mut egui::Ui, session: &crate::session::Session, region: &mut Region, beat: f32) {
+fn clip_view(ui: &mut egui::Ui, session: &workshop_base::session::Session, region: &mut Region, beat: f32) {
     let sounds = own_sounds(session);
     let clip = region.clip.get_or_insert_with(|| Clip::of(sounds.first().map_or("", String::as_str)));
     ui.horizontal_wrapped(|ui| {

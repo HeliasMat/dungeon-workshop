@@ -8,7 +8,7 @@ use super::fields::rule_field;
 use super::inspector::{component, head, prop, raw, remarks};
 use crate::decors::Decors;
 use crate::edit::{self, Item, Kind};
-use crate::theme;
+use workshop_base::theme;
 
 /// A landmark chosen: its name, where it is, its size and where it leads (an exit).
 pub(super) fn landmark(ui: &mut egui::Ui, decors: &mut Decors, item: &Item) {

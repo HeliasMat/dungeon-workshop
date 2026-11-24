@@ -32,22 +32,22 @@ fn the_other_answers_in_a_dialogue() {
 #[test]
 fn someone_then_what_they_do_then_the_rest() {
     let text = "scene: beach pikachu piplup\npikachu ";
-    let doing = chained(&crate::session::Session::for_tests(), text, text.chars().count()).expect("what Pikachu may do");
+    let doing = chained(&workshop_base::session::Session::for_tests(), text, text.chars().count()).expect("what Pikachu may do");
     assert!(doing.choices.iter().any(|(word, _)| word == "walk"), "{:?}", &doing.choices[..doing.choices.len().min(10)]);
     let text = "scene: beach pikachu piplup\npikachu walk ";
-    let rest = chained(&crate::session::Session::for_tests(), text, text.chars().count()).expect("what comes after walk");
+    let rest = chained(&workshop_base::session::Session::for_tests(), text, text.chars().count()).expect("what comes after walk");
     assert!(rest.choices.iter().any(|(word, _)| word == "to" || word == "piplup" || word == "right"), "{:?}", rest.choices);
     assert_eq!(line_word(text, "pikachu walk to").as_deref(), Some("walk"));
     assert_eq!(
         species_of(
-            &crate::session::Session::for_tests(),
+            &workshop_base::session::Session::for_tests(),
             "pinchy = krabby 
 scene: beach pinchy",
             "pinchy"
         ),
         "krabby"
     );
-    assert_eq!(species_of(&crate::session::Session::for_tests(), "scene: beach krabby2", "krabby2"), "krabby");
+    assert_eq!(species_of(&workshop_base::session::Session::for_tests(), "scene: beach krabby2", "krabby2"), "krabby");
 }
 
 /// The keys that change lines: commented and back, doubled, moved, indented, gone, cut, a new line begun.
@@ -119,7 +119,7 @@ fn a_comparison_is_counted() {
 /// so, one the DS lacks not offered; without the line, everything.
 #[test]
 fn in_ds_mode_only_what_exports_is_offered() {
-    let session = crate::session::Session::for_tests();
+    let session = workshop_base::session::Session::for_tests();
     let text = "scene: beach pikachu piplup\npikachu d";
     let all = super::completion::offered(&session, text, text.chars().count(), true).expect("what Pikachu may do");
     let ds = format!("for ds\n{text}");

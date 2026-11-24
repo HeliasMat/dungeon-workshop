@@ -6,11 +6,11 @@ use std::time::Instant;
 
 use shell::sound::Hears;
 
+use super::now_seed;
 use super::presets::eased;
 use super::{Measure, Sound, SoundMaking, Synth};
-use super::now_seed;
-use crate::done::Done;
-use crate::session::Session;
+use workshop_base::done::Done;
+use workshop_base::session::Session;
 
 /// Whether sounds are made as an expert (kept from one time to the next).
 fn expert_file(session: &Session) -> PathBuf {

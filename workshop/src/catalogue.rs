@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use crate::session::Session;
+use workshop_base::session::Session;
 
 /// The families as they are shown, in that order: the v2.1 core's
 /// (`film::plan`), the optional ones (`uses dungeon`), the advanced words

@@ -6,7 +6,7 @@ use eframe::egui::{self, Color32, FontId, Pos2, Rect, Sense, Stroke, StrokeKind,
 
 use super::pointer::{pixel_at, pointer};
 use super::{Painting, Tool};
-use crate::theme;
+use workshop_base::theme;
 
 /// A checkered ground under a picture (what is not painted shows so).
 pub(super) fn checkered(painter: &egui::Painter, room: Rect, square: f32) {

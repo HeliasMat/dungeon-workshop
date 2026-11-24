@@ -8,7 +8,7 @@ use image::RgbaImage;
 
 use super::Painting;
 use super::canvas::{checkered, fitted};
-use crate::theme;
+use workshop_base::theme;
 
 impl Painting {
     /// A step (of every layer) added after this one: empty, or the same.

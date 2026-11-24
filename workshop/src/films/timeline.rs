@@ -12,7 +12,7 @@ use super::playing::clock;
 use super::scene::toggle;
 use super::{BarAct, Films, SECOND};
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 /// What a line is, to colour its bar: its kind's index (`KINDS`).
 pub(super) fn kind_of_line(line: &str) -> usize {

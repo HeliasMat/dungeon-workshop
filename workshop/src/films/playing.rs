@@ -42,7 +42,7 @@ pub(super) fn next_step(steps: &[(usize, usize)], frame: usize, stepped: Option<
 
 /// The film's thread: its session, its art, its sound; of the frames asked
 /// meanwhile, the last only.
-pub(super) fn work(own: &crate::session::Session, asked: &Receiver<Ask>, answer: &Sender<Answer>, waker: &egui::Context) {
+pub(super) fn work(own: &workshop_base::session::Session, asked: &Receiver<Ask>, answer: &Sender<Answer>, waker: &egui::Context) {
     let data = own.data().to_string();
     let send = |reply: Answer| {
         _ = answer.send(reply);

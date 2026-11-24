@@ -8,7 +8,7 @@ use super::pictures::paint_item;
 use super::toolbar;
 use super::{Item, Resources, Shelf};
 use crate::decors::Decors;
-use crate::theme;
+use workshop_base::theme;
 
 /// How the things lie: the width for them, a card's size, how many in a row, a row's height.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -189,7 +189,7 @@ fn list_row(
         );
     }
     if resources.favourites.contains(&item.key()) {
-        crate::icons::star(ui.painter(), Rect::from_center_size(rect.right_center() - vec2(14.0, 0.0), vec2(12.0, 12.0)), true, theme::FILM);
+        workshop_base::icons::star(ui.painter(), Rect::from_center_size(rect.right_center() - vec2(14.0, 0.0), vec2(12.0, 12.0)), true, theme::FILM);
     }
     response
 }
@@ -229,7 +229,7 @@ fn card(
         ui.painter().rect_stroke(room, 2.0, Stroke::new(2.0_f32, theme::ASSETS), StrokeKind::Outside);
     }
     if resources.favourites.contains(&item.key()) {
-        crate::icons::star(ui.painter(), Rect::from_min_size(room.min + vec2(4.0, 4.0), vec2(12.0, 12.0)), true, theme::FILM);
+        workshop_base::icons::star(ui.painter(), Rect::from_min_size(room.min + vec2(4.0, 4.0), vec2(12.0, 12.0)), true, theme::FILM);
     }
     // (How many films use it, in a corner.)
     let using = resources.films_using(&item.word);

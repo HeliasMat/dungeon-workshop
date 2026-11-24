@@ -9,7 +9,7 @@ use super::super::{Films, Frame, Held};
 use super::script::spots_of;
 use super::{Place, View};
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 /// All the marks over the picture; the place's point under the pointer.
 pub(super) fn over(ui: &egui::Ui, films: &Films, scripts: &mut Scripts, drawn: &Frame, view: &View, head: Rect, picture: &egui::Response) -> Option<[f32; 2]> {

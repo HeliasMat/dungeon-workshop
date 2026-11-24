@@ -13,7 +13,7 @@ use super::heard::{hear, heard_on};
 use super::plan::clock;
 use super::text::spot_of;
 use super::{FACE, GUTTER, LABEL, REMARK, WRONG, worst};
-use crate::theme;
+use workshop_base::theme;
 
 /// What the margin found as it was drawn: each line shown (its top, its
 /// bottom, its number), where each line ends, the lines with a fix, the folds
@@ -137,7 +137,7 @@ impl Body<'_> {
         painter.text(pos2(x - 12.0, y), egui::Align2::RIGHT_CENTER, line.to_string(), FontId::monospace(12.0), colour);
         // (A fold: its chevron, open or folded.)
         if margin.fold_starts.contains_key(&line) {
-            crate::icons::chevron(
+            workshop_base::icons::chevron(
                 painter,
                 pos2(editor_rect.min.x + GUTTER - 12.0, y),
                 !self.scripts.folded.contains(&line),

@@ -7,8 +7,8 @@ use super::panels::{side_panel, tools_panel};
 use super::simple::paint_simply;
 use super::steps::steps_panel;
 use super::{Painting, Tool};
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// The painting: its bar, its tools, its canvas, its colours and layers, its steps.
 pub fn paint(ui: &mut egui::Ui, painting: &mut Painting) -> Option<Done> {

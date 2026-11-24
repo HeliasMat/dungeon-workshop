@@ -4,7 +4,7 @@
 use eframe::egui::{self, Color32, Pos2, Rect, RichText, Sense, Stroke, StrokeKind, pos2, vec2};
 
 use super::Note;
-use crate::theme;
+use workshop_base::theme;
 
 /// A row of a sound's setting: its name, its slider (its help); whether it was taken, let go.
 pub(super) fn setting(ui: &mut egui::Ui, name: &str, value: &mut f32, range: std::ops::RangeInclusive<f32>, suffix: &str, help: &str) -> (bool, bool) {

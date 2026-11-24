@@ -10,11 +10,11 @@ use super::body::Body;
 use super::keys::project_search;
 use super::knowledge::{face_portrait, place_said, species_of};
 use super::text::{index_of, spot_of};
-use crate::theme;
+use workshop_base::theme;
 
 /// What is shown of a name in the story: the narrator, the species' name
 /// (after the name given, if it is not the species').
-pub(super) fn name_in_story(session: &crate::session::Session, text: &str, who: &str, tables: &film::tables::Tables) -> String {
+pub(super) fn name_in_story(session: &workshop_base::session::Session, text: &str, who: &str, tables: &film::tables::Tables) -> String {
     if film::words::plain(who) == "narrator" {
         return "Narrator".to_string();
     }

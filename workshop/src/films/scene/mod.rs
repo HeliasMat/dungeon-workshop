@@ -13,7 +13,7 @@ use eframe::egui::{self, Color32, FontId, Pos2, Rect, RichText, Sense, Vec2, pos
 
 use super::{Films, Frame, SECOND};
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 mod bar;
 mod marks;

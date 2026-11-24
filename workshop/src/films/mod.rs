@@ -18,10 +18,10 @@
 
 use std::sync::Arc;
 
-use crate::session::Session;
 use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::{Duration, Instant};
+use workshop_base::session::Session;
 
 use eframe::egui::{self, Vec2, vec2};
 use preview::played::Timeline;

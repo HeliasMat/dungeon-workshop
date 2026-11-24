@@ -12,8 +12,8 @@ use std::path::Path;
 use eframe::egui::{self, RichText, TextureHandle, vec2};
 use spritecollab::{FACES, LAST_IN_GAME, NEW, Places};
 
-use crate::theme;
-use crate::tool_run::Run;
+use workshop_base::theme;
+use workshop_base::tool_run::Run;
 
 /// A Pokémon of the community's, by its Pokédex number.
 struct Entry {
@@ -50,9 +50,9 @@ pub struct Browser {
 
 impl Browser {
     /// Opened (on a Pokédex number, if one is given).
-    pub fn new(session: &crate::session::Session, dex: Option<u32>) -> Browser {
+    pub fn new(session: &workshop_base::session::Session, dex: Option<u32>) -> Browser {
         let mut browser = Browser {
-            places: crate::tool_run::places(session),
+            places: workshop_base::tool_run::places(session),
             sought: String::new(),
             entries: Vec::new(),
             chosen: None,

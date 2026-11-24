@@ -21,9 +21,9 @@ use eframe::egui::{self, Color32, Rect, Sense, Stroke, StrokeKind, pos2, vec2};
 
 use crate::decors::{Decors, paint_art};
 use crate::edit;
-use crate::project::Entry;
 use crate::terrains::Tool;
-use crate::theme;
+use workshop_base::project::Entry;
+use workshop_base::theme;
 
 mod backdrops;
 mod cards;
@@ -431,7 +431,7 @@ fn found_groups(ui: &mut egui::Ui, decors: &mut Decors, found: &Found, models: &
 /// it), then how the cards are shown: their sizes, how large, grid or list.
 fn search_bar(ui: &mut egui::Ui, lib: &mut Library) {
     let (icon, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
-    crate::icons::search(ui.painter(), icon, theme::WEAK);
+    workshop_base::icons::search(ui.painter(), icon, theme::WEAK);
     let wide = (ui.available_width() - 400.0).clamp(160.0, 560.0);
     let field =
         ui.add(egui::TextEdit::singleline(&mut lib.sought).hint_text("Search elements, backdrops, models, decors…   (Ctrl+F or /)").desired_width(wide));
@@ -446,7 +446,7 @@ fn search_bar(ui: &mut egui::Ui, lib: &mut Library) {
     let field = field.on_hover_text("by name, tag (tree, rock, roof…), the place it comes from; every kind at once (Esc: empty)");
     if !lib.sought.is_empty() {
         let (cross, _) = ui.allocate_exact_size(vec2(18.0, 18.0), Sense::hover());
-        if crate::icons::button(ui, cross, "empty the search (Esc)", |painter, at, tint| crate::icons::cross(painter, at.shrink(3.0), tint)) {
+        if workshop_base::icons::button(ui, cross, "empty the search (Esc)", |painter, at, tint| workshop_base::icons::cross(painter, at.shrink(3.0), tint)) {
             lib.sought.clear();
             field.request_focus();
         }

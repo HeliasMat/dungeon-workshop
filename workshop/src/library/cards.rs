@@ -8,8 +8,8 @@ use eframe::egui::{self, Color32, Rect, RichText, Sense, Stroke, StrokeKind, pos
 use super::search::{from_said, title_of};
 use super::{Picked, colour_of};
 use crate::decors::{Decors, PieceArt, paint_art};
-use crate::theme;
 use crate::workshop::PieceInfo;
+use workshop_base::theme;
 
 /// The colour a card chosen is filled and outlined with.
 pub(super) const CHOSEN_FILL: Color32 = Color32::from_rgb(0x04, 0x39, 0x5E);
@@ -98,8 +98,8 @@ fn card(ui: &mut egui::Ui, decors: &mut Decors, piece: &PieceInfo, mark: Mark, p
         Rect::from_center_size(rect.right_top() + vec2(-11.0, 12.0), vec2(18.0, 18.0))
     };
     if (response.hovered() || favourite)
-        && crate::icons::button(ui, star_at, if favourite { "remove from the favourites" } else { "add to the favourites" }, |painter, at, tint| {
-            crate::icons::star(painter, at, favourite, if favourite { Color32::from_rgb(0xF6, 0xD3, 0x3C) } else { tint })
+        && workshop_base::icons::button(ui, star_at, if favourite { "remove from the favourites" } else { "add to the favourites" }, |painter, at, tint| {
+            workshop_base::icons::star(painter, at, favourite, if favourite { Color32::from_rgb(0xF6, 0xD3, 0x3C) } else { tint })
         })
     {
         picked.star = Some(piece.name.clone());
@@ -147,7 +147,7 @@ fn square_face(ui: &egui::Ui, piece: &PieceInfo, art: Option<&PieceArt>, rect: R
     }
     ui.painter().rect_filled(Rect::from_min_size(rect.min + vec2(4.0, 4.0), vec2(5.0, 5.0)), 1.0, colour_of(piece.category));
     if lives(piece) {
-        crate::icons::wave(ui.painter(), Rect::from_center_size(rect.left_top() + vec2(19.0, 6.5), vec2(12.0, 8.0)), theme::DECOR);
+        workshop_base::icons::wave(ui.painter(), Rect::from_center_size(rect.left_top() + vec2(19.0, 6.5), vec2(12.0, 8.0)), theme::DECOR);
     }
     card_words(ui.painter(), rect, &title_of(piece), &from_said(piece));
 }
@@ -256,7 +256,7 @@ pub(super) fn model_cards(ui: &mut egui::Ui, models: &[(String, Vec<String>)], s
         for (name, lines) in shown.iter().filter_map(|at| models.get(*at)) {
             let (rect, response) = ui.allocate_exact_size(vec2(170.0, 54.0), Sense::click_and_drag());
             ui.painter().rect_filled(rect, 3.0, if response.hovered() { theme::HOVERED } else { theme::FIELD });
-            crate::icons::folder(
+            workshop_base::icons::folder(
                 ui.painter(),
                 Rect::from_center_size(rect.left_center() + vec2(18.0, 0.0), vec2(18.0, 18.0)),
                 false,

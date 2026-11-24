@@ -21,8 +21,8 @@ mod wave;
 pub use editor::make_music;
 use std::sync::Arc;
 
-use crate::session::Session;
 use wave::write_wave;
+use workshop_base::session::Session;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -251,7 +251,7 @@ impl MusicMaking {
     /// A song made here before, as it was written.
     pub fn open(session: &Arc<Session>, word: &str) -> MusicMaking {
         let mut made = MusicMaking::new(session, word);
-        crate::safe::check(session, &song_file(session, word));
+        workshop_base::safe::check(session, &song_file(session, word));
         match std::fs::read_to_string(songs_folder(session).join(format!("{word}.music"))).ok().and_then(|text| Project::read(&text)) {
             Some(song) => {
                 made.project = song;
@@ -321,7 +321,7 @@ impl MusicMaking {
 
     fn write_song(&self, word: &str) -> Result<(), String> {
         std::fs::create_dir_all(songs_folder(&self.session)).map_err(|why| why.to_string())?;
-        crate::safe::write(&song_file(&self.session, word), self.project.written()).map_err(|why| why.to_string())
+        workshop_base::safe::write(&song_file(&self.session, word), self.project.written()).map_err(|why| why.to_string())
     }
 
     /// Each track heard alone, in its own file (`library/music/<word>_tracks/`).

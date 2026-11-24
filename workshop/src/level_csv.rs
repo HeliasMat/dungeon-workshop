@@ -12,7 +12,7 @@ const MAX_HP: i32 = 999;
 const MAX_STAT: i32 = 255;
 
 /// The species a Pokémon of the project is: its own number, or (a variant) the one it is a variant of.
-pub fn species_of(session: &crate::session::Session, number: i64) -> Option<u16> {
+pub fn species_of(session: &workshop_base::session::Session, number: i64) -> Option<u16> {
     let offered = crate::dungeon::offered(session)?;
     let book = &offered.book;
     let number = u16::try_from(number).ok()?;
@@ -28,7 +28,7 @@ fn quoted(said: &str) -> String {
 }
 
 /// The table, as text.
-pub fn table(session: &crate::session::Session, species: u16) -> Result<String, String> {
+pub fn table(session: &workshop_base::session::Session, species: u16) -> Result<String, String> {
     let offered = crate::dungeon::offered(session).ok_or("the game's tables are missing (dungeons.bin: extractor)")?;
     let book = &offered.book;
     let kind = book.species(species).ok_or_else(|| format!("no species No. {species} in the game's tables"))?;
@@ -62,7 +62,7 @@ pub fn table(session: &crate::session::Session, species: u16) -> Result<String, 
 }
 
 /// Written where asked (a dialog of the system's): what is said of it.
-pub fn export(session: &crate::session::Session, number: i64, label: &str) -> String {
+pub fn export(session: &workshop_base::session::Session, number: i64, label: &str) -> String {
     let Some(species) = species_of(session, number) else {
         return format!("{label}: not in the game's tables (no progression known)");
     };
@@ -71,7 +71,7 @@ pub fn export(session: &crate::session::Session, number: i64, label: &str) -> St
         Err(why) => return why,
     };
     let name = format!("{}_progression.csv", film::words::plain(label).replace([' ', '\''], "_"));
-    let Some(path) = crate::pick::save("Export the Progression as CSV", &name, &[("CSV", &["csv"])], Some(&session.root().join("target"))) else {
+    let Some(path) = workshop_base::pick::save("Export the Progression as CSV", &name, &[("CSV", &["csv"])], Some(&session.root().join("target"))) else {
         return "export cancelled".to_string();
     };
     match write(&path, &text) {

@@ -6,7 +6,7 @@ use eframe::egui::{self, Color32, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2, p
 
 use super::View;
 use super::drawn::{Things, draw_all};
-use crate::theme;
+use workshop_base::theme;
 
 /// How close and where the decor is seen: its closeness (none: to fit), how far it is moved.
 pub(super) type Camera = (Option<f32>, Vec2);

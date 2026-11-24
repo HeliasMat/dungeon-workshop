@@ -7,7 +7,7 @@ use eframe::egui::{self, Color32, Pos2, Rect, pos2, vec2};
 
 use crate::decors::{Decors, section, tag};
 use crate::edit::{self, Kind};
-use crate::theme;
+use workshop_base::theme;
 
 /// How fast one walks, in pixels a second (as the game, about).
 const PACE: f32 = 96.0;

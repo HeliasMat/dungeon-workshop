@@ -6,7 +6,7 @@ use eframe::egui::{self, TextureHandle, vec2};
 use rules::own::plain;
 
 use super::{DungeonMaking, offered};
-use crate::theme;
+use workshop_base::theme;
 
 /// A cry chosen among our own sounds (library/sounds), or none.
 pub(super) fn sound_choice(ui: &mut egui::Ui, id: (&str, usize), cry: &mut String, sounds: &[String]) {

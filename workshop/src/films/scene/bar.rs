@@ -6,7 +6,7 @@ use eframe::egui::{self, FontId, Rect, RichText, Sense, Stroke, vec2};
 use super::super::playing::clock;
 use super::super::{Films, SECOND};
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 /// The line played (a click: it in the Script), what was last said.
 pub(super) fn line_played(ui: &egui::Ui, films: &Films, scripts: &mut Scripts, under: Rect) {

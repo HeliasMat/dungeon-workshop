@@ -5,7 +5,7 @@
 
 use eframe::egui::{self, RichText, TextureHandle};
 
-use crate::theme;
+use workshop_base::theme;
 
 /// The tool's window: the picture's path, what is asked, what it became.
 pub struct QuantTool {
@@ -23,7 +23,7 @@ impl QuantTool {
     }
 
     /// One asked by the environment (`WORKSHOP_TILEQUANT=path.png`), converted at once, for a picture.
-    pub fn asked(context: &egui::Context, launch: &crate::launch::LaunchOptions) -> Option<QuantTool> {
+    pub fn asked(context: &egui::Context, launch: &workshop_base::launch::LaunchOptions) -> Option<QuantTool> {
         let path = launch.tilequant.clone()?;
         let mut tool = QuantTool { path, ..QuantTool::new() };
         tool.convert(context);
@@ -68,7 +68,7 @@ pub fn show(context: &egui::Context, tool: &mut Option<QuantTool>) {
         ui.horizontal(|ui| {
             ui.add(egui::TextEdit::singleline(&mut made.path).desired_width(300.0).hint_text("path of the PNG (or drop it on the window)"));
             if ui.button("Browse…").clicked()
-                && let Some(path) = crate::pick::png("An Image to Convert", Some(std::path::Path::new(made.path.trim())))
+                && let Some(path) = workshop_base::pick::png("An Image to Convert", Some(std::path::Path::new(made.path.trim())))
             {
                 made.path = path.display().to_string();
                 made.convert(ui.ctx());

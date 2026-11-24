@@ -10,7 +10,7 @@ use super::keys::next_spot;
 use super::plan::clock;
 use super::text::{index_of, spot_of};
 use super::{REMARK, STATUS, WRONG, severity_colour};
-use crate::theme;
+use workshop_base::theme;
 
 /// The changes of the first fix offered of each problem, those that do not
 /// overlap one taken before them.
@@ -63,7 +63,7 @@ impl Body<'_> {
         let (head, head_response) = panel.allocate_exact_size(vec2(problems_rect.width(), 24.0), Sense::click());
         let painter = panel.painter().clone();
         painter.rect_filled(head, 0.0, theme::TABS);
-        crate::icons::chevron(&painter, pos2(head.min.x + 10.0, head.center().y), scripts.problems_open && !scripts.concentration, theme::TEXT);
+        workshop_base::icons::chevron(&painter, pos2(head.min.x + 10.0, head.center().y), scripts.problems_open && !scripts.concentration, theme::TEXT);
         painter.text(pos2(head.min.x + 20.0, head.center().y), egui::Align2::LEFT_CENTER, "PROBLEMS", FontId::proportional(theme::SMALL), theme::STRONG);
         let looking = open.asked != open.told_for || open.changed.is_some();
         let counts = format!("{wrong} error(s) · {remarked} remark(s){}", if looking { " · reading again…" } else { "" });

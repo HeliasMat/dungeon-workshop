@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use super::{Item, Shelf, game_shelves};
 use crate::decors::Decors;
-use crate::session::Session;
+use workshop_base::session::Session;
 
 /// A Pokémon's number in the Pokédex, by its number in the game (those of the project: theirs, less 2000).
 pub(super) fn dex_of(session: &Session, number: i64) -> i64 {

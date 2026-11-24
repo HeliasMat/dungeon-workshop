@@ -27,7 +27,7 @@ struct Made {
 }
 
 impl FloorShown {
-    pub(super) fn new(launch: &crate::launch::LaunchOptions) -> FloorShown {
+    pub(super) fn new(launch: &workshop_base::launch::LaunchOptions) -> FloorShown {
         // (`WORKSHOP_SEED=n`: that seed, for a picture; `WORKSHOP_DRAWN=1`: drawn.)
         FloorShown { at: 1, seed: launch.seed.unwrap_or(1), drawn: launch.drawn, made: None, art: None }
     }
@@ -68,7 +68,7 @@ fn colour(floor: &Floor, at: Pos, secondary: u8) -> [u8; 4] {
 }
 
 /// The floor laid out for its look and seed, and pictured.
-fn made(session: &crate::session::Session, shown: &mut FloorShown, context: &egui::Context, spec: &FloorTable, own: Option<&std::path::Path>) -> Made {
+fn made(session: &workshop_base::session::Session, shown: &mut FloorShown, context: &egui::Context, spec: &FloorTable, own: Option<&std::path::Path>) -> Made {
     let floor = generate_floor(&mut DungeonRng::new(shown.seed), &spec.props);
     let (wide, high, rgba) = if shown.drawn {
         let art = shown.art.get_or_insert_with(|| shell::art::Art::open_in(session.data(), session.library().clone()));

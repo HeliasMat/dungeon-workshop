@@ -4242,9 +4242,25 @@ dependencies = [
  "image",
  "media",
  "preview",
- "rfd",
  "rules",
  "scenes",
+ "shell",
+ "spritecollab",
+ "stage_view",
+ "workshop_base",
+]
+
+[[package]]
+name = "workshop_base"
+version = "0.2.0"
+dependencies = [
+ "assets",
+ "decor",
+ "eframe",
+ "film",
+ "game",
+ "preview",
+ "rfd",
  "shell",
  "spritecollab",
  "stage_view",

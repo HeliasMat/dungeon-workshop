@@ -15,9 +15,9 @@ use std::time::Instant;
 use eframe::egui::{self, RichText};
 use emulator::{Button, Core, Input};
 
-use crate::session::Session;
 use crate::settings::{self, Settings};
-use crate::theme;
+use workshop_base::session::Session;
+use workshop_base::theme;
 
 /// The DS's buttons, their name, and the key that plays each one unless
 /// the settings say another (`key_<name> = <key>`, the Keys window).
@@ -243,7 +243,7 @@ impl Emulate {
     /// A game of the user's chosen and loaded; the first one remembered as their Explorers of Sky.
     fn choose_rom(&mut self) {
         let start = self.settings.path(settings::ROM);
-        if let Some(rom) = crate::pick::file("A DS game of yours", &[("Nintendo DS cartridge", &["nds"]), ("Any file", &["*"])], start.as_deref()) {
+        if let Some(rom) = workshop_base::pick::file("A DS game of yours", &[("Nintendo DS cartridge", &["nds"]), ("Any file", &["*"])], start.as_deref()) {
             if self.settings.get(settings::ROM).is_none() && crate::first::check_rom(&rom).is_ok() {
                 self.remember(settings::ROM, &rom);
             }
@@ -253,7 +253,7 @@ impl Emulate {
 
     fn choose_core(&mut self) {
         let kinds: &[(&str, &[&str])] = &[("libretro core", &["dll", "so", "dylib"]), ("Any file", &["*"])];
-        if let Some(core) = crate::pick::file("A libretro core (melonDS or DeSmuME)", kinds, self.core_path().as_deref()) {
+        if let Some(core) = workshop_base::pick::file("A libretro core (melonDS or DeSmuME)", kinds, self.core_path().as_deref()) {
             self.remember(settings::CORE, &core);
             self.said = format!("core: {}", core.display());
         }
@@ -269,7 +269,7 @@ impl Emulate {
     fn play_film(&mut self, film: &Path) {
         let rom = match self.settings.path(settings::ROM).filter(|rom| rom.is_file()) {
             Some(rom) => rom,
-            None => match crate::pick::file("Your copy of Explorers of Sky (only read)", &[("Nintendo DS cartridge", &["nds"])], None) {
+            None => match workshop_base::pick::file("Your copy of Explorers of Sky (only read)", &[("Nintendo DS cartridge", &["nds"])], None) {
                 Some(rom) => {
                     self.remember(settings::ROM, &rom);
                     rom
@@ -279,7 +279,7 @@ impl Emulate {
         };
         let armips = match self.launch_armips.clone().or_else(|| self.settings.path(settings::ARMIPS)).filter(|armips| armips.is_file()) {
             Some(armips) => armips,
-            None => match crate::pick::file("armips (SkyTemple assembles its patches with it)", &[("armips", &["exe", "*"])], None) {
+            None => match workshop_base::pick::file("armips (SkyTemple assembles its patches with it)", &[("armips", &["exe", "*"])], None) {
                 Some(armips) => {
                     self.remember(settings::ARMIPS, &armips);
                     armips

@@ -5,7 +5,7 @@ use eframe::egui;
 use super::inspector::prop;
 use crate::decors::Decors;
 use crate::edit::{self, Kind};
-use crate::theme;
+use workshop_base::theme;
 
 /// A field typed in: what it says while it has the keys, written (given
 /// back) once it lets them go changed.

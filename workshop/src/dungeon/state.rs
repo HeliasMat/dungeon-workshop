@@ -11,8 +11,8 @@ use shell::sound::Hears;
 
 use super::choosers::kept_team;
 use super::{ArenaTool, BossForm, DungeonMaking, Form, Trial, offered};
-use crate::session::Session;
 use assets::project::Project;
+use workshop_base::session::Session;
 
 impl DungeonMaking {
     pub fn new(session: &Arc<Session>, word: &str) -> DungeonMaking {
@@ -28,7 +28,7 @@ impl DungeonMaking {
     /// One written in that project's folder (a game's own, or the shared library): as its file has it, written back there.
     pub fn open_in(session: &Arc<Session>, project: &Project, word: &str) -> DungeonMaking {
         let path = project.dungeons().join(format!("{word}.dungeon"));
-        crate::safe::check(session, &path);
+        workshop_base::safe::check(session, &path);
         let text = std::fs::read_to_string(path).unwrap_or_default();
         DungeonMaking { project: project.clone(), ..DungeonMaking::of(session, word, Form::read(&text.replace("\r\n", "\n")), true) }
     }
@@ -48,7 +48,7 @@ impl DungeonMaking {
     /// A boss fight written in that project's folder: as its file has it, written back there.
     pub fn open_fight_in(session: &Arc<Session>, project: &Project, word: &str) -> DungeonMaking {
         let path = project.fights().join(format!("{word}.fight"));
-        crate::safe::check(session, &path);
+        workshop_base::safe::check(session, &path);
         let text = std::fs::read_to_string(path).unwrap_or_default();
         let mut form = Form::read(&text.replace("\r\n", "\n"));
         form.boss.get_or_insert_with(BossForm::new);
@@ -130,7 +130,7 @@ impl DungeonMaking {
             _ = std::fs::create_dir_all(folder);
         }
         let shown = path.strip_prefix(self.project.root()).unwrap_or(&path).display().to_string().replace('\\', "/");
-        match crate::safe::write(&path, self.file_text()) {
+        match workshop_base::safe::write(&path, self.file_text()) {
             Ok(()) => {
                 (self.saved, self.written) = (true, self.form.clone());
                 self.said = Some(if self.fight {

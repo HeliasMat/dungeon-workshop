@@ -2,9 +2,9 @@
 //! wants (over the line), the words offered as a word is typed (the rest of
 //! the one chosen in grey), the words by family to browse.
 
-use crate::session::Session;
 use eframe::egui::{self, Color32, FontId, Rect, RichText, Sense, pos2, vec2};
 use film::service::Spot;
+use workshop_base::session::Session;
 
 use super::body::{Body, Written};
 use super::cast::someone_here;
@@ -13,7 +13,7 @@ use super::edits::replaced;
 use super::knowledge::{face_portrait, species_of};
 use super::text::{letter_of_word, line_at, spot_of};
 use super::{Completion, KEYWORD, OFFERED, PLAIN};
-use crate::theme;
+use workshop_base::theme;
 
 /// The first forms of the line's word, when a word is being typed after it (to show what it takes, in order).
 pub(super) fn forms_of_line(text: &str, completion: &Completion) -> Vec<String> {
@@ -265,7 +265,7 @@ impl Body<'_> {
                     ui.add_space(4.0);
                     ui.separator();
                     let user = completion.user.clone().unwrap_or_else(|| "pikachu".to_string());
-                    examples.show(ui, &crate::example::film_of_move(&user, name), 336.0);
+                    examples.show(ui, &workshop_base::example::film_of_move(&user, name), 336.0);
                 }
                 // (What the one chosen is, all of it.)
                 if let Some((_, about)) = completion.choices.get(completion.chosen)
@@ -293,7 +293,7 @@ impl Body<'_> {
 /// A word of a family, all of it: its name, its family, its forms, what it
 /// does, an example (played); the word or the example asked to be written
 /// (the example after a `\u{1}`).
-fn word_explained(ui: &mut egui::Ui, examples: &mut crate::example::Examples, entry: &crate::catalogue::Entry) -> Option<String> {
+fn word_explained(ui: &mut egui::Ui, examples: &mut workshop_base::example::Examples, entry: &crate::catalogue::Entry) -> Option<String> {
     let mut take = None;
     ui.label(RichText::new(&entry.word).monospace().size(theme::BODY + 1.0).color(theme::STRONG));
     ui.label(theme::text(crate::catalogue::family_shown(entry.family), theme::SMALL, theme::FILM));
@@ -306,7 +306,7 @@ fn word_explained(ui: &mut egui::Ui, examples: &mut crate::example::Examples, en
     ui.label(theme::weak("Example"));
     let example = crate::catalogue::example(entry);
     ui.label(RichText::new(&example).monospace().size(theme::SMALL).color(theme::TEXT));
-    examples.show(ui, &crate::example::film_of(&example), 300.0);
+    examples.show(ui, &workshop_base::example::film_of(&example), 300.0);
     ui.add_space(4.0);
     ui.horizontal(|ui| {
         if ui.button("Write the Word").clicked() {

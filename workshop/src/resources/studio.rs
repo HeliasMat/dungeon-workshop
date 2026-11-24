@@ -4,7 +4,7 @@ use eframe::egui::{self, RichText, Sense, vec2};
 
 use super::dropped::take_dropped_while_making;
 use super::{Resources, Shelf};
-use crate::theme;
+use workshop_base::theme;
 
 /// The tabs of what is being made, in the window's tools bar: back to the Library, each making
 /// (a click shows it, × closes it), a new one; Ctrl+Tab the next, Ctrl+Shift+Tab the one before.
@@ -115,16 +115,16 @@ pub fn studio(ui: &mut egui::Ui, resources: &mut Resources) {
         crate::resources::Maker::Dungeon(dungeon) => crate::dungeon::make_dungeon(ui, dungeon, &mut resources.audio, resources.volume),
     };
     match done {
-        Some(crate::done::Done::Picture(word)) => {
+        Some(workshop_base::done::Done::Picture(word)) => {
             resources.lists.remove(&Shelf::Drawn);
             resources.pictures.remove(&format!("{}:{word}", Shelf::Drawn.key()));
             (resources.shelf, resources.chosen) = (Shelf::Drawn, Some(format!("{}:{word}", Shelf::Drawn.key())));
         }
-        Some(crate::done::Done::Sound(word)) => {
+        Some(workshop_base::done::Done::Sound(word)) => {
             resources.lists.remove(&Shelf::Sounds);
             (resources.shelf, resources.chosen) = (Shelf::Sounds, Some(format!("{}:{word}", Shelf::Sounds.key())));
         }
-        Some(crate::done::Done::Fight(word)) => {
+        Some(workshop_base::done::Done::Fight(word)) => {
             let fight = if word.is_empty() {
                 crate::dungeon::DungeonMaking::new_fight(&resources.session, "new_fight")
             } else {
@@ -132,7 +132,7 @@ pub fn studio(ui: &mut egui::Ui, resources: &mut Resources) {
             };
             resources.open_making(crate::resources::Maker::Dungeon(Box::new(fight)));
         }
-        Some(crate::done::Done::Closed) => {
+        Some(workshop_base::done::Done::Closed) => {
             if resources.makings[at].saved() || resources.closing == Some(at) {
                 resources.close_making(at);
             } else {

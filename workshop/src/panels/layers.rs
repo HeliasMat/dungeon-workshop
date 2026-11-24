@@ -7,7 +7,7 @@ use eframe::egui::{self, Color32, Sense, pos2, vec2};
 use super::hierarchy::{Asked, Dragged, Element, ROW, ROW_FOCUSED, ROW_HOVERED, Read, action_rect, section_head};
 use crate::decors::Decors;
 use crate::edit;
-use crate::theme;
+use workshop_base::theme;
 
 /// The colour of a layer, as its square shows it.
 pub(super) fn layer_colour(word: &str) -> Color32 {
@@ -149,8 +149,8 @@ fn layer_actions(ui: &mut egui::Ui, decors: &mut Decors, rect: egui::Rect, word:
     let pointed = ui.rect_contains_pointer(rect);
     if pointed || !shown || decors.solo == Some(word) {
         let alt = ui.input(|input| input.modifiers.alt);
-        if crate::icons::button(ui, action_rect(rect, 0), "shown or hidden (Alt+click: it alone)", |painter, at, tint| {
-            crate::icons::eye(painter, at, shown, tint)
+        if workshop_base::icons::button(ui, action_rect(rect, 0), "shown or hidden (Alt+click: it alone)", |painter, at, tint| {
+            workshop_base::icons::eye(painter, at, shown, tint)
         }) {
             if alt {
                 decors.solo = if decors.solo == Some(word) { None } else { Some(word) };
@@ -165,8 +165,8 @@ fn layer_actions(ui: &mut egui::Ui, decors: &mut Decors, rect: egui::Rect, word:
         }
     }
     if (pointed || locked)
-        && crate::icons::button(ui, action_rect(rect, 1), "locked: the mouse takes nothing of this layer", |painter, at, tint| {
-            crate::icons::lock(painter, at, locked, tint)
+        && workshop_base::icons::button(ui, action_rect(rect, 1), "locked: the mouse takes nothing of this layer", |painter, at, tint| {
+            workshop_base::icons::lock(painter, at, locked, tint)
         })
     {
         if locked {

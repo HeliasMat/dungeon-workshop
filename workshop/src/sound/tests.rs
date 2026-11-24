@@ -23,7 +23,7 @@ fn every_kind_and_wave_of_sound_makes_samples() {
 fn a_beginner_chooses_and_moves_sounds_an_expert_bends_them() {
     // (Every kind a beginner sees makes a sound, clean.)
     for kind in EASY_KINDS.iter().flat_map(|(_, kinds)| kinds.iter()) {
-        let (stereo, _) = preset(kind, 11).render(&crate::own_sounds::OwnSounds::default());
+        let (stereo, _) = preset(kind, 11).render(&workshop_base::own_sounds::OwnSounds::default());
         assert!(!stereo.is_empty() && stereo.iter().all(|sample| sample.is_finite() && sample.abs() <= 1.0), "{kind}");
     }
     // (The words do what they say: higher, longer.)
@@ -87,7 +87,7 @@ fn the_deepest_sounds_are_made_clean_and_written_back() {
         voices: vec![lead, Voice::of("modulator", Synth { wave: 2, pitch: 330.0, ..Synth::default() })],
         mix: Mix { tempo: 120.0, low: 6.0, middle: -3.0, high: 4.0, compress: 0.6, width: 1.6, ping_pong: true, echo_mix: 0.3, limit: true, ..Mix::default() },
     };
-    let (stereo, _) = sound.render(&crate::own_sounds::OwnSounds::default());
+    let (stereo, _) = sound.render(&workshop_base::own_sounds::OwnSounds::default());
     clean(&stereo, "the whole");
     assert!(stereo.len() / 2 >= (1.25 * shell::audio::OUTPUT_RATE as f32) as usize, "the score lasts its two and a half beats (1.25 s at 120)");
     assert!(stereo.chunks(2).any(|pair| (pair[0] - pair[1]).abs() > 0.01), "the unison spreads from left to right");
@@ -106,7 +106,7 @@ fn a_sound_of_voices_is_mixed_written_and_read_back() {
     (second.offset, second.pan, second.gain) = (0.1, -0.5, 0.8);
     sound.voices.push(second);
     sound.mix = Mix { echo_mix: 0.4, room_mix: 0.3, fade_out: 0.05, normalize: true, ..Mix::default() };
-    let (stereo, measure) = sound.render(&crate::own_sounds::OwnSounds::default());
+    let (stereo, measure) = sound.render(&workshop_base::own_sounds::OwnSounds::default());
     assert!(stereo.len() > 2 && stereo.iter().all(|sample| sample.is_finite() && sample.abs() <= 1.0));
     assert!(measure.peak < 0.0 && measure.peak > -2.0, "normalised to -1 dB: {}", measure.peak);
     let back = Sound::read(&sound.written());

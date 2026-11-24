@@ -28,40 +28,28 @@ mod catalogue;
 mod debug;
 mod decors;
 mod dungeon;
-mod done;
 mod dungeons;
 mod edit;
 mod emulate;
-mod example;
 mod films;
 mod first;
-mod game;
 mod games;
 mod home;
-mod icons;
-mod launch;
 mod level_csv;
 mod library;
 mod music;
-mod own_sounds;
 mod panels;
 mod picture;
-mod pick;
 mod placing;
-mod project;
 mod quant_tool;
 mod resources;
-mod safe;
 mod scene;
 mod script;
-mod session;
 mod settings;
 mod sound;
 mod spritecollab;
 mod story;
 mod terrains;
-mod theme;
-mod tool_run;
 mod typography;
 mod walk;
 mod wiki;
@@ -80,9 +68,9 @@ fn main() -> eframe::Result {
         }
     };
     let data = assets::data::folder(library.root());
-    let launch = launch::LaunchOptions::read();
+    let launch = workshop_base::launch::LaunchOptions::read();
     let context = film::Context::new(library, data).with_language(&launch.language);
-    let session = std::sync::Arc::new(session::Session::new(context, launch));
+    let session = std::sync::Arc::new(workshop_base::session::Session::new(context, launch));
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default().with_title("Dungeon Workshop").with_inner_size([1440.0, 900.0]).with_min_inner_size([960.0, 600.0]),
         ..Default::default()
@@ -91,7 +79,7 @@ fn main() -> eframe::Result {
         "Workshop",
         options,
         Box::new(move |creation| {
-            crate::theme::apply(&creation.egui_ctx);
+            workshop_base::theme::apply(&creation.egui_ctx);
             // (No game data yet: the first launch first.)
             Ok(Box::new(match first::has_data(&session) && !session.launch.first {
                 true => Start::Workshop(Box::new(app::App::new(&creation.egui_ctx, session))),

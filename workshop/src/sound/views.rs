@@ -5,8 +5,8 @@ use shell::sound::Hears;
 
 use super::versions::{hear, open_audio};
 use super::{Sound, SoundMaking, WAVES};
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// A sound's spectrum: how strong each pitch is (log from 60 Hz to 12 kHz, low at the bottom) along its time.
 pub(super) fn spectrum(mono: &[f32], columns: usize, rows: usize) -> Vec<f32> {

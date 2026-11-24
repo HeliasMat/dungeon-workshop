@@ -1,7 +1,7 @@
 //! Sounds made by kind and by chance, and moved by a beginner's words.
 
-use super::{Mix, Note, Sound, Synth, Voice};
 use super::Chance;
+use super::{Mix, Note, Sound, Synth, Voice};
 
 /// The kinds of sounds made by chance, as sfxr makes them.
 pub(super) const KINDS: [&str; 9] = ["Coin", "Laser", "Explosion", "Power-up", "Hit", "Jump", "Blip", "Magic", "Step"];

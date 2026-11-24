@@ -4,7 +4,7 @@ use eframe::egui::{self, Color32, FontId, Sense, pos2, vec2};
 
 use super::{Resources, Shelf};
 use crate::decors::Decors;
-use crate::theme;
+use workshop_base::theme;
 
 pub fn tree(ui: &mut egui::Ui, resources: &mut Resources, decors: &mut Decors) {
     resources.read_now = 0;
@@ -18,7 +18,7 @@ pub fn tree(ui: &mut egui::Ui, resources: &mut Resources, decors: &mut Decors) {
             ui.painter().rect_filled(rect, 0.0, theme::HOVERED);
         }
         if let Some(open) = sign {
-            crate::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0 + deep, rect.center().y), open, theme::WEAK);
+            workshop_base::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0 + deep, rect.center().y), open, theme::WEAK);
         }
         ui.painter().text(
             pos2(rect.min.x + 20.0 + deep, rect.center().y),

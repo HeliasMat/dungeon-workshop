@@ -5,7 +5,7 @@ use eframe::egui::{self, Color32, RichText, vec2};
 use super::super::{Asked, Item, Resources, Shelf};
 use super::{Shown, plural, section};
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 /// What a shelf's thing is called, over what it is.
 pub(super) fn kind_name(shelf: Shelf) -> &'static str {
@@ -100,7 +100,7 @@ pub(super) fn in_a_film(ui: &mut egui::Ui, resources: &mut Resources, scripts: &
             resources.watching = !resources.watching;
         }
     });
-    let film = if person { Some(crate::example::film_of(&line)) } else { item.watched_film() };
+    let film = if person { Some(workshop_base::example::film_of(&line)) } else { item.watched_film() };
     if let Some(film) = film.filter(|_| resources.watching) {
         ui.horizontal(|ui| {
             ui.add_space(8.0);

@@ -4,12 +4,12 @@ use eframe::egui::{self, Color32, RichText, Sense, vec2};
 use shell::sound::Hears;
 
 use super::SoundMaking;
+use super::now_seed;
 use super::presets::{EASY, EASY_KINDS, eased, preset};
 use super::versions::{hear, save_sound};
 use super::views::draw_wave;
-use super::now_seed;
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// The maker for a beginner: choose a kind, move it with words, hear it, write it.
 pub(super) fn make_sound_simply(ui: &mut egui::Ui, making: &mut SoundMaking, audio: &mut Option<Box<dyn Hears>>, volume: f32) -> Option<Done> {

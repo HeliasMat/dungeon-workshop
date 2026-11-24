@@ -11,7 +11,7 @@ use super::landmark::{facing_and_wander, with_facing_and_wander};
 use super::piece::Changing;
 use crate::decors::Decors;
 use crate::edit;
-use crate::theme;
+use workshop_base::theme;
 
 /// What is changed of his life beside his pose: his way, how far he
 /// wanders, his lines.
@@ -71,7 +71,7 @@ fn rose(ui: &mut egui::Ui, facing: &mut usize) {
         if way == *facing {
             ui.painter().rect_filled(square, 3.0, theme::DECOR.gamma_multiply(0.5));
         }
-        if crate::icons::button(ui, square, decor::lang::FACING[way], |painter, at, tint| crate::icons::way(painter, at, way, tint)) {
+        if workshop_base::icons::button(ui, square, decor::lang::FACING[way], |painter, at, tint| workshop_base::icons::way(painter, at, way, tint)) {
             *facing = way;
         }
     }
@@ -129,7 +129,7 @@ fn in_the_game(ui: &mut egui::Ui, decors: &mut Decors, changing: &mut Changing) 
             prop(ui, "The Film", |ui| {
                 let mut asked: Option<String> = None;
                 egui::ComboBox::from_id_salt(("talk film", number)).selected_text(film).show_ui(ui, |ui| {
-                    for known in crate::game::films(&library) {
+                    for known in workshop_base::game::films(&library) {
                         if ui.selectable_label(known == film, &known).clicked() {
                             asked = Some(known);
                         }

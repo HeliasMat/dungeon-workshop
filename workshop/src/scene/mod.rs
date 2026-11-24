@@ -17,7 +17,7 @@ use eframe::egui::{self, Color32, Pos2, Rect, Sense, Vec2, vec2};
 use crate::decors::{Carry, Decors, PieceArt};
 use crate::edit::{self, Item};
 use crate::terrains::Tool;
-use crate::theme;
+use workshop_base::theme;
 
 mod choosing;
 mod drawn;

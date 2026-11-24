@@ -10,7 +10,7 @@ use super::editor::{checks, fight_head, view};
 use super::form::SHAPES;
 use super::layout::{Fighter, Numbers, hint, numbers, section};
 use super::*;
-use crate::session::Session;
+use workshop_base::session::Session;
 
 /// The game's id of a species named so (none: it is not in the game).
 pub(super) fn species_id(session: &Session, name: &str) -> Option<u16> {

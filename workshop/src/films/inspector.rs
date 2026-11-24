@@ -10,7 +10,7 @@ use super::playing::clock;
 use super::timeline::{KINDS, kind_of_line};
 use super::{Films, SECOND};
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 /// The line looked at: the film's text, its number, as written; what the
 /// parts ask: the text made again, another line, a moment to go to.

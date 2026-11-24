@@ -9,8 +9,8 @@ use film::service::Spot;
 use super::knowledge::place_said;
 use super::text::{index_of, spot_of};
 use super::{NAME, Script, Scripts, WRONG};
-use crate::session::Session;
-use crate::theme;
+use workshop_base::session::Session;
+use workshop_base::theme;
 
 /// The Plan: the film's scenes (their places as the game names them, how
 /// many lines are wrong in each), their moments; a click goes there.

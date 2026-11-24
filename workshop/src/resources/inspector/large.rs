@@ -10,7 +10,7 @@ use super::super::{Item, Resources, Sheet, Shelf};
 use super::{Shown, section};
 use crate::decors::Decors;
 use crate::picture::fitted;
-use crate::theme;
+use workshop_base::theme;
 
 /// What is shown of the one chosen: a person's body (if it has no faces, or
 /// its body was asked) or its face, a thing's picture; the step shown.
@@ -183,7 +183,7 @@ fn way_button(ui: &mut egui::Ui, resources: &mut Resources, way: usize) {
         theme::FIELD
     };
     ui.painter().rect_filled(rect, 3.0, fill);
-    crate::icons::way(ui.painter(), rect, way, if on { theme::STRONG } else { theme::WEAK });
+    workshop_base::icons::way(ui.painter(), rect, way, if on { theme::STRONG } else { theme::WEAK });
     if response.on_hover_text("the way it faces").clicked() {
         (resources.way, resources.body) = (way, Some(true));
     }

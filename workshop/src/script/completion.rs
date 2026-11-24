@@ -7,7 +7,7 @@ use super::edits::replaced;
 use super::highlight::{names_of, speaker};
 use super::knowledge::{known_here, species_of};
 use super::text::{letter_of_word, line_at, spot_of};
-use crate::session::Session;
+use workshop_base::session::Session;
 
 /// The models a word unfolds into (offered with the words, Tab): its word,
 /// what it is, its lines (`a`, `b`: two of the scene).

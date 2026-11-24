@@ -9,7 +9,7 @@ use super::{Drawn, Read, View, grid_step};
 use crate::decors::{Decors, paint_art, tag};
 use crate::edit::{self, Item, Kind};
 use crate::terrains::Tool;
-use crate::theme;
+use workshop_base::theme;
 
 /// The decor's things in the order they are drawn: under those who live
 /// there, those who live there, over them; the pieces asked for (not yet

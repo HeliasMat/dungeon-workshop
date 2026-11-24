@@ -14,7 +14,7 @@ pub struct Capture {
 
 impl Capture {
     /// The one the Workshop was launched with, if one is (`WORKSHOP_CAPTURE`, `WORKSHOP_AFTER`).
-    pub fn asked(launch: &crate::launch::LaunchOptions) -> Option<Capture> {
+    pub fn asked(launch: &workshop_base::launch::LaunchOptions) -> Option<Capture> {
         let path = launch.capture.clone()?;
         let seconds = launch.capture_after.unwrap_or(3);
         Some(Capture { path, since: std::time::Instant::now(), after: std::time::Duration::from_secs(seconds), asked: false })

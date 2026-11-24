@@ -266,7 +266,7 @@ fn note(start: f32, length: f32, tone: f32, velocity: f32) -> Note {
     Note { start, length, tone, velocity }
 }
 
-use crate::own_sounds::OwnSounds;
+use workshop_base::own_sounds::OwnSounds;
 
 /// One of the project's own sounds, in two channels (none: not found).
 pub(crate) fn sound_of(own: &OwnSounds, word: &str) -> Option<Channels> {

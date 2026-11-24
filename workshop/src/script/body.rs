@@ -20,7 +20,7 @@ use super::knowledge::{Defined, defined};
 use super::text::{found_in, index_of, letter_of_word, line_at, number_at, spot_of, word_at};
 use super::windows::{project_windows, scripts_parts};
 use super::{GUTTER, STATUS, Script, Scripts, Scrub, Seen, severity_colour};
-use crate::theme;
+use workshop_base::theme;
 
 /// The ruler's width, on the right of the text.
 pub(super) const RULER: f32 = 12.0;

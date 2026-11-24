@@ -9,7 +9,7 @@
 use std::sync::Arc;
 
 use crate::catalogue::{Entry, Origin};
-use crate::session::Session;
+use workshop_base::session::Session;
 
 pub mod made;
 pub mod search;

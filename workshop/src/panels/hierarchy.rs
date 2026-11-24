@@ -10,7 +10,7 @@ use super::layers::layers;
 use super::{badge_of, cross_button, paint_badge};
 use crate::decors::Decors;
 use crate::edit::{self, Item, Kind};
-use crate::theme;
+use workshop_base::theme;
 
 /// A thing of the decor: its line, its place on the line.
 pub(super) type Element = (usize, usize);
@@ -79,7 +79,7 @@ const FOCUS_LINE: Color32 = Color32::from_rgb(0x00, 0x7F, 0xD4);
 pub(super) fn section_head(ui: &mut egui::Ui, title: &str, open: &mut bool, actions: impl FnOnce(&mut egui::Ui, egui::Rect)) {
     let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), ROW), Sense::click());
     ui.painter().rect_filled(rect, 0.0, theme::TABS);
-    crate::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), *open, theme::TEXT);
+    workshop_base::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), *open, theme::TEXT);
     ui.painter().text(
         pos2(rect.min.x + 20.0, rect.center().y),
         egui::Align2::LEFT_CENTER,
@@ -223,9 +223,9 @@ fn elements_head(ui: &mut egui::Ui, decors: &mut Decors, read: &Read, asked: &mu
     let mut new_group = false;
     let mut search = false;
     section_head(ui, "Elements", &mut elements_open, |ui, rect| {
-        search = crate::icons::button(ui, action_rect(rect, 0), "search (Ctrl+F)", crate::icons::search);
-        fold_all = crate::icons::button(ui, action_rect(rect, 1), "fold all", crate::icons::fold_all);
-        new_group = crate::icons::button(ui, action_rect(rect, 2), "group the chosen elements", crate::icons::plus);
+        search = workshop_base::icons::button(ui, action_rect(rect, 0), "search (Ctrl+F)", workshop_base::icons::search);
+        fold_all = workshop_base::icons::button(ui, action_rect(rect, 1), "fold all", workshop_base::icons::fold_all);
+        new_group = workshop_base::icons::button(ui, action_rect(rect, 2), "group the chosen elements", workshop_base::icons::plus);
     });
     decors.sections.1 = elements_open;
     // (The search: by its icon, or Ctrl+F with the pointer over the list.)
@@ -265,7 +265,7 @@ fn search_field(ui: &mut egui::Ui, decors: &mut Decors) {
             field.request_focus();
             decors.search_focus = false;
         }
-        if crate::icons::button(
+        if workshop_base::icons::button(
             ui,
             egui::Rect::from_center_size(pos2(ui.max_rect().max.x - 12.0, field.rect.center().y), vec2(18.0, 18.0)),
             "close the search",
@@ -507,8 +507,8 @@ fn group_row(ui: &mut egui::Ui, decors: &Decors, read: &Read, at: usize, drawn: 
     let RowDrawn { rect, left, pointed, colour, .. } = *drawn;
     let (name, start, end) = &read.groups[at];
     let folded = decors.folded.contains(name) && decors.hier_sought.is_empty();
-    crate::icons::chevron(ui.painter(), pos2(left + 6.0, rect.center().y), !folded, theme::TEXT);
-    crate::icons::folder(
+    workshop_base::icons::chevron(ui.painter(), pos2(left + 6.0, rect.center().y), !folded, theme::TEXT);
+    workshop_base::icons::folder(
         ui.painter(),
         egui::Rect::from_center_size(pos2(left + 22.0, rect.center().y), vec2(16.0, 16.0)),
         !folded,
@@ -530,14 +530,16 @@ fn group_row(ui: &mut egui::Ui, decors: &Decors, read: &Read, at: usize, drawn: 
     let all_locked = !poses.is_empty() && poses.iter().all(|(_, pose)| pose.locked);
     let mut changed: Option<Vec<(usize, Pose)>> = None;
     if (pointed || all_hidden)
-        && crate::icons::button(ui, action_rect(rect, 0), "the whole group shown or hidden", |painter, at, tint| {
-            crate::icons::eye(painter, at, !all_hidden, tint)
+        && workshop_base::icons::button(ui, action_rect(rect, 0), "the whole group shown or hidden", |painter, at, tint| {
+            workshop_base::icons::eye(painter, at, !all_hidden, tint)
         })
     {
         changed = Some(poses.iter().map(|(line, pose)| (*line, Pose { hidden: !all_hidden, ..pose.clone() })).collect());
     }
     if (pointed || all_locked)
-        && crate::icons::button(ui, action_rect(rect, 1), "the whole group locked", |painter, at, tint| crate::icons::lock(painter, at, all_locked, tint))
+        && workshop_base::icons::button(ui, action_rect(rect, 1), "the whole group locked", |painter, at, tint| {
+            workshop_base::icons::lock(painter, at, all_locked, tint)
+        })
     {
         changed = Some(poses.iter().map(|(line, pose)| (*line, Pose { locked: !all_locked, ..pose.clone() })).collect());
     }
@@ -601,13 +603,15 @@ fn line_row(ui: &mut egui::Ui, decors: &Decors, read: &Read, number: usize, one:
     }
     if let Some(pose) = &one.pose {
         if (pointed || pose.hidden)
-            && crate::icons::button(ui, action_rect(rect, 0), "shown or hidden", |painter, at, tint| crate::icons::eye(painter, at, !pose.hidden, tint))
+            && workshop_base::icons::button(ui, action_rect(rect, 0), "shown or hidden", |painter, at, tint| {
+                workshop_base::icons::eye(painter, at, !pose.hidden, tint)
+            })
         {
             asked.made = Some(open.with_line(number, Some(Pose { hidden: !pose.hidden, ..pose.clone() }.line())));
         }
         if (pointed || pose.locked)
-            && crate::icons::button(ui, action_rect(rect, 1), "locked: the mouse does not take it", |painter, at, tint| {
-                crate::icons::lock(painter, at, pose.locked, tint)
+            && workshop_base::icons::button(ui, action_rect(rect, 1), "locked: the mouse does not take it", |painter, at, tint| {
+                workshop_base::icons::lock(painter, at, pose.locked, tint)
             })
         {
             asked.made = Some(open.with_line(number, Some(Pose { locked: !pose.locked, ..pose.clone() }.line())));

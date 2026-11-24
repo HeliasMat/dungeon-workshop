@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use eframe::egui::{self, Color32, Rect, RichText, Sense, Stroke, StrokeKind, pos2, vec2};
 
-use crate::theme;
+use workshop_base::theme;
 
 /// How the Script shows the film.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -244,11 +244,11 @@ pub enum Asked {
 /// What a story view is drawn with, from the Script.
 pub struct Means<'a> {
     /// What the Workshop works with (`session`).
-    pub session: &'a crate::session::Session,
+    pub session: &'a workshop_base::session::Session,
     pub text: &'a str,
     pub path: &'a Path,
     pub timing: &'a BTreeMap<usize, (f64, f64)>,
-    pub examples: &'a mut crate::example::Examples,
+    pub examples: &'a mut workshop_base::example::Examples,
     pub portrait: &'a mut dyn FnMut(&egui::Context, &str, &str) -> Option<egui::TextureHandle>,
     pub name_of: &'a dyn Fn(&str) -> String,
     pub place_of: &'a dyn Fn(&str) -> String,

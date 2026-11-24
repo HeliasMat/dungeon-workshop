@@ -7,8 +7,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use super::pictures::{effects, face_name};
 use super::{Item, Shelf};
-use crate::session::Session;
 use film::words::plain;
+use workshop_base::session::Session;
 
 /// What each of a move's four effects is (`rules::tables::Tables::move_effects`).
 pub(super) const EFFECT_ROLES: [&str; 4] = ["before it", "as it strikes", "on the target", "what flies"];

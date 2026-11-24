@@ -8,7 +8,7 @@ use super::shelves::drawn_name;
 fn the_lines_offered_are_good_lines() {
     for line in ["pikachu anim Attack", "pikachu anim Sleep", "pikachu hold torch", "music peace", "sound click", "pikachu walk to right"] {
         let text = format!("scene: beach pikachu\n{line}\n");
-        let wrong: Vec<String> = film::service::diagnostics(&text, crate::session::Session::for_tests().tables())
+        let wrong: Vec<String> = film::service::diagnostics(&text, workshop_base::session::Session::for_tests().tables())
             .into_iter()
             .filter(|told| told.is_error())
             .map(|told| told.message)
@@ -49,7 +49,7 @@ fn a_drawn_file_names_its_picture_and_its_images() {
 /// What the film language finds wrong in a text (its errors, its warnings), each with its line.
 fn problems_in(text: &str) -> Vec<String> {
     let lines: Vec<&str> = text.lines().collect();
-    film::service::diagnostics(text, crate::session::Session::for_tests().tables())
+    film::service::diagnostics(text, workshop_base::session::Session::for_tests().tables())
         .into_iter()
         .filter(|told| !told.is_remark())
         .map(|told| {
@@ -66,7 +66,7 @@ fn problems_in(text: &str) -> Vec<String> {
 
 /// A shelf's things, as the Library lists them of the game's data (none without it).
 fn listed(shelf: super::Shelf) -> Vec<super::Item> {
-    let session = crate::session::Session::for_tests();
+    let session = workshop_base::session::Session::for_tests();
     super::shelves::listed(&session, shelf)
 }
 
@@ -146,7 +146,7 @@ fn the_backdrops_lines_are_good() {
 /// The tilesets' lines (`look: Beach Cave 2`): what a `.dungeon` takes the look of.
 #[test]
 fn the_tilesets_lines_are_good() {
-    let session = crate::session::Session::for_tests();
+    let session = workshop_base::session::Session::for_tests();
     let Some(offered) = crate::dungeon::offered(&session) else { return };
     let known = game::dungeon_check::Known::of(&offered.book);
     for line in listed(super::Shelf::Tilesets).iter().filter_map(super::Item::line) {

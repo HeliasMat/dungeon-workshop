@@ -8,8 +8,8 @@ use eframe::egui::{self, Color32, FontId, Rect, vec2};
 use super::{Item, Resources, Sheet, Shelf};
 use crate::decors::Decors;
 use crate::picture::fitted;
-use crate::session::{Session, Sheets};
-use crate::theme;
+use workshop_base::session::{Session, Sheets};
+use workshop_base::theme;
 
 /// The widest a picture is made a texture (wider ones are cut: some cards take no more).
 const LARGEST: u32 = 8192;
@@ -172,7 +172,7 @@ pub(super) fn paint_item(
         Shelf::Songs | Shelf::Sounds => {
             let heard = resources.heard.as_deref() == Some(item.key().as_str());
             let side = room.width().min(room.height()) * 0.45;
-            crate::icons::wave(painter, Rect::from_center_size(room.center(), vec2(side, side)), if heard { theme::ASSETS } else { theme::WEAK });
+            workshop_base::icons::wave(painter, Rect::from_center_size(room.center(), vec2(side, side)), if heard { theme::ASSETS } else { theme::WEAK });
         }
         Shelf::Weather => match item.watched_film().map(|film| resources.examples.picture(context, &film)) {
             Some(Ok(Some(texture))) => {

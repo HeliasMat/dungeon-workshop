@@ -3,7 +3,7 @@
 
 /// The sound or the music of that line heard (heard already: stopped).
 pub(super) fn hear(
-    session: &crate::session::Session,
+    session: &workshop_base::session::Session,
     heard: &mut Option<usize>,
     audio: &mut Option<Box<dyn shell::sound::Hears>>,
     said: &mut Option<String>,

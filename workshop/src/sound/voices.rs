@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use super::mix::{mix_fields, mixed};
 use super::render::Context;
-use crate::own_sounds::{OwnSounds, sample_of};
 use super::{Measure, Mix, Note, Sound, Synth, Voice};
+use workshop_base::own_sounds::{OwnSounds, sample_of};
 
 impl Voice {
     pub(super) fn of(name: &str, synth: Synth) -> Voice {

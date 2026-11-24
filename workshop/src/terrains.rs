@@ -21,8 +21,8 @@ use eframe::egui::{self, Color32, Pos2, Rect, RichText, Sense, Stroke, StrokeKin
 
 use crate::decors::{Decors, PieceArt, made_art, section, texture};
 use crate::scene::Drawn;
-use crate::theme;
 use crate::workshop::{Ask, Solved, TerrainInfo};
+use workshop_base::theme;
 
 /// What the mouse does on the scene.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

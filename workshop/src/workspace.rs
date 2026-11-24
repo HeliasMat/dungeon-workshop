@@ -219,7 +219,7 @@ pub fn ago(when: u64) -> String {
 }
 
 /// The film as the last commit has it (none: not in git, or git not there).
-pub fn committed(session: &crate::session::Session, film: &Path) -> Option<String> {
+pub fn committed(session: &workshop_base::session::Session, film: &Path) -> Option<String> {
     // (Asked at each frame the window is open: git asked again only every few seconds.)
     let mut kept = session.committed.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some((when, text)) = kept.get(film)

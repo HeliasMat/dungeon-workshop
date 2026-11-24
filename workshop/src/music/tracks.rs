@@ -8,7 +8,7 @@ use super::project::{Kind, RATE, Region, Track};
 use super::wave::pcm;
 use super::{LANE, MusicMaking, RULER, Tab, Taken};
 use crate::sound::{self, open_audio};
-use crate::theme;
+use workshop_base::theme;
 
 /// How many lanes fit, and the tracks shown (from the first scrolled to).
 fn lanes_shown(making: &MusicMaking, high: f32) -> std::ops::Range<usize> {
@@ -256,7 +256,7 @@ fn draw_region(painter: &egui::Painter, frame: &Frame, making: &MusicMaking, tra
     }
     if let Some(clip) = &region.clip {
         // (Its sound's shape: how loud, along the region.)
-        if let Some(mono) = crate::own_sounds::sample_of(&making.session.own_sounds, &clip.sound) {
+        if let Some(mono) = workshop_base::own_sounds::sample_of(&making.session.own_sounds, &clip.sound) {
             let speed = 2f32.powf(clip.tone / 12.0);
             let per_pixel = making.project.beat() / frame.pixels * RATE * speed;
             let columns = shape.width().max(1.0) as usize;

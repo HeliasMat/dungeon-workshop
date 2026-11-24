@@ -13,8 +13,8 @@ use rules::run::Book;
 use shell::Screen;
 use shell::sound::Hears;
 
-use crate::done::Done;
-use super::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 mod arena;
 mod check;
@@ -51,7 +51,7 @@ pub(crate) struct Offered {
 }
 
 /// What the editor offers, read from the session's data once (none without `dungeons.bin`).
-pub(crate) fn offered(session: &crate::session::Session) -> Option<std::sync::Arc<Offered>> {
+pub(crate) fn offered(session: &workshop_base::session::Session) -> Option<std::sync::Arc<Offered>> {
     let data = session.data().to_string();
     (*session.kept.get(|| read_offered(&data).map(std::sync::Arc::new))).clone()
 }
@@ -213,7 +213,7 @@ struct Trial {
 /// A dungeon being made.
 pub struct DungeonMaking {
     /// What the Workshop works with (`session`).
-    pub session: std::sync::Arc<crate::session::Session>,
+    pub session: std::sync::Arc<workshop_base::session::Session>,
     /// The project it is written in: the open game's folder, or the shared library.
     pub project: assets::project::Project,
     pub word: String,

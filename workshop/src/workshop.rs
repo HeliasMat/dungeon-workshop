@@ -144,7 +144,7 @@ pub struct Workshop {
 
 impl Workshop {
     /// Started on its own thread; `woken` called when it has answered.
-    pub fn start(session: &std::sync::Arc<crate::session::Session>, woken: impl Fn() + Send + 'static) -> Workshop {
+    pub fn start(session: &std::sync::Arc<workshop_base::session::Session>, woken: impl Fn() + Send + 'static) -> Workshop {
         let (asks, asked) = channel::<Ask>();
         let (answer, answers) = channel::<Answer>();
         let session = session.clone();
@@ -417,7 +417,7 @@ fn body(data: &str, sheets: &Sheets, tables: &film::tables::Tables, word: &str) 
 
 /// The workshop at work: what is asked, answered; of several bakes asked
 /// while one was being made, only the last.
-fn work(session: &crate::session::Session, asked: &Receiver<Ask>, send: &dyn Fn(Answer)) {
+fn work(session: &workshop_base::session::Session, asked: &Receiver<Ask>, send: &dyn Fn(Answer)) {
     let data = session.data().to_string();
     let workshop = match decor::workshop(session.library(), &data) {
         Ok(workshop) => workshop,

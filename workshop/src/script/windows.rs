@@ -7,11 +7,11 @@ use std::path::PathBuf;
 use eframe::egui::{self, Color32, RichText, pos2, vec2};
 
 use super::{ProjectSearch, Script};
-use crate::theme;
+use workshop_base::theme;
 
 /// The Script's fields the project's windows use.
 pub(super) struct Parts<'a> {
-    session: &'a crate::session::Session,
+    session: &'a workshop_base::session::Session,
     search: &'a mut Option<ProjectSearch>,
     quick: &'a mut Option<(String, bool)>,
     beside: &'a mut Option<PathBuf>,
@@ -25,7 +25,7 @@ pub(super) struct Parts<'a> {
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn scripts_parts<'a>(
-    session: &'a crate::session::Session,
+    session: &'a workshop_base::session::Session,
     search: &'a mut Option<ProjectSearch>,
     quick: &'a mut Option<(String, bool)>,
     beside: &'a mut Option<PathBuf>,
@@ -69,7 +69,7 @@ pub(super) fn project_windows(ui: &mut egui::Ui, mut parts: Parts, open: &mut Sc
 /// what replaces it (asked twice), where it is (a click opens it there).
 fn searched(
     ui: &mut egui::Ui,
-    session: &crate::session::Session,
+    session: &workshop_base::session::Session,
     search: &mut ProjectSearch,
     open: &mut Script,
     said: &mut Option<String>,
@@ -239,7 +239,7 @@ pub(super) fn counted(compared: &[crate::workspace::Diff]) -> (usize, usize) {
 }
 
 /// What changed since the version chosen (in red: removed; in green: added); taken back if asked.
-fn compared(ui: &mut egui::Ui, session: &crate::session::Session, chosen: Option<&str>, open: &Script, taken: &mut Option<String>) {
+fn compared(ui: &mut egui::Ui, session: &workshop_base::session::Session, chosen: Option<&str>, open: &Script, taken: &mut Option<String>) {
     let old = match chosen {
         Some("commit") => crate::workspace::committed(session, &open.path),
         Some(path) => std::fs::read_to_string(path).ok(),

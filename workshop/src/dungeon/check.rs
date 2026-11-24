@@ -41,7 +41,7 @@ pub(super) fn problems(making: &DungeonMaking) -> Vec<Problem> {
 }
 
 /// A problem put right.
-fn fixed(session: &crate::session::Session, form: &mut Form, fix: Fix) {
+fn fixed(session: &workshop_base::session::Session, form: &mut Form, fix: Fix) {
     let count = form.floors.max(1);
     let cut = |floors: &mut Floors| *floors = floors.map(|(low, high)| (low.min(count), high.min(count)));
     match fix {

@@ -11,7 +11,7 @@ use eframe::egui::{self, FontId, Sense, pos2, vec2};
 use super::{Resources, Sheet, Shelf};
 use crate::decors::Decors;
 use crate::script::Scripts;
-use crate::theme;
+use workshop_base::theme;
 
 mod about;
 mod actions;
@@ -110,6 +110,6 @@ fn section(ui: &mut egui::Ui, name: &str) {
     ui.add_space(6.0);
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::hover());
     ui.painter().rect_filled(rect, 0.0, theme::TOOLS);
-    crate::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), true, theme::WEAK);
+    workshop_base::icons::chevron(ui.painter(), pos2(rect.min.x + 10.0, rect.center().y), true, theme::WEAK);
     ui.painter().text(pos2(rect.min.x + 20.0, rect.center().y), egui::Align2::LEFT_CENTER, name, FontId::proportional(theme::BODY), theme::STRONG);
 }

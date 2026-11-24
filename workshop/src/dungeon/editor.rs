@@ -10,8 +10,8 @@ use shell::sound::Hears;
 use super::choosers::team_choice;
 use super::state::keys_of;
 use super::{DungeonMaking, Form, offered};
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// The editor, on the whole window.
 pub fn make_dungeon(ui: &mut egui::Ui, making: &mut DungeonMaking, audio: &mut Option<Box<dyn Hears>>, volume: f32) -> Option<Done> {
@@ -132,7 +132,7 @@ pub(super) fn fight_choice(ui: &mut egui::Ui, making: &mut DungeonMaking) -> Opt
             let fight = Form { head: Vec::new(), name: form.name.clone(), boss: form.boss.take(), ..Form::new("") };
             let folder = making.project.fights();
             _ = std::fs::create_dir_all(&folder);
-            match crate::safe::write(&folder.join(format!("{word}.fight")), fight.fight_text()) {
+            match workshop_base::safe::write(&folder.join(format!("{word}.fight")), fight.fight_text()) {
                 Ok(()) => {
                     form.fight = word.clone();
                     making.said = Some(format!("fight written apart: fights/{word}.fight (save the dungeon so it names it)"));

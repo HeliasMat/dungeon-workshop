@@ -4,16 +4,16 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::session::Session;
 use assets::project::Project;
 use std::time::Instant;
+use workshop_base::session::Session;
 
 use eframe::egui::{self, RichText, Sense, vec2};
 use shell::sound::Hears;
 
 use crate::dungeon::{DungeonMaking, Summary};
-use crate::done::Done;
-use crate::theme;
+use workshop_base::done::Done;
+use workshop_base::theme;
 
 /// What to open in the Dungeon space: a new one, one by its word (the open
 /// game's own if it has one by that word, else the shared library's), or
@@ -115,7 +115,7 @@ impl Dungeons {
         self.open.iter().filter(|open| !open.saved).count()
     }
 
-    /// A file restored (`crate::safe`): the open one written in it read again.
+    /// A file restored (`workshop_base::safe`): the open one written in it read again.
     pub fn reload(&mut self, path: &std::path::Path) {
         for open in &mut self.open {
             if open.path() == path {

@@ -3,7 +3,7 @@
 use eframe::egui::{self, Color32, Rect, RichText, Sense, vec2};
 
 use super::{ALLY, ArenaTool, BossForm, Offered, Tile};
-use crate::theme;
+use workshop_base::theme;
 
 /// The tools of the arena, as the editor keeps them.
 pub(super) struct ArenaParts<'a> {

@@ -12,8 +12,8 @@ use super::Source;
 use super::cards::{CHOSEN_FILL, CHOSEN_LINE, card_words, paint_checks, paint_framed};
 use crate::decors::Decors;
 use crate::edit;
-use crate::theme;
 use crate::workshop::BackdropInfo;
+use workshop_base::theme;
 
 /// What was asked of a backdrop: the decor laid on it (its size made the
 /// backdrop's, or kept; `bare`: its ground alone, without its elements), taken off.

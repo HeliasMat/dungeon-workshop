@@ -71,6 +71,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `scene_player` | the program that plays a film or a game, and its commands |
 | `emulator` | a small libretro frontend: a core the user chose loaded, a game run frame by frame (program `emulator`, headless) |
 | `dungeon_lsp` | the language server (program `dungeon_lsp`) |
+| `workshop_base` | what every part of the Workshop shares: the `Session`, the look, the project's files, safe saves, the system's dialogs |
 | `workshop` | Dungeon Workshop, the editor |
 
 A block only uses blocks from the layers below it, and only those that `sh tools/rule.sh` allows; it fails otherwise, and when this table is not its list (path dependencies, the `[dependencies]` of each `Cargo.toml`; test ones are free):
@@ -99,7 +100,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `scene_player` | `engine`, `film`, `game`, `language`, `preview`, `rules`, `scenes`, `shell`, `stage_view` |
 | `emulator` | nothing |
 | `dungeon_lsp` | `assets`, `decor`, `film`, `game`, `language` |
-| `workshop` | `assets`, `decor`, `dive`, `emulator`, `engine`, `film`, `game`, `media`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view` |
+| `workshop_base` | `assets`, `decor`, `film`, `game`, `preview`, `shell`, `spritecollab`, `stage_view` |
+| `workshop` | `assets`, `decor`, `dive`, `emulator`, `engine`, `film`, `game`, `media`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view`, `workshop_base` |
 <!-- end of rule -->
 
 So `preview` plays and draws films and knows no game (no `decor`, `language` nor `dive`); `game` uses `preview`, never the other way; only `extractor` uses `rom_formats`; `assets` reads `data/` for everyone. The engine reads no game's data nor rules: its faces, songs, animations and the commands only a game plays are handed to it (`Vocabulary`). It does know a few things of this kind of game, said exactly in "What the engine knows" below.

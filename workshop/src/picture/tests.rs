@@ -32,7 +32,7 @@ fn lines_shapes_fills_and_layers_are_made() {
 
 #[test]
 fn a_beginner_shapes_and_animates_an_expert_blends_and_reduces() {
-    let mut painting = Painting::new(&std::sync::Arc::new(crate::session::Session::for_tests()), "easy_test", 32, 32, 1);
+    let mut painting = Painting::new(&std::sync::Arc::new(workshop_base::session::Session::for_tests()), "easy_test", 32, 32, 1);
     painting.begin(32);
     for kind in ["Round", "Box", "Star", "Drop"] {
         painting.layers[0].cels[0] = RgbaImage::new(32, 32);

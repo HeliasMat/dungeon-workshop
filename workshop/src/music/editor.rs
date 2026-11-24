@@ -13,8 +13,8 @@ use super::tracks::{arrangement, track_headers};
 use super::transport::transport;
 use super::wave::pcm;
 use super::{HEADERS, MusicMaking, Playing, SCALES};
-use crate::done::Done;
 use crate::sound::open_audio;
+use workshop_base::done::Done;
 
 pub(super) fn colour(rgb: [u8; 3]) -> Color32 {
     Color32::from_rgb(rgb[0], rgb[1], rgb[2])

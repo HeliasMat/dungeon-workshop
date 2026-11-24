@@ -15,8 +15,8 @@ use super::edits::replaced;
 use super::highlight::{Lights, painted};
 use super::text::{line_at, word_at};
 use crate::catalogue::{FAMILIES, Origin};
-use crate::theme;
 use crate::wiki::{Page, family_name};
+use workshop_base::theme;
 
 /// What is asked on a page: another page, the list again, the example
 /// played or not, its line written at the cursor, the example copied, the recipe's source shown or not.
@@ -31,7 +31,7 @@ enum Asked {
 
 /// The word whose page F1 opens, at a place of the text: the word there if
 /// it has a page, else the word its line is said with.
-pub(super) fn wiki_word_at(session: &crate::session::Session, text: &str, at: usize) -> Option<String> {
+pub(super) fn wiki_word_at(session: &workshop_base::session::Session, text: &str, at: usize) -> Option<String> {
     let pages = crate::wiki::pages(session);
     let has_page = |word: &str| pages.iter().any(|page| page.word == word);
     if let Some(word) = word_at(text, at).map(|word| film::words::plain(&word)).filter(|word| has_page(word)) {
@@ -43,7 +43,7 @@ pub(super) fn wiki_word_at(session: &crate::session::Session, text: &str, at: us
 
 /// The word pointed at, if it has a page: its page's line, to say in the
 /// pointer's tooltip (F1 for the rest).
-pub(super) fn wiki_said_of(session: &crate::session::Session, text: &str, at: usize) -> Option<String> {
+pub(super) fn wiki_said_of(session: &workshop_base::session::Session, text: &str, at: usize) -> Option<String> {
     let word = word_at(text, at).map(|word| film::words::plain(&word))?;
     let page = crate::wiki::page_of(session, &word)?;
     Some(format!("{} — {}\nF1: its page in the wiki", page.word, page.one_line()))
@@ -461,7 +461,7 @@ mod tests {
         assert_eq!(line_for_scene("pikachu walk to piplup", "eevee", "krabby"), "eevee walk to krabby");
         assert_eq!(line_for_scene("piplup: Hi, pikachu!", "eevee", "krabby"), "krabby: Hi, eevee!");
         assert_eq!(line_for_scene("pikachu2 jump", "eevee", "krabby"), "pikachu2 jump", "whole words only");
-        let session = crate::session::Session::for_tests();
+        let session = workshop_base::session::Session::for_tests();
         let text = "scene: beach pikachu piplup\npikachu walk to right\nwait 1s";
         assert_eq!(wiki_word_at(&session, text, 31).as_deref(), Some("walk"), "the word under the cursor");
         assert_eq!(wiki_word_at(&session, text, 28).as_deref(), Some("walk"), "on someone: the line's word");

@@ -7,7 +7,7 @@ use image::RgbaImage;
 use super::canvas::{checkered, fitted};
 use super::pixels::composite;
 use super::{BLENDS, Layer, PALETTE, Painting, Tool};
-use crate::theme;
+use workshop_base::theme;
 
 /// A colour's swatch: clicked (left: primary; right: secondary).
 pub(super) fn swatch(ui: &mut egui::Ui, colour: Color32, chosen: bool, side: f32) -> egui::Response {
@@ -254,7 +254,7 @@ fn merged_down(painting: &mut Painting) {
 fn layer_row(ui: &mut egui::Ui, painting: &mut Painting, context: &egui::Context, layer: usize) {
     let chosen = layer == painting.layer;
     let (eye, eye_response) = ui.allocate_exact_size(vec2(18.0, 18.0), Sense::click());
-    crate::icons::eye(ui.painter(), eye, painting.layers[layer].visible, if painting.layers[layer].visible { theme::TEXT } else { theme::FAINT });
+    workshop_base::icons::eye(ui.painter(), eye, painting.layers[layer].visible, if painting.layers[layer].visible { theme::TEXT } else { theme::FAINT });
     if eye_response.on_hover_text("show it or not").clicked() {
         painting.layers[layer].visible = !painting.layers[layer].visible;
         painting.composites.clear();

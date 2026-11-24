@@ -7,7 +7,7 @@ use eframe::egui::{self, FontId, Rect, RichText, vec2};
 use super::dropped::take_files;
 use super::shelves::filters_of;
 use super::{Asked, Resources, Shelf};
-use crate::theme;
+use workshop_base::theme;
 
 /// What the sort button says, by the sort.
 pub(super) fn sort_said(sort: u8) -> &'static str {
@@ -100,7 +100,7 @@ fn made_and_imported(bar: &mut egui::Ui, resources: &mut Resources) {
         )
         .clicked()
     {
-        let chosen = crate::pick::files("Images to Import", &[("PNG Images", &["png"])], None);
+        let chosen = workshop_base::pick::files("Images to Import", &[("PNG Images", &["png"])], None);
         if chosen.is_empty() {
             resources.said = Some("no image chosen (a PNG can also be dropped on the window)".to_string());
         } else {
