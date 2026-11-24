@@ -22,8 +22,26 @@ step() {
         echo "ok     $name ($(($(date +%s) - begun)) s)"
     else
         echo "FAILED $name ($(($(date +%s) - begun)) s): $logs/$name.txt"
-        grep -E '^(error|test .* FAILED|---- .* stdout)|panicked at|FAILED' "$logs/$name.txt" | head -12 | sed 's/^/       /'
+        grep -E '^(error|test .* FAILED|---- .* stdout)|panicked at|FAILED|^ +FAIL ' "$logs/$name.txt" | head -12 | sed 's/^/       /'
         failed="$failed $name"
+    fi
+}
+
+# The tests: by cargo-nextest when it is installed (every crate's tests at once,
+# in parallel; the doc's examples, which it does not run, by cargo test --doc
+# after), else by cargo test. `tests <cargo args> [-- --ignored]`.
+tests() {
+    if cargo nextest --version >/dev/null 2>&1; then
+        ignored=""
+        case " $* " in *" --ignored "*) ignored="--run-ignored only" ;; esac
+        # shellcheck disable=SC2046
+        set -- $(printf '%s
+' "$@" | grep -vx -e '--' -e '--ignored')
+        # shellcheck disable=SC2086
+        cargo nextest run --offline --no-tests=pass --hide-progress-bar $ignored "$@" || return 1
+        [ -n "$ignored" ] || cargo test --offline --doc "$@"
+    else
+        cargo test --offline "$@"
     fi
 }
 
@@ -66,12 +84,12 @@ if [ -n "$1" ]; then
     {
         step build cargo build --offline $each
         step test-places test_places
-        step tests cargo test --offline $each
+        step tests tests $each
         data_each=""
         for package in $packages; do
             case " $data_tested " in *" $package "*) data_each="$data_each -p $package" ;; esac
         done
-        [ -n "$data_each" ] && [ -f data/rom/dungeons.bin ] && step data-tests cargo test --offline $data_each -- --ignored
+        [ -n "$data_each" ] && [ -f data/rom/dungeons.bin ] && step data-tests tests $data_each -- --ignored
         step clippy cargo clippy --offline $each --all-targets -- -D warnings
         step doc env RUSTDOCFLAGS="-D warnings" cargo doc --offline --no-deps $each
         [ -n "$shown" ] && step format cargo fmt --check $shown
@@ -80,9 +98,9 @@ else
     step rule sh tools/rule.sh
     step build cargo build --offline --workspace
     step test-places test_places
-    step tests cargo test --offline --workspace
+    step tests tests --workspace
     # shellcheck disable=SC2046
-    [ -f data/rom/dungeons.bin ] && step data-tests cargo test --offline $(for package in $data_tested; do printf -- '-p %s ' "$package"; done) -- --ignored
+    [ -f data/rom/dungeons.bin ] && step data-tests tests $(for package in $data_tested; do printf -- '-p %s ' "$package"; done) -- --ignored
     step clippy cargo clippy --offline --workspace --all-targets -- -D warnings
     # (The documentation of the code: no link to nothing.)
     step doc env RUSTDOCFLAGS="-D warnings" cargo doc --offline --workspace --no-deps
