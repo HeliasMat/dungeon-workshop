@@ -401,7 +401,7 @@ impl Film {
                 None => self.not_a(listening.join(" "), "Pokémon of the scene"),
             }
         }
-        crate::plot::scene_shows(self, at);
+        crate::verbs::story::scene_shows(self, at);
         self.lines_of(number, &scene.lines[setting..]);
         self.scene_ends(scenes.get(at + 1), song);
     }

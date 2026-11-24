@@ -46,6 +46,7 @@ use crate::grammar::{self, Kind, Piece, Value as Given};
 use crate::ir::{Instr, Shape};
 use crate::ir::{RecipeText, told_at};
 use crate::verbs::Lexicon;
+use crate::verbs::{Defined, Recipe};
 use crate::words::{frames_of, plain};
 
 /// How deep a recipe may call others.
@@ -89,38 +90,6 @@ const SAID: [&str; 23] = [
 
 /// The words of the language, not recipes, that name a team, for `team`.
 const TEAMS: [&str; 5] = ["arrival", "trek", "take_stairs", "fireflies", "darkness"];
-
-/// A recipe: what it is told, its lines as the language wrote them
-/// (written at each call, `front::called`); where it is from, what it does.
-#[derive(Clone, Debug)]
-pub struct Recipe {
-    pub(crate) form: Vec<Piece>,
-    pub(crate) text: Arc<RecipeText>,
-    pub name: String,
-    pub from: String,
-    /// Its file, as told (`gestures.film`; none: the film's own).
-    pub file: String,
-    pub doc: String,
-    /// How it is called, and what it does: for the table of every word.
-    pub told_and_doc: String,
-}
-
-impl Recipe {
-    /// How it is called, to say so.
-    pub fn shape(&self) -> String {
-        format!("{} {}", self.name, grammar::shown(&self.form))
-    }
-
-    /// Whether it is said of someone first (`who`, `who:pokemon`, `*who`).
-    pub fn said_of_someone(&self) -> bool {
-        crate::order::performer_first(&self.form)
-    }
-
-    /// Whether it is told a team (`*who`).
-    fn of_a_team(&self) -> bool {
-        self.form.iter().any(|piece| matches!(piece, Piece::Team(_)))
-    }
-}
 
 type Recipes = HashMap<String, Vec<Recipe>>;
 
@@ -452,7 +421,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                 recipe.file = format!("{name}.film");
             }
             if !film.defined.iter().any(|known| Arc::ptr_eq(&known.recipe.text, written)) {
-                film.defined.push(super::checked::Defined { recipe: recipe.clone(), uses: None });
+                film.defined.push(Defined { recipe: recipe.clone(), uses: None });
             }
             recipes.entry(recipe.name.clone()).or_default().insert(0, recipe);
             continue;
@@ -524,7 +493,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                     film.uses.push(plain(name));
                     for recipe in recipes_of(film.lexicon, &text, name) {
                         if !film.defined.iter().any(|known| known.recipe.file == recipe.file && known.recipe.text.number == recipe.text.number) {
-                            film.defined.push(super::checked::Defined { recipe: recipe.clone(), uses: Some(number) });
+                            film.defined.push(Defined { recipe: recipe.clone(), uses: Some(number) });
                         }
                         recipes.entry(recipe.name.clone()).or_default().insert(0, recipe);
                     }
@@ -585,7 +554,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                             crate::order::told_who_first(film, number, &words, verb);
                         }
                         if let Some(bound) = as_in_the_text.then(|| grammar::bind(film, &recipe.form, &written[1..]).ok()).flatten() {
-                            let read = crate::compile::ReadAs { word: verb.clone(), group: "recipe", values: bound.values };
+                            let read = crate::film::ReadAs { word: verb.clone(), group: "recipe", values: bound.values };
                             film.read_as.entry(number).or_insert(read);
                         }
                         // (Its places given in two numbers, to be told if they have a name.)

@@ -46,11 +46,11 @@ use std::path::{Path, PathBuf};
 
 use engine::{Diagnostic, Script, StoryEvent};
 
-pub use compile::{ReadAs, Written};
+pub use compile::Written;
 pub use context::Context;
-pub use film::Film;
+pub use film::{Film, ReadAs};
+pub use grammar::{performer_first, shown_form};
 pub use lines::formatted;
-pub use order::{performer_first, shown_form};
 pub use screen::coloured;
 pub use text::recipes::{Told, shared_files, shared_path};
 pub use verbs::{Group, Lexicon, Word, internal, scene_line};

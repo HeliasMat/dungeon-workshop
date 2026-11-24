@@ -660,3 +660,43 @@ pub const FARTHEST: f32 = 100_000.0;
 pub fn coordinate_in(word: &str) -> Option<i32> {
     number_in(word).filter(|number| number.abs() <= FARTHEST).map(|number| number as i32)
 }
+
+/// Whether a form's first part is one who acts: someone (`who:pokemon`,
+/// `who:code`, a `who:word` by its name) or a team (`*who`, said of one
+/// only when given one).
+pub fn performer_first(pieces: &[Piece]) -> bool {
+    match pieces.first() {
+        Some(Piece::Team(_)) | Some(Piece::One { kind: Kind::Someone | Kind::Code, .. }) => true,
+        Some(Piece::One { kind: Kind::Word, name, .. }) => name == "who",
+        _ => false,
+    }
+}
+
+/// A form as an author writes it: who first if its first part is who acts
+/// (`walk who:pokemon to where:place` shows `who:pokemon walk to where:place`),
+/// else the word first (`music name:word`), as always when `who_may_lead` is
+/// false (a word written word first, `fight a vs b`: `Lexicon::shown_form`).
+pub fn shown_form(word: &str, form: &str, who_may_lead: bool) -> String {
+    let form = form.trim();
+    let who_first = who_may_lead && performer_first(&read(form));
+    match (who_first, form.split_once(' ')) {
+        (true, Some((who, rest))) => format!("{who} {word} {rest}"),
+        (true, None) => format!("{form} {word}"),
+        (false, _) => format!("{word} {form}").trim_end().to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_form_is_shown_who_first_when_who_acts() {
+        assert_eq!(shown_form("walk", "who:pokemon to where:place", true), "who:pokemon walk to where:place");
+        assert_eq!(shown_form("exit", "*who [via side:word]", true), "*who exit [via side:word]");
+        assert_eq!(shown_form("jump", "who:pokemon", true), "who:pokemon jump");
+        assert_eq!(shown_form("music", "name:word", true), "music name:word");
+        assert_eq!(shown_form("frame", "members... [follows]", true), "frame members... [follows]");
+        assert_eq!(shown_form("train", "[gap:number] *who", true), "train [gap:number] *who");
+    }
+}

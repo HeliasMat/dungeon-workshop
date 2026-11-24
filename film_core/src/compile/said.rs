@@ -219,10 +219,3 @@ fn face_had(film: &mut Film, who: &str, face: String, number: usize) -> String {
     film.remark(number, format!("{who} has no {face} portrait: {instead} instead"));
     instead.to_string()
 }
-
-/// What a line said keeps in the scene at hand, nothing at the next one.
-#[derive(Default)]
-pub struct Speaking {
-    pub faces: std::collections::HashMap<String, String>,
-    pub last_speaker: Option<String>,
-}

@@ -52,19 +52,6 @@ pub const WORDS: &[Word] = &[
 /// Its words, a group of the language (`Lexicon`).
 pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("game", WORDS);
 
-/// What a scene the game makes knows: who the player walks, how many talks so far.
-#[derive(Default)]
-pub struct Game {
-    /// A scene the game makes of a place (`film::compile_place`): the words
-    /// only the game writes are known.
-    pub made_by_the_game: bool,
-    pub player: Option<String>,
-    talks: usize,
-    menus: usize,
-    /// The dialogues open, up to their `end`: who, its label, past it.
-    open: Vec<(Who, String, String)>,
-}
-
 /// What to write instead of a word of the game's, by the word.
 fn instead(word: &str) -> &'static str {
     match word {

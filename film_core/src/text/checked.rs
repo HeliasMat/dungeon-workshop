@@ -19,20 +19,13 @@
 use std::collections::HashMap;
 
 use super::front::{CallOf, CallValue, called};
-use super::recipes::{INCLUDED, Recipe};
+use super::recipes::INCLUDED;
 use crate::film::Film;
 use crate::grammar::{self, Kind, Piece, any};
 use crate::ir::{Instr, Shape};
 use crate::verbs::Lexicon;
+use crate::verbs::{Defined, Recipe};
 use crate::words::{frames_of, plain};
-
-/// A recipe the film writes or uses, and the `uses` line that takes it in
-/// (none: written in the film, or in a file it takes in).
-#[derive(Clone, Debug)]
-pub struct Defined {
-    pub recipe: Recipe,
-    pub uses: Option<usize>,
-}
 
 /// The recipes a recipe's lines may call, by name.
 pub type Known = HashMap<String, Vec<Recipe>>;

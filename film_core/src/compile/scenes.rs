@@ -4,6 +4,7 @@
 
 use crate::film::Film;
 use crate::ir::{Instr, Shape};
+use crate::plot::{StoryMap, slug, uses_story};
 use crate::tables::SOMEWHERE;
 use crate::text::recipes::unfold;
 use crate::words::{digits, plain, tile};
@@ -115,4 +116,44 @@ pub fn read(text: &str, film: &mut Film) -> Vec<SceneOf> {
         }
     }
     scenes
+}
+
+/// The film's map of its moments and scenes (`plot`), from its scenes.
+impl StoryMap {
+    /// A film's, from its scenes.
+    pub fn of(scenes: &[SceneOf], text: &str) -> StoryMap {
+        let mut map = StoryMap { used: uses_story(text), ..StoryMap::default() };
+        if !map.used {
+            return map;
+        }
+        fn each<'a>(lines: &'a [Instr], into: &mut Vec<&'a Instr>) {
+            for line in lines {
+                into.push(line);
+                if let Some(inner) = &line.inner {
+                    each(inner, into);
+                }
+            }
+        }
+        for (at, scene) in scenes.iter().enumerate() {
+            map.scenes.push(slug(&scene.word));
+            let mut lines = Vec::new();
+            each(&scene.lines, &mut lines);
+            for line in lines.iter().filter(|line| line.verb() == Some("moment")) {
+                map.moments.push((slug(&line.words().join(" ")), at));
+            }
+        }
+        for (at, scene) in scenes.iter().enumerate() {
+            let mut lines = Vec::new();
+            each(&scene.lines, &mut lines);
+            for line in lines.iter().filter(|line| line.verb() == Some("go") && line.words().first().is_some_and(|word| word == "moment")) {
+                let name = slug(&line.words()[1..].join(" "));
+                if let Some(rank) = map.moments.iter().position(|(known, scene)| *known == name && *scene != at)
+                    && !map.reached_from_afar.contains(&rank)
+                {
+                    map.reached_from_afar.push(rank);
+                }
+            }
+        }
+        map
+    }
 }

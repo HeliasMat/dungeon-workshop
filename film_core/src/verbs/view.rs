@@ -355,7 +355,7 @@ fn viewed(film: &mut Film, line: &Line) -> bool {
     // (`moment: the gust`: a moment of the scene; its view is framed once.)
     if line.verb == "moment" {
         let title = line.args.words("title").join(" ");
-        crate::plot::moment_starts(film, &title);
+        super::story::moment_starts(film, &title);
         film.moment = Some((title, false));
         return true;
     }

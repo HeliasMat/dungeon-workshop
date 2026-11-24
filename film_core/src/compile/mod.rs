@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use ::scenes::vocabulary::POKEMON;
 use engine::{Beat, FlowBeat, Scene, Script, StoryEvent, ViewBeat, Who};
 
-use crate::film::{Film, Sortie};
+use crate::film::{Film, ReadAs, Sortie};
 use crate::ir::{Instr, Shape};
 use crate::verbs::command;
 use crate::words::told;
@@ -18,7 +18,7 @@ use scenes::read;
 
 mod for_ds;
 mod said;
-pub use said::Speaking;
+
 pub(crate) mod scene;
 pub mod scenes;
 
@@ -127,67 +127,6 @@ pub struct Written {
     /// `bobber.4.png`): its things, and those its words pick by themselves
     /// (`Lexicon::own_pictures`). What a game's pack takes of its `images/`.
     pub pictures: Vec<String>,
-}
-
-/// A line of the text as it was read: its word, the family whose form fit
-/// it, what that form gave each of its names, and where in the line.
-#[derive(Clone, Debug)]
-pub struct ReadAs {
-    pub word: String,
-    pub group: &'static str,
-    pub values: Vec<crate::grammar::Value>,
-}
-
-impl ReadAs {
-    /// Where the line's word stands among the words written there: 0 when
-    /// written first (`music calm`), 1 when after who acts (`pikachu walk
-    /// to piplup`); none if the line now written is another word's.
-    pub fn word_at(&self, written: &str) -> Option<usize> {
-        written.split_whitespace().take(2).position(|said| crate::words::plain(said) == self.word)
-    }
-
-    /// The edit that makes that field of the line, as it was read, these
-    /// words; why not, if the line now written is another word's, or has
-    /// no such field said. Written who first, the field is found where it
-    /// is written: who before the word, the rest after it.
-    pub fn edit(&self, number: usize, written: &str, name: &str, words: &[String]) -> Result<crate::doc::Edit, String> {
-        let changed = || format!("line {number}: changed since the film played");
-        let word_at = self.word_at(written).ok_or_else(changed)?;
-        let value = self.values.iter().find(|value| value.name == name).ok_or_else(|| format!("line {number}: \"{}\" has no field \"{name}\"", self.word))?;
-        let at = value.at.ok_or_else(|| format!("line {number}: \"{name}\" is not written there"))?;
-        let long = value.words.len();
-        if word_at == 0 {
-            return Ok(crate::doc::Edit::Words { number, at, long, with: words.to_vec() });
-        }
-        // (Its words among those written: those before the word, then the
-        // word, then the rest; a field never across the word.)
-        let tokens: Vec<(usize, usize)> = tokens(written);
-        let placed = |read: usize| if read < word_at { read } else { read + 1 };
-        if long == 0 || (at < word_at && at + long > word_at) {
-            return Err(format!("line {number}: \"{name}\" is not written there"));
-        }
-        let (first, last) = (placed(at), placed(at + long - 1));
-        let (Some(&(start, _)), Some(&(_, end))) = (tokens.get(first), tokens.get(last)) else { return Err(changed()) };
-        let text = format!("{}{}{}", &written[..start], words.join(" "), &written[end..]);
-        Ok(crate::doc::Edit::Line { number, text })
-    }
-}
-
-/// Where each word of a line is, in bytes.
-fn tokens(written: &str) -> Vec<(usize, usize)> {
-    let mut found = Vec::new();
-    let mut start = None;
-    for (at, letter) in written.char_indices().chain(std::iter::once((written.len(), ' '))) {
-        match (letter.is_whitespace(), start) {
-            (false, None) => start = Some(at),
-            (true, Some(from)) => {
-                found.push((from, at));
-                start = None;
-            }
-            _ => {}
-        }
-    }
-    found
 }
 
 /// A film's text turned into lines, with these tables (its project's, its

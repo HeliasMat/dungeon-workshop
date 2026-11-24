@@ -17,7 +17,7 @@ use std::fmt::Display;
 
 use engine::{Beat, Exit, Gait, Num, Point, Who};
 
-use crate::film::{Film, Sortie};
+use crate::film::{Film, Sortie, Staging};
 
 mod body;
 mod command;
@@ -273,5 +273,41 @@ impl Film {
         let text = self.names_in(&centred).replace("\\n", "\n");
         self.beat(say(None, None, text, None, None));
         self.beat(said());
+    }
+}
+
+impl Staging {
+    /// The light of the scene's hour, as `daytime` last laid it.
+    pub fn daylight(&self) -> [f32; 4] {
+        self.daylight.unwrap_or_else(|| light_of(engine::Daylight::Normal))
+    }
+}
+
+impl Film {
+    /// The film waits for someone to get where it goes (each of a crowd),
+    /// if the line says so; else the line lasts as long, beside the film.
+    pub fn wait_for(&mut self, who: &str, wait: bool) {
+        if wait {
+            self.on(who, wait_for);
+        } else if let Some(code) = self.everyone(who).first().and_then(|one| self.someone(one)) {
+            self.plan.handle(crate::time::Length::Event { handle: crate::time::Handle::Who(code.to_string()), at_least: 0 });
+        }
+    }
+
+    /// The film waits that many frames (`30`, `1.5s`, `6f`), at its pace,
+    /// if the line says so (else the line lasts as long, beside the film);
+    /// a time it cannot read, kept for the engine to tell.
+    pub fn wait_frames(&mut self, frames: impl ToString, wait: bool) {
+        let frames = frames.to_string();
+        if !wait {
+            if let Some(read) = crate::words::frames_of(&frames) {
+                self.plan.handle(crate::time::Length::Known(read));
+            }
+            return;
+        }
+        match crate::words::frames_of(&frames) {
+            Some(read) => self.wait(i64::from(read)),
+            None => self.not_a(&frames, "a duration"),
+        }
     }
 }

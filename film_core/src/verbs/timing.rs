@@ -293,29 +293,3 @@ pub(crate) fn said_meanwhile(film: &mut Film, item: &Instr) -> bool {
     meanwhile(film, item.number, vec![said]);
     true
 }
-
-/// The film's time, the whole film: how long lines stay, the marks, the
-/// threads beside it, what the scene waits for before it closes, the
-/// instants marked, what is open (what `end` plays to close it).
-#[derive(Default)]
-pub struct TimingState {
-    /// (How long lines stay, if the film says; the box at the top.)
-    pub line_time: Option<i32>,
-    pub marks: usize,
-    pub threads: usize,
-    pub awaited: Vec<String>,
-    /// What is played beside the film under a name (`& as wind`), by
-    /// that name: its thread.
-    pub named: std::collections::HashMap<String, String>,
-    /// The instants marked in the scene at hand (`mark name`).
-    pub time_marks: Vec<String>,
-    /// A music was given, somewhere above in the film (`music …`): its
-    /// clock goes (`at music 12s`, `wait music 12s`).
-    pub music: bool,
-    /// The plain ambient is a sound of ours (`ambient my_wind`): the
-    /// game's, coming after, stops it.
-    pub ambiance_own: bool,
-    /// What is open (a shot of a picture, a vision, a memory, a choice, a
-    /// fight on the floor), the last last: what `end` plays to close it.
-    pub opened: Vec<fn(&mut crate::film::Film, &crate::verbs::Line)>,
-}

@@ -39,11 +39,12 @@ pub mod pictures;
 pub mod rituals;
 pub mod said;
 pub mod sky;
+pub mod story;
 pub mod things;
 pub mod timing;
 pub mod view;
 
-pub use lexicon::{Lexicon, TEXT_WORDS};
+pub use lexicon::{Defined, Lexicon, Recipe, TEXT_WORDS};
 
 /// A word of the language: its forms, what it writes for the engine, who it
 /// names (those who are on the stage by being named in the scene), and how
@@ -562,7 +563,7 @@ fn command_here(film: &mut Film, item: &Instr) {
     // recipe, a scene or a word writes with its number.)
     let as_in_the_text = item.span.is_some();
     if let Some((group, bound)) = fitting.first().filter(|_| as_in_the_text) {
-        let read = crate::compile::ReadAs { word: line.verb.clone(), group, values: bound.values.clone() };
+        let read = crate::film::ReadAs { word: line.verb.clone(), group, values: bound.values.clone() };
         film.read_as.entry(line.number).or_insert(read);
     }
     // (A place said in numbers where the place has a name for it: its name

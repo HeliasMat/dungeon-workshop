@@ -225,11 +225,3 @@ fn worked(film: &mut Film, line: &Line) -> bool {
     }
     true
 }
-
-/// The things of the scene at hand, nothing at the next one.
-#[derive(Default)]
-pub struct ThingsState {
-    /// The things, how many of each; the faces said.
-    pub stuff: Vec<crate::film::Stuff>,
-    pub copies: std::collections::HashMap<String, u32>,
-}

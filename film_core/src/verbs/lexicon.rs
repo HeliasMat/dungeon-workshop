@@ -10,7 +10,10 @@ use std::collections::HashSet;
 use std::sync::OnceLock;
 
 use super::{Group, Word, commands, engine};
-use crate::text::recipes::Recipe;
+use std::sync::Arc;
+
+use crate::grammar::{self, Piece};
+use crate::ir::RecipeText;
 
 /// The text's own words and the engine's: forms, never played here.
 const TEXT: Group = Group::new("text", TEXT_WORDS);
@@ -95,7 +98,7 @@ impl Lexicon {
         let shortest = forms
             .filter_map(|form| {
                 let pieces = crate::grammar::read(form);
-                Some((crate::grammar::write(&pieces, &given)?, crate::order::performer_first(&pieces)))
+                Some((crate::grammar::write(&pieces, &given)?, crate::grammar::performer_first(&pieces)))
             })
             .min_by_key(|(words, _)| words.len());
         match shortest {
@@ -134,7 +137,7 @@ impl Lexicon {
     /// `walk who:pokemon to where:place`, a recipe's `who` or `*who`).
     pub fn takes_someone_first(&'static self, word: &str, text: &str) -> bool {
         let word = crate::words::plain(word);
-        let someone = |pieces: Vec<crate::grammar::Piece>| crate::order::performer_first(&pieces);
+        let someone = |pieces: Vec<crate::grammar::Piece>| crate::grammar::performer_first(&pieces);
         let forms = self.all_words().filter(|(_, known, ..)| *known == word).flat_map(|(_, _, forms, _)| forms.iter());
         let commands = self.command_words().filter(|(known, ..)| *known == word).flat_map(|(_, forms, _)| forms.iter());
         forms.chain(commands).any(|form| someone(crate::grammar::read(form)))
@@ -235,3 +238,43 @@ pub const TEXT_WORDS: &[Word] = &[
         "closes a block (define, repeat, fight directed), or the last one open: a picture's shot, dimensional_scream, memory, choice, fight",
     ).family("Structure").ds_direct("nothing (closes a block)"),
 ];
+
+/// A recipe: what it is told, its lines as the language wrote them
+/// (written at each call, `front::called`); where it is from, what it does.
+#[derive(Clone, Debug)]
+pub struct Recipe {
+    pub(crate) form: Vec<Piece>,
+    pub(crate) text: Arc<RecipeText>,
+    pub name: String,
+    pub from: String,
+    /// Its file, as told (`gestures.film`; none: the film's own).
+    pub file: String,
+    pub doc: String,
+    /// How it is called, and what it does: for the table of every word.
+    pub told_and_doc: String,
+}
+
+impl Recipe {
+    /// How it is called, to say so.
+    pub fn shape(&self) -> String {
+        format!("{} {}", self.name, grammar::shown(&self.form))
+    }
+
+    /// Whether it is said of someone first (`who`, `who:pokemon`, `*who`).
+    pub fn said_of_someone(&self) -> bool {
+        crate::grammar::performer_first(&self.form)
+    }
+
+    /// Whether it is told a team (`*who`).
+    pub(crate) fn of_a_team(&self) -> bool {
+        self.form.iter().any(|piece| matches!(piece, Piece::Team(_)))
+    }
+}
+
+/// A recipe the film writes or uses, and the `uses` line that takes it in
+/// (none: written in the film, or in a file it takes in).
+#[derive(Clone, Debug)]
+pub struct Defined {
+    pub recipe: Recipe,
+    pub uses: Option<usize>,
+}

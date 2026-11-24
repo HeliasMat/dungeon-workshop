@@ -133,13 +133,6 @@ pub struct Staging {
     pub auras: BTreeMap<String, u8>,
 }
 
-impl Staging {
-    /// The light of the scene's hour, as `daytime` last laid it.
-    pub fn daylight(&self) -> [f32; 4] {
-        self.daylight.unwrap_or_else(|| crate::emit::light_of(engine::Daylight::Normal))
-    }
-}
-
 pub struct Film {
     /// The words it is read with: every family of the language.
     pub lexicon: &'static crate::verbs::Lexicon,
@@ -161,16 +154,16 @@ pub struct Film {
     /// What the film knows of the scene at hand, nothing at each new one.
     pub staging: Staging,
     /// What a line said keeps: the faces said, who spoke last (`compile/said.rs`).
-    pub speaking: crate::compile::Speaking,
+    pub speaking: Speaking,
     /// The things of the scene at hand, how many of each (`verbs/things.rs`).
-    pub things: crate::verbs::things::ThingsState,
+    pub things: ThingsState,
     /// The film's time: threads, marks, what the scene waits for, what is open (`verbs/timing.rs`).
-    pub timing: crate::verbs::timing::TimingState,
+    pub timing: TimingState,
     /// The film's plan: a line each, its thread, placing and time (`time::plan`).
     pub plan: crate::time::Plan,
 
     /// A film one plays: who the player walks (`verbs/game.rs`).
-    pub game: crate::verbs::game::Game,
+    pub game: Game,
     /// What each family keeps of its own (`Kept`), by its type: fishing's,
     /// a dungeon's, a fight's.
     kept: BTreeMap<std::any::TypeId, Box<dyn Kept>>,
@@ -240,11 +233,11 @@ pub struct Film {
     pub recipe_calls: usize,
     /// The recipes the film writes and uses, each once: checked alone
     /// once the film is read (`text::checked`).
-    pub defined: Vec<crate::text::checked::Defined>,
+    pub defined: Vec<crate::verbs::Defined>,
     /// The line at hand.
     pub number: usize,
     /// What each of the text's own lines was read as.
-    pub read_as: std::collections::BTreeMap<usize, crate::compile::ReadAs>,
+    pub read_as: std::collections::BTreeMap<usize, ReadAs>,
 }
 
 impl Film {
@@ -305,33 +298,6 @@ impl Film {
         }
     }
 
-    /// The film waits for someone to get where it goes (each of a crowd),
-    /// if the line says so; else the line lasts as long, beside the film.
-    pub fn wait_for(&mut self, who: &str, wait: bool) {
-        if wait {
-            self.on(who, crate::emit::wait_for);
-        } else if let Some(code) = self.everyone(who).first().and_then(|one| self.someone(one)) {
-            self.plan.handle(crate::time::Length::Event { handle: crate::time::Handle::Who(code.to_string()), at_least: 0 });
-        }
-    }
-
-    /// The film waits that many frames (`30`, `1.5s`, `6f`), at its pace,
-    /// if the line says so (else the line lasts as long, beside the film);
-    /// a time it cannot read, kept for the engine to tell.
-    pub fn wait_frames(&mut self, frames: impl ToString, wait: bool) {
-        let frames = frames.to_string();
-        if !wait {
-            if let Some(read) = crate::words::frames_of(&frames) {
-                self.plan.handle(crate::time::Length::Known(read));
-            }
-            return;
-        }
-        match crate::words::frames_of(&frames) {
-            Some(read) => self.wait(i64::from(read)),
-            None => self.not_a(&frames, "a duration"),
-        }
-    }
-
     /// A number of its own for a place found when the film plays.
     pub fn found_var(&mut self) -> String {
         self.found += 1;
@@ -366,4 +332,119 @@ impl Film {
         self.chance = self.chance.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
         (self.chance >> 34) % ((1 << 30) - 1) + 1
     }
+}
+
+/// A line of the text as it was read: its word, the family whose form fit
+/// it, what that form gave each of its names, and where in the line.
+#[derive(Clone, Debug)]
+pub struct ReadAs {
+    pub word: String,
+    pub group: &'static str,
+    pub values: Vec<crate::grammar::Value>,
+}
+
+impl ReadAs {
+    /// Where the line's word stands among the words written there: 0 when
+    /// written first (`music calm`), 1 when after who acts (`pikachu walk
+    /// to piplup`); none if the line now written is another word's.
+    pub fn word_at(&self, written: &str) -> Option<usize> {
+        written.split_whitespace().take(2).position(|said| crate::words::plain(said) == self.word)
+    }
+
+    /// The edit that makes that field of the line, as it was read, these
+    /// words; why not, if the line now written is another word's, or has
+    /// no such field said. Written who first, the field is found where it
+    /// is written: who before the word, the rest after it.
+    pub fn edit(&self, number: usize, written: &str, name: &str, words: &[String]) -> Result<crate::doc::Edit, String> {
+        let changed = || format!("line {number}: changed since the film played");
+        let word_at = self.word_at(written).ok_or_else(changed)?;
+        let value = self.values.iter().find(|value| value.name == name).ok_or_else(|| format!("line {number}: \"{}\" has no field \"{name}\"", self.word))?;
+        let at = value.at.ok_or_else(|| format!("line {number}: \"{name}\" is not written there"))?;
+        let long = value.words.len();
+        if word_at == 0 {
+            return Ok(crate::doc::Edit::Words { number, at, long, with: words.to_vec() });
+        }
+        // (Its words among those written: those before the word, then the
+        // word, then the rest; a field never across the word.)
+        let tokens: Vec<(usize, usize)> = tokens(written);
+        let placed = |read: usize| if read < word_at { read } else { read + 1 };
+        if long == 0 || (at < word_at && at + long > word_at) {
+            return Err(format!("line {number}: \"{name}\" is not written there"));
+        }
+        let (first, last) = (placed(at), placed(at + long - 1));
+        let (Some(&(start, _)), Some(&(_, end))) = (tokens.get(first), tokens.get(last)) else { return Err(changed()) };
+        let text = format!("{}{}{}", &written[..start], words.join(" "), &written[end..]);
+        Ok(crate::doc::Edit::Line { number, text })
+    }
+}
+
+/// What a line said keeps in the scene at hand, nothing at the next one.
+#[derive(Default)]
+pub struct Speaking {
+    pub faces: std::collections::HashMap<String, String>,
+    pub last_speaker: Option<String>,
+}
+
+/// The things of the scene at hand, nothing at the next one.
+#[derive(Default)]
+pub struct ThingsState {
+    /// The things, how many of each; the faces said.
+    pub stuff: Vec<crate::film::Stuff>,
+    pub copies: std::collections::HashMap<String, u32>,
+}
+
+/// The film's time, the whole film: how long lines stay, the marks, the
+/// threads beside it, what the scene waits for before it closes, the
+/// instants marked, what is open (what `end` plays to close it).
+#[derive(Default)]
+pub struct TimingState {
+    /// (How long lines stay, if the film says; the box at the top.)
+    pub line_time: Option<i32>,
+    pub marks: usize,
+    pub threads: usize,
+    pub awaited: Vec<String>,
+    /// What is played beside the film under a name (`& as wind`), by
+    /// that name: its thread.
+    pub named: std::collections::HashMap<String, String>,
+    /// The instants marked in the scene at hand (`mark name`).
+    pub time_marks: Vec<String>,
+    /// A music was given, somewhere above in the film (`music …`): its
+    /// clock goes (`at music 12s`, `wait music 12s`).
+    pub music: bool,
+    /// The plain ambient is a sound of ours (`ambient my_wind`): the
+    /// game's, coming after, stops it.
+    pub ambiance_own: bool,
+    /// What is open (a shot of a picture, a vision, a memory, a choice, a
+    /// fight on the floor), the last last: what `end` plays to close it.
+    pub opened: Vec<fn(&mut crate::film::Film, &crate::verbs::Line)>,
+}
+
+/// What a scene the game makes knows: who the player walks, how many talks so far.
+#[derive(Default)]
+pub struct Game {
+    /// A scene the game makes of a place (`film::compile_place`): the words
+    /// only the game writes are known.
+    pub made_by_the_game: bool,
+    pub player: Option<String>,
+    pub(crate) talks: usize,
+    pub(crate) menus: usize,
+    /// The dialogues open, up to their `end`: who, its label, past it.
+    pub(crate) open: Vec<(engine::Who, String, String)>,
+}
+
+/// Where each word of a line is, in bytes.
+fn tokens(written: &str) -> Vec<(usize, usize)> {
+    let mut found = Vec::new();
+    let mut start = None;
+    for (at, letter) in written.char_indices().chain(std::iter::once((written.len(), ' '))) {
+        match (letter.is_whitespace(), start) {
+            (false, None) => start = Some(at),
+            (true, Some(from)) => {
+                found.push((from, at));
+                start = None;
+            }
+            _ => {}
+        }
+    }
+    found
 }

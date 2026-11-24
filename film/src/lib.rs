@@ -101,7 +101,7 @@ pub fn shown_form(word: &str, form: &str) -> String {
 /// The groups of the language's words, the narrower first: a line goes to
 /// the first whose form of its word fits.
 const GROUPS: [film_core::verbs::Group; 26] = [
-    film_core::plot::GROUP,
+    film_core::verbs::story::GROUP,
     film_acting::GROUP,
     film_core::verbs::game::GROUP,
     film_fishing::GROUP,

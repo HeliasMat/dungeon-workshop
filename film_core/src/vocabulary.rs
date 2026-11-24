@@ -404,7 +404,7 @@ impl Lexicon {
                 // (Who first by its forms, those of every group that reads it.)
                 let forms =
                     self.groups_of_words().flat_map(|group| group.words.iter()).filter(|known| known.word == word.word).flat_map(|known| known.forms.iter());
-                let who_first = !word.word_first && forms.into_iter().any(|form| crate::order::performer_first(&crate::grammar::read(form)));
+                let who_first = !word.word_first && forms.into_iter().any(|form| crate::grammar::performer_first(&crate::grammar::read(form)));
                 let ds = word.ds.unwrap_or(OnDs::none(""));
                 out.push(Planned { family: word.family.unwrap_or(ADVANCED), word: word.word, made: Made::Word, who_first, ds });
             }
@@ -450,9 +450,9 @@ impl Lexicon {
     }
 
     /// A form as an author writes it: who first if its first part is who
-    /// acts and the word is not written word first (`order::shown_form`).
+    /// acts and the word is not written word first (`grammar::shown_form`).
     pub fn shown_form(&'static self, word: &str, form: &str) -> String {
-        crate::order::shown_form(word, form, self.who_first(word) != Some(false))
+        crate::grammar::shown_form(word, form, self.who_first(word) != Some(false))
     }
 }
 
