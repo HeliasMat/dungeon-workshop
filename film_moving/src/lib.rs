@@ -353,7 +353,7 @@ fn placed(film: &mut Film, line: &Line) {
                 film.staging.facing_later.push((who, way));
                 return;
             }
-            film_core::verbs::acting::faced(film, &who, &way);
+            film_core::spots::faced(film, &who, &way);
         }
     }
 }

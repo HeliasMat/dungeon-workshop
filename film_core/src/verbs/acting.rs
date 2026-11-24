@@ -4,13 +4,13 @@
 //! emote balloons and their sounds, the effects (`data/rom/effects`). Their
 //! other forms, older, stay in the families they come from.
 
-use engine::{AnimId, Beat, BodyBeat, Direction, EmoteId, MotionBeat, Pose, Spot};
+use engine::{AnimId, Beat, BodyBeat, EmoteId, MotionBeat, Pose, Spot};
 
 use super::{Line, Names, Word};
 use crate::emit;
 use crate::film::Film;
 use crate::spots::routes::found;
-use crate::spots::{Goal, goal_of, somewhere};
+use crate::spots::{Goal, goal_of};
 use crate::words::{WAYS, plain};
 
 pub const WORDS: &[Word] = &[
@@ -415,19 +415,6 @@ fn fled(film: &mut Film, line: &Line) {
     film.wait_for(&who, line.wait);
 }
 
-/// Turned that way (a side), to someone, or a point of the place.
-pub fn faced(film: &mut Film, who: &str, way: &str) {
-    match (WAYS.contains(&way), Direction::of(way)) {
-        (true, Some(direction)) => film.on(who, |one| emit::turn(one, direction)),
-        _ if film.actor(way).is_some() => film.face(who, way),
-        _ => {
-            let spot = somewhere(film, &[way.to_string()], film.number);
-            let at = found(film, "-", spot, &["exact"]);
-            film.on_at(who, at, emit::look_at_point);
-        }
-    }
-}
-
 /// `pikachu face right`, `pikachu face piplup slow`, `pikachu face away`.
 fn turned(film: &mut Film, line: &Line) -> bool {
     if !line.args.has("who") {
@@ -446,7 +433,7 @@ fn turned(film: &mut Film, line: &Line) -> bool {
     if line.args.has("away") {
         film.on(&who, |one| Beat::Body(BodyBeat::TurnAround(one)));
     } else {
-        faced(film, &who, &to);
+        crate::spots::faced(film, &who, &to);
     }
     if line.args.has("slow") {
         film.wait_for(&who, line.wait);

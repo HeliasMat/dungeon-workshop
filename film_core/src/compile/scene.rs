@@ -370,7 +370,7 @@ impl Film {
         self.beat(emit::weather(engine::Weather::Clear));
         self.set(at, &scene.lines[..setting], song);
         for (who, other) in std::mem::take(&mut self.staging.facing_later) {
-            crate::verbs::acting::faced(self, &who, &other);
+            crate::spots::faced(self, &who, &other);
         }
         self.number = number;
         // (The film's title, alone on the dark, before all else.)

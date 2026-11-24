@@ -209,6 +209,19 @@ pub fn ending_point(film: &Film, words: &[String]) -> (Vec<String>, Option<Spot>
     (words, None)
 }
 
+/// Turned that way (a side), to someone, or a point of the place.
+pub fn faced(film: &mut Film, who: &str, way: &str) {
+    match (crate::words::WAYS.contains(&way), engine::Direction::of(way)) {
+        (true, Some(direction)) => film.on(who, |one| emit::turn(one, direction)),
+        _ if film.actor(way).is_some() => film.face(who, way),
+        _ => {
+            let spot = somewhere(film, &[way.to_string()], film.number);
+            let at = routes::found(film, "-", spot, &["exact"]);
+            film.on_at(who, at, emit::look_at_point);
+        }
+    }
+}
+
 /// Where a line puts someone; the middle if it does not say, told if it says
 /// wrong.
 pub fn somewhere(film: &mut Film, words: &[String], number: usize) -> Spot {
