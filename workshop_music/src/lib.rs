@@ -5,6 +5,10 @@
 //! and recorded, a loop, a click, swing; MIDI files read and written; heard as it changes; written out
 //! (`library/sounds/<word>.wav`: `music <word>` in a film; the song in `library/music/<word>.music`;
 //! its tracks apart; a `.mid`).
+//!
+//! A crate of Dungeon Workshop: it uses `workshop_base` (the session, the look,
+//! safe saves) and `workshop_sound` (the instruments, the mix); the Resources
+//! space holds what it makes (`MusicMaking`, edited by `make_music`).
 
 mod editor;
 mod keys;
@@ -95,7 +99,7 @@ pub struct MusicMaking {
     /// What the Workshop works with (`session`).
     pub session: Arc<Session>,
     pub word: String,
-    pub(crate) saved: bool,
+    pub saved: bool,
     project: Project,
     undone: Vec<Project>,
     redone: Vec<Project>,

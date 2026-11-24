@@ -87,13 +87,13 @@ pub fn making_tabs(ui: &mut egui::Ui, resources: &mut Resources) {
                 ui.close();
             }
         }
-        let songs = crate::music::songs(&resources.session);
+        let songs = workshop_music::songs(&resources.session);
         if !songs.is_empty() {
             ui.separator();
             ui.label(theme::text("Open a Song", theme::SMALL, theme::WEAK));
             for word in songs {
                 if ui.button(&word).clicked() {
-                    resources.open_making(crate::resources::Maker::Music(Box::new(crate::music::MusicMaking::open(&resources.session, &word))));
+                    resources.open_making(crate::resources::Maker::Music(Box::new(workshop_music::MusicMaking::open(&resources.session, &word))));
                     ui.close();
                 }
             }
@@ -111,7 +111,7 @@ pub fn studio(ui: &mut egui::Ui, resources: &mut Resources) {
     let done = match maker {
         crate::resources::Maker::Picture(painting) => workshop_picture::paint(ui, painting),
         crate::resources::Maker::Sound(making) => workshop_sound::make_sound(ui, making, &mut resources.audio, resources.volume),
-        crate::resources::Maker::Music(music) => crate::music::make_music(ui, music, &mut resources.audio, resources.volume),
+        crate::resources::Maker::Music(music) => workshop_music::make_music(ui, music, &mut resources.audio, resources.volume),
         crate::resources::Maker::Dungeon(dungeon) => crate::dungeon::make_dungeon(ui, dungeon, &mut resources.audio, resources.volume),
     };
     match done {

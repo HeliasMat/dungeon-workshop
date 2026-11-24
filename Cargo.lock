@@ -4248,6 +4248,7 @@ dependencies = [
  "spritecollab",
  "stage_view",
  "workshop_base",
+ "workshop_music",
  "workshop_picture",
  "workshop_sound",
 ]
@@ -4266,6 +4267,18 @@ dependencies = [
  "shell",
  "spritecollab",
  "stage_view",
+]
+
+[[package]]
+name = "workshop_music"
+version = "0.2.0"
+dependencies = [
+ "eframe",
+ "film",
+ "rules",
+ "shell",
+ "workshop_base",
+ "workshop_sound",
 ]
 
 [[package]]

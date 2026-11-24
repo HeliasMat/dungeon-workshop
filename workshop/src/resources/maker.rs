@@ -8,7 +8,7 @@ use workshop_sound::SoundMaking;
 pub enum Maker {
     Picture(Box<Painting>),
     Sound(Box<SoundMaking>),
-    Music(Box<crate::music::MusicMaking>),
+    Music(Box<workshop_music::MusicMaking>),
     Dungeon(Box<crate::dungeon::DungeonMaking>),
 }
 
@@ -18,7 +18,7 @@ impl Maker {
         match kind {
             "animation" => Maker::Picture(Box::new(Painting::new(session, "new_animation", 32, 32, 4))),
             "sound" => Maker::Sound(Box::new(SoundMaking::new(session, "new_sound"))),
-            "music" => Maker::Music(Box::new(crate::music::MusicMaking::new(session, "new_music"))),
+            "music" => Maker::Music(Box::new(workshop_music::MusicMaking::new(session, "new_music"))),
             "dungeon" => Maker::Dungeon(Box::new(crate::dungeon::DungeonMaking::new(session, "new_dungeon"))),
             _ if kind.starts_with("dungeon:") => Maker::Dungeon(Box::new(crate::dungeon::DungeonMaking::open(session, &kind["dungeon:".len()..]))),
             "fight" => Maker::Dungeon(Box::new(crate::dungeon::DungeonMaking::new_fight(session, "new_fight"))),

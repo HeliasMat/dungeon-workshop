@@ -37,7 +37,6 @@ mod games;
 mod home;
 mod level_csv;
 mod library;
-mod music;
 mod panels;
 mod placing;
 mod quant_tool;

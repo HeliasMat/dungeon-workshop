@@ -456,8 +456,8 @@ impl Resources {
     pub fn reload(&mut self, path: &std::path::Path) {
         for maker in &mut self.makings {
             let reopened = match maker {
-                Maker::Music(music) if crate::music::song_file(&self.session, &music.word) == path => {
-                    Some(Maker::Music(Box::new(crate::music::MusicMaking::open(&self.session, &music.word))))
+                Maker::Music(music) if workshop_music::song_file(&self.session, &music.word) == path => {
+                    Some(Maker::Music(Box::new(workshop_music::MusicMaking::open(&self.session, &music.word))))
                 }
                 _ => None,
             };
