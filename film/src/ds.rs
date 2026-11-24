@@ -211,6 +211,11 @@ pub const WORDS: &[(&str, Export, &str)] = &[
         "its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target, a small shake: not the move's own animation (dungeons only)",
     ),
     (
+        "use",
+        Export::Close,
+        "as attack, the one it is used on neither knocked back nor hurt: its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target (or on itself), a small shake",
+    ),
+    (
         "evolve",
         Export::Close,
         "a stats-up shine, the screen white, the evolved one (an actor of its own) put where it stood and shown, the other hidden; no change of species (Sky's scripts have none)",
@@ -327,6 +332,7 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("daytime", "the light's own colour"),
     ("status", "only confusion, poison, sleep, ice and stats show"),
     ("attack", "a crouch, the attack and an effect of its type: not the move's own animation"),
+    ("use", "a crouch, the attack and an effect of its type: not the move's own animation"),
     ("evolve", "no change of species: the evolved one is another actor"),
     ("dodge", "the “Missed!” won't show"),
     ("finish", "no slow motion"),

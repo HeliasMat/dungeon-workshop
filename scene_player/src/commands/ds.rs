@@ -2210,6 +2210,15 @@ impl<'a> Writer<'a> {
                 self.facing.insert(*who, way);
                 self.line(&format!("SetDirection<actor {actor}>({});", direction(way)));
             }
+            // Turned to an unseen point (`use Move at x y`): its way from where he stands.
+            Beat::Body(BodyBeat::Face { who, other: other @ Who::Spot(_) }) => {
+                let Some(actor) = self.who(number, *who) else { return };
+                let (Some(&from), Some(&to)) = (self.at.get(who), self.at.get(other)) else { return };
+                let way = way_to(from, to);
+                self.facing.insert(*who, way);
+                self.line(&format!("Turn2Direction<actor {actor}>(4, 10, {});", direction(way)));
+                self.wait_for(&actor);
+            }
             Beat::Body(BodyBeat::Face { who, other }) => {
                 let (Some(actor), Some(other_actor)) = (self.who(number, *who), self.who(number, *other)) else { return };
                 if let (Some(&from), Some(&to)) = (self.at.get(who), self.at.get(other)) {

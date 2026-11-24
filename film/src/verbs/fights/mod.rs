@@ -42,6 +42,12 @@ pub const WORDS: &[Word] = &[
         "face, move (the move's own animation and effects, its sound), recoil and the Hurt pose of the target",
     )
     .does(attacked),
+    Word::new(
+        "use",
+        &["who:pokemon move:thing... on target:pokemon", "who:pokemon move:thing... at x:number y:number", "who:pokemon move:thing..."],
+        "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one); no knock back, no hurt",
+    )
+    .does(used),
     Word::new("evolve", &["who:pokemon into:pokemon"], "do evolution, the game's sentence").maybe(fought_word),
     Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise")
         .does(blows::roared),
@@ -165,6 +171,42 @@ fn attacked(film: &mut Film, line: &Line) {
     if let Some(blow) = film.combat.blow.as_mut() {
         blow.written = film.written.len();
     }
+}
+
+/// `pikachu use Protect`, `a use Hypnosis on b`, `a use Surf at 300 200`: a
+/// move as the game shows it, out of a fight: no one knocked back nor hurt.
+fn used(film: &mut Film, line: &Line) {
+    let args = &line.args;
+    let who = plain(args.word("who").unwrap_or_default());
+    let named = args.words("move").join(" ");
+    let Some(id) = move_id(film, &named) else {
+        let tables = film.tables.clone();
+        film.unknown(line.number, "unknown move", &named, tables.moves.keys().map(String::as_str), "");
+        return;
+    };
+    let Some(user) = film.one(&who) else {
+        return;
+    };
+    let target = match (args.word("target").map(plain), args.number("x").zip(args.number("y"))) {
+        (Some(target), _) => {
+            let Some(on) = film.one(&target) else {
+                return;
+            };
+            film.face(&who, &target);
+            Some(on)
+        }
+        // (A point: an unseen mark there, faced, the move aimed at it.)
+        (None, Some((x, y))) => {
+            let mark = format!("p{}", super::effects::FIRST_MARK + film.timing.marks);
+            film.timing.marks += 1;
+            film.on(&mark, |mark| emit::put(mark, x, y, engine::Direction::Down));
+            film.face(&who, &mark);
+            film.other(&mark)
+        }
+        (None, None) => None,
+    };
+    film.beat(emit::uses_move(user, engine::MoveId(id), target));
+    film.wait_frames((STRIKE_FRAMES as i64 + STRUCK_FRAMES) as i32, line.wait);
 }
 
 /// A move of the game by its name (`Thunderbolt`, `Thunder Punch`): its number.

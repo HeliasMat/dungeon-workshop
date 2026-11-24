@@ -181,7 +181,7 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 | Sound | `music track [fade d] [volume v]`, `music off [fade d]`, `sound name [on who] [loop]`, `jingle name` |
 | Effects | `effect name on who\|at where\|from a to b`, `weather rain\|snow\|sand\|fog\|hail\|sun [heavy]`, `daytime morning\|day\|evening\|night [stars]`, `who status state\|stat up\|down` |
 | Objects | `who hold item`, `who drop [where]`, `who give item to other`, `who throw item at other\|where`, `open thing`, `close thing` |
-| Fights | `fight who... vs who... [duel\|double\|relay] [boss] [level n]`, `who attack Move [at target]`, `who evolve species`, `who join [team]` |
+| Fights | `fight who... vs who... [duel\|double\|relay] [boss] [level n]`, `who attack Move [at target]`, `who use Move [on target|at x y]`, `who evolve species`, `who join [team]` |
 | Time | `wait d\|who\|all\|sound\|music`, `together … end`, `mark name`, `at name + d: …`, `pace slow\|brisk\|normal\|n`, `pace lines d\|off` |
 | Story | `option "text" [if test] [once]`, `{if test: text \| other}`, `{value}`, `go moment name`, `go scene name`, `seen(name)`, `who: text #id`, `keep flag = value` |
 | Dungeon (`uses dungeon`) | `stairs [where]`, `stairs take who...`, `trap kind [on who]`, `ambush who... on other`, `who shop item price...`, `who shop buy item`, `who steal item` |
@@ -189,6 +189,8 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 | Fishing (`uses fishing`) | `who cast [at where]`, `bite [strong\|nibble]`, `who reel [catch what\|snap\|lose]`, `who release item` |
 
 **Riding and carrying.** `pikachu ride on lapras` hops him onto its back: he goes where it goes, turns with it as it walks, rises and sinks with it (`ride a b`, the same). He sits as high as the mount's middle and a quarter of its span behind it, from the game's own points of its body (`points.txt`); `head`: on its head instead; `high 12`, `behind 6`: by hand. `pikachu get_off [to x y]` (or `dismount`) hops him down, beside it or there. `machamp carry pikachu` lifts pikachu over machamp's head (as high as its head's point), carried wherever it goes; `machamp put_down pikachu [to where]` hops him down before it. `ride a 20 0.5s`, numbers and no mount, is still the engine's own `ride`. On DS, the rider climbs up but stays where he got on (`R-DS-LOSS`).
+
+**A move out of a fight.** `piplup use Hypnosis on pikachu`, `pikachu use Protect`, `pikachu use Thunderbolt at 350 170`: the move by its name, as the game shows it (his own animation, its effects and its sound), turned to the one or the point it is used on; no one knocked back nor hurt, nothing missed (that is `attack`). Only moves: `a uses Oran Berry`, in a directed fight, is another word. On DS, as `attack` (`R-DS-LOSS`).
 
 The **advanced words**, folded in the Workshop, are the engine's own commands (`layer`, `tint`, `zoom`, `node`, `prop`, `attach`, `timer`, `every`, `while`, `random`, `tempo`, `halo`...: `engine/docs/COMMANDS.md`), and the lines of a place's scene the game makes (`player`, `dialogue`, `explore`, `game`, `way`).
 
@@ -737,6 +739,7 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `fight` | `fight *side_team vs *others [duel\|double\|relay] [boss] [level] [n:number] [winner wins:pokemon]`; `fight directed *side_team against *others [level] [n:number] [winner wins:pokemon]`; `fight directed rest...`; `fight who:pokemon lv:number hp:number against other:pokemon hp2:number`; `fight who:pokemon lv:number hp:number [floor:word]` | `fights` | by the line | fight open (bars, log); fight directed: fight directed |
 | `join` | `who:pokemon join [team]` | `fights` | by the line | emote, jump, the game's sentence |
 | `attack` | `who:pokemon attack move:thing... at target:pokemon`; `who:pokemon attack move:thing...` | `fights` | by the line | face, move (the move's own animation and effects, its sound), recoil and the Hurt pose of the target |
+| `use` | `who:pokemon use move:thing... on target:pokemon`; `who:pokemon use move:thing... at x:number y:number`; `who:pokemon use move:thing...` | `fights` | by the line | a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one); no knock back, no hurt |
 | `evolve` | `who:pokemon evolve into:pokemon` | `fights` | by the line | do evolution, the game's sentence |
 | `roar` | `who:pokemon roar [hard]` | `fights` | by the line | the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise |
 | `charge` | `who:pokemon charge move:thing...`; `who:pokemon charge` | `fights` | by the line | his Charge animation, the game's stats-up shine and its sound, held a beat; a move told: his next attack with it lands with a flash and a hard shake |
