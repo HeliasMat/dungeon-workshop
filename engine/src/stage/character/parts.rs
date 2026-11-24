@@ -141,6 +141,9 @@ pub(crate) struct Habits {
     /// It rides on the back of who carries it: how high over its feet, how
     /// far to its side (see `BodyBeat::Ride`).
     pub(crate) rides: Option<(f32, f32)>,
+    /// The way its mount faced when last seen: a mount that turns on the
+    /// spot turns its rider with it.
+    pub(crate) mount_faced: Option<u16>,
     /// It leaves the stage once it gets where it goes (a thing given).
     pub(crate) vanishes: bool,
     /// It wanders about a point, never further from it than that.

@@ -151,29 +151,39 @@ pub fn try_out(piece: &Piece, asked: &[String], on: Option<&String>, context: &A
     let mut kept: Vec<(RgbImage, usize)> = Vec::new();
     for frame in frames {
         while pass.frame < frame && pass.step() {}
-        pass.film.draw(&mut canvas, &mut screen);
+        // (Who to look at closely, where: the camera on him, even when the
+        // film's own leaves him out of its frame.)
+        let close = on.map(|name| {
+            let film = &pass.film;
+            let who = film.play().sim.stage.cast.keys().copied().find(|who| super::looking::name_of(piece, film, *who) == *name);
+            who.and_then(|who| film.play().sim.stage.cast.get(&who)).map(|actor| actor.shown_at() - glam::Vec2::new(0.0, actor.shown_height() + 12.0))
+        });
+        let view = match close.flatten() {
+            Some(at) => Some((pass.film.draw_around(&mut canvas, &mut screen, at), at)),
+            None => {
+                pass.film.draw(&mut canvas, &mut screen);
+                None
+            }
+        };
         let whole = RgbImage::from_raw(screen.wide as u32, screen.high as u32, rgb(&screen)).ok_or("a badly made image")?;
         let film = &pass.film;
         let line = film.play().sim.director.numbers().get(engine::LINE).map_or(0, |line| *line as i32);
         let text = usize::try_from(line).ok().and_then(|line| lines.get(line.checked_sub(1)?)).map_or("", |text| text.trim());
         println!("{}. {} s, line {line}: {text}", kept.len() + 1, seconds(frame));
-        let picture = match on {
-            Some(name) => {
-                let who = film.play().sim.stage.cast.keys().copied().find(|who| super::looking::name_of(piece, film, *who) == *name);
-                let actor = who.and_then(|who| film.play().sim.stage.cast.get(&who));
-                let Some(actor) = actor else {
-                    println!("   ({name} is not there: the whole image)");
-                    kept.push((image::imageops::resize(&whole, whole.width() / 2, whole.height() / 2, image::imageops::FilterType::Nearest), frame));
-                    continue;
-                };
-                let at = film.view().on_screen(actor.shown_at() - glam::Vec2::new(0.0, actor.shown_height() + 12.0));
+        let picture = match (on, view) {
+            (Some(_), Some((view, at))) => {
+                let at = view.on_screen(at);
                 let scale = PICTURE_SCALE as f32;
                 let (wide, high) = (CLOSE_ON.0 * PICTURE_SCALE as u32, CLOSE_ON.1 * PICTURE_SCALE as u32);
                 let left = ((at.x * scale) as i64 - wide as i64 / 2).clamp(0, (whole.width() - wide) as i64) as u32;
                 let top = ((at.y * scale) as i64 - high as i64 / 2).clamp(0, (whole.height() - high) as i64) as u32;
                 image::imageops::crop_imm(&whole, left, top, wide, high).to_image()
             }
-            None => image::imageops::resize(&whole, whole.width() / 2, whole.height() / 2, image::imageops::FilterType::Nearest),
+            (Some(name), None) => {
+                println!("   ({name} is not there: the whole image)");
+                image::imageops::resize(&whole, whole.width() / 2, whole.height() / 2, image::imageops::FilterType::Nearest)
+            }
+            (None, _) => image::imageops::resize(&whole, whole.width() / 2, whole.height() / 2, image::imageops::FilterType::Nearest),
         };
         kept.push((picture, frame));
     }

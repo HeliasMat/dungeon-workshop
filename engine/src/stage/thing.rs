@@ -210,12 +210,14 @@ impl Stage {
                     // faces. Facing us, its back is behind its
                     // neck: drawn behind it, higher on it; facing away, before it.)
                     (Some((back, behind)), _) => {
-                        // (Turned with it as it goes, and all the while it flies; still on
-                        // the ground or the water, he looks where he will: he fishes off its
-                        // back any way.)
-                        if turns {
+                        // (Turned with it as it goes, all the while it flies, and when it
+                        // turns on the spot; else, still on the ground or the water, he
+                        // looks where he will: he fishes off its back any way.)
+                        let turned = actor.habits.mount_faced.is_some_and(|faced| faced != direction);
+                        if turns || turned {
                             actor.direction = direction;
                         }
+                        actor.habits.mount_faced = Some(direction);
                         let away = -facing * behind;
                         match facing.y > 0.3 {
                             true => (at + Vec2::new(away.x, -1.0), back + BEHIND_THE_NECK),

@@ -87,6 +87,7 @@ impl Actor {
                 carried_by: None,
                 held: false,
                 rides: None,
+                mount_faced: None,
                 vanishes: false,
                 wander: None,
                 orbit: None,

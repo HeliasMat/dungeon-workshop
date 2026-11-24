@@ -272,6 +272,21 @@ impl Film {
         (sim.focus, sim.stage.view.zoom.now) = (focus, close);
     }
 
+    /// The stage drawn with the camera on that point, as close as it is now
+    /// (no words over it), and the view it was drawn with; the view the film
+    /// has, kept as it was. For a close look at someone the film's camera
+    /// leaves out of its frame.
+    pub fn draw_around(&mut self, canvas: &mut Canvas, world: &mut Screen, centre: glam::Vec2) -> Viewport {
+        let focus = self.play.sim.focus;
+        self.play.sim.focus = Some(centre);
+        let view = self.view();
+        let clear = Clear { page: false, portrait: None, bubbles: 0 };
+        self.play.draw(canvas, world, &self.art, &self.art.ui, clear);
+        world.over(&canvas.data);
+        self.play.sim.focus = focus;
+        view
+    }
+
     /// What the view shows of the place now.
     pub fn view(&self) -> Viewport {
         let screen = glam::Vec2::new(SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);

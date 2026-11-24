@@ -136,6 +136,7 @@ impl Stage {
             BodyBeat::Ride { who, on, high, beside } => self.with(who, |actor| {
                 (actor.habits.carried_by, actor.habits.held) = (on, false);
                 actor.habits.rides = on.map(|_| (high, beside));
+                actor.habits.mount_faced = None;
                 if on.is_none() {
                     actor.air.height = 0.0;
                 }
