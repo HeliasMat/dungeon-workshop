@@ -38,6 +38,23 @@ fn sprite_groups(sheets: &[SheetRow]) -> HashMap<String, HashSet<u16>> {
     found
 }
 
+/// The faces each monster's portraits have, by its number: the files
+/// `portraits/<monster>_<face>.png` of each layer of the data folder.
+fn portraits(folder: &str) -> HashMap<String, HashSet<u16>> {
+    let mut found: HashMap<String, HashSet<u16>> = HashMap::new();
+    let layers = std::fs::read_dir(folder).into_iter().flatten().flatten().map(|layer| layer.path().join("portraits"));
+    for file in layers.filter_map(|dir| std::fs::read_dir(dir).ok()).flatten().flatten() {
+        let name = file.file_name().to_string_lossy().into_owned();
+        let Some((monster, face)) = name.strip_suffix(".png").and_then(|stem| stem.split_once('_')) else {
+            continue;
+        };
+        if let Ok(face) = face.parse::<u16>() {
+            found.entry(monster.to_string()).or_default().insert(face);
+        }
+    }
+    found
+}
+
 /// The monsters, those drawn, those with a portrait alone, the variants and
 /// the generations.
 pub(super) fn read_monsters(tables: &mut Tables) {
@@ -46,6 +63,7 @@ pub(super) fn read_monsters(tables: &mut Tables) {
     tables.bodies = bodies(&sheets);
     tables.sprite_groups = sprite_groups(&sheets);
     tables.points = assets::tables::points(&folder).into_iter().map(|(number, points)| (number.to_string(), points)).collect();
+    tables.portraits = portraits(&folder);
     for (id, name) in numbered(&folder, "monsters.txt") {
         let suffix = if id == 32 { "_m" } else { "" };
         tables.monsters.entry(plain(&name) + suffix).or_insert((id.to_string(), name));

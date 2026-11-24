@@ -111,6 +111,9 @@ pub struct Tables {
     /// Where each monster's head, hands and middle are (`points.txt`), by
     /// its number: from where it stands, y downwards, facing us.
     pub points: HashMap<String, [(i32, i32); 4]>,
+    /// The faces each monster's portraits have, by its number (`happy` is
+    /// 1), as `portraits/` holds them.
+    pub portraits: HashMap<String, HashSet<u16>>,
     /// Those with a sprite, in the order of their numbers.
     pub with_sprites: Vec<String>,
     /// The group of each species' own sprite that shows it roaring, by its

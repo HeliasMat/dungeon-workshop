@@ -137,6 +137,7 @@ impl Film {
         }
         let who = if told { "-".to_string() } else { plain(name) };
         let who = self.staging.evolved.get(&who).cloned().unwrap_or(who);
+        let face = if told { face } else { face_had(self, &who, face, number) };
         if self.acting && !told {
             act(self, &who, &face, &bare);
         }
@@ -156,6 +157,44 @@ impl Film {
             self.beat(emit::text_speed(None));
         }
     }
+}
+
+/// For a face a species' portraits may lack, the nearest ones, in turn
+/// (none had: its normal face).
+const NEAREST_FACES: [(&str, &[&str]); 15] = [
+    ("happy", &["joyous", "inspired"]),
+    ("joyous", &["happy", "inspired"]),
+    ("inspired", &["happy", "joyous", "determined"]),
+    ("crying", &["teary_eyed", "sad"]),
+    ("teary_eyed", &["crying", "sad"]),
+    ("sad", &["teary_eyed", "worried"]),
+    ("shouting", &["angry", "determined"]),
+    ("angry", &["shouting", "determined"]),
+    ("determined", &["angry", "inspired"]),
+    ("surprised", &["stunned", "worried"]),
+    ("stunned", &["surprised", "worried"]),
+    ("dizzy", &["pain", "worried"]),
+    ("pain", &["worried", "sad"]),
+    ("worried", &["sad", "sigh"]),
+    ("sigh", &["worried", "sad"]),
+];
+
+/// The face someone shows for that one: itself if his portraits have it
+/// (or they are not known), else the nearest they have, else his normal
+/// one; told when it changes.
+fn face_had(film: &mut Film, who: &str, face: String, number: usize) -> String {
+    let faces = film.actor(who).and_then(|code| film.tables.portraits.get(crate::names::species(&code)?).cloned());
+    let Some(faces) = faces.filter(|faces| !faces.is_empty()) else {
+        return face;
+    };
+    let has = |name: &str| scenes::vocabulary::POKEMON.face(name).is_some_and(|number| faces.contains(&number));
+    if face == "normal" || has(&face) {
+        return face;
+    }
+    let nearest = NEAREST_FACES.iter().find(|(said, _)| *said == face).map_or(&[][..], |(_, nearest)| *nearest);
+    let instead = nearest.iter().find(|name| has(name)).map_or("normal", |name| *name);
+    film.remark(number, format!("{who} has no {face} portrait: {instead} instead"));
+    instead.to_string()
 }
 
 /// What a line said keeps in the scene at hand, nothing at the next one.

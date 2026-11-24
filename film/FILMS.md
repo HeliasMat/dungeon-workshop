@@ -194,6 +194,8 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 
 **Gestures, and what a sprite lacks.** `who pose name` plays the sprite's animations by a clear name (`sit`, `lie`, `look_up`, `proud`, `stagger`, `cringe`, `faint`, `nod`, `breathe`, `spin`…: `POSES` in `film/src/verbs/acting.rs`). The film knows which animations each species' sprite really has (`sprites.txt`): one it lacks plays the nearest it has (`sit`: lying, else asleep; `cringe`: pain, else hurt; `proud`: a hop…), and where none is near, `check` remarks it (“lapras has no Float animation: he stays standing”). The gestures the game has no animation for are recipes (`film/recipes/gestures.film`): `who laugh` (its laugh balloon, little hops), `who cry` (pain, sweat, shaking), `who sulk` (back turned, a sigh), `who shiver`, `who stretch`, `who celebrate` (a spin, happy hops, its proud pose).
 
+**Faces a species lacks.** The film knows which faces each species' portraits really have (`portraits/<species>_<face>.png`). A line asking one it lacks shows the nearest it has (`joyous`: happy; `crying`, `teary_eyed`: each other, else sad; `shouting`: angry; `surprised`: stunned; `dizzy`: pain…), else its normal face, and `check` remarks it (“lapras has no crying portrait: normal instead”).
+
 The **advanced words**, folded in the Workshop, are the engine's own commands (`layer`, `tint`, `zoom`, `node`, `prop`, `attach`, `timer`, `every`, `while`, `random`, `tempo`, `halo`...: `engine/docs/COMMANDS.md`), and the lines of a place's scene the game makes (`player`, `dialogue`, `explore`, `game`, `way`).
 
 **The nodes' properties** (`prop who property value`):
