@@ -1,4 +1,24 @@
-//! Pictures and animations painted as in a pixel-art studio: the tools,
+//! Pictures and animations, made in the Resources space, painted as in a pixel-art studio:
+//! - layers (seen or not, how opaque, moved, doubled, merged down), each with
+//!   a picture for each step of the animation (a cel);
+//! - tools: pencil (its size, pixel-perfect strokes), eraser, fill (what
+//!   touches, or all of a colour), picker, line, rectangle and ellipse
+//!   (outlined or filled), selection, move, shade (darker, lighter), dither;
+//!   mirrors on both axes; a primary and a secondary colour (left and right
+//!   buttons, X swaps them), the colours used last, a palette of one's own,
+//!   the game's;
+//! - a selection: cut, copied, pasted (a picture dropped on the window too),
+//!   moved, flipped, turned, cleared; painting stays inside it;
+//! - the canvas: zoomed around the pointer, moved (middle button, or Space
+//!   held), its grid, the steps before and after seen through (onion skin),
+//!   the brush shown where it would paint;
+//! - the steps: a strip of them under the canvas, each its time, played
+//!   round or back and forth, faster or slower; seen at their true size;
+//! - every change undone and redone by its name;
+//! - written as the things drawn are (`name.png`, `name.4.png`: four steps
+//!   side by side), its layers kept beside to be painted again.
+//!
+//! Here: the tools,
 //! the game's palette, the layers, and the picture being painted with its
 //! first workings (its steps, its cels, its changes undone and redone).
 
@@ -177,7 +197,7 @@ pub struct Painting {
     floating_texture: Option<egui::TextureHandle>,
     file: Option<PathBuf>,
     size: (u32, u32),
-    pub(super) saved: bool,
+    pub(crate) saved: bool,
     said: Option<String>,
     /// A stroke: where the pointer was, where a shape began, the pixels laid (to be pixel-perfect,
     /// to shade once), whether with the right button; a move's start.
@@ -294,7 +314,7 @@ impl Painting {
         }
     }
 
-    pub(super) fn count(&self) -> usize {
+    pub(crate) fn count(&self) -> usize {
         self.layers[0].cels.len()
     }
 

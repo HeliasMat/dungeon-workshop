@@ -11,7 +11,8 @@ use super::simple::make_sound_simply;
 use super::versions::{hear, redo_sound, save_sound, undo_sound};
 use super::views::{draw_pitch, draw_spectrum, draw_wave, side_sound};
 use super::{Sound, SoundMaking, Synth, Voice};
-use crate::making::{Done, now_seed};
+use super::now_seed;
+use crate::done::Done;
 use crate::theme;
 
 /// Where the sound goes out: the card, how loud.

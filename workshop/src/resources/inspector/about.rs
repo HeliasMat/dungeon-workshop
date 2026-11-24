@@ -136,7 +136,7 @@ pub(super) fn move_effects(ui: &mut egui::Ui, resources: &mut Resources, item: &
                 ui.painter().rect_filled(room, 2.0, theme::GROUND);
                 if let Some(sheet) = resources.picture(&context, &shown) {
                     let step = sheet.step_at(seconds);
-                    ui.painter().image(sheet.texture.id(), crate::making::fitted(sheet.cell, room.shrink(4.0)), sheet.uv(step), Color32::WHITE);
+                    ui.painter().image(sheet.texture.id(), crate::picture::fitted(sheet.cell, room.shrink(4.0)), sheet.uv(step), Color32::WHITE);
                     context.request_repaint_after(std::time::Duration::from_millis(33));
                 }
                 ui.label(theme::text(format!("{role} · {effect}"), theme::SMALL, theme::WEAK));

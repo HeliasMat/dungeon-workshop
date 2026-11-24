@@ -166,3 +166,22 @@ fn entries(folder: &Path, extension: &str, kind: Kind) -> Vec<Entry> {
     found.sort_by_key(|entry| std::cmp::Reverse(entry.changed));
     found
 }
+
+/// The kinds of places (`library/tables/place_kinds.txt`), read again only when the file changes.
+pub fn place_kinds(library: &assets::project::Project) -> std::sync::Arc<decor::tags::PlaceKinds> {
+    type Kept = std::sync::Mutex<Option<(std::path::PathBuf, Option<std::time::SystemTime>, std::sync::Arc<decor::tags::PlaceKinds>)>>;
+    static KEPT: std::sync::OnceLock<Kept> = std::sync::OnceLock::new();
+    let tables = decor::pieces_folder(library);
+    let path = tables.join(decor::tags::PLACE_KINDS);
+    let when = std::fs::metadata(&path).and_then(|meta| meta.modified()).ok();
+    let mut kept = KEPT.get_or_init(Default::default).lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some((known, stamp, kinds)) = kept.as_ref()
+        && *known == path
+        && *stamp == when
+    {
+        return kinds.clone();
+    }
+    let kinds = std::sync::Arc::new(decor::tags::PlaceKinds::of(&tables));
+    *kept = Some((path, when, kinds.clone()));
+    kinds
+}

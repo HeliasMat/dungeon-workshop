@@ -17,7 +17,7 @@ pub(super) fn take_dropped(resources: &mut Resources, context: &egui::Context) {
 /// PNGs dropped or chosen: among the things drawn (while painting: pasted in it).
 pub(super) fn take_files(resources: &mut Resources, dropped: Vec<PathBuf>) {
     // (While painting: the picture pasted in it, to be moved.)
-    if let Some(crate::making::Maker::Picture(painting)) = resources.makings.get_mut(resources.making_at).filter(|_| resources.making_full) {
+    if let Some(crate::resources::Maker::Picture(painting)) = resources.makings.get_mut(resources.making_at).filter(|_| resources.making_full) {
         if let Some(picture) = dropped.iter().find_map(|path| image::open(path).ok()) {
             painting.paste(picture.to_rgba8());
         }
@@ -55,7 +55,7 @@ pub(super) fn take_files(resources: &mut Resources, dropped: Vec<PathBuf>) {
 /// A PNG dropped while painting: pasted in it, to be moved.
 pub(super) fn take_dropped_while_making(resources: &mut Resources, context: &egui::Context) {
     let dropped: Vec<PathBuf> = context.input(|input| input.raw.dropped_files.iter().filter_map(|file| file.path.clone()).collect());
-    if let Some(crate::making::Maker::Picture(painting)) = resources.makings.get_mut(resources.making_at)
+    if let Some(crate::resources::Maker::Picture(painting)) = resources.makings.get_mut(resources.making_at)
         && let Some(picture) = dropped.iter().find_map(|path| image::open(path).ok())
     {
         painting.paste(picture.to_rgba8());

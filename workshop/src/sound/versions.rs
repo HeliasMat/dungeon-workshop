@@ -8,7 +8,8 @@ use shell::sound::Hears;
 
 use super::presets::eased;
 use super::{Measure, Sound, SoundMaking, Synth};
-use crate::making::{Done, now_seed};
+use super::now_seed;
+use crate::done::Done;
 use crate::session::Session;
 
 /// Whether sounds are made as an expert (kept from one time to the next).

@@ -71,13 +71,13 @@ fn file_buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item, file:
         resources.said = Some(file.parent().map_or_else(String::new, opened));
     }
     if item.shelf == Shelf::Drawn && ui.button("Paint Here").on_hover_text("in the Workshop, pixel by pixel, its images one by one").clicked() {
-        match crate::making::Painting::open(&resources.session, &item.word, file, item.number.max(1) as usize) {
-            Some(painting) => resources.open_making(crate::making::Maker::Picture(Box::new(painting))),
+        match crate::picture::Painting::open(&resources.session, &item.word, file, item.number.max(1) as usize) {
+            Some(painting) => resources.open_making(crate::resources::Maker::Picture(Box::new(painting))),
             None => resources.said = Some("the image could not be read".to_string()),
         }
     }
     if item.shelf == Shelf::Sounds && ui.button("Edit").on_hover_text("make it again in the Workshop").clicked() {
-        resources.open_making(crate::making::Maker::Sound(Box::new(crate::making::SoundMaking::open(&resources.session, &item.word))));
+        resources.open_making(crate::resources::Maker::Sound(Box::new(crate::sound::SoundMaking::open(&resources.session, &item.word))));
     }
     if item.shelf == Shelf::Drawn && ui.button("Rename…").clicked() {
         resources.renaming = Some((item.word.clone(), true));

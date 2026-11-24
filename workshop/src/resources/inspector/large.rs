@@ -9,7 +9,7 @@ use super::super::pictures::{animations_of, body_sheet, face_name, faces_of, pai
 use super::super::{Item, Resources, Sheet, Shelf};
 use super::{Shown, section};
 use crate::decors::Decors;
-use crate::making::fitted;
+use crate::picture::fitted;
 use crate::theme;
 
 /// What is shown of the one chosen: a person's body (if it has no faces, or

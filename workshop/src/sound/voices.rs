@@ -3,7 +3,8 @@
 use std::collections::HashMap;
 
 use super::mix::{mix_fields, mixed};
-use super::render::{Context, OwnSounds, sample_of};
+use super::render::Context;
+use crate::own_sounds::{OwnSounds, sample_of};
 use super::{Measure, Mix, Note, Sound, Synth, Voice};
 
 impl Voice {

@@ -13,7 +13,7 @@ use rules::run::Book;
 use shell::Screen;
 use shell::sound::Hears;
 
-use super::making::Done;
+use crate::done::Done;
 use super::theme;
 
 mod arena;
@@ -53,7 +53,7 @@ pub(crate) struct Offered {
 /// What the editor offers, read from the session's data once (none without `dungeons.bin`).
 pub(crate) fn offered(session: &crate::session::Session) -> Option<std::sync::Arc<Offered>> {
     let data = session.data().to_string();
-    (*session.offered.get(|| read_offered(&data).map(std::sync::Arc::new))).clone()
+    (*session.kept.get(|| read_offered(&data).map(std::sync::Arc::new))).clone()
 }
 
 fn read_offered(data: &str) -> Option<Offered> {

@@ -64,7 +64,7 @@ fn family_of(word: &str) -> usize {
 /// Every word of the language (and the library's recipes), once each, in
 /// their families; the engine's commands last.
 pub fn catalogue(session: &Session) -> Arc<Vec<Entry>> {
-    session.catalogue.get(|| {
+    session.kept.get(|| {
         let mut entries: Vec<Entry> = Vec::new();
         let mut put = |entry: Entry| {
             if !entries.iter().any(|known| known.word == entry.word) {

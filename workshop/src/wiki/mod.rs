@@ -61,7 +61,7 @@ impl Page {
 
 /// Every page, by family then name (made once, kept by the session).
 pub fn pages(session: &Session) -> Arc<Vec<Page>> {
-    session.wiki.get(|| {
+    session.kept.get(|| {
         let written = written::every_page();
         crate::catalogue::catalogue(session).iter().map(|entry| page(entry, written.get(&entry.word))).collect()
     })

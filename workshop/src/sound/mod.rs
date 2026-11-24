@@ -1,4 +1,24 @@
-//! Sounds made as the best sound makers of games make theirs, then mixed:
+//! Sounds, made in the Resources space as the best sound makers of games make theirs (sfxr,
+//! Bfxr, ChipTone), then mixed as a sound editor would:
+//! - voices (up to four, mixed): each its synth, when it comes in, how loud,
+//!   from which side, muted or alone;
+//! - a voice: a wave (square and its duty, saw, sine, triangle, white, pink
+//!   and 8-bit noises) and its harmonics, an envelope (attack, sustain and its
+//!   punch, decay: dragged by its handles on the wave too), a pitch that
+//!   slides and slides faster down to a floor, a vibrato, an arpeggio, a
+//!   repeat, low-pass (resonant) and high-pass filters that sweep, a
+//!   flanger, a coarser grain;
+//! - the mix: an echo, a room (reverb), faster or slower, backwards, faded in
+//!   and out, made as loud as it may;
+//! - made by kind (coin, laser, explosion…), by chance, a little changed,
+//!   the groups locked kept; variants written at once (`step_1`, `step_2`…);
+//! - seen: its wave (left and right), the voice's pitch, its spectrum; how
+//!   loud (peak, mean, clipping); a sound of the game to compare;
+//! - every version kept, undone, redone; heard once or round and round, the
+//!   playhead on its wave; written where the films find their own sounds
+//!   (`sound name`).
+//!
+//! Here: the voices and the mix of a sound, and the editor:
 //! the synth's settings and names, a voice, a sound of voices, its mix, its
 //! measures, and the sound being made.
 
@@ -25,7 +45,7 @@ pub(crate) use controls::piano_roll;
 pub use editor::make_sound;
 pub(crate) use instruments::{INSTRUMENTS, drum_kit, instrument};
 pub(crate) use mix::{mix_editor, mix_read, mix_written, mixed, note_audio, one_shot};
-pub(crate) use render::{Biquad, OwnSounds, sample_of};
+pub(crate) use render::Biquad;
 pub(crate) use versions::open_audio;
 
 /// The waves a sound is made of.
@@ -335,7 +355,7 @@ pub struct SoundMaking {
     reference: usize,
     rendered: Option<(Sound, Vec<f32>, Measure)>,
     picture: Option<(Sound, egui::TextureHandle)>,
-    pub(super) saved: bool,
+    pub(crate) saved: bool,
     said: Option<String>,
     /// Made as an expert, or simply; simply: the sound chosen, and the words moving it (and theirs to undo).
     expert: bool,
@@ -347,4 +367,29 @@ pub struct SoundMaking {
     text: Option<String>,
     /// Inside another maker (a song's instrument): nothing written, nothing closed.
     pub(crate) embedded: bool,
+}
+
+/// A little random number maker (the same seed, the same numbers).
+struct Chance(u32);
+
+impl Chance {
+    fn new(seed: u32) -> Chance {
+        Chance(seed.max(1))
+    }
+
+    /// From 0 to 1.
+    fn next(&mut self) -> f32 {
+        self.0 ^= self.0 << 13;
+        self.0 ^= self.0 >> 17;
+        self.0 ^= self.0 << 5;
+        (self.0 >> 8) as f32 / (1u32 << 24) as f32
+    }
+
+    fn between(&mut self, low: f32, high: f32) -> f32 {
+        low + (high - low) * self.next()
+    }
+}
+
+fn now_seed() -> u32 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(7, |since| since.subsec_nanos() ^ since.as_secs() as u32) | 1
 }

@@ -306,7 +306,7 @@ pub(crate) fn mix_editor(ui: &mut egui::Ui, mix: &mut Mix, id: &str) -> (bool, b
 }
 
 /// A note of an instrument: the sound played that many half tones over its pitch, held so long (s), so hard.
-pub(crate) fn note_audio(sound: &Sound, tone: f32, seconds: f32, velocity: f32, own: &super::OwnSounds) -> (Vec<f32>, Vec<f32>) {
+pub(crate) fn note_audio(sound: &Sound, tone: f32, seconds: f32, velocity: f32, own: &crate::own_sounds::OwnSounds) -> (Vec<f32>, Vec<f32>) {
     let mut played = sound.clone();
     played.mix.tempo = 60.0;
     for voice in &mut played.voices {
@@ -316,7 +316,7 @@ pub(crate) fn note_audio(sound: &Sound, tone: f32, seconds: f32, velocity: f32, 
 }
 
 /// A sound played once as it is (a drum), so hard.
-pub(crate) fn one_shot(sound: &Sound, velocity: f32, own: &super::OwnSounds) -> (Vec<f32>, Vec<f32>) {
+pub(crate) fn one_shot(sound: &Sound, velocity: f32, own: &crate::own_sounds::OwnSounds) -> (Vec<f32>, Vec<f32>) {
     let (mut left, mut right) = split(&sound.render(own).0);
     for sample in left.iter_mut().chain(right.iter_mut()) {
         *sample *= velocity;

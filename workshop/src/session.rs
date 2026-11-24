@@ -6,6 +6,7 @@
 //! Nothing of it is a static: `reload` forgets all that is read, to be read
 //! again from the files, when the Workshop reads its project again.
 
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -33,6 +34,34 @@ impl<T> Kept<T> {
     }
 }
 
+/// Things read once and kept, one of each type, for the parts that keep
+/// their own (the words' catalogue, the wiki's pages, the dungeon editor's
+/// offers): each made the first time it is asked, until all are forgotten.
+#[derive(Default)]
+pub struct KeptByType(Mutex<HashMap<TypeId, Arc<dyn Any + Send + Sync>>>);
+
+impl KeptByType {
+    /// The one of that type, made the first time it is asked (or after all were forgotten).
+    pub fn get<T: Any + Send + Sync>(&self, make: impl FnOnce() -> T) -> Arc<T> {
+        let kept = |map: &HashMap<TypeId, Arc<dyn Any + Send + Sync>>| map.get(&TypeId::of::<T>()).cloned().and_then(|kept| kept.downcast::<T>().ok());
+        if let Some(found) = kept(&self.0.lock().unwrap_or_else(PoisonError::into_inner)) {
+            return found;
+        }
+        // (Made with the lock let go: making one may ask for another.)
+        let made: Arc<T> = Arc::new(make());
+        let mut map = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(found) = kept(&map) {
+            return found;
+        }
+        map.insert(TypeId::of::<T>(), made.clone());
+        made
+    }
+
+    pub fn forget(&self) {
+        self.0.lock().unwrap_or_else(PoisonError::into_inner).clear();
+    }
+}
+
 /// The sheets of a list (`sprites.txt`, `props.txt`), by number and animation.
 pub type Sheets = HashMap<(u16, u8), assets::tables::Sheet>;
 
@@ -46,16 +75,14 @@ pub struct Session {
     pub effects: Kept<Vec<assets::tables::EffectRow>>,
     /// A Pokémon's number in the Pokédex, by its number in the game.
     pub dex: Kept<HashMap<i64, i64>>,
-    /// Every word of the language and the library's recipes (`catalogue`).
-    pub catalogue: Kept<Vec<crate::catalogue::Entry>>,
-    /// The wiki's pages, a word each (`wiki`).
-    pub wiki: Kept<Vec<crate::wiki::Page>>,
+    /// What the parts keep of their own: every word of the language and the
+    /// library's recipes (`catalogue`), the wiki's pages (`wiki`), what the
+    /// dungeon editor offers (`dungeon::offered`).
+    pub kept: KeptByType,
     /// The game's moves by their names.
     pub moves: Kept<Vec<String>>,
-    /// What the dungeon editor offers (`dungeon::offered`).
-    pub offered: Kept<Option<Arc<crate::dungeon::Offered>>>,
     /// The project's own sounds, and those read as samples.
-    pub own_sounds: crate::making::OwnSounds,
+    pub own_sounds: crate::own_sounds::OwnSounds,
     /// The films as the last commit has them, and when git was asked.
     pub committed: Mutex<HashMap<PathBuf, (std::time::Instant, Option<String>)>>,
     /// The files offered to restore (`safe`).
@@ -66,7 +93,7 @@ pub struct Session {
 
 impl Session {
     pub fn new(context: film::Context, launch: crate::launch::LaunchOptions) -> Session {
-        let own_sounds = crate::making::OwnSounds::new(&context.data, &context.library);
+        let own_sounds = crate::own_sounds::OwnSounds::new(&context.data, &context.library);
         let spritecollab = launch.spritecollab_clone.clone().unwrap_or_else(|| context.root().join("sources").join("spritecollab"));
         Session {
             context: Arc::new(context),
@@ -75,10 +102,8 @@ impl Session {
             props: Kept::default(),
             effects: Kept::default(),
             dex: Kept::default(),
-            catalogue: Kept::default(),
-            wiki: Kept::default(),
+            kept: KeptByType::default(),
             moves: Kept::default(),
-            offered: Kept::default(),
             own_sounds,
             committed: Mutex::default(),
             safe: Mutex::default(),
@@ -86,8 +111,7 @@ impl Session {
         }
     }
 
-    /// The repository's library and data, for the tests.
-    #[cfg(test)]
+    /// The repository's library and data, for the tests (of every part of the Workshop).
     pub fn for_tests() -> Session {
         Session::new(film::Context::new(assets::testing::library(), assets::testing::data()), crate::launch::LaunchOptions::default())
     }
@@ -119,10 +143,8 @@ impl Session {
         self.props.forget();
         self.effects.forget();
         self.dex.forget();
-        self.catalogue.forget();
-        self.wiki.forget();
+        self.kept.forget();
         self.moves.forget();
-        self.offered.forget();
         self.own_sounds.forget();
     }
 }

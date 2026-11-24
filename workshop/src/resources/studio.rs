@@ -83,7 +83,7 @@ pub fn making_tabs(ui: &mut egui::Ui, resources: &mut Resources) {
     ui.menu_button(RichText::new("+ New").strong().color(theme::ASSETS), |ui| {
         for (said, kind) in [("An Image", "image"), ("An Animation", "animation"), ("A Sound", "sound"), ("A Song", "music")] {
             if ui.button(said).clicked() {
-                resources.open_making(crate::making::Maker::new_of(&resources.session, kind));
+                resources.open_making(crate::resources::Maker::new_of(&resources.session, kind));
                 ui.close();
             }
         }
@@ -93,7 +93,7 @@ pub fn making_tabs(ui: &mut egui::Ui, resources: &mut Resources) {
             ui.label(theme::text("Open a Song", theme::SMALL, theme::WEAK));
             for word in songs {
                 if ui.button(&word).clicked() {
-                    resources.open_making(crate::making::Maker::Music(Box::new(crate::music::MusicMaking::open(&resources.session, &word))));
+                    resources.open_making(crate::resources::Maker::Music(Box::new(crate::music::MusicMaking::open(&resources.session, &word))));
                     ui.close();
                 }
             }
@@ -109,30 +109,30 @@ pub fn studio(ui: &mut egui::Ui, resources: &mut Resources) {
         return;
     };
     let done = match maker {
-        crate::making::Maker::Picture(painting) => crate::making::paint(ui, painting),
-        crate::making::Maker::Sound(making) => crate::making::make_sound(ui, making, &mut resources.audio, resources.volume),
-        crate::making::Maker::Music(music) => crate::music::make_music(ui, music, &mut resources.audio, resources.volume),
-        crate::making::Maker::Dungeon(dungeon) => crate::dungeon::make_dungeon(ui, dungeon, &mut resources.audio, resources.volume),
+        crate::resources::Maker::Picture(painting) => crate::picture::paint(ui, painting),
+        crate::resources::Maker::Sound(making) => crate::sound::make_sound(ui, making, &mut resources.audio, resources.volume),
+        crate::resources::Maker::Music(music) => crate::music::make_music(ui, music, &mut resources.audio, resources.volume),
+        crate::resources::Maker::Dungeon(dungeon) => crate::dungeon::make_dungeon(ui, dungeon, &mut resources.audio, resources.volume),
     };
     match done {
-        Some(crate::making::Done::Picture(word)) => {
+        Some(crate::done::Done::Picture(word)) => {
             resources.lists.remove(&Shelf::Drawn);
             resources.pictures.remove(&format!("{}:{word}", Shelf::Drawn.key()));
             (resources.shelf, resources.chosen) = (Shelf::Drawn, Some(format!("{}:{word}", Shelf::Drawn.key())));
         }
-        Some(crate::making::Done::Sound(word)) => {
+        Some(crate::done::Done::Sound(word)) => {
             resources.lists.remove(&Shelf::Sounds);
             (resources.shelf, resources.chosen) = (Shelf::Sounds, Some(format!("{}:{word}", Shelf::Sounds.key())));
         }
-        Some(crate::making::Done::Fight(word)) => {
+        Some(crate::done::Done::Fight(word)) => {
             let fight = if word.is_empty() {
                 crate::dungeon::DungeonMaking::new_fight(&resources.session, "new_fight")
             } else {
                 crate::dungeon::DungeonMaking::open_fight(&resources.session, &word)
             };
-            resources.open_making(crate::making::Maker::Dungeon(Box::new(fight)));
+            resources.open_making(crate::resources::Maker::Dungeon(Box::new(fight)));
         }
-        Some(crate::making::Done::Closed) => {
+        Some(crate::done::Done::Closed) => {
             if resources.makings[at].saved() || resources.closing == Some(at) {
                 resources.close_making(at);
             } else {

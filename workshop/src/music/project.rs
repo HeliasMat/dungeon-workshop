@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::making::{self, Biquad, Mix, Note, Sound};
+use crate::sound::{self, Biquad, Mix, Note, Sound};
 
 /// The speakers' rate.
 pub(crate) const RATE: f32 = shell::audio::OUTPUT_RATE as f32;
@@ -148,12 +148,12 @@ const COLOURS: [[u8; 3]; 8] = [
 ];
 
 impl Track {
-    /// A track of an instrument of that kind (`making::INSTRUMENTS`).
+    /// A track of an instrument of that kind (`sound::INSTRUMENTS`).
     pub(crate) fn instrument(kind: &str, at: usize) -> Track {
         Track {
             name: kind.to_string(),
             kind: Kind::Instrument,
-            instrument: making::instrument(kind),
+            instrument: sound::instrument(kind),
             kit: Vec::new(),
             volume: 0.5,
             pan: 0.0,
@@ -174,7 +174,7 @@ impl Track {
 
     /// A track of drums (the kit synthesized).
     pub(crate) fn drums(at: usize) -> Track {
-        Track { name: "Drums".to_string(), kind: Kind::Drums, kit: making::drum_kit(), volume: 0.65, ..Track::instrument("Chiptune", at) }
+        Track { name: "Drums".to_string(), kind: Kind::Drums, kit: sound::drum_kit(), volume: 0.65, ..Track::instrument("Chiptune", at) }
     }
 
     /// A track of sounds as they are.
@@ -266,7 +266,7 @@ fn note(start: f32, length: f32, tone: f32, velocity: f32) -> Note {
     Note { start, length, tone, velocity }
 }
 
-pub(crate) use crate::making::OwnSounds;
+use crate::own_sounds::OwnSounds;
 
 /// One of the project's own sounds, in two channels (none: not found).
 pub(crate) fn sound_of(own: &OwnSounds, word: &str) -> Option<Channels> {
@@ -450,7 +450,7 @@ impl Project {
             if bus_left.iter().chain(&bus_right).all(|sample| *sample == 0.0) {
                 continue;
             }
-            let (wet_left, wet_right) = making::mixed(bus, bus_left, bus_right);
+            let (wet_left, wet_right) = sound::mixed(bus, bus_left, bus_right);
             if wet_left.len() > left.len() {
                 left.resize(wet_left.len(), 0.0);
                 right.resize(wet_left.len(), 0.0);
@@ -479,7 +479,7 @@ impl Project {
         for sample in left.iter_mut().chain(right.iter_mut()) {
             *sample *= self.master_volume.max(0.0);
         }
-        let (mut left, mut right) = making::mixed(&self.master, left, right);
+        let (mut left, mut right) = sound::mixed(&self.master, left, right);
         // (What is silent past the end, taken off.)
         let keep = left.iter().zip(&right).rposition(|(l, r)| l.abs() > 1e-4 || r.abs() > 1e-4).map_or(0, |at| at + 1).max(span.min(left.len()));
         left.truncate(keep);
@@ -542,8 +542,8 @@ impl Project {
                             Kind::Drums => track
                                 .kit
                                 .get(note.tone.round().max(0.0) as usize)
-                                .map_or((Vec::new(), Vec::new()), |(_, sound)| making::one_shot(sound, note.velocity, own)),
-                            _ => making::note_audio(&track.instrument, note.tone, held * beat, note.velocity, own),
+                                .map_or((Vec::new(), Vec::new()), |(_, sound)| sound::one_shot(sound, note.velocity, own)),
+                            _ => sound::note_audio(&track.instrument, note.tone, held * beat, note.velocity, own),
                         })
                     })
                     .clone();
@@ -565,7 +565,7 @@ impl Project {
                 right[at] = on_right.run(right[at]).clamp(-4.0, 4.0);
             }
         }
-        making::mixed(&track.fx, left, right)
+        sound::mixed(&track.fx, left, right)
     }
 
     /// Written as `key=value` lines.
@@ -582,9 +582,9 @@ impl Project {
             self.master_volume,
             self.tracks.len()
         );
-        said.push_str(&making::mix_written(&self.master, "master."));
-        said.push_str(&making::mix_written(&self.bus_a, "bus_a."));
-        said.push_str(&making::mix_written(&self.bus_b, "bus_b."));
+        said.push_str(&sound::mix_written(&self.master, "master."));
+        said.push_str(&sound::mix_written(&self.bus_a, "bus_a."));
+        said.push_str(&sound::mix_written(&self.bus_b, "bus_b."));
         for (at, track) in self.tracks.iter().enumerate() {
             let prefix = format!("track{at}.");
             said.push_str(&format!(
@@ -609,7 +609,7 @@ impl Project {
                 track.sidechain,
                 track.duck
             ));
-            said.push_str(&making::mix_written(&track.fx, &format!("{prefix}fx.")));
+            said.push_str(&sound::mix_written(&track.fx, &format!("{prefix}fx.")));
             match track.kind {
                 Kind::Instrument => {
                     for line in track.instrument.written().lines() {
@@ -690,9 +690,9 @@ impl Project {
             loop_end: looped.get(2).copied().unwrap_or(16.0),
             swing: number("swing", 0.0),
             tracks: Vec::new(),
-            bus_a: if has("bus_a.") { making::mix_read(&pairs, "bus_a.") } else { empty.bus_a },
-            bus_b: if has("bus_b.") { making::mix_read(&pairs, "bus_b.") } else { empty.bus_b },
-            master: making::mix_read(&pairs, "master."),
+            bus_a: if has("bus_a.") { sound::mix_read(&pairs, "bus_a.") } else { empty.bus_a },
+            bus_b: if has("bus_b.") { sound::mix_read(&pairs, "bus_b.") } else { empty.bus_b },
+            master: sound::mix_read(&pairs, "master."),
             master_volume: number("master_volume", 1.0),
         };
         for at in 0..number("tracks", 0.0) as usize {
@@ -708,13 +708,13 @@ impl Project {
             let mut track = Track {
                 name: own("name").cloned().unwrap_or_else(|| format!("Track {}", at + 1)),
                 kind,
-                instrument: if kind == Kind::Instrument { nested(&format!("{prefix}instrument.")) } else { making::instrument("Chiptune") },
+                instrument: if kind == Kind::Instrument { nested(&format!("{prefix}instrument.")) } else { sound::instrument("Chiptune") },
                 kit: Vec::new(),
                 volume: own_number("volume", 0.8),
                 pan: own_number("pan", 0.0),
                 muted: own_number("muted", 0.0) > 0.5,
                 solo: own_number("solo", 0.0) > 0.5,
-                fx: making::mix_read(&pairs, &format!("{prefix}fx.")),
+                fx: sound::mix_read(&pairs, &format!("{prefix}fx.")),
                 cutoff: own_number("cutoff", 20_000.0),
                 resonance: own_number("resonance", 0.0),
                 send_a: own_number("send_a", 0.0),

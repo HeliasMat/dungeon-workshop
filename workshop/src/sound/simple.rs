@@ -7,7 +7,8 @@ use super::SoundMaking;
 use super::presets::{EASY, EASY_KINDS, eased, preset};
 use super::versions::{hear, save_sound};
 use super::views::draw_wave;
-use crate::making::{Done, now_seed};
+use super::now_seed;
+use crate::done::Done;
 use crate::theme;
 
 /// The maker for a beginner: choose a kind, move it with words, hear it, write it.

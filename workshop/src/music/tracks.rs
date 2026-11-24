@@ -7,7 +7,7 @@ use super::editor::{colour, new_link};
 use super::project::{Kind, RATE, Region, Track};
 use super::wave::pcm;
 use super::{LANE, MusicMaking, RULER, Tab, Taken};
-use crate::making::{self, open_audio};
+use crate::sound::{self, open_audio};
 use crate::theme;
 
 /// How many lanes fit, and the tracks shown (from the first scrolled to).
@@ -82,13 +82,13 @@ pub(super) fn track_headers(ui: &mut egui::Ui, making: &mut MusicMaking, rect: R
     let foot = Rect::from_min_max(pos2(rect.min.x + 4.0, rect.max.y - 28.0), rect.max - vec2(4.0, 2.0));
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(foot).layout(egui::Layout::left_to_right(egui::Align::Center)));
     child.menu_button(RichText::new("+ Instr.").strong().color(theme::HOME), |ui| {
-        for kind in making::INSTRUMENTS {
+        for kind in sound::INSTRUMENTS {
             if ui.button(kind).clicked() {
                 let at = making.project.tracks.len();
                 making.project.tracks.push(Track::instrument(kind, at));
                 making.track = at;
                 (making.region, making.editor) = (None, None);
-                let preview = making::note_audio(&making::instrument(kind), 0.0, 0.5, 0.9, &making.session.own_sounds);
+                let preview = sound::note_audio(&sound::instrument(kind), 0.0, 0.5, 0.9, &making.session.own_sounds);
                 open_audio(&making.session, audio);
                 if let Some(audio) = audio.as_mut() {
                     audio.samples(pcm(&preview.0, &preview.1), volume);
@@ -256,7 +256,7 @@ fn draw_region(painter: &egui::Painter, frame: &Frame, making: &MusicMaking, tra
     }
     if let Some(clip) = &region.clip {
         // (Its sound's shape: how loud, along the region.)
-        if let Some(mono) = making::sample_of(&making.session.own_sounds, &clip.sound) {
+        if let Some(mono) = crate::own_sounds::sample_of(&making.session.own_sounds, &clip.sound) {
             let speed = 2f32.powf(clip.tone / 12.0);
             let per_pixel = making.project.beat() / frame.pixels * RATE * speed;
             let columns = shape.width().max(1.0) as usize;

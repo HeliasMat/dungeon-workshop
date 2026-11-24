@@ -7,7 +7,7 @@ use super::panels::{side_panel, tools_panel};
 use super::simple::paint_simply;
 use super::steps::steps_panel;
 use super::{Painting, Tool};
-use crate::making::Done;
+use crate::done::Done;
 use crate::theme;
 
 /// The painting: its bar, its tools, its canvas, its colours and layers, its steps.

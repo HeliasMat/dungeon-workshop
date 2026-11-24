@@ -57,7 +57,7 @@ pub(super) fn known_here(session: &Session, text: &str, head: &str, plain: &str)
         }
         // (By kind of place, `library/tables/place_kinds.txt`: each with its kind and its name.)
         let tables = session.tables();
-        let kinds = crate::decors::place_kinds(session.library());
+        let kinds = crate::project::place_kinds(session.library());
         let mut places: Vec<(decor::tags::PlaceKind, String, String)> = tables
             .decors
             .keys()

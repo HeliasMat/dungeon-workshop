@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use super::render::Context;
 use super::{MOD_KEYS, Synth, WAVES};
-use crate::making::Chance;
+use super::Chance;
 
 /// The settings a synth is written with, by their names (its wave, seed, notes and drawing apart).
 fn synth_fields(synth: &mut Synth) -> Vec<(&'static str, &mut f32)> {

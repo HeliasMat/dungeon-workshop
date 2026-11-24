@@ -10,7 +10,7 @@ use shell::sound::Hears;
 use super::choosers::team_choice;
 use super::state::keys_of;
 use super::{DungeonMaking, Form, offered};
-use crate::making::Done;
+use crate::done::Done;
 use crate::theme;
 
 /// The editor, on the whole window.

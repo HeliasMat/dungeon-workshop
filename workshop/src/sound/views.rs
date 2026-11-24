@@ -5,7 +5,7 @@ use shell::sound::Hears;
 
 use super::versions::{hear, open_audio};
 use super::{Sound, SoundMaking, WAVES};
-use crate::making::Done;
+use crate::done::Done;
 use crate::theme;
 
 /// A sound's spectrum: how strong each pitch is (log from 60 Hz to 12 kHz, low at the bottom) along its time.

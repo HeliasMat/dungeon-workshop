@@ -7,7 +7,7 @@ use super::editor::{new_link, redo, undo};
 use super::project::{Kind, Region};
 use super::wave::pcm;
 use super::{MusicMaking, PIANO_KEYS, Tab};
-use crate::making::{self, Note, open_audio};
+use crate::sound::{self, Note, open_audio};
 
 /// The keyboard played as a piano (or as drums), heard at once; recorded while it plays; the shortcuts.
 pub(super) fn played_keys(ui: &mut egui::Ui, making: &mut MusicMaking, audio: &mut Option<Box<dyn Hears>>, volume: f32, editor: Rect) {
@@ -88,8 +88,8 @@ pub(super) fn played_keys(ui: &mut egui::Ui, making: &mut MusicMaking, audio: &m
             };
             let track = &making.project.tracks[place];
             let heard = match kind {
-                Kind::Drums => track.kit.get(tone as usize).map(|(_, sound)| making::one_shot(sound, 1.0, &making.session.own_sounds)),
-                _ => Some(making::note_audio(&track.instrument, tone, 0.45, 0.9, &making.session.own_sounds)),
+                Kind::Drums => track.kit.get(tone as usize).map(|(_, sound)| sound::one_shot(sound, 1.0, &making.session.own_sounds)),
+                _ => Some(sound::note_audio(&track.instrument, tone, 0.45, 0.9, &making.session.own_sounds)),
             };
             if let Some((left, right)) = heard {
                 open_audio(&making.session, audio);

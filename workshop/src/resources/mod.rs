@@ -28,6 +28,7 @@ mod dropped;
 mod game_shelves;
 mod grid;
 mod inspector;
+mod maker;
 mod pictures;
 mod shelves;
 mod studio;
@@ -38,6 +39,7 @@ mod tree;
 
 pub use grid::grid;
 pub use inspector::inspector;
+pub use maker::Maker;
 pub use studio::{making_tabs, studio};
 pub use tree::tree;
 
@@ -329,7 +331,7 @@ pub struct Resources {
     trashing: bool,
     /// The pictures, animations and sounds being made (each its tab), the one shown; shown on the whole window or not
     /// (back to the Library, they stay open); one closed while not written, asked once more.
-    makings: Vec<crate::making::Maker>,
+    makings: Vec<Maker>,
     making_at: usize,
     making_full: bool,
     closing: Option<usize>,
@@ -401,7 +403,7 @@ impl Resources {
                 Some(kinds) => kinds
                     .split(',')
                     .filter(|kind| !kind.starts_with("dungeon") && !kind.starts_with("fight"))
-                    .map(|kind| crate::making::Maker::new_of(session, kind))
+                    .map(|kind| Maker::new_of(session, kind))
                     .collect(),
                 None => Vec::new(),
             },
@@ -435,10 +437,10 @@ impl Resources {
         for maker in self.makings.iter().filter(|maker| !maker.saved()) {
             let word = maker.word();
             let shelves: &[Shelf] = match maker {
-                crate::making::Maker::Picture(_) => &[Shelf::Drawn],
-                crate::making::Maker::Sound(_) => &[Shelf::Sounds],
-                crate::making::Maker::Music(_) => &[Shelf::Songs, Shelf::Sounds],
-                crate::making::Maker::Dungeon(_) => &[Shelf::Dungeons, Shelf::Bosses],
+                Maker::Picture(_) => &[Shelf::Drawn],
+                Maker::Sound(_) => &[Shelf::Sounds],
+                Maker::Music(_) => &[Shelf::Songs, Shelf::Sounds],
+                Maker::Dungeon(_) => &[Shelf::Dungeons, Shelf::Bosses],
             };
             keys.extend(shelves.iter().map(|shelf| format!("{}:{word}", shelf.key())));
         }
@@ -454,8 +456,8 @@ impl Resources {
     pub fn reload(&mut self, path: &std::path::Path) {
         for maker in &mut self.makings {
             let reopened = match maker {
-                crate::making::Maker::Music(music) if crate::music::song_file(&self.session, &music.word) == path => {
-                    Some(crate::making::Maker::Music(Box::new(crate::music::MusicMaking::open(&self.session, &music.word))))
+                Maker::Music(music) if crate::music::song_file(&self.session, &music.word) == path => {
+                    Some(Maker::Music(Box::new(crate::music::MusicMaking::open(&self.session, &music.word))))
                 }
                 _ => None,
             };
@@ -652,7 +654,7 @@ impl Resources {
 
 impl Resources {
     /// A making opened, shown on the whole window (the same word and kind already open: that one, shown).
-    fn open_making(&mut self, maker: crate::making::Maker) {
+    fn open_making(&mut self, maker: Maker) {
         let same = self.makings.iter().position(|open| open.kind() == maker.kind() && open.word() == maker.word() && open.saved());
         self.making_at = same.unwrap_or_else(|| {
             self.makings.push(maker);

@@ -7,7 +7,7 @@ use super::MusicMaking;
 use super::editor::colour;
 use super::project::{Kind, Target};
 use super::wave::pcm;
-use crate::making::{self, SoundMaking, open_audio};
+use crate::sound::{self, SoundMaking, open_audio};
 use crate::theme;
 
 /// The track's instrument, made with the sound maker (a drum kit: each drum); another chosen.
@@ -26,7 +26,7 @@ pub(super) fn instrument_view(ui: &mut egui::Ui, making: &mut MusicMaking, place
                 if ui.selectable_label(making.piece == at, name).clicked() {
                     making.piece = at;
                     making.editor = None;
-                    let hit = making::one_shot(&making.project.tracks[place].kit[at].1, 1.0, &making.session.own_sounds);
+                    let hit = sound::one_shot(&making.project.tracks[place].kit[at].1, 1.0, &making.session.own_sounds);
                     open_audio(&making.session, audio);
                     if let Some(audio) = audio.as_mut() {
                         audio.samples(pcm(&hit.0, &hit.1), volume);
@@ -34,15 +34,15 @@ pub(super) fn instrument_view(ui: &mut egui::Ui, making: &mut MusicMaking, place
                 }
             }
             if ui.button("Original Kit").clicked() {
-                making.project.tracks[place].kit = making::drum_kit();
+                making.project.tracks[place].kit = sound::drum_kit();
                 making.editor = None;
             }
         }
         _ => {
             ui.menu_button("Change Instrument", |ui| {
-                for kind in making::INSTRUMENTS {
+                for kind in sound::INSTRUMENTS {
                     if ui.button(kind).clicked() {
-                        making.project.tracks[place].instrument = making::instrument(kind);
+                        making.project.tracks[place].instrument = sound::instrument(kind);
                         making.editor = None;
                         ui.close();
                     }
@@ -68,7 +68,7 @@ pub(super) fn instrument_view(ui: &mut egui::Ui, making: &mut MusicMaking, place
         making.editor = Some((wanted.0, wanted.1, SoundMaking::editing(&making.session, sound)));
     }
     let Some((_, _, editor)) = making.editor.as_mut() else { return };
-    making::make_sound(ui, editor, audio, volume);
+    sound::make_sound(ui, editor, audio, volume);
     let made = editor.sound().clone();
     let track = &mut making.project.tracks[place];
     match kind {
@@ -131,22 +131,22 @@ pub(super) fn mixer_view(ui: &mut egui::Ui, making: &mut MusicMaking) {
                         ui.add(egui::Slider::new(&mut track.duck, 0.0..=1.0).max_decimals(2));
                         ui.end_row();
                     });
-                    making::mix_editor(ui, &mut track.fx, &format!("track {at}"));
+                    sound::mix_editor(ui, &mut track.fx, &format!("track {at}"));
                 });
             }
             let project = &mut making.project;
             strip(ui, "Bus A · reverb", theme::DECOR, 0.0, |ui| {
-                making::mix_editor(ui, &mut project.bus_a, "bus a");
+                sound::mix_editor(ui, &mut project.bus_a, "bus a");
             });
             strip(ui, "Bus B · echo", theme::DECOR, 0.0, |ui| {
-                making::mix_editor(ui, &mut project.bus_b, "bus b");
+                sound::mix_editor(ui, &mut project.bus_b, "bus b");
             });
             strip(ui, "Master", theme::STRONG, 0.0, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(theme::text("Volume", theme::SMALL - 1.0, theme::WEAK));
                     ui.add(egui::Slider::new(&mut project.master_volume, 0.0..=2.0).max_decimals(2));
                 });
-                making::mix_editor(ui, &mut project.master, "master");
+                sound::mix_editor(ui, &mut project.master, "master");
             });
         });
     });

@@ -7,7 +7,7 @@ use eframe::egui::{self, Color32, FontId, Rect, vec2};
 
 use super::{Item, Resources, Sheet, Shelf};
 use crate::decors::Decors;
-use crate::making::fitted;
+use crate::picture::fitted;
 use crate::session::{Session, Sheets};
 use crate::theme;
 

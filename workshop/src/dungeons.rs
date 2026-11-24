@@ -12,7 +12,7 @@ use eframe::egui::{self, RichText, Sense, vec2};
 use shell::sound::Hears;
 
 use crate::dungeon::{DungeonMaking, Summary};
-use crate::making::Done;
+use crate::done::Done;
 use crate::theme;
 
 /// What to open in the Dungeon space: a new one, one by its word (the open

@@ -11,7 +11,7 @@ use super::mixer::{automation_view, instrument_view, mixer_view};
 use super::project::{Clip, Kind, RATE, Region};
 use super::wave::pcm;
 use super::{ARPEGGIOS, CHORDS, MusicMaking, Playing, SCALES, TONICS, Tab, own_sounds, project};
-use crate::making::{self, Note, open_audio};
+use crate::sound::{self, Note, open_audio};
 use crate::theme;
 
 /// The bottom: the region's notes (a piano roll, a step sequencer, a clip), the track's instrument (the sound
@@ -105,7 +105,7 @@ fn notes_view(ui: &mut egui::Ui, making: &mut MusicMaking, audio: &mut Option<Bo
         Kind::Instrument => {
             notes_tools(ui, &mut region.notes, chord, arpeggio, step, strum, scale);
             let beats = region.length;
-            making::piano_roll(ui, &mut region.notes, id, beats, true, scale);
+            sound::piano_roll(ui, &mut region.notes, id, beats, true, scale);
             velocities(ui, &mut region.notes, beats);
         }
         Kind::Drums => {
