@@ -164,7 +164,7 @@ pub struct Work {
     /// The Decor space's own.
     pub decors: crate::decors::Decors,
     /// The Film space's Script; the film played.
-    pub scripts: crate::script::Scripts,
+    pub scripts: workshop_script::Scripts,
     pub films: crate::films::Films,
     /// The Resources space's own.
     pub resources: crate::resources::Resources,
@@ -217,7 +217,7 @@ impl App {
             making: None,
             go: None,
             decors: crate::decors::Decors::new(&session, context),
-            scripts: crate::script::Scripts::new(&session, context),
+            scripts: workshop_script::Scripts::new(&session, context),
             films: crate::films::Films::new(&session, context),
             resources: crate::resources::Resources::new(&session, context),
             dungeons: workshop_dungeon::dungeons::Dungeons::new(&session),
@@ -900,7 +900,7 @@ impl egui_dock::TabViewer for Panels<'_> {
                 }
             }
             Panel::Script => {
-                let seen = crate::script::Seen {
+                let seen = workshop_script::Seen {
                     line: self.work.films.playing_line(),
                     stepped: self.work.films.stepped_line(),
                     playing: self.work.films.playing,
@@ -908,7 +908,7 @@ impl egui_dock::TabViewer for Panels<'_> {
                     end: self.work.films.timeline.as_ref().map(|_| self.work.films.end as f64 / 60.0),
                     numbers: self.work.films.numbers.clone(),
                 };
-                if let Some(line) = crate::script::script(ui, &mut self.work.scripts, self.work.film.clone().as_ref(), &seen) {
+                if let Some(line) = workshop_script::script(ui, &mut self.work.scripts, self.work.film.clone().as_ref(), &seen) {
                     self.work.films.go_to_line(line);
                 }
                 // (F12 on a shared file, a recipe from one: that file open, at its line.)

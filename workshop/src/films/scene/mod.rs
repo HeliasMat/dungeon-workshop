@@ -12,8 +12,8 @@
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, RichText, Sense, Vec2, pos2, vec2};
 
 use super::{Films, Frame, SECOND};
-use crate::script::Scripts;
 use workshop_base::theme;
+use workshop_script::Scripts;
 
 mod bar;
 mod marks;

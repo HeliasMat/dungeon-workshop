@@ -24,7 +24,6 @@
 mod app;
 mod bug;
 mod capture;
-mod debug;
 mod decors;
 mod edit;
 mod emulate;
@@ -38,15 +37,11 @@ mod placing;
 mod quant_tool;
 mod resources;
 mod scene;
-mod script;
 mod settings;
 mod spritecollab;
-mod story;
 mod terrains;
-mod typography;
 mod walk;
 mod workshop;
-mod workspace;
 
 fn main() -> eframe::Result {
     bug::told_as_bugs();

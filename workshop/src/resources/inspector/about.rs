@@ -4,8 +4,8 @@ use eframe::egui::{self, Color32, RichText, vec2};
 
 use super::super::{Asked, Item, Resources, Shelf};
 use super::{Shown, plural, section};
-use crate::script::Scripts;
 use workshop_base::theme;
+use workshop_script::Scripts;
 
 /// What a shelf's thing is called, over what it is.
 pub(super) fn kind_name(shelf: Shelf) -> &'static str {

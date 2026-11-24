@@ -119,7 +119,7 @@ impl Story {
                     continue;
                 }
             }
-            if let Some((who, said_at)) = crate::script::speaker(raw) {
+            if let Some((who, said_at)) = crate::speaker(raw) {
                 let head = &raw[..said_at - 1];
                 let face = head
                     .find('(')
@@ -327,7 +327,7 @@ fn screenplay(ui: &mut egui::Ui, story: &Story, means: &mut Means) -> Option<Ask
                 let response = match beat {
                     Beat::Said { who, face, text } => {
                         ui.horizontal_top(|ui| {
-                            let species = crate::script::species_of(means.session, means.text, who);
+                            let species = crate::species_of(means.session, means.text, who);
                             let (rect, _) = ui.allocate_exact_size(vec2(40.0, 40.0), Sense::hover());
                             if let Some(picture) =
                                 (who != "narrateur").then(|| (means.portrait)(ui.ctx(), &species, face.as_deref().unwrap_or("normal"))).flatten()
@@ -461,7 +461,7 @@ fn characters(ui: &mut egui::Ui, story: &Story, means: &mut Means) -> Option<Ask
             ui.end_row();
             for who in &order {
                 ui.horizontal(|ui| {
-                    let species = crate::script::species_of(means.session, means.text, who);
+                    let species = crate::species_of(means.session, means.text, who);
                     if let Some(picture) = (who != "narrateur").then(|| (means.portrait)(ui.ctx(), &species, "normal")).flatten() {
                         ui.add(egui::Image::new(&picture).fit_to_exact_size(vec2(22.0, 22.0)));
                     }

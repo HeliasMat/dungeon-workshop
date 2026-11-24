@@ -26,8 +26,8 @@ use workshop_base::session::Session;
 use eframe::egui::{self, Vec2, vec2};
 use preview::played::Timeline;
 
-use super::script::Scripts;
 use playing::{line_frame, next_step, steps, work};
+use workshop_script::Scripts;
 
 mod bands;
 mod inspector;

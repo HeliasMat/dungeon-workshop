@@ -4250,8 +4250,8 @@ dependencies = [
  "workshop_dungeon",
  "workshop_music",
  "workshop_picture",
+ "workshop_script",
  "workshop_sound",
- "workshop_wiki",
 ]
 
 [[package]]
@@ -4308,6 +4308,22 @@ dependencies = [
  "film",
  "image",
  "workshop_base",
+]
+
+[[package]]
+name = "workshop_script"
+version = "0.2.0"
+dependencies = [
+ "assets",
+ "decor",
+ "eframe",
+ "film",
+ "image",
+ "rules",
+ "scenes",
+ "shell",
+ "workshop_base",
+ "workshop_wiki",
 ]
 
 [[package]]

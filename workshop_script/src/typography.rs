@@ -9,7 +9,7 @@ pub const CODE: &str = "typo";
 
 /// What is said on a line: where it begins (byte), if the line is said by someone.
 fn said_from(line: &str) -> Option<usize> {
-    crate::script::speaker(line).map(|(_, at)| at)
+    crate::speaker(line).map(|(_, at)| at)
 }
 
 /// One finding: on that line (from 1), from a column to another (from 1, its end past it), said so, fixed so.

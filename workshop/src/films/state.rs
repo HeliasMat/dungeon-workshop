@@ -4,8 +4,8 @@ use eframe::egui::{self, Rect, RichText, Sense, vec2};
 
 use super::Films;
 use super::playing::clock;
-use crate::script::Scripts;
 use workshop_base::theme;
+use workshop_script::Scripts;
 
 /// The State: the scene at the moment shown, as `scene_player state` tells
 /// it (`preview::state`): the camera, the bars, the line in the box, each

@@ -11,8 +11,8 @@ use super::lines::{edited_lines, with_seconds};
 use super::playing::clock;
 use super::scene::toggle;
 use super::{BarAct, Films, SECOND};
-use crate::script::Scripts;
 use workshop_base::theme;
+use workshop_script::Scripts;
 
 /// What a line is, to colour its bar: its kind's index (`KINDS`).
 pub(super) fn kind_of_line(line: &str) -> usize {

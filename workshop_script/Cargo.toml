@@ -1,0 +1,21 @@
+[package]
+name = "workshop_script"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Dungeon Workshop's Script: the editor of a film's text, the language's service at its side"
+publish.workspace = true
+
+[dependencies]
+assets = { path = "../assets" }
+decor = { path = "../decor" }
+film = { path = "../film" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+shell = { path = "../shell" }
+workshop_base = { path = "../workshop_base" }
+workshop_wiki = { path = "../workshop_wiki" }
+eframe = { version = "0.32", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+image.workspace = true

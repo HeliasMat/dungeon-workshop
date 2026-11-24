@@ -11,8 +11,8 @@ use super::lines::{seconds_between, stretchable};
 use super::playing::{clock, line_frame};
 use super::timeline::{Axis, KINDS, kind_of_line, speaker_of};
 use super::{BarAct, Films, SECOND};
-use crate::script::Scripts;
 use workshop_base::theme;
+use workshop_script::Scripts;
 
 /// What the bands ask: the line and who pointed (lit in the other panels),
 /// the frame to go to, the line to choose in the Script, a line stretched to

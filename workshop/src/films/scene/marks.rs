@@ -8,8 +8,8 @@ use eframe::egui::{self, Color32, FontId, Painter, Pos2, Rect, Stroke, StrokeKin
 use super::super::{Films, Frame, Held};
 use super::script::spots_of;
 use super::{Place, View};
-use crate::script::Scripts;
 use workshop_base::theme;
+use workshop_script::Scripts;
 
 /// All the marks over the picture; the place's point under the pointer.
 pub(super) fn over(ui: &egui::Ui, films: &Films, scripts: &mut Scripts, drawn: &Frame, view: &View, head: Rect, picture: &egui::Response) -> Option<[f32; 2]> {

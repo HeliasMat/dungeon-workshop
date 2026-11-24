@@ -27,6 +27,12 @@
 //! top while what follows is read; a bulb in the margin where a fix is
 //! offered (a click, the fixes), all fixed at once; how long each line
 //! plays, faint at its end; a model's first `...` chosen to be written.
+//!
+//! A crate of Dungeon Workshop: the Script (`Scripts`, drawn by `script`), with
+//! the film as a story (`story`), what is well written (`typography`), the
+//! whole project's films (`workspace`) and a film looked into (`debug`). It
+//! uses `workshop_base` (the session, the look, safe saves), `workshop_wiki`
+//! (the Wiki beside the text) and `film` (the language's service).
 
 use std::sync::Arc;
 
@@ -46,6 +52,7 @@ use text::{index_of, line_at, spot_of};
 mod body;
 mod cast;
 mod completion;
+mod debug;
 mod editor;
 mod edits;
 mod head;
@@ -58,11 +65,14 @@ mod offers;
 mod plan;
 mod popups;
 mod problems;
+mod story;
 #[cfg(test)]
 mod tests;
 mod text;
+mod typography;
 mod wiki;
 mod windows;
+mod workspace;
 
 pub use editor::script;
 pub(crate) use highlight::speaker;

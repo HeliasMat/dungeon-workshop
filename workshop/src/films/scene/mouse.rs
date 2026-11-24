@@ -9,8 +9,8 @@ use super::super::lines::with_field;
 use super::super::{Films, Held};
 use super::View;
 use super::script::moved_to;
-use crate::script::Scripts;
 use workshop_base::theme;
+use workshop_script::Scripts;
 
 /// What a measure from a point to another says.
 pub(super) fn measure_said(from: [f32; 2], to: [f32; 2]) -> String {
