@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::sound::{self, Biquad, Mix, Note, Sound};
+use workshop_sound::{self as sound, Biquad, Mix, Note, Sound};
 
 /// The speakers' rate.
 pub(crate) const RATE: f32 = shell::audio::OUTPUT_RATE as f32;

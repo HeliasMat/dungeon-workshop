@@ -462,14 +462,14 @@ struct LfoState {
 /// A filter of two poles and two zeros (the cookbook's), of a kind: low-pass, band-pass, notch, peak,
 /// high-pass, low shelf, high shelf.
 #[derive(Clone, Copy, Default)]
-pub(crate) struct Biquad {
+pub struct Biquad {
     terms: [f32; 5],
     inputs: [f32; 2],
     outputs: [f32; 2],
 }
 
 impl Biquad {
-    pub(crate) fn set(&mut self, kind: usize, frequency: f32, q: f32, gain: f32, rate: f32) {
+    pub fn set(&mut self, kind: usize, frequency: f32, q: f32, gain: f32, rate: f32) {
         let w0 = std::f32::consts::TAU * frequency.clamp(10.0, rate * 0.49) / rate;
         let (sin, cos) = w0.sin_cos();
         let alpha = sin / (2.0 * q.max(0.05));
@@ -501,7 +501,7 @@ impl Biquad {
         self.terms = [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
     }
 
-    pub(crate) fn run(&mut self, sample: f32) -> f32 {
+    pub fn run(&mut self, sample: f32) -> f32 {
         let [b0, b1, b2, a1, a2] = self.terms;
         let made = b0 * sample + b1 * self.inputs[0] + b2 * self.inputs[1] - a1 * self.outputs[0] - a2 * self.outputs[1];
         self.inputs = [sample, self.inputs[0]];

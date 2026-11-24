@@ -7,8 +7,8 @@ use super::editor::{colour, new_link};
 use super::project::{Kind, RATE, Region, Track};
 use super::wave::pcm;
 use super::{LANE, MusicMaking, RULER, Tab, Taken};
-use crate::sound::{self, open_audio};
 use workshop_base::theme;
+use workshop_sound::{self as sound, open_audio};
 
 /// How many lanes fit, and the tracks shown (from the first scrolled to).
 fn lanes_shown(making: &MusicMaking, high: f32) -> std::ops::Range<usize> {

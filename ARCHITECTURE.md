@@ -73,6 +73,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `dungeon_lsp` | the language server (program `dungeon_lsp`) |
 | `workshop_base` | what every part of the Workshop shares: the `Session`, the look, the project's files, safe saves, the system's dialogs |
 | `workshop_picture` | the Resources' painter: pictures and animations painted as in a pixel-art studio |
+| `workshop_sound` | the Resources' sound maker: sounds made as the sound makers of games make them, then mixed; the instruments music plays with |
 | `workshop` | Dungeon Workshop, the editor |
 
 A block only uses blocks from the layers below it, and only those that `sh tools/rule.sh` allows; it fails otherwise, and when this table is not its list (path dependencies, the `[dependencies]` of each `Cargo.toml`; test ones are free):
@@ -103,7 +104,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `dungeon_lsp` | `assets`, `decor`, `film`, `game`, `language` |
 | `workshop_base` | `assets`, `decor`, `film`, `game`, `preview`, `shell`, `spritecollab`, `stage_view` |
 | `workshop_picture` | `film`, `workshop_base` |
-| `workshop` | `assets`, `decor`, `dive`, `emulator`, `engine`, `film`, `game`, `media`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view`, `workshop_base`, `workshop_picture` |
+| `workshop_sound` | `film`, `rules`, `shell`, `workshop_base` |
+| `workshop` | `assets`, `decor`, `dive`, `emulator`, `engine`, `film`, `game`, `media`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view`, `workshop_base`, `workshop_picture`, `workshop_sound` |
 <!-- end of rule -->
 
 So `preview` plays and draws films and knows no game (no `decor`, `language` nor `dive`); `game` uses `preview`, never the other way; only `extractor` uses `rom_formats`; `assets` reads `data/` for everyone. The engine reads no game's data nor rules: its faces, songs, animations and the commands only a game plays are handed to it (`Vocabulary`). It does know a few things of this kind of game, said exactly in "What the engine knows" below.

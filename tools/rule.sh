@@ -32,7 +32,8 @@ check extractor "engine rom_formats rules shell stage_view "
 check dive "rules scenes shell stage_view "
 check workshop_base "assets decor film game preview shell spritecollab stage_view "
 check workshop_picture "film workshop_base "
-check workshop "assets decor dive emulator engine film game media preview rules scenes shell spritecollab stage_view workshop_base workshop_picture "
+check workshop_sound "film rules shell workshop_base "
+check workshop "assets decor dive emulator engine film game media preview rules scenes shell spritecollab stage_view workshop_base workshop_picture workshop_sound "
 # (The table of ARCHITECTURE.md, between <!-- rule --> and its end, is this
 # list, block for block.)
 told=$(sed -n '/^<!-- rule -->/,/^<!-- end of rule -->/p' ARCHITECTURE.md | grep '^| `' | tr -d '`,' | sed 's/^| \([a-z_]*\) | \(.*\) |$/\1: \2 /; s/: nothing $/: /' | sort)

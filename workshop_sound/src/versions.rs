@@ -107,7 +107,7 @@ impl SoundMaking {
     }
 
     /// A sound to be changed inside another maker (a song's instrument, a drum).
-    pub(crate) fn editing(session: &Arc<Session>, sound: Sound) -> SoundMaking {
+    pub fn editing(session: &Arc<Session>, sound: Sound) -> SoundMaking {
         let mut made = SoundMaking::new(session, "instrument");
         made.versions = vec![("at the start".to_string(), sound.clone())];
         made.base = sound.clone();
@@ -117,7 +117,7 @@ impl SoundMaking {
     }
 
     /// The sound as it is now.
-    pub(crate) fn sound(&self) -> &Sound {
+    pub fn sound(&self) -> &Sound {
         &self.sound
     }
 
@@ -206,7 +206,7 @@ fn params_file(session: &Session, word: &str) -> PathBuf {
     session.root().join("target").join("workshop").join("sounds").join(format!("{word}.txt"))
 }
 
-pub(crate) fn open_audio(session: &Session, audio: &mut Option<Box<dyn Hears>>) {
+pub fn open_audio(session: &Session, audio: &mut Option<Box<dyn Hears>>) {
     if audio.is_none() {
         *audio = shell::sound::Audio::open_in(session.data(), session.library().clone()).map(|audio| Box::new(audio) as Box<dyn Hears>);
     }

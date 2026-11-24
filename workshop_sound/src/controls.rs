@@ -76,7 +76,7 @@ pub(super) fn steps_editor(ui: &mut egui::Ui, values: &mut [f32; 32], lit: bool)
 
 /// A voice's score as a piano roll: a click adds a note, dragging moves it, its right edge lengthens it,
 /// a right click takes it off; the chosen one's numbers below. Whether taken, let go.
-pub(crate) fn piano_roll(ui: &mut egui::Ui, notes: &mut Vec<Note>, id: egui::Id, beats: f32, named: bool, scale: Option<[bool; 12]>) -> (bool, bool) {
+pub fn piano_roll(ui: &mut egui::Ui, notes: &mut Vec<Note>, id: egui::Id, beats: f32, named: bool, scale: Option<[bool; 12]>) -> (bool, bool) {
     const LOW: f32 = -12.0;
     const HIGH: f32 = 24.0;
     const SNAP: f32 = 0.25;

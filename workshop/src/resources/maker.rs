@@ -1,8 +1,8 @@
 //! What is being made in the Resources space: a picture, a sound, a music,
 //! a dungeon or a boss fight, each in the editor of its part.
 
-use crate::sound::SoundMaking;
 use workshop_picture::Painting;
+use workshop_sound::SoundMaking;
 
 /// What is being made.
 pub enum Maker {

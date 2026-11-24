@@ -110,7 +110,7 @@ pub fn studio(ui: &mut egui::Ui, resources: &mut Resources) {
     };
     let done = match maker {
         crate::resources::Maker::Picture(painting) => workshop_picture::paint(ui, painting),
-        crate::resources::Maker::Sound(making) => crate::sound::make_sound(ui, making, &mut resources.audio, resources.volume),
+        crate::resources::Maker::Sound(making) => workshop_sound::make_sound(ui, making, &mut resources.audio, resources.volume),
         crate::resources::Maker::Music(music) => crate::music::make_music(ui, music, &mut resources.audio, resources.volume),
         crate::resources::Maker::Dungeon(dungeon) => crate::dungeon::make_dungeon(ui, dungeon, &mut resources.audio, resources.volume),
     };

@@ -45,7 +45,6 @@ mod resources;
 mod scene;
 mod script;
 mod settings;
-mod sound;
 mod spritecollab;
 mod story;
 mod terrains;

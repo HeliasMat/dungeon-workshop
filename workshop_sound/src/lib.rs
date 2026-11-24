@@ -21,6 +21,11 @@
 //! Here: the voices and the mix of a sound, and the editor:
 //! the synth's settings and names, a voice, a sound of voices, its mix, its
 //! measures, and the sound being made.
+//!
+//! A crate of Dungeon Workshop: it uses `workshop_base` (the session, the look,
+//! the own sounds); the Resources space holds what it makes (`SoundMaking`,
+//! edited by `make_sound`), the music (`workshop_music`) plays its instruments
+//! and mixes.
 
 use std::time::Instant;
 
@@ -41,12 +46,12 @@ mod versions;
 mod views;
 mod voices;
 
-pub(crate) use controls::piano_roll;
+pub use controls::piano_roll;
 pub use editor::make_sound;
-pub(crate) use instruments::{INSTRUMENTS, drum_kit, instrument};
-pub(crate) use mix::{mix_editor, mix_read, mix_written, mixed, note_audio, one_shot};
-pub(crate) use render::Biquad;
-pub(crate) use versions::open_audio;
+pub use instruments::{INSTRUMENTS, drum_kit, instrument};
+pub use mix::{mix_editor, mix_read, mix_written, mixed, note_audio, one_shot};
+pub use render::Biquad;
+pub use versions::open_audio;
 
 /// The waves a sound is made of.
 const WAVES: [&str; 10] = ["Square", "Saw", "Sine", "Triangle", "Noise", "Pink noise", "8-bit noise", "Drawn", "String", "Sample"];
@@ -247,11 +252,11 @@ impl Default for Synth {
 
 /// A note of a voice's score: when (in beats), how long (beats), how many half tones over its pitch, how hard.
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub(crate) struct Note {
-    pub(crate) start: f32,
-    pub(crate) length: f32,
-    pub(crate) tone: f32,
-    pub(crate) velocity: f32,
+pub struct Note {
+    pub start: f32,
+    pub length: f32,
+    pub tone: f32,
+    pub velocity: f32,
 }
 
 /// A voice of a sound: its synth, when it comes in, how loud, from which side, muted or alone.
@@ -271,27 +276,27 @@ struct Voice {
 
 /// What is done to the voices mixed: an echo, a room, faster or slower, backwards, coming in and going out, made as loud as it may.
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub(crate) struct Mix {
-    pub(crate) echo: f32,
-    pub(crate) feedback: f32,
-    pub(crate) echo_mix: f32,
-    pub(crate) room: f32,
-    pub(crate) room_mix: f32,
-    pub(crate) speed: f32,
-    pub(crate) fade_in: f32,
-    pub(crate) fade_out: f32,
-    pub(crate) reverse: bool,
-    pub(crate) normalize: bool,
+pub struct Mix {
+    pub echo: f32,
+    pub feedback: f32,
+    pub echo_mix: f32,
+    pub room: f32,
+    pub room_mix: f32,
+    pub speed: f32,
+    pub fade_in: f32,
+    pub fade_out: f32,
+    pub reverse: bool,
+    pub normalize: bool,
     /// The scores' beats a minute; low, middle, high (dB); compressed (0 to 1); how wide (1: as it is);
     /// the echo from one side to the other; nothing ever past -1 dB.
-    pub(crate) tempo: f32,
-    pub(crate) low: f32,
-    pub(crate) middle: f32,
-    pub(crate) high: f32,
-    pub(crate) compress: f32,
-    pub(crate) width: f32,
-    pub(crate) ping_pong: bool,
-    pub(crate) limit: bool,
+    pub tempo: f32,
+    pub low: f32,
+    pub middle: f32,
+    pub high: f32,
+    pub compress: f32,
+    pub width: f32,
+    pub ping_pong: bool,
+    pub limit: bool,
 }
 
 impl Default for Mix {
@@ -329,7 +334,7 @@ pub(crate) struct Measure {
 
 /// A sound: its voices, mixed so.
 #[derive(Clone, PartialEq, Debug)]
-pub(crate) struct Sound {
+pub struct Sound {
     voices: Vec<Voice>,
     mix: Mix,
 }
@@ -355,7 +360,7 @@ pub struct SoundMaking {
     reference: usize,
     rendered: Option<(Sound, Vec<f32>, Measure)>,
     picture: Option<(Sound, egui::TextureHandle)>,
-    pub(crate) saved: bool,
+    pub saved: bool,
     said: Option<String>,
     /// Made as an expert, or simply; simply: the sound chosen, and the words moving it (and theirs to undo).
     expert: bool,

@@ -100,7 +100,7 @@ impl Sound {
     }
 
     /// Written as `key=value` lines: its mix, then each voice under its number.
-    pub(crate) fn written(&self) -> String {
+    pub fn written(&self) -> String {
         let mut mix = self.mix;
         let mut said = format!("layers={}\n", self.voices.len());
         for (key, value) in mix_fields(&mut mix) {
@@ -137,7 +137,7 @@ impl Sound {
     }
 
     /// Read back (what a maker of one voice wrote, too).
-    pub(crate) fn read(text: &str) -> Sound {
+    pub fn read(text: &str) -> Sound {
         let mut pairs: HashMap<String, String> = HashMap::new();
         for line in text.lines() {
             if let Some((key, value)) = line.split_once('=') {

@@ -11,8 +11,8 @@ use super::mixer::{automation_view, instrument_view, mixer_view};
 use super::project::{Clip, Kind, RATE, Region};
 use super::wave::pcm;
 use super::{ARPEGGIOS, CHORDS, MusicMaking, Playing, SCALES, TONICS, Tab, own_sounds, project};
-use crate::sound::{self, Note, open_audio};
 use workshop_base::theme;
+use workshop_sound::{self as sound, Note, open_audio};
 
 /// The bottom: the region's notes (a piano roll, a step sequencer, a clip), the track's instrument (the sound
 /// maker), the mixer, the lanes drawn. Its rect.

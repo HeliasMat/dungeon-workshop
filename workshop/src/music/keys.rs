@@ -7,7 +7,7 @@ use super::editor::{new_link, redo, undo};
 use super::project::{Kind, Region};
 use super::wave::pcm;
 use super::{MusicMaking, PIANO_KEYS, Tab};
-use crate::sound::{self, Note, open_audio};
+use workshop_sound::{self as sound, Note, open_audio};
 
 /// The keyboard played as a piano (or as drums), heard at once; recorded while it plays; the shortcuts.
 pub(super) fn played_keys(ui: &mut egui::Ui, making: &mut MusicMaking, audio: &mut Option<Box<dyn Hears>>, volume: f32, editor: Rect) {

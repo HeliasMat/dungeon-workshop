@@ -32,8 +32,8 @@ use std::time::Instant;
 use eframe::egui::{self};
 use shell::sound::Hears;
 
-use crate::sound::{Note, SoundMaking};
 use project::{Clip, Kind, NoteCache, Project, RATE, Region, Rendered, Target, Track};
+use workshop_sound::{Note, SoundMaking};
 
 /// The bottom's views: the notes of the region chosen, the track's instrument, the mixer, the lanes drawn.
 #[derive(Clone, Copy, PartialEq)]

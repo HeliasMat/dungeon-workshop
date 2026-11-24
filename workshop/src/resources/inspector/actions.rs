@@ -77,7 +77,7 @@ fn file_buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item, file:
         }
     }
     if item.shelf == Shelf::Sounds && ui.button("Edit").on_hover_text("make it again in the Workshop").clicked() {
-        resources.open_making(crate::resources::Maker::Sound(Box::new(crate::sound::SoundMaking::open(&resources.session, &item.word))));
+        resources.open_making(crate::resources::Maker::Sound(Box::new(workshop_sound::SoundMaking::open(&resources.session, &item.word))));
     }
     if item.shelf == Shelf::Drawn && ui.button("Rename…").clicked() {
         resources.renaming = Some((item.word.clone(), true));

@@ -31,7 +31,7 @@ pub(super) fn mix_fields(mix: &mut Mix) -> [(&'static str, &mut f32); 14] {
 
 /// What a mix does to two channels: faster or slower, backwards, an echo, a room, the equaliser, what does not
 /// move taken off, compressed, wider, faded, made loud, limited (a sound's, a track's, a song's master).
-pub(crate) fn mixed(mix: &Mix, mut left: Vec<f32>, mut right: Vec<f32>) -> (Vec<f32>, Vec<f32>) {
+pub fn mixed(mix: &Mix, mut left: Vec<f32>, mut right: Vec<f32>) -> (Vec<f32>, Vec<f32>) {
     let rate = shell::audio::OUTPUT_RATE as f32;
     // (Faster or slower: its samples taken further apart or closer, its pitch with it.)
     if (mix.speed - 1.0).abs() > 0.001 && left.len() > 1 {
@@ -235,7 +235,7 @@ fn limit(left: &mut [f32], right: &mut [f32], rate: f32) {
 }
 
 /// The mix written as `key=value` lines, under a prefix (`track0.fx.`).
-pub(crate) fn mix_written(mix: &Mix, prefix: &str) -> String {
+pub fn mix_written(mix: &Mix, prefix: &str) -> String {
     let mut copy = *mix;
     let mut said = String::new();
     for (key, value) in mix_fields(&mut copy) {
@@ -252,7 +252,7 @@ pub(crate) fn mix_written(mix: &Mix, prefix: &str) -> String {
 }
 
 /// A mix read back from its lines under a prefix (what is not there, as it is by default).
-pub(crate) fn mix_read(pairs: &HashMap<String, String>, prefix: &str) -> Mix {
+pub fn mix_read(pairs: &HashMap<String, String>, prefix: &str) -> Mix {
     let mut mix = Mix::default();
     let number = |key: &str| pairs.get(&format!("{prefix}{key}")).and_then(|value| value.parse::<f32>().ok());
     for (key, value) in mix_fields(&mut mix) {
@@ -268,7 +268,7 @@ pub(crate) fn mix_read(pairs: &HashMap<String, String>, prefix: &str) -> Mix {
 }
 
 /// The mix's settings, to be changed (an effects chain of a track, the master): whether taken, let go.
-pub(crate) fn mix_editor(ui: &mut egui::Ui, mix: &mut Mix, id: &str) -> (bool, bool) {
+pub fn mix_editor(ui: &mut egui::Ui, mix: &mut Mix, id: &str) -> (bool, bool) {
     let mut moved = (false, false);
     ui.horizontal(|ui| {
         for (said, value, help) in [
@@ -306,7 +306,7 @@ pub(crate) fn mix_editor(ui: &mut egui::Ui, mix: &mut Mix, id: &str) -> (bool, b
 }
 
 /// A note of an instrument: the sound played that many half tones over its pitch, held so long (s), so hard.
-pub(crate) fn note_audio(sound: &Sound, tone: f32, seconds: f32, velocity: f32, own: &workshop_base::own_sounds::OwnSounds) -> (Vec<f32>, Vec<f32>) {
+pub fn note_audio(sound: &Sound, tone: f32, seconds: f32, velocity: f32, own: &workshop_base::own_sounds::OwnSounds) -> (Vec<f32>, Vec<f32>) {
     let mut played = sound.clone();
     played.mix.tempo = 60.0;
     for voice in &mut played.voices {
@@ -316,7 +316,7 @@ pub(crate) fn note_audio(sound: &Sound, tone: f32, seconds: f32, velocity: f32, 
 }
 
 /// A sound played once as it is (a drum), so hard.
-pub(crate) fn one_shot(sound: &Sound, velocity: f32, own: &workshop_base::own_sounds::OwnSounds) -> (Vec<f32>, Vec<f32>) {
+pub fn one_shot(sound: &Sound, velocity: f32, own: &workshop_base::own_sounds::OwnSounds) -> (Vec<f32>, Vec<f32>) {
     let (mut left, mut right) = split(&sound.render(own).0);
     for sample in left.iter_mut().chain(right.iter_mut()) {
         *sample *= velocity;

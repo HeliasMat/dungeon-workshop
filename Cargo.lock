@@ -4249,6 +4249,7 @@ dependencies = [
  "stage_view",
  "workshop_base",
  "workshop_picture",
+ "workshop_sound",
 ]
 
 [[package]]
@@ -4274,6 +4275,17 @@ dependencies = [
  "eframe",
  "film",
  "image",
+ "workshop_base",
+]
+
+[[package]]
+name = "workshop_sound"
+version = "0.2.0"
+dependencies = [
+ "eframe",
+ "film",
+ "rules",
+ "shell",
  "workshop_base",
 ]
 

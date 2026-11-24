@@ -3,11 +3,11 @@
 use super::{Mix, Sound, Synth, Voice};
 
 /// The instruments a song's track may begin from (their pitch: middle C).
-pub(crate) const INSTRUMENTS: [&str; 12] =
+pub const INSTRUMENTS: [&str; 12] =
     ["Electric Piano", "Bass", "Synth Bass", "Square Lead", "Super Saw", "Pad", "Strings", "Organ", "Bells", "Plucked String", "Flute", "Chiptune"];
 
 /// An instrument of that kind: its synth, its pitch middle C (a note's half tones over it).
-pub(crate) fn instrument(kind: &str) -> Sound {
+pub fn instrument(kind: &str) -> Sound {
     const C4: f32 = 261.63;
     const C2: f32 = 65.41;
     let base = Synth { pitch: C4, seed: 1, ..Synth::default() };
@@ -115,7 +115,7 @@ pub(crate) fn instrument(kind: &str) -> Sound {
 }
 
 /// A drum kit, synthesized: each piece by its name (a drum track's rows, from the top).
-pub(crate) fn drum_kit() -> Vec<(String, Sound)> {
+pub fn drum_kit() -> Vec<(String, Sound)> {
     let base = Synth { seed: 3, ..Synth::default() };
     let piece = |name: &str, voices: Vec<Voice>| (name.to_string(), Sound { voices, mix: Mix::default() });
     let voice = |name: &str, synth: Synth, offset: f32, gain: f32| Voice { offset, gain, ..Voice::of(name, synth.tidy()) };

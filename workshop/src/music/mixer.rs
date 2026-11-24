@@ -7,8 +7,8 @@ use super::MusicMaking;
 use super::editor::colour;
 use super::project::{Kind, Target};
 use super::wave::pcm;
-use crate::sound::{self, SoundMaking, open_audio};
 use workshop_base::theme;
+use workshop_sound::{self as sound, SoundMaking, open_audio};
 
 /// The track's instrument, made with the sound maker (a drum kit: each drum); another chosen.
 pub(super) fn instrument_view(ui: &mut egui::Ui, making: &mut MusicMaking, place: usize, audio: &mut Option<Box<dyn Hears>>, volume: f32) {
