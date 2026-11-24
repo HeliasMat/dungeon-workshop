@@ -2,12 +2,12 @@
 //! `scene_player export-ds` writes, and `tools/ds/patch_rom.py` puts in a
 //! copy of the user's own ROM (docs/DS.md).
 //!
-//! - [`film`]: a film as a cutscene of the original game, written in
+//! - [`film()`]: a film as a cutscene of the original game, written in
 //!   ExplorerScript (SkyTemple's language for Sky's scripts), and each decor
 //!   its scenes are in as a map of Sky's of its own, beside it.
-//! - [`dungeon`]: a dungeon of the Workshop (and the fight it ends with) as
+//! - [`dungeon()`]: a dungeon of the Workshop (and the fight it ends with) as
 //!   the rules read it, in JSON, for `tools/ds/dungeon.py`.
-//! - [`table`]: every word of the vocabulary and what it becomes on the DS.
+//! - [`table()`]: every word of the vocabulary and what it becomes on the DS.
 //!
 //! The export reads what the film has the engine play, its typed beats
 //! (`Written::events`: places, Pokémon, emotes and sounds are already the
