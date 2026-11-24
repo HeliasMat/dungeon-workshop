@@ -107,7 +107,7 @@ impl Lower<'_> {
                 }
                 // (`pikachu walk to right`: who first, then the word; read
                 // as `walk pikachu to right`.)
-                let subject = self.fighting == 0 && crate::verbs::subject_first(&call.word.text, call.args.first().map(|arg| arg.text.as_str()), &self.text);
+                let subject = self.fighting == 0 && self.lexicon.subject_first(&call.word.text, call.args.first().map(|arg| arg.text.as_str()), &self.text);
                 let (mut line, rest) = match subject {
                     true => (format!("{} {}", call.args[0].text, self.given_word(&call.word.text)), &call.args[1..]),
                     false => (call.word.text.clone(), &call.args[..]),

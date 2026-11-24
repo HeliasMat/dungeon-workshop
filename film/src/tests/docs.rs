@@ -5,8 +5,8 @@
 
 use std::collections::BTreeSet;
 
+use crate::every_word;
 use crate::tests::{corpus, root, tables};
-use crate::verbs::every_word;
 
 const START: &str = "<!-- words: written by film/src/tests/docs.rs -->";
 const END: &str = "<!-- end of words -->";
@@ -21,7 +21,7 @@ fn table() -> String {
     let mut out = format!("{START}\n| Word | Forms | Read in | Time | Written for the engine |\n|---|---|---|---|---|\n");
     for (family, word, forms, writes) in every_word() {
         let forms: Vec<String> = forms.iter().map(|form| format!("`{}`", crate::shown_form(word, form).replace('|', "\\|"))).collect();
-        let time = crate::verbs::word_time(family, word).said();
+        let time = crate::LEXICON.word_time(family, word).said();
         out.push_str(&format!("| `{word}` | {} | `{family}` | {time} | {writes} |\n", forms.join("; ")));
     }
     out.push_str(END);
@@ -34,7 +34,7 @@ const TIMES_END: &str = "<!-- end of engine times -->";
 /// The engine's commands that last, as the registry has them.
 fn times_table() -> String {
     let mut out = format!("{TIMES_START}\n| Command | Time |\n|---|---|\n");
-    for (word, time) in crate::verbs::engine_times() {
+    for (word, time) in crate::LEXICON.engine_times() {
         out.push_str(&format!("| `{word}` | {} |\n", time.said()));
     }
     out.push_str(TIMES_END);
@@ -49,7 +49,7 @@ fn the_times_of_the_engine_s_commands_are_in_films_md_as_the_registry_has_them()
 /// Every word of a family has a form at least, for the one reader.
 #[test]
 fn every_word_has_its_forms() {
-    let families = crate::verbs::FAMILIES.iter().flat_map(|family| family.words.iter().map(move |word| (family.name, word)));
+    let families = crate::LEXICON.families().iter().flat_map(|family| family.words.iter().map(move |word| (family.name, word)));
     let text = crate::text::WORDS.iter().map(|word| ("text", word));
     let missing: Vec<String> =
         families.chain(text).filter(|(_, word)| word.forms.is_empty()).map(|(family, word)| format!("{} ({family})", word.word)).collect();
@@ -60,7 +60,8 @@ fn every_word_has_its_forms() {
 /// elsewhere (the text's words are read before, the engine's go as they are).
 #[test]
 fn every_word_of_a_family_plays() {
-    let missing: Vec<String> = crate::verbs::FAMILIES
+    let missing: Vec<String> = crate::LEXICON
+        .families()
         .iter()
         .flat_map(|family| family.words.iter().filter(|word| word.play.is_none()).map(move |word| format!("{} ({})", word.word, family.name)))
         .collect();

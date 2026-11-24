@@ -19,6 +19,9 @@ pub const WORDS: &[Word] = &[
     Word::new("throw", &["who:pokemon line [to|on] [target:place]", "who:pokemon water [to] target:place", "who:pokemon thing... at target:place [straight]", "who:pokemon thing... [to] target:pokemon [straight]"], "throw a Apple to b: face, hold off, throw, then catch or miss; `straight`: tight and fast, at the height of the hands (a shot); throw a line to x y (or on b), the fisher; throw a water to b, a swimmer: jump, particles drops").does(thrown_said),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("items", WORDS);
+
 /// The bites of a thing eaten: what is left of it, the frames between two.
 const BITES: [f32; 3] = [0.75, 0.5, 0.25];
 const BITE_FRAMES: i32 = 14;

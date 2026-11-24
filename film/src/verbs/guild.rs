@@ -13,6 +13,9 @@ pub const WORDS: &[Word] =
         .names(super::Names::NoOne)
         .does(job)];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("guild", WORDS);
+
 /// `job take Find Bellsprout`: a job taken from the guild's board: the
 /// board, the words, the tune; `job done Find Bellsprout`: the job done, the
 /// game's tune of a mission accomplished; `job fail …`: failed.

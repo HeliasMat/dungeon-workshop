@@ -12,7 +12,7 @@ fn every_file_reads_in_the_language() {
         let Ok(found) = std::fs::read_dir(root.join(folder)) else { continue };
         for path in found.flatten().map(|entry| entry.path()).filter(|path| path.extension().is_some_and(|extension| extension == "film")) {
             let text = std::fs::read_to_string(&path).unwrap_or_default();
-            for (number, told) in internal(&text, 0, crate::tables::ENGLISH).diagnostics {
+            for (number, told) in internal(&crate::LEXICON, &text, 0, crate::tables::ENGLISH).diagnostics {
                 wrong.push(format!("{}:{number}: {}", path.display(), told.message));
             }
         }
@@ -21,7 +21,7 @@ fn every_file_reads_in_the_language() {
 }
 
 fn written(text: &str) -> Vec<String> {
-    let read = internal(text, 0, crate::tables::ENGLISH);
+    let read = internal(&crate::LEXICON, text, 0, crate::tables::ENGLISH);
     assert!(read.diagnostics.is_empty(), "{:?}", read.diagnostics);
     // (Each block's lines after its opening, then its `end`: as written.)
     fn flat(lines: &[crate::ir::Instr], out: &mut Vec<String>) {
@@ -199,9 +199,9 @@ fn a_line_may_say_who_first() {
     let wrong =
         |written: &crate::Written| written.problems.iter().filter(|problem| !problem.is_remark()).map(|problem| problem.message.clone()).collect::<Vec<_>>();
     assert!(wrong(&new).is_empty(), "{:?}", wrong(&new));
-    assert!(crate::verbs::subject_first("pikachu", Some("walk"), ""));
-    assert!(!crate::verbs::subject_first("walk", Some("pikachu"), ""));
-    assert!(!crate::verbs::subject_first("pikachu", Some("music"), ""));
+    assert!(crate::LEXICON.subject_first("pikachu", Some("walk"), ""));
+    assert!(!crate::LEXICON.subject_first("walk", Some("pikachu"), ""));
+    assert!(!crate::LEXICON.subject_first("pikachu", Some("music"), ""));
 }
 
 /// One order: who acts first. A line written the word first, its word said

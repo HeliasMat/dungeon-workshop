@@ -36,6 +36,7 @@ pub mod game;
 pub mod guild;
 pub mod heard;
 pub mod items;
+mod lexicon;
 pub mod moving;
 pub mod nodes;
 pub mod pictures;
@@ -46,19 +47,7 @@ pub mod things;
 pub mod timing;
 pub mod view;
 
-/// The pictures of one's own (`images/`, by name) that words pick by
-/// themselves, no line naming them, each with the family of words that
-/// does: fishing's bobber, the rifle's crosshair and cork, the footprints.
-/// A film drawing one lists its file in `Written::pictures`.
-pub const OWN_PICTURES: &[(&str, &str)] = &[
-    ("fishing", fishing::BOBBER_PICTURE),
-    ("fishing", "letter"),
-    ("fishing", "net_basket"),
-    ("fishing", "small_fish"),
-    ("fishing", "small_fish_r"),
-    ("fishing", "big_shadow"),
-    ("fishing", "big_shadow_r"),
-];
+pub use lexicon::Lexicon;
 
 /// A word of the language: its forms, what it writes for the engine, who it
 /// names (those who are on the stage by being named in the scene), and how
@@ -233,7 +222,7 @@ impl Word {
 /// numbers, as its point); only those of the scene.
 pub fn brought_by(film: &mut Film, verb: &str, words: &[String]) -> Vec<(String, Comes)> {
     let mut out: Vec<(String, Comes)> = Vec::new();
-    let entries = all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == verb);
+    let entries = film.lexicon.all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == verb);
     for (word, brings) in entries.filter_map(|word| Some((word, word.brings?))) {
         let args = match first_fitting(film, word, words) {
             Some(args) => Some(args),
@@ -259,7 +248,7 @@ pub fn brought_by(film: &mut Film, verb: &str, words: &[String]) -> Vec<(String,
 /// click`) nor words said (`text...`), nor what is left out. None if no
 /// form of it fits; as its entry says otherwise (`Names`).
 pub fn named_by(film: &mut Film, verb: &str, words: &[String]) -> Option<Vec<String>> {
-    let entries: Vec<&Word> = all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == verb).collect();
+    let entries: Vec<&Word> = film.lexicon.all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == verb).collect();
     let spliced = spots_as_points(film, words);
     for said in [words, spliced.as_slice()] {
         for word in &entries {
@@ -362,9 +351,22 @@ pub fn who_said(line: &Line) -> String {
 pub struct Family {
     pub name: &'static str,
     pub words: &'static [Word],
+    /// The pictures of one's own (`images/`, by name) its words pick by
+    /// themselves, no line naming them (`Lexicon::own_pictures`).
+    pub pictures: &'static [&'static str],
 }
 
 impl Family {
+    /// The family of that name, those its words.
+    pub const fn new(name: &'static str, words: &'static [Word]) -> Family {
+        Family { name, words, pictures: &[] }
+    }
+
+    /// Its words pick those pictures of one's own by themselves.
+    pub const fn with_pictures(self, pictures: &'static [&'static str]) -> Family {
+        Family { pictures, ..self }
+    }
+
     /// A line of its word, its form fitting: played, or not its own (false:
     /// the next family may). What the word keeps for a moment
     /// (`film.temps`) is released once its line is written.
@@ -385,192 +387,15 @@ impl Family {
     }
 }
 
-/// A line of that word, with what is given each name (`("who", "eevee")`),
-/// written by those of its forms that take all of them and need no more:
-/// the shortest (`a put 3 4`, not `put face to face a 3 4`), who first when
-/// its form starts with who acts; why not, if
-/// none does.
-pub fn line_of(word: &str, given: &[(&str, &str)]) -> Result<String, String> {
-    let given: Vec<(&str, Vec<String>)> = given.iter().map(|(name, said)| (*name, said.split_whitespace().map(str::to_string).collect())).collect();
-    let given: Vec<(&str, &[String])> = given.iter().map(|(name, said)| (*name, said.as_slice())).collect();
-    let forms = all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == word).flat_map(|known| known.forms.iter());
-    let shortest = forms
-        .filter_map(|form| {
-            let pieces = crate::grammar::read(form);
-            Some((crate::grammar::write(&pieces, &given)?, crate::order::performer_first(&pieces)))
-        })
-        .min_by_key(|(words, _)| words.len());
-    match shortest {
-        Some((words, true)) if !words.is_empty() => {
-            Ok(std::iter::once(words[0].clone()).chain(std::iter::once(word.to_string())).chain(words[1..].iter().cloned()).collect::<Vec<_>>().join(" "))
-        }
-        Some((words, _)) => Ok(std::iter::once(word.to_string()).chain(words).collect::<Vec<_>>().join(" ")),
-        None => {
-            let names: Vec<&str> = given.iter().map(|(name, _)| *name).collect();
-            Err(format!("“{word}” has no form that takes {}", names.join(", ")))
-        }
-    }
-}
-
 /// The line that opens a scene in that place, with those of the stage.
 pub fn scene_line(place: &str) -> String {
     format!("scene: {place}")
-}
-
-/// The text's own words and the engine's: forms, never played here.
-const TEXT: Family = Family { name: "text", words: crate::text::WORDS };
-const ENGINE: Family = Family { name: "engine", words: engine::WORDS };
-
-/// The families of the engine's own commands: a line only they fit is the
-/// engine's, whatever word of a film shares its name (`fade 30`).
-const ENGINE_FAMILIES: [&str; 2] = ["engine", "commands"];
-
-/// Every family, the text's and the engine's too: those whose forms a line is read by.
-fn all_families() -> impl Iterator<Item = &'static Family> {
-    all_families_but_commands().chain(std::iter::once(commands::family()))
-}
-
-/// The families of the words written here, and of the engine's commands
-/// given a form of their own (`engine.rs`).
-fn all_families_but_commands() -> impl Iterator<Item = &'static Family> {
-    std::iter::once(&TEXT).chain(FAMILIES.iter()).chain(std::iter::once(&ENGINE))
-}
-
-/// The engine's commands as words of the language: those given a form here
-/// (`engine.rs`), then the others, their form from the docs: each its word,
-/// its forms, what it writes.
-pub fn command_words() -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)> {
-    ENGINE.words.iter().chain(commands::family().words.iter()).map(|word| (word.word, word.forms, word.writes))
-}
-
-/// The names of the language's words, its engine's commands and the
-/// library's recipes.
-fn known_words() -> &'static std::collections::HashSet<String> {
-    static KNOWN: std::sync::OnceLock<std::collections::HashSet<String>> = std::sync::OnceLock::new();
-    KNOWN.get_or_init(|| all_words().map(|(_, word, ..)| word.to_string()).chain(command_words().map(|(word, ..)| word.to_string())).collect())
-}
-
-/// Whether that is a word of the language (or a recipe the film writes).
-pub fn is_word(word: &str, text: &str) -> bool {
-    let word = crate::words::plain(word);
-    known_words().contains(&word) || text.contains(&format!("define {word} "))
-}
-
-/// Whether that word is said of someone first (its form starts with who:
-/// `walk who:pokemon to where:place`, a recipe's `who` or `*who`).
-pub fn takes_someone_first(word: &str, text: &str) -> bool {
-    let word = crate::words::plain(word);
-    let someone = |pieces: Vec<crate::grammar::Piece>| crate::order::performer_first(&pieces);
-    let forms = all_words().filter(|(_, known, ..)| *known == word).flat_map(|(_, _, forms, _)| forms.iter());
-    let commands = command_words().filter(|(known, ..)| *known == word).flat_map(|(_, forms, _)| forms.iter());
-    forms.chain(commands).any(|form| someone(crate::grammar::read(form)))
-        || crate::text::recipes::library().iter().any(|recipe| recipe.name == word && recipe.said_of_someone())
-        || own_recipe_of_someone(&word, text)
-}
-
-/// Whether the film's own recipe of that name is said of someone: its first
-/// value `who`, `*who`, or one of the cast (`a:pokemon`).
-fn own_recipe_of_someone(word: &str, text: &str) -> bool {
-    let head = format!("define {word} ");
-    text.lines().filter_map(|line| line.trim_start().strip_prefix(head.as_str())).any(|rest| {
-        let first = rest.split_whitespace().next().unwrap_or_default();
-        first == "who" || first.starts_with("who:") || first.starts_with('*') || first.ends_with(":pokemon")
-    })
-}
-
-/// Whether a line is written who first (`pikachu walk to right`): its
-/// first word is no word of the language, its second is one said of someone.
-pub fn subject_first(first: &str, second: Option<&str>, text: &str) -> bool {
-    second.is_some_and(|second| !is_word(first, text) && is_word(second, text) && takes_someone_first(second, text))
-}
-
-/// The families, the narrower first.
-pub const FAMILIES: [Family; 26] = [
-    Family { name: "story", words: crate::plot::WORDS },
-    Family { name: "acting", words: acting::WORDS },
-    Family { name: "game", words: game::WORDS },
-    Family { name: "fishing", words: fishing::WORDS },
-    Family { name: "dungeon", words: dungeon::WORDS },
-    Family { name: "guild", words: guild::WORDS },
-    Family { name: "things", words: things::WORDS },
-    Family { name: "heard", words: heard::WORDS },
-    Family { name: "view", words: view::WORDS },
-    Family { name: "sky", words: sky::WORDS },
-    Family { name: "effects", words: effects::WORDS },
-    Family { name: "fights", words: fights::WORDS },
-    Family { name: "items", words: items::WORDS },
-    Family { name: "swimming", words: moving::swimming::WORDS },
-    Family { name: "flying", words: moving::flying::WORDS },
-    Family { name: "riding", words: moving::riding::WORDS },
-    Family { name: "contact", words: moving::contact::WORDS },
-    Family { name: "hiding", words: moving::hiding::WORDS },
-    Family { name: "moving", words: moving::WORDS },
-    Family { name: "body", words: moving::body::WORDS },
-    Family { name: "pictures", words: pictures::WORDS },
-    Family { name: "rituals", words: rituals::WORDS },
-    Family { name: "crowds", words: crowds::WORDS },
-    Family { name: "said", words: said::WORDS },
-    Family { name: "timing", words: timing::WORDS },
-    Family { name: "nodes", words: nodes::WORDS },
-];
-
-/// The word of that name in that family (the text's, the engine's, the
-/// commands' too).
-pub(crate) fn word_of_family(family: &str, verb: &str) -> Option<&'static Word> {
-    all_families().filter(|known| known.name == family).flat_map(|known| known.words.iter()).find(|word| word.word == verb)
 }
 
 /// Whether a word is the library's own (`_bobber`, `_evolution`): its
 /// recipes write it, a film never does; no catalogue shows it.
 pub fn internal(word: &str) -> bool {
     word.starts_with('_')
-}
-
-/// Every word of the films' language: where it is read, its forms, what it
-/// writes (a recipe: its file in `film/recipes/`, no form, what it does).
-/// Not the library's own (`internal`).
-pub fn every_word() -> impl Iterator<Item = (&'static str, &'static str, &'static [&'static str], &'static str)> {
-    all_words().filter(|(_, word, ..)| !internal(word))
-}
-
-/// The engine's commands a film may write: not those the plan replaced
-/// (`fadein`: `transition fade in`).
-pub fn shown_commands() -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)> {
-    command_words().filter(|(word, ..)| crate::plan::replaced(word).is_none())
-}
-
-/// The same, the library's own words with them, as the language reads them.
-pub(crate) fn all_words() -> impl Iterator<Item = (&'static str, &'static str, &'static [&'static str], &'static str)> {
-    let mut recipes: Vec<&'static crate::text::recipes::Recipe> = Vec::new();
-    for recipe in crate::text::recipes::library() {
-        if !recipes.iter().any(|known| known.name == recipe.name) {
-            recipes.push(recipe);
-        }
-    }
-    std::iter::once(&TEXT)
-        .chain(FAMILIES.iter())
-        .flat_map(|family| family.words.iter().map(|word| (family.name, word.word, word.forms, word.writes)))
-        .chain(recipes.into_iter().map(|recipe| (recipe.from.as_str(), recipe.name.as_str(), &[][..], recipe.told_and_doc.as_str())))
-}
-
-/// The time of a word of a family (`every_word`'s), as the registry says it;
-/// a recipe's, by its lines.
-pub fn word_time(family: &str, word: &str) -> crate::time::WordTime {
-    all_families()
-        .filter(|known| known.name == family)
-        .flat_map(|known| known.words.iter())
-        .find(|known| known.word == word)
-        .map_or(crate::time::WordTime::ByLine, Word::timing)
-}
-
-/// The engine's commands whose time is not instant: each its word and its time.
-pub fn engine_times() -> impl Iterator<Item = (&'static str, crate::time::WordTime)> {
-    ENGINE
-        .words
-        .iter()
-        .chain(commands::family().words.iter())
-        .map(|word| (word.word, word.timing()))
-        .filter(|(_, time)| *time != crate::time::WordTime::Instant)
 }
 
 /// A line of a scene other than a line said, as the engine's commands.
@@ -652,13 +477,13 @@ fn command_here(film: &mut Film, item: &Instr) {
     if item.from.0.is_none() && item.span.is_some() {
         let written = film.here.1.clone();
         // (Who first, `pikachu nap`: the old word second.)
-        let second = written.get(1).map(|(said, _)| plain(said)).filter(|_| !is_word(&line.verb, &film.source));
+        let second = written.get(1).map(|(said, _)| plain(said)).filter(|_| !film.lexicon.is_word(&line.verb, &film.source));
         let old = std::iter::once(line.verb.clone()).chain(second).find(|word| crate::plan::replaced(word).is_some()).unwrap_or_default();
         if crate::plan::told_replaced(film, line.number, &written, &old) {
             return;
         }
         if internal(&line.verb) && written.first().is_some_and(|(said, _)| plain(said) == line.verb) {
-            film.unknown(line.number, "unknown word", &first, every_word().map(|(_, word, ..)| word), "film/FILMS.md");
+            film.unknown(line.number, "unknown word", &first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
             return;
         }
     }
@@ -737,16 +562,18 @@ fn command_here(film: &mut Film, item: &Instr) {
         return;
     }
     let has = |family: &Family| family.words.iter().any(|word| word.word == line.verb);
-    let by_the_engine_only = !fitting_families.is_empty() && fitting_families.iter().all(|family| ENGINE_FAMILIES.contains(family));
+    let by_the_engine_only = !fitting_families.is_empty() && fitting_families.iter().all(|family| lexicon::ENGINE_FAMILIES.contains(family));
     // (Each family is given what its own form read in the line. When the
     // engine's form fits too, the families whose form does not are not
     // asked: what the fitting ones let go is the engine's, `anim krabby
     // DeepBreath` a game animation once no character has it.)
-    let engine_fits = fitting_families.iter().any(|family| ENGINE_FAMILIES.contains(family));
-    let ordered = FAMILIES
+    let engine_fits = fitting_families.iter().any(|family| lexicon::ENGINE_FAMILIES.contains(family));
+    let ordered = film
+        .lexicon
+        .families()
         .iter()
         .filter(|family| fitting_families.contains(&family.name))
-        .chain(FAMILIES.iter().filter(|family| !engine_fits && !fitting_families.contains(&family.name)));
+        .chain(film.lexicon.families().iter().filter(|family| !engine_fits && !fitting_families.contains(&family.name)));
     for family in ordered.into_iter().filter(|family| !by_the_engine_only && has(family)) {
         line.args = fitting.iter().find(|(from, _)| *from == family.name).map(|(_, bound)| bound.clone()).unwrap_or_default();
         if family.plays(film, &line) {
@@ -754,7 +581,7 @@ fn command_here(film: &mut Film, item: &Instr) {
         }
     }
     if !engine_word(&first) && !engine_word(&line.verb) {
-        film.unknown(line.number, "unknown word", &first, every_word().map(|(_, word, ..)| word), "film/FILMS.md");
+        film.unknown(line.number, "unknown word", &first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
     } else if line.verb == "else" && line.rest.is_empty() {
         film.beat(crate::emit::otherwise());
     } else if fitting_families.is_empty() {
@@ -766,7 +593,7 @@ fn command_here(film: &mut Film, item: &Instr) {
     } else {
         // (How long it lasts, as the registry says of the word: its `d`, or
         // until its `who` gets there; the film waits for it unless `&`.)
-        let (time, bound) = engine_time(&line.verb, &fitting).unwrap_or((crate::time::WordTime::Instant, Default::default()));
+        let (time, bound) = engine_time(film.lexicon, &line.verb, &fitting).unwrap_or((crate::time::WordTime::Instant, Default::default()));
         // (A time without its unit: frames, as written before.)
         let said_time = bound.values.iter().filter(|value| value.kind == crate::grammar::Kind::Time).filter_map(|value| value.words.first());
         if let Some(said) = said_time.clone().find(|said| crate::words::digits(said) && *said != "0") {
@@ -815,7 +642,7 @@ pub(crate) fn wrong_form(film: &mut Film, verb: &str, first: &str, rest: &[Strin
         return Some(format!("“{text}”: {}", why.join("; ")));
     }
     if !engine_word(first) && !engine_word(verb) {
-        let close = crate::check::closest_of(first, every_word().map(|(_, word, ..)| word));
+        let close = crate::check::closest_of(first, film.lexicon.every_word().map(|(_, word, ..)| word));
         return Some(crate::check::unknown("unknown word", first, &close, "film/FILMS.md"));
     }
     (verb != "else" || !rest.is_empty())
@@ -831,7 +658,7 @@ const NAMED_NEAR: i32 = 12;
 fn fitting_forms(film: &mut Film, line: &Line) -> (Vec<(&'static str, crate::grammar::Bound)>, Vec<String>) {
     let mut fitting: Vec<(&'static str, crate::grammar::Bound)> = Vec::new();
     let mut why = Vec::new();
-    for family in all_families() {
+    for family in film.lexicon.all_families() {
         for word in family.words.iter().filter(|word| word.word == line.verb) {
             for shape in word.forms {
                 match crate::grammar::bind(film, &crate::grammar::read(shape), &line.rest) {
@@ -894,8 +721,12 @@ fn named_near(film: &Film, x: i32, y: i32) -> Option<(String, i32, i32)> {
 
 /// The time of the engine's word a line goes to, as the registry has it
 /// (`engine.rs`, the commands' own table), and what its form read there.
-fn engine_time(verb: &str, fitting: &[(&'static str, crate::grammar::Bound)]) -> Option<(crate::time::WordTime, crate::grammar::Bound)> {
-    [&ENGINE, commands::family()].into_iter().find_map(|family| {
+fn engine_time(
+    lexicon: &'static Lexicon,
+    verb: &str,
+    fitting: &[(&'static str, crate::grammar::Bound)],
+) -> Option<(crate::time::WordTime, crate::grammar::Bound)> {
+    lexicon.engine_families().into_iter().find_map(|family| {
         let word = family.words.iter().find(|word| word.word == verb)?;
         let bound = fitting.iter().find(|(from, _)| *from == family.name)?.1.clone();
         Some((word.timing(), bound))
@@ -919,7 +750,7 @@ pub(crate) fn things_in(film: &mut Film, verb: &str, words: &[String]) -> Vec<St
     if matches!(verb, "every" | "after") && words.len() > 2 {
         return things_in(film, &plain(&words[1]), &words[2..]);
     }
-    let forms = all_families().flat_map(|family| family.words.iter()).filter(|word| word.word == verb).flat_map(|word| word.forms.iter());
+    let forms = film.lexicon.all_families().flat_map(|family| family.words.iter()).filter(|word| word.word == verb).flat_map(|word| word.forms.iter());
     for form in forms {
         if let Ok(bound) = crate::grammar::bind(film, &crate::grammar::read(form), words) {
             return bound.values.into_iter().filter(|value| value.kind == crate::grammar::Kind::Thing).flat_map(|value| value.words).collect();

@@ -6,14 +6,7 @@
 //! written from the engine, and a test here checks its rows by theme say
 //! the same.
 
-use std::sync::LazyLock;
-
-use super::{Family, Word};
-
-/// The family of the engine's commands with no word of their own.
-pub fn family() -> &'static Family {
-    &FAMILY
-}
+use super::{Family, Lexicon, Word};
 
 /// The commands with no word of their own that last until who goes gets
 /// there (their time in the registry: the others are instant).
@@ -25,9 +18,10 @@ const KEPT: [&str; 7] = ["banner", "fade", "flee", "follow", "ride", "shake", "t
 
 /// The engine's commands no word of the films names: each its forms as the
 /// engine declares them and what it writes (`name: what it does`). `runto`
-/// lasts until who goes gets there; the others are instant.
-static FAMILY: LazyLock<Family> = LazyLock::new(|| {
-    let taken = |own: &str| !KEPT.contains(&own) && super::all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == own));
+/// lasts until who goes gets there; the others are instant. Read once by
+/// the lexicon (`Lexicon::commands`): the words of its families are taken.
+pub(super) fn family(lexicon: &'static Lexicon) -> Family {
+    let taken = |own: &str| !KEPT.contains(&own) && lexicon.all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == own));
     let words: Vec<Word> = engine::commands()
         .iter()
         .filter(|own| !taken(own))
@@ -38,8 +32,8 @@ static FAMILY: LazyLock<Family> = LazyLock::new(|| {
             if WALKS.contains(&own) { word.until() } else { word }
         })
         .collect();
-    Family { name: "commands", words: Box::leak(words.into_boxed_slice()) }
-});
+    Family::new("commands", Box::leak(words.into_boxed_slice()))
+}
 
 #[cfg(test)]
 mod tests {
@@ -189,11 +183,11 @@ mod tests {
         name
     }
 
-    /// The table `FAMILY` should be, from the docs: one line of Rust a word.
+    /// The commands family should be, from the docs: one line of Rust a word.
     fn table_from_docs() -> Vec<String> {
         let documented = from_docs();
         let taken =
-            |word: &str| !KEPT.contains(&word) && super::super::all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == word));
+            |word: &str| !KEPT.contains(&word) && crate::LEXICON.all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == word));
         engine::commands()
             .iter()
             .filter(|own| !taken(own))
@@ -210,9 +204,10 @@ mod tests {
             .collect()
     }
 
-    /// The table `FAMILY` is, one line of Rust a word.
+    /// The commands family is, one line of Rust a word.
     fn table_of_code() -> Vec<String> {
-        FAMILY
+        crate::LEXICON
+            .commands()
             .words
             .iter()
             .map(|word| {
@@ -235,7 +230,7 @@ mod tests {
             .map(|line| format!("the docs: {line}"))
             .chain(code.iter().filter(|line| !docs.contains(line)).map(|line| format!("the code: {line}")))
             .collect();
-        assert!(differ.is_empty(), "engine/docs/COMMANDS.md and FAMILY in film/src/verbs/commands.rs differ:\n{}", differ.join("\n"));
+        assert!(differ.is_empty(), "engine/docs/COMMANDS.md and the commands family (film/src/verbs/commands.rs) differ:\n{}", differ.join("\n"));
     }
 
     /// Every command's rows by theme, those the families have a word for
@@ -257,10 +252,10 @@ mod tests {
 
     #[test]
     fn every_command_of_the_engine_has_a_word() {
-        let family = family();
+        let family = crate::LEXICON.commands();
         assert!(family.words.len() > 100, "{}", family.words.len());
         for own in engine::commands() {
-            assert!(super::super::all_families().any(|family| family.words.iter().any(|word| word.word == *own)), "“{own}” has no word");
+            assert!(crate::LEXICON.all_families().any(|family| family.words.iter().any(|word| word.word == *own)), "“{own}” has no word");
         }
         for word in family.words {
             assert!(engine::commands().contains(&word.word), "“{}” is no command of the engine", word.word);

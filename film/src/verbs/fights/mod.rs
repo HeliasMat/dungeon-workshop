@@ -83,6 +83,9 @@ pub const WORDS: &[Word] = &[
     .does(blows::dodged),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("fights", WORDS);
+
 fn bar_opens(film: &mut Film, line: &Line) {
     // (`fight pikachu 12 30 [floor]`: the top line of a dungeon, or its name
     // out of one, the log at the bottom, for as long as the fight lasts.

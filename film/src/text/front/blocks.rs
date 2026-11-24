@@ -244,7 +244,7 @@ impl Lower<'_> {
             }
             Opening::Word(call) => {
                 // (Who first, `pikachu dimensional_scream tower`: read as the word first.)
-                let subject = crate::verbs::subject_first(&call.word.text, call.args.first().map(|arg| arg.text.as_str()), &self.text);
+                let subject = self.lexicon.subject_first(&call.word.text, call.args.first().map(|arg| arg.text.as_str()), &self.text);
                 let (mut line, rest, word) = match subject {
                     true => (format!("{} {}", call.args[0].text, self.given_word(&call.word.text)), &call.args[1..], call.args[0].text.as_str()),
                     false => (call.word.text.clone(), &call.args[..], call.word.text.as_str()),

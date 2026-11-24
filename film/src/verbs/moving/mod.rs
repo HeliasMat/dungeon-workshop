@@ -100,6 +100,9 @@ pub const WORDS: &[Word] = &[
     Word::new("spot", &["name:word where:place"], "spot throne 400 200: setspot, a spot of the film's, by its name").maybe(spot_said),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("moving", WORDS);
+
 /// The frames someone walks up to another in, when no pace is said.
 const APPROACH: i32 = 40;
 

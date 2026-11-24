@@ -33,6 +33,9 @@ pub const WORDS: &[Word] = &[Word::new(
 )
 .maybe(went)];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("story", WORDS);
+
 /// The number a film holds which moment of another scene it goes to.
 const GOING: &str = "_go_moment";
 

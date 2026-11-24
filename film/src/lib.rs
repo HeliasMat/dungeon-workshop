@@ -27,15 +27,14 @@ mod film;
 pub mod grammar;
 pub mod ir;
 pub mod lines;
+mod names;
 pub mod order;
 pub mod plan;
 pub mod plot;
-pub mod service;
-pub mod steps;
-pub use text::front::formatted;
-mod names;
 pub mod screen;
+pub mod service;
 mod spots;
+pub mod steps;
 pub mod tables;
 mod temps;
 mod text;
@@ -47,16 +46,101 @@ use std::path::{Path, PathBuf};
 
 use engine::{Diagnostic, Lines, Script, StoryEvent};
 
-pub use compile::{ReadAs, Written, compile_place_with, compile_with};
+pub use compile::{ReadAs, Written};
 pub use context::Context;
 pub use film::Film;
 pub use order::{performer_first, shown_form};
 pub use screen::coloured;
-pub use text::recipes::{Told, recipes_for, shared_files, shared_path};
-pub use verbs::{
-    OWN_PICTURES, command_words, engine_times, every_word, internal, is_word, line_of, scene_line, shown_commands, subject_first, takes_someone_first,
-    word_time,
-};
+pub use text::front::formatted;
+pub use text::recipes::{Told, shared_files, shared_path};
+pub use verbs::{Lexicon, internal, scene_line};
+
+/// The families of the language's words, the narrower first: a line goes to
+/// the first whose form of its word fits.
+const FAMILIES: [verbs::Family; 26] = [
+    plot::FAMILY,
+    verbs::acting::FAMILY,
+    verbs::game::FAMILY,
+    verbs::fishing::FAMILY,
+    verbs::dungeon::FAMILY,
+    verbs::guild::FAMILY,
+    verbs::things::FAMILY,
+    verbs::heard::FAMILY,
+    verbs::view::FAMILY,
+    verbs::sky::FAMILY,
+    verbs::effects::FAMILY,
+    verbs::fights::FAMILY,
+    verbs::items::FAMILY,
+    verbs::moving::swimming::FAMILY,
+    verbs::moving::flying::FAMILY,
+    verbs::moving::riding::FAMILY,
+    verbs::moving::contact::FAMILY,
+    verbs::moving::hiding::FAMILY,
+    verbs::moving::FAMILY,
+    verbs::moving::body::FAMILY,
+    verbs::pictures::FAMILY,
+    verbs::rituals::FAMILY,
+    verbs::crowds::FAMILY,
+    verbs::said::FAMILY,
+    verbs::timing::FAMILY,
+    verbs::nodes::FAMILY,
+];
+
+/// The language: every family of its words, in their order.
+pub static LEXICON: Lexicon = Lexicon::new(&FAMILIES);
+
+/// A film's text turned into lines, with these tables (its project's, its
+/// data's, its language).
+pub fn compile_with(text: &str, tables: std::sync::Arc<tables::Tables>) -> Written {
+    compile::compile_with(&LEXICON, text, tables)
+}
+
+/// A scene the game makes of a place (`game::roam`), turned into lines with
+/// those tables: the words only the game writes are known there.
+pub fn compile_place_with(text: &str, tables: std::sync::Arc<tables::Tables>) -> Written {
+    compile::compile_place_with(&LEXICON, text, tables)
+}
+
+/// Whether that is a word of the language (or a recipe the film writes).
+pub fn is_word(word: &str, text: &str) -> bool {
+    LEXICON.is_word(word, text)
+}
+
+/// Whether that word is said of someone first (`walk who:pokemon to where:place`).
+pub fn takes_someone_first(word: &str, text: &str) -> bool {
+    LEXICON.takes_someone_first(word, text)
+}
+
+/// Whether a line is written who first (`pikachu walk to right`).
+pub fn subject_first(first: &str, second: Option<&str>, text: &str) -> bool {
+    LEXICON.subject_first(first, second, text)
+}
+
+/// Every word of the films' language: its family, its word, its forms, what
+/// it writes (`Lexicon::every_word`).
+pub fn every_word() -> impl Iterator<Item = (&'static str, &'static str, &'static [&'static str], &'static str)> {
+    LEXICON.every_word()
+}
+
+/// The engine's commands as words of the language: each its word, its forms, what it writes.
+pub fn command_words() -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)> {
+    LEXICON.command_words()
+}
+
+/// The engine's commands a film may write (`Lexicon::shown_commands`).
+pub fn shown_commands() -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)> {
+    LEXICON.shown_commands()
+}
+
+/// A line of that word, with what is given each name (`Lexicon::line_of`).
+pub fn line_of(word: &str, given: &[(&str, &str)]) -> Result<String, String> {
+    LEXICON.line_of(word, given)
+}
+
+/// The recipes a film has to call: its own, those of the files it uses, then the library's.
+pub fn recipes_for(project: &assets::project::Project, text: &str) -> Vec<Told> {
+    text::recipes::recipes_for(&LEXICON, project, text)
+}
 
 /// A film by a path, or a name of the project's films (the shared
 /// library's: `library/films`), else of a game's `films/`

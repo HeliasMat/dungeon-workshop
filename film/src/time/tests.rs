@@ -80,12 +80,12 @@ fn together_ends_with_the_longest() {
 
 #[test]
 fn the_registry_says_each_word_s_time() {
-    assert_eq!(crate::verbs::word_time("engine", "go"), WordTime::Lasts);
-    assert_eq!(crate::verbs::word_time("engine", "walkto"), WordTime::Until);
-    assert_eq!(crate::verbs::word_time("engine", "quake"), WordTime::Instant);
-    assert_eq!(crate::verbs::word_time("commands", "runto"), WordTime::Until);
-    assert_eq!(crate::verbs::word_time("body", "wait"), WordTime::Until);
-    assert!(crate::verbs::engine_times().any(|(word, time)| word == "go" && time == WordTime::Lasts));
+    assert_eq!(crate::LEXICON.word_time("engine", "go"), WordTime::Lasts);
+    assert_eq!(crate::LEXICON.word_time("engine", "walkto"), WordTime::Until);
+    assert_eq!(crate::LEXICON.word_time("engine", "quake"), WordTime::Instant);
+    assert_eq!(crate::LEXICON.word_time("commands", "runto"), WordTime::Until);
+    assert_eq!(crate::LEXICON.word_time("body", "wait"), WordTime::Until);
+    assert!(crate::LEXICON.engine_times().any(|(word, time)| word == "go" && time == WordTime::Lasts));
 }
 
 #[test]

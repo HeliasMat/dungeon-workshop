@@ -40,6 +40,9 @@ pub const WORDS: &[Word] = &[
     .does(gets_out),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("swimming", WORDS);
+
 /// How much of a swimmer's body is under the water, and how deep, when his
 /// body is not known.
 const UNDER: f32 = 0.33;

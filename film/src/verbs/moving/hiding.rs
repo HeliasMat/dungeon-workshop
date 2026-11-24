@@ -36,6 +36,9 @@ pub const WORDS: &[Word] = &[
     .does(popped_out),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("hiding", WORDS);
+
 /// How far over the obstacle's feet one hides, on the screen.
 const BEHIND: f32 = 6.0;
 /// Digging: the frames of each step down (or up), the steps; clods each

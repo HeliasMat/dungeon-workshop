@@ -34,6 +34,9 @@ pub const WORDS: &[Word] = &[
     .does(super::aura::aura),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("effects", WORDS);
+
 /// The word that is no move: it has its own bolt.
 const BOLT: &str = "bolt";
 /// The first of the unseen points effects are put on.

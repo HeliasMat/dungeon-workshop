@@ -330,7 +330,7 @@ fn the_pictures_words_pick_by_themselves_are_ours_and_listed() {
         .flatten()
         .map(|file| file.file_name().to_string_lossy().split('.').next().unwrap_or_default().to_string())
         .collect();
-    for (family, picture) in crate::OWN_PICTURES {
-        assert!(images.iter().any(|name| name == picture), "{family}: no {picture} in library/images");
+    for (family, picture) in crate::LEXICON.own_pictures() {
+        assert!(images.iter().any(|name| name == &picture), "{family}: no {picture} in library/images");
     }
 }

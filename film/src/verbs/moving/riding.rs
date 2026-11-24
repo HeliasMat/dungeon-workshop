@@ -49,6 +49,9 @@ pub const WORDS: &[Word] = &[
     .does(put_down),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("riding", WORDS);
+
 /// A hop on or off: how high, how many frames.
 const HOP_HEIGHT: f32 = 28.0;
 const HOP_FRAMES: f32 = 30.0;

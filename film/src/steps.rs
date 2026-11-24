@@ -44,18 +44,18 @@ pub fn steps(text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Strin
     }
 
     title(&mut out, "3. The film's tree", "text::front: each line what it is (ir::Shape), a recipe kept as it is");
-    for instr in internal(text, 0, crate::tables::ENGLISH).lines.iter().filter(|instr| instr.shape != Shape::Blank) {
+    for instr in internal(&crate::LEXICON, text, 0, crate::tables::ENGLISH).lines.iter().filter(|instr| instr.shape != Shape::Blank) {
         told_instr(&mut out, instr, 1);
     }
 
     title(&mut out, "4. The recipes played", "text::recipes: each call written with what it is given, “there” and “team” put in");
-    let mut film = Film::with(tables.clone());
+    let mut film = Film::with(&crate::LEXICON, tables.clone());
     for instr in unfold(text, &mut film).iter().filter(|instr| instr.shape != Shape::Blank) {
         told_instr(&mut out, instr, 1);
     }
 
     title(&mut out, "5. The scenes", "compile::scenes: each scene, its place, those it names");
-    let mut film = Film::with(tables.clone());
+    let mut film = Film::with(&crate::LEXICON, tables.clone());
     for (at, scene) in read(text, &mut film).iter().enumerate() {
         let (level, x, y) = scene.place;
         let _ = writeln!(

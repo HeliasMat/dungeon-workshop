@@ -36,6 +36,9 @@ pub const WORDS: &[Word] = &[
     Word::new("detach", &["who:word"], "detach: detach <who>; it stays where it is").does(detach_said),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("nodes", WORDS);
+
 /// The nodes a word names, each with its kind if known before it plays:
 /// a node of the film's own, the caption, a halo by its rank, the emitter
 /// on someone, someone (a crowd: each of it). None: no node by that name.

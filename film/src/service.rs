@@ -66,7 +66,8 @@ fn writing(name: String, at: Range) -> Fix {
 /// of their own). Each with its lines and columns, its bytes too when said.
 pub fn diagnostics(text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Vec<Diagnostic> {
     let source = Source::new(text);
-    let mut told: Vec<Diagnostic> = internal(text, 0, crate::tables::ENGLISH).diagnostics.into_iter().map(|(_, wrong)| wrong.resolved(&source)).collect();
+    let mut told: Vec<Diagnostic> =
+        internal(&crate::LEXICON, text, 0, crate::tables::ENGLISH).diagnostics.into_iter().map(|(_, wrong)| wrong.resolved(&source)).collect();
     let said: Vec<(usize, String)> = told.iter().map(|one| (one.span.start.line, one.message.clone())).collect();
     for mut problem in crate::compile_with(text, tables).problems {
         let line = problem.line();
@@ -433,7 +434,7 @@ pub fn definition(text: &str, at: Spot, project: &assets::project::Project) -> O
         return Some((None, source.position(span.start).line));
     }
     if matches!(role, Role::Word) {
-        let shared = crate::text::recipes::recipes_for(project, text).into_iter().find(|recipe| recipe.name == name)?;
+        let shared = crate::recipes_for(project, text).into_iter().find(|recipe| recipe.name == name)?;
         return Some((Some(shared.from), shared.line));
     }
     None
@@ -508,7 +509,7 @@ pub fn hover(text: &str, at: Spot, project: &assets::project::Project) -> Option
 /// What a word of the language, a recipe or an engine's command is: its
 /// forms as written, what it does.
 fn word_help(name: &str, text: &str, project: &assets::project::Project) -> Option<String> {
-    if let Some(recipe) = crate::text::recipes::recipes_for(project, text).into_iter().find(|recipe| recipe.name == name) {
+    if let Some(recipe) = crate::recipes_for(project, text).into_iter().find(|recipe| recipe.name == name) {
         let from = if recipe.from.is_empty() { format!("line {}", recipe.line) } else { recipe.from.clone() };
         return Some(format!("{} — {} ({from})", recipe.shape, recipe.doc));
     }
@@ -517,10 +518,10 @@ fn word_help(name: &str, text: &str, project: &assets::project::Project) -> Opti
         let forms: Vec<String> = forms.iter().map(|form| crate::shown_form(known, form)).collect();
         format!("{} — {writes} ({family})", forms.join(" · "))
     };
-    if let Some((family, known, forms, writes)) = crate::verbs::every_word().find(|(_, known, ..)| *known == word) {
+    if let Some((family, known, forms, writes)) = crate::LEXICON.every_word().find(|(_, known, ..)| *known == word) {
         return Some(shown(known, forms, writes, family));
     }
-    crate::verbs::command_words().find(|(known, ..)| *known == word).map(|(known, forms, writes)| shown(known, forms, writes, "engine"))
+    crate::LEXICON.command_words().find(|(known, ..)| *known == word).map(|(known, forms, writes)| shown(known, forms, writes, "engine"))
 }
 
 /// What a word's line wants at one of its places, by the word's first form.
@@ -572,7 +573,7 @@ fn wanted_at(text: &str, at: Spot) -> Vec<Wanted> {
     let mut before: Vec<String> = call.args.iter().filter(|arg| arg.span.end < byte).map(|arg| crate::words::plain(&arg.text)).collect();
     let mut word = crate::words::plain(&call.word.text);
     // (Who first, `pikachu walk `: the word is the second, who its first.)
-    if crate::verbs::subject_first(&call.word.text, call.args.first().map(|arg| arg.text.as_str()), text) && !before.is_empty() {
+    if crate::LEXICON.subject_first(&call.word.text, call.args.first().map(|arg| arg.text.as_str()), text) && !before.is_empty() {
         let verb = before.remove(0);
         before.insert(0, std::mem::replace(&mut word, verb));
     }
@@ -591,7 +592,7 @@ fn who_first_at(text: &str, at: Spot) -> Option<(String, bool)> {
     let file = parsed(text);
     let call = bodies(&file).find_map(|body| call_at(body, byte))?;
     let second = call.args.first()?;
-    if !crate::verbs::subject_first(&call.word.text, Some(&second.text), text) {
+    if !crate::LEXICON.subject_first(&call.word.text, Some(&second.text), text) {
         return None;
     }
     let within = |span: Span| span.start <= byte && byte <= span.end;
@@ -608,7 +609,7 @@ fn wanted_of(word: &str, before: &[String]) -> Vec<Wanted> {
     use crate::grammar::Piece as FormPiece;
     // (Every word of that name: several families may have one, `walk` a
     // formation's and a walk's.)
-    let forms: Vec<&str> = crate::verbs::every_word().filter(|(_, known, ..)| *known == word).flat_map(|(_, _, forms, _)| forms.iter().copied()).collect();
+    let forms: Vec<&str> = crate::LEXICON.every_word().filter(|(_, known, ..)| *known == word).flat_map(|(_, _, forms, _)| forms.iter().copied()).collect();
     if forms.is_empty() {
         return Vec::new();
     }
@@ -706,7 +707,7 @@ fn who_then_word<'a>(before: &'a str, text: &str) -> Option<&'a str> {
     };
     let who = words.first().copied()?;
     let name = who.chars().all(|letter| letter.is_alphanumeric() || letter == '_');
-    (typing_second && name && !crate::verbs::is_word(who, text) && !OPENINGS.iter().any(|(word, _)| word.trim_end_matches(':') == who)).then_some(who)
+    (typing_second && name && !crate::LEXICON.is_word(who, text) && !OPENINGS.iter().any(|(word, _)| word.trim_end_matches(':') == who)).then_some(who)
 }
 
 /// What may be written at that place: at a line's start, the words, the
@@ -733,11 +734,11 @@ pub fn completions(text: &str, at: Spot, project: &assets::project::Project) -> 
         }
     } else if let Some(who) = who_then_word(&before, text) {
         // (Who first, `pikachu `: the words said of someone, as he would do them.)
-        for recipe in crate::text::recipes::recipes_for(project, text).into_iter().filter(|recipe| crate::takes_someone_first(&recipe.name, text)) {
+        for recipe in crate::recipes_for(project, text).into_iter().filter(|recipe| crate::LEXICON.takes_someone_first(&recipe.name, text)) {
             offered.push((recipe.name.clone(), format!("{who} {}", recipe.shape)));
         }
         for (word, forms) in
-            crate::verbs::every_word().map(|(_, word, forms, _)| (word, forms)).chain(crate::verbs::shown_commands().map(|(word, forms, _)| (word, forms)))
+            crate::LEXICON.every_word().map(|(_, word, forms, _)| (word, forms)).chain(crate::LEXICON.shown_commands().map(|(word, forms, _)| (word, forms)))
         {
             if let Some(form) = forms.iter().find(|form| crate::performer_first(&crate::grammar::read(form))) {
                 let shown = crate::shown_form(word, form);
@@ -746,15 +747,15 @@ pub fn completions(text: &str, at: Spot, project: &assets::project::Project) -> 
         }
     } else if first {
         offered.extend(OPENINGS.iter().map(|(word, told)| (word.to_string(), told.to_string())));
-        for recipe in crate::text::recipes::recipes_for(project, text) {
+        for recipe in crate::recipes_for(project, text) {
             offered.push((recipe.name.clone(), recipe.shape.clone()));
         }
-        for (_, word, forms, writes) in crate::verbs::every_word() {
+        for (_, word, forms, writes) in crate::LEXICON.every_word() {
             offered.push((word.to_string(), forms.first().map_or_else(|| writes.to_string(), |form| crate::shown_form(word, form))));
         }
         // (The advanced words, the engine's commands, folded: offered once three of their letters are typed.)
         if typed.chars().count() >= 3 {
-            for (word, forms, writes) in crate::verbs::shown_commands() {
+            for (word, forms, writes) in crate::LEXICON.shown_commands() {
                 offered.push((word.to_string(), forms.first().map_or_else(|| writes.to_string(), |form| crate::shown_form(word, form))));
             }
         }

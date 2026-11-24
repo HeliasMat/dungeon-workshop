@@ -86,6 +86,9 @@ pub const WORDS: &[Word] = &[
     .maybe(emoted),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("acting", WORDS);
+
 /// The game's emote balloons by their v2.1 names: the effect, its sound
 /// (as the game's scripts play them beside it most), if any.
 pub const EMOTES: [(&str, u16, Option<&str>); 9] = [

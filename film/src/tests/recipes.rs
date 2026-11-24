@@ -62,10 +62,10 @@ fn a_failure_at_a_call_says_which_recipe_line() {
 #[test]
 fn every_shared_recipe_is_checked_alone() {
     let mut known: std::collections::HashMap<String, Vec<crate::text::recipes::Recipe>> = Default::default();
-    let mut all = crate::text::recipes::library().to_vec();
+    let mut all = crate::LEXICON.library().to_vec();
     for name in crate::shared_files(&crate::tests::project()).iter().filter(|name| name.as_str() == "welcome") {
         let text = crate::text::recipes::shared_text(&crate::tests::project(), name).expect("read");
-        all.extend(crate::text::recipes::recipes_of(&text, name));
+        all.extend(crate::text::recipes::recipes_of(&crate::LEXICON, &text, name));
     }
     for recipe in &all {
         known.entry(recipe.name.clone()).or_default().push(recipe.clone());

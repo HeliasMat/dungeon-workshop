@@ -45,7 +45,7 @@ pub fn shown_form(word: &str, form: &str) -> String {
 pub(crate) fn told_who_first(film: &mut Film, number: usize, written: &[(String, language::Span)], verb: &str) {
     let [(word, word_at), (who, who_at), ..] = written else { return };
     // (A word the plan writes word first, nobody acting in it, `fight a vs b`: as it is.)
-    if crate::plan::who_first(verb) == Some(false) || plain(word) != verb || film.actor(who).is_none() || crate::verbs::is_word(who, &film.source) {
+    if crate::plan::who_first(verb) == Some(false) || plain(word) != verb || film.actor(who).is_none() || film.lexicon.is_word(who, &film.source) {
         return;
     }
     let rest: Vec<&str> = written[2..].iter().map(|(said, _)| said.as_str()).collect();
@@ -65,7 +65,7 @@ pub(crate) fn told_who_first(film: &mut Film, number: usize, written: &[(String,
 /// family's forms that fits it: its first part one who acts (a team given
 /// only one).
 pub(crate) fn said_of_someone(film: &mut Film, family: &str, verb: &str, rest: &[String]) -> bool {
-    let Some(word) = crate::verbs::word_of_family(family, verb) else { return false };
+    let Some(word) = film.lexicon.word_of_family(family, verb) else { return false };
     for form in word.forms {
         let pieces = crate::grammar::read(form);
         let Ok(bound) = crate::grammar::bind(film, &pieces, rest) else { continue };

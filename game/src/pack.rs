@@ -16,7 +16,7 @@
 //! - a film: the files it `uses` or `include`s (the project's, not the
 //!   library's, which every player has), and what it plays as it is
 //!   compiled: the pictures of one's own it draws (`film::Written::pictures`,
-//!   those its words pick by themselves too: `film::OWN_PICTURES`), its own
+//!   those its words pick by themselves too: `film::LEXICON.own_pictures()`), its own
 //!   sounds and music (`own:<name>`: `sounds/<name>.wav`, and the
 //!   `music/<name>.music` it was made from), the files its lines give;
 //! - a dungeon or a fight: its `fight:` and its `tileset:`.

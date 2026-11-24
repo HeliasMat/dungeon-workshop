@@ -140,6 +140,8 @@ impl Staging {
 }
 
 pub struct Film {
+    /// The words it is read with: every family of the language.
+    pub lexicon: &'static crate::verbs::Lexicon,
     pub tables: Arc<Tables>,
     /// Those known by a name, in the order they came; their codes.
     pub names: Vec<String>,
@@ -250,12 +252,13 @@ impl Film {
     /// A film compiled with the repository's tables, for the tests.
     #[cfg(test)]
     pub fn new() -> Self {
-        Film::with(crate::tests::tables())
+        Film::with(&crate::LEXICON, crate::tests::tables())
     }
 
     /// A film compiled with these tables.
-    pub fn with(tables: Arc<Tables>) -> Self {
+    pub fn with(lexicon: &'static crate::verbs::Lexicon, tables: Arc<Tables>) -> Self {
         Film {
+            lexicon,
             tables,
             names: vec!["hero".to_string(), "partner".to_string()],
             actors: HashMap::from([("hero".to_string(), "0".to_string()), ("partner".to_string(), "10".to_string())]),
@@ -348,12 +351,5 @@ impl Film {
     pub fn draw(&mut self) -> u64 {
         self.chance = self.chance.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
         (self.chance >> 34) % ((1 << 30) - 1) + 1
-    }
-}
-
-impl Default for Film {
-    /// A film with empty tables (it knows no Pokémon, no place).
-    fn default() -> Self {
-        Film::with(Arc::new(Tables::default()))
     }
 }

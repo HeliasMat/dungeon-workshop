@@ -22,6 +22,9 @@ pub const WORDS: &[Word] = &[
         .maybe(viewed),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("view", WORDS);
+
 /// The words that frame the view: one in a moment.
 const FRAMING_WORDS: [&str; 7] = ["camera", "view", "frame", "shot", "glide", "scroll", "dolly"];
 

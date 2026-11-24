@@ -34,6 +34,7 @@ use language::{Diagnostic, Source, Span};
 use engine::{Beat, Compare, Condition, DataBeat, FlowBeat, Frames, Num, Test, Value};
 
 use crate::ir::{From, Instr, RecipeLine, Shape};
+use crate::verbs::Lexicon;
 
 mod blocks;
 mod helpers;
@@ -199,7 +200,7 @@ impl Anchor {
 const THE_GAMES: [&str; 9] = ["clock", "music_clock", "answer", "timer", "controlled", "target", "stopwatch", "hp", "turns"];
 
 /// A text, its numbers from `base` (a file taken in has its own range).
-pub fn internal(text: &str, base: usize, language: &str) -> Internal {
+pub fn internal(lexicon: &'static Lexicon, text: &str, base: usize, language: &str) -> Internal {
     let parsed = language::parse_with(text, &holds);
     let source = Source::new(text);
     let mut lower = Lower {
@@ -220,6 +221,7 @@ pub fn internal(text: &str, base: usize, language: &str) -> Internal {
         fighting: 0,
         own: 0,
         language: language.to_string(),
+        lexicon,
         story: crate::plot::names_of(&parsed.file),
     };
     for diagnostic in parsed.diagnostics {
@@ -233,7 +235,7 @@ pub fn internal(text: &str, base: usize, language: &str) -> Internal {
 /// A recipe written for one call (`define` … `end`, as the language
 /// wrote it): its lines with what the call gives each name, every line the
 /// call's number; what is wrong in them.
-pub fn called(recipe: &RecipeText, call: CallOf, language: &str) -> Internal {
+pub fn called(lexicon: &'static Lexicon, recipe: &RecipeText, call: CallOf, language: &str) -> Internal {
     let source = Source::new(&recipe.text);
     let mut params = HashMap::new();
     gather(&recipe.form.elements, false, &mut params);
@@ -269,6 +271,7 @@ pub fn called(recipe: &RecipeText, call: CallOf, language: &str) -> Internal {
         fighting: 0,
         own: 0,
         language: language.to_string(),
+        lexicon,
         story: Vec::new(),
     };
     for (name, words) in found {
@@ -324,6 +327,8 @@ struct Lower<'a> {
     own: usize,
     /// The language the lines said are written in (`Tables::language`).
     language: String,
+    /// The words it is read with (who first: `pikachu walk to b`).
+    lexicon: &'static Lexicon,
     /// The film's moments and scenes by name, for `seen(name)` to be checked
     /// (none in a recipe: its calls name them).
     story: Vec<String>,

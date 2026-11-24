@@ -43,6 +43,9 @@ pub const WORDS: &[Word] = &[
     Word::new("_spectators", &["off", "joy|sorrow", "*who"], "then, at each catch: emote joy, jump; at each loss: emote sweat; joy, sorrow: they react at once; off").does(watched),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("fishing", WORDS).with_pictures(PICTURES);
+
 mod state;
 pub use state::FishingState;
 mod catches;
@@ -59,6 +62,11 @@ use water::*;
 /// picture (library/images/).
 const BOBBER: &str = "bobber";
 pub(crate) const BOBBER_PICTURE: &str = "bobber";
+
+/// The pictures of one's own fishing's words pick by themselves: the
+/// bobber, the letter, the net, the fish and their shadows.
+const PICTURES: &[&str] = &[BOBBER_PICTURE, "letter", "net_basket", "small_fish", "small_fish_r", "big_shadow", "big_shadow_r"];
+
 /// What comes out with `haul a random`, by chance (the same each time the film
 /// plays): the sea's own, a berry, an apple, or nothing.
 const CATCHES: [&str; 12] = ["magikarp", "poliwag", "krabby", "staryu", "shellder", "qwilfish", "remoraid", "chinchou", "Apple", "oranberry", "Apple", "-"];

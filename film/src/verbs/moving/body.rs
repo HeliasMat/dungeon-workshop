@@ -32,6 +32,9 @@ pub const WORDS: &[Word] = &[
     Word::new("wander", &["who:pokemon [n:number]"], "roams").does(roamed),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("body", WORDS);
+
 /// `wait 2s`, `wait all`, `wait a b`; `wait wind`: what is
 /// played beside the film under that name.
 fn waited(film: &mut Film, line: &Line) {

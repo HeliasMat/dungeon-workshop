@@ -124,7 +124,7 @@ pub struct Written {
     pub plan: crate::time::Plan,
     /// The pictures of one's own it draws, by their files (`footprints.png`,
     /// `bobber.4.png`): its things, and those its words pick by themselves
-    /// (`crate::OWN_PICTURES`). What a game's pack takes of its `images/`.
+    /// (`Lexicon::own_pictures`). What a game's pack takes of its `images/`.
     pub pictures: Vec<String>,
 }
 
@@ -191,19 +191,19 @@ fn tokens(written: &str) -> Vec<(usize, usize)> {
 
 /// A film's text turned into lines, with these tables (its project's, its
 /// data's, its language).
-pub fn compile_with(text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Written {
-    compile_as(text, tables, false)
+pub fn compile_with(lexicon: &'static crate::verbs::Lexicon, text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Written {
+    compile_as(lexicon, text, tables, false)
 }
 
 /// A scene the game makes of a place (`game::roam`), turned into
 /// lines with those tables: the words only the game writes (`player`,
 /// `dialogue`, `explore`, `game`, `way`) are known there.
-pub fn compile_place_with(text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Written {
-    compile_as(text, tables, true)
+pub fn compile_place_with(lexicon: &'static crate::verbs::Lexicon, text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Written {
+    compile_as(lexicon, text, tables, true)
 }
 
-fn compile_as(text: &str, tables: std::sync::Arc<crate::tables::Tables>, made_by_the_game: bool) -> Written {
-    let mut film = Film::with(tables);
+fn compile_as(lexicon: &'static crate::verbs::Lexicon, text: &str, tables: std::sync::Arc<crate::tables::Tables>, made_by_the_game: bool) -> Written {
+    let mut film = Film::with(lexicon, tables);
     film.game.made_by_the_game = made_by_the_game;
     film.source = std::sync::Arc::from(text);
     let mut scenes = read(text, &mut film);

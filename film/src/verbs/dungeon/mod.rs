@@ -50,6 +50,9 @@ pub const WORDS: &[Word] = &[
     Word::new("steal", &["who:pokemon thing..."], "picks up without paying; the shopkeeper: emote, tremble, quake, popup, sound, battlelog").does(steals),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("dungeon", WORDS);
+
 /// The stairs' and the traps' pictures (data/hand/, `scene_player dungeons`).
 const STAIRS: &str = "stairs";
 

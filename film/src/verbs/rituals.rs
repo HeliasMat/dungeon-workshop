@@ -17,6 +17,9 @@ pub const WORDS: &[Word] = &[
     Word::new("rank", &["*who", "team:word rank:thing..."], "find, goes, turn down (they line up); a team and a rank: jingle, the game's sentence").maybe(rank),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("rituals", WORDS);
+
 fn meal(film: &mut Film, who: &[String]) {
     // (Dinner is called; each goes to a place where the game's scenes seat
     // someone, then the plates are emptied at their own pace.)

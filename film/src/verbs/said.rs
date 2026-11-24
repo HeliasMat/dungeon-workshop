@@ -20,6 +20,9 @@ pub const WORDS: &[Word] = &[
         .does(chattered),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("said", WORDS);
+
 /// What a crowd says when it chatters: short, of no one's story.
 const CHATTER: [&str; 12] = ["!", "...", "?", "Oh!", "Hm.", "Ha ha!", "Yes!", "No way!", "Wow...", "Look!", "Hey!", "Really?"];
 /// How long each of those bubbles stays, and how far apart they come.

@@ -36,7 +36,7 @@
 //! which recipe line it comes from.
 
 use std::collections::HashMap;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use assets::project::Project;
 
@@ -44,6 +44,7 @@ use super::front::{CallOf, CallValue, RecipeText};
 use crate::film::Film;
 use crate::grammar::{self, Kind, Piece, Value as Given};
 use crate::ir::{Instr, Shape};
+use crate::verbs::Lexicon;
 use crate::words::{frames_of, plain};
 
 /// How deep a recipe may call others.
@@ -122,16 +123,15 @@ impl Recipe {
 
 type Recipes = HashMap<String, Vec<Recipe>>;
 
-/// The library's recipes, read once.
-pub fn library() -> &'static [Recipe] {
-    static READ: OnceLock<Vec<Recipe>> = OnceLock::new();
-    READ.get_or_init(|| LIBRARY.iter().flat_map(|(from, text)| recipes_of(text, from)).collect())
+/// The library's recipes, read with that lexicon (kept by it: `Lexicon::library`).
+pub(crate) fn read_library(lexicon: &'static Lexicon) -> Vec<Recipe> {
+    LIBRARY.iter().flat_map(|(from, text)| recipes_of(lexicon, text, from)).collect()
 }
 
 /// The recipes of a text (its `define` … `end`), each with the comment
 /// above it as what it does.
-pub fn recipes_of(text: &str, from: &str) -> Vec<Recipe> {
-    let lines = super::front::internal(text, 0, crate::tables::ENGLISH).lines;
+pub fn recipes_of(lexicon: &'static Lexicon, text: &str, from: &str) -> Vec<Recipe> {
+    let lines = super::front::internal(lexicon, text, 0, crate::tables::ENGLISH).lines;
     lines
         .iter()
         .filter_map(|item| match &item.shape {
@@ -245,7 +245,7 @@ pub struct Told {
 
 /// The recipes a film has to call: its own (`define`, from its text),
 /// those of the files it uses (`uses`), then the library's.
-pub fn recipes_for(project: &Project, text: &str) -> Vec<Told> {
+pub fn recipes_for(lexicon: &'static Lexicon, project: &Project, text: &str) -> Vec<Told> {
     let told = |recipe: &Recipe, from: &str| Told {
         name: recipe.name.clone(),
         shape: recipe.shape().trim_end().to_string(),
@@ -253,15 +253,15 @@ pub fn recipes_for(project: &Project, text: &str) -> Vec<Told> {
         from: from.to_string(),
         line: recipe.text.number,
     };
-    let mut all: Vec<Told> = recipes_of(text, "film").iter().map(|recipe| told(recipe, "")).collect();
+    let mut all: Vec<Told> = recipes_of(lexicon, text, "film").iter().map(|recipe| told(recipe, "")).collect();
     for line in text.lines() {
         if let ["uses" | "include", name] = line.split_whitespace().collect::<Vec<_>>().as_slice()
             && let Ok(shared) = shared_text(project, name)
         {
-            all.extend(recipes_of(&shared, name).iter().map(|recipe| told(recipe, name)));
+            all.extend(recipes_of(lexicon, &shared, name).iter().map(|recipe| told(recipe, name)));
         }
     }
-    all.extend(library().iter().filter(|recipe| !crate::verbs::internal(&recipe.name)).map(|recipe| told(recipe, &recipe.from)));
+    all.extend(lexicon.library().iter().filter(|recipe| !crate::verbs::internal(&recipe.name)).map(|recipe| told(recipe, &recipe.from)));
     all
 }
 
@@ -335,7 +335,7 @@ fn cooked(film: &mut Film, recipe: &Recipe, given: &[Given], number: usize) -> V
         })
         .collect();
     let call = CallOf { id: film.recipe_calls, number, values, file: recipe.file.clone(), apart: false };
-    let read = super::front::called(&recipe.text, call, &film.tables.language);
+    let read = super::front::called(film.lexicon, &recipe.text, call, &film.tables.language);
     let source = language::Source::new(&recipe.text.text);
     for (_, wrong) in read.diagnostics.into_iter().filter(|(_, wrong)| wrong.severity == language::Severity::Error) {
         let at = told_at(&recipe.file, source.position(wrong.bytes().start).line);
@@ -528,7 +528,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                 Ok(_) if depth > 8 => film.wrong(number, format!("“{}”: files that include each other without end", instr.text)),
                 Ok(text) if verb == "uses" => {
                     film.uses.push(plain(name));
-                    for recipe in recipes_of(&text, name) {
+                    for recipe in recipes_of(film.lexicon, &text, name) {
                         if !film.defined.iter().any(|known| known.recipe.file == recipe.file && known.recipe.text.number == recipe.text.number) {
                             film.defined.push(super::checked::Defined { recipe: recipe.clone(), uses: Some(number) });
                         }
@@ -620,7 +620,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                         }
                     }
                     // (No recipe of that name fits, but a word of the language does: the word's.)
-                    None if crate::verbs::is_word(verb, "") && crate::verbs::wrong_form(film, verb, verb, &written[1..], &instr.text).is_none() => {
+                    None if film.lexicon.is_word(verb, "") && crate::verbs::wrong_form(film, verb, verb, &written[1..], &instr.text).is_none() => {
                         out.push(if written == line { instr.clone() } else { as_word(instr, written) });
                     }
                     None => {
@@ -646,7 +646,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
 /// A text read by the language (`front`), its numbers from `base`: its
 /// tree of lines, what is wrong told.
 fn read(film: &mut Film, text: &str, base: usize) -> Vec<Instr> {
-    let read = super::front::internal(text, base, &film.tables.language);
+    let read = super::front::internal(film.lexicon, text, base, &film.tables.language);
     for (number, wrong) in read.diagnostics {
         if wrong.severity == language::Severity::Error {
             let fix = wrong.fixes.first().map_or(String::new(), |fix| format!(" ({})", fix.title));
@@ -694,7 +694,7 @@ fn own_spans(lines: &mut [Instr], text: &str) {
 /// played out in it (`evolution a m133`, of `evolve`): its lines.
 pub fn unfold_word(film: &mut Film, line: Instr) -> Vec<Instr> {
     let mut recipes = Recipes::new();
-    for recipe in library() {
+    for recipe in film.lexicon.library() {
         recipes.entry(recipe.name.clone()).or_default().push(recipe.clone());
     }
     let mut out = Vec::new();
@@ -707,7 +707,7 @@ pub fn unfold_word(film: &mut Film, line: Instr) -> Vec<Instr> {
 pub fn unfold(text: &str, film: &mut Film) -> Vec<Instr> {
     let numbered = read(film, text, 0);
     let mut recipes = Recipes::new();
-    for recipe in library() {
+    for recipe in film.lexicon.library() {
         recipes.entry(recipe.name.clone()).or_default().push(recipe.clone());
     }
     let mut out = Vec::new();

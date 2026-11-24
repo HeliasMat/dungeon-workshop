@@ -13,6 +13,9 @@ pub const WORDS: &[Word] = &[Word::new(
 )
 .does(pushed)];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("contact", WORDS);
+
 /// `a push b [wins b]`: they lock and strain, and one throws the other
 /// back: who the line says, else the heavier, else a.
 fn pushed(film: &mut Film, line: &Line) {

@@ -27,6 +27,9 @@ pub const WORDS: &[Word] = &[
     .does(landed),
 ];
 
+/// Its words, a family of the language (`Lexicon`).
+pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("flying", WORDS);
+
 /// How high one flies, when the line does not say; how long the way up
 /// takes, and down.
 const HEIGHT: f32 = 24.0;
