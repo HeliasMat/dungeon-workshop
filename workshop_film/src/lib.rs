@@ -15,6 +15,11 @@
 //!
 //! Stepping by line, the film stops at the start of each line of its own
 //! course as it plays; "Next Line" plays on to the next one.
+//!
+//! A crate of Dungeon Workshop: the film played (`Films`) and its panels. It
+//! uses `workshop_base` (the session, the look), `workshop_script` (the Script
+//! it plays, `Scripts`), `workshop_decor` (the panels' sections and tags) and
+//! `preview` (a film played with no window).
 
 use std::sync::Arc;
 

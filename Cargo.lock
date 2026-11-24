@@ -4237,18 +4237,16 @@ dependencies = [
  "engine",
  "film",
  "game",
- "glam",
  "image",
  "media",
- "preview",
  "rules",
  "scenes",
  "shell",
  "spritecollab",
- "stage_view",
  "workshop_base",
  "workshop_decor",
  "workshop_dungeon",
+ "workshop_film",
  "workshop_music",
  "workshop_picture",
  "workshop_script",
@@ -4301,6 +4299,23 @@ dependencies = [
  "rules",
  "shell",
  "workshop_base",
+]
+
+[[package]]
+name = "workshop_film"
+version = "0.2.0"
+dependencies = [
+ "eframe",
+ "engine",
+ "film",
+ "glam",
+ "image",
+ "preview",
+ "shell",
+ "stage_view",
+ "workshop_base",
+ "workshop_decor",
+ "workshop_script",
 ]
 
 [[package]]

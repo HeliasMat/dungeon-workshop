@@ -25,7 +25,6 @@ mod app;
 mod bug;
 mod capture;
 mod emulate;
-mod films;
 mod first;
 mod games;
 mod home;

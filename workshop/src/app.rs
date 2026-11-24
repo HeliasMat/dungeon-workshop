@@ -165,7 +165,7 @@ pub struct Work {
     pub decors: workshop_decor::Decors,
     /// The Film space's Script; the film played.
     pub scripts: workshop_script::Scripts,
-    pub films: crate::films::Films,
+    pub films: workshop_film::Films,
     /// The Resources space's own.
     pub resources: crate::resources::Resources,
     /// The Dungeon space's own.
@@ -218,7 +218,7 @@ impl App {
             go: None,
             decors: workshop_decor::Decors::new(&session, context),
             scripts: workshop_script::Scripts::new(&session, context),
-            films: crate::films::Films::new(&session, context),
+            films: workshop_film::Films::new(&session, context),
             resources: crate::resources::Resources::new(&session, context),
             dungeons: workshop_dungeon::dungeons::Dungeons::new(&session),
             games: crate::games::Games::new(&session),
@@ -922,10 +922,10 @@ impl egui_dock::TabViewer for Panels<'_> {
                     self.work.films.playing = true;
                 }
             }
-            Panel::FilmScene => crate::films::scene(ui, &mut self.work.films, &mut self.work.scripts),
-            Panel::Timeline => crate::films::timeline(ui, &mut self.work.films, &mut self.work.scripts),
-            Panel::FilmInspector => crate::films::inspector(ui, &mut self.work.films, &mut self.work.scripts),
-            Panel::FilmState => crate::films::state(ui, &mut self.work.films, &mut self.work.scripts),
+            Panel::FilmScene => workshop_film::scene(ui, &mut self.work.films, &mut self.work.scripts),
+            Panel::Timeline => workshop_film::timeline(ui, &mut self.work.films, &mut self.work.scripts),
+            Panel::FilmInspector => workshop_film::inspector(ui, &mut self.work.films, &mut self.work.scripts),
+            Panel::FilmState => workshop_film::state(ui, &mut self.work.films, &mut self.work.scripts),
             Panel::AssetTree => crate::resources::tree(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetGrid => crate::resources::grid(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetInspector => {
