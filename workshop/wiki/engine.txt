@@ -117,12 +117,6 @@ scene: beach pikachu piplup
 calc apples 3 + 2
 pikachu: I have {apples} apples.
 
-== carry
-> A thing (or someone) carried above someone's head, following them everywhere; carry x off puts it down.
-scene: beach pikachu piplup
-piplup carry pikachu
-pikachu walk to right
-
 == color
 > colour, another spelling: someone tinted a colour (r g b), for so long.
 scene: beach pikachu piplup

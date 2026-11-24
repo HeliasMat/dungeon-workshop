@@ -50,8 +50,9 @@ use crate::words::{frames_of, plain};
 const DEEPEST: usize = 8;
 
 /// The library's recipes, a file a theme.
-const LIBRARY: [(&str, &str); 3] = [
+const LIBRARY: [(&str, &str); 4] = [
     ("gestures", include_str!("../../recipes/gestures.film")),
+    ("contact", include_str!("../../recipes/contact.film")),
     ("fights", include_str!("../../recipes/fights.film")),
     ("fishing/line", include_str!("../../recipes/fishing/line.film")),
 ];

@@ -104,6 +104,11 @@ impl Film {
         species(code).and_then(|number| self.tables.movements.get(number)).copied().unwrap_or(crate::tables::Movement::Walks)
     }
 
+    /// How heavy someone is, by its tables (none: not known).
+    pub fn weight_of(&self, code: &str) -> Option<u16> {
+        species(code).and_then(|number| self.tables.weights.get(number)).copied()
+    }
+
     /// Whether someone's sprite has that animation (none: its sheets are
     /// not known, a variant painted by hand, no data).
     pub fn has_animation(&self, code: &str, group: u16) -> Option<bool> {

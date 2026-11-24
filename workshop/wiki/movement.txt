@@ -93,6 +93,14 @@ pikachu ride on lapras
 lapras walk to right
 pikachu get_off to center
 
+== dismount
+> get_off, another word: someone hops down off the back they ride, beside the mount or to the place told.
+scene: beach pikachu lapras
+pikachu put left
+lapras put center
+pikachu ride on lapras
+pikachu dismount to 200 150
+
 == swim
 > Someone is in the water and swims: a third of their body under it, the water's line waving on them, a little bob. Alone, where they are; to a place, straight across the water, rings in their wake; from x y, coming in from there.
 scene: beach lapras pikachu
@@ -110,6 +118,15 @@ pikachu put 300 175
 lapras swim
 lapras dive
 pikachu (surprised): Where did it go?
+
+== plunge
+> dive, another word: someone in the water plunges under it, with a splash, and is gone.
+scene: beach lapras pikachu
+lapras put 330 95
+pikachu put 300 175
+lapras swim
+lapras plunge
+pikachu (surprised): Gone!
 
 == surface
 > Someone under the water comes up again, where they dived or at the place told, with a splash.
@@ -139,6 +156,14 @@ pikachu put 260 330
 pidgey fly
 pidgey fly to 90 330
 pikachu (surprised): Over the cliff!
+
+== take_off
+> fly, another word: someone takes off and flies, bobbing in the air, so high or to a place.
+scene: lake pidgey pikachu
+pidgey put 300 330
+pikachu put 260 330
+pidgey take_off
+pikachu (happy): Up he goes!
 
 == land
 > Someone flying comes down with their landing and walks again: where they are, or at the place told, flying there first.

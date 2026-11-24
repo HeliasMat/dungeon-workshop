@@ -118,3 +118,57 @@ pikachu (happy): What a morning!
 scene: beach pikachu piplup
 piplup: We won!
 pikachu celebrate
+
+== push
+> Two shove each other, as in sumo: they lock, strain and tremble, then one throws the other back and he falls. The heavier wins, by the game's own weights (the one who pushes if they are not known); wins says who.
+scene: beach pikachu munchlax
+pikachu put left
+munchlax put right
+pikachu (determined): Out of the ring!
+pikachu push munchlax wins pikachu
+munchlax (pain): Oof...
+
+== tug
+> Someone takes hold of another and pulls him along, walking back; the other is dragged after him and staggers.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu: Come on, this way!
+pikachu tug piplup
+piplup (surprised): Hey!
+
+== tickle
+> Someone tickles another, who laughs and wriggles.
+scene: beach pikachu piplup
+pikachu tickle piplup
+piplup (happy): Ha ha, stop it!
+
+== chomp
+> Someone bites another: a snap of the head, the other hurt and shocked.
+scene: beach pikachu piplup
+piplup (angry): Give it back!
+piplup chomp pikachu
+pikachu (pain): Ow!
+
+== high_five
+> Two meet face to face and jump up together, glad: a high five.
+scene: beach pikachu piplup
+pikachu put left
+piplup put right
+pikachu (happy): We did it!
+pikachu high_five piplup
+
+== boost
+> Someone crouches and gives another a leg up: the other climbs on his head and springs off, there (to where) or before him.
+scene: beach pikachu piplup
+pikachu: Up you go!
+pikachu boost piplup to 400 150
+piplup (happy): I can see the sea!
+
+== lift
+> Someone lifts another up over his head, with an effort, and holds him there; put_down sets him down.
+scene: beach pikachu piplup
+piplup: I can't see!
+pikachu lift piplup
+piplup (happy): Much better!
+pikachu put_down piplup

@@ -22,7 +22,7 @@ uses dungeon
 scene: town pikachu kecleon
 kecleon shop Apple 50 Oran Berry 30
 pikachu shop buy Apple
-kecleon (happy): Thank you!
+kecleon: Thank you!
 
 == steal
 > Someone takes an item of the shop without paying: the shopkeeper, furious, cries thief.

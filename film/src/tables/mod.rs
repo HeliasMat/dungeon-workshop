@@ -141,6 +141,9 @@ pub struct Tables {
     /// movement types (`Movement`), from its tables (`dungeons.bin`); none
     /// told, it walks.
     pub movements: HashMap<String, Movement>,
+    /// How heavy each monster is, by its number, from its tables
+    /// (`dungeons.bin`): who wins a shove (`push`).
+    pub weights: HashMap<String, u16>,
     /// The faces each monster's portraits have, by its number (`happy` is
     /// 1), as `portraits/` holds them.
     pub portraits: HashMap<String, HashSet<u16>>,

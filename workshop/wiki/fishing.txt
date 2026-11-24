@@ -12,12 +12,6 @@ bite
 pikachu reel catch magikarp
 pikachu release
 
-== ride
-> Someone hops onto another's back and stays there, wherever it swims.
-scene: beach pikachu lapras
-pikachu ride lapras
-lapras walk to right
-
 == bite
 > A fish bites the line in the water (the last one cast): the bobber dives, a splash, the fisher starts. bite strong: it is yanked under, the rod pulls him forward; bite nibble: it only touches, the bobber quivers twice and he wonders.
 uses fishing

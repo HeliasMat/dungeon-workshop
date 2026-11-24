@@ -1,0 +1,133 @@
+# The contacts of the library: two bodies that meet, in the words of the
+# language. `_sumo` is the library's own (`who push other`, which picks who
+# wins), never written in a film.
+
+# A shove of sumo, who winning: they lock, strain and tremble, then the other is thrown back and falls.
+define _sumo who:pokemon other:pokemon
+  who walk to other
+  who face other
+  other face who
+  wait 0.2s
+  who pose pull loop
+  other pose pull loop
+  who tremble
+  other tremble
+  sound jolt
+  wait 1.2s
+  who tremble off
+  other tremble off
+  who pose off
+  other pose off
+  sound strike
+  other hurt back 24
+  other fall back
+  wait 0.4s
+  who hop happy
+end
+
+# He pulls the other along: he takes hold and walks back, the other dragged after him, staggering.
+define tug who:pokemon other:pokemon
+  who walk to other
+  who face other
+  other face who
+  wait 0.2s
+  who pose pull loop
+  other tremble
+  other emote sweat
+  wait 0.8s
+  other tremble off
+  other follow who
+  who walk to behind who slow backward
+  other follow off
+  other face who
+  who pose off
+  other pose stagger
+  wait 0.4s
+  other pose off
+end
+
+# He tickles the other, who laughs and wriggles.
+define tickle who:pokemon other:pokemon
+  who walk to other
+  who face other
+  other face who
+  who pose double loop
+  other tremble
+  other emote laugh
+  sound laugh
+  wait 1s
+  who pose off
+  other tremble off
+  other jump height 4
+  other jump height 4
+end
+
+# He bites the other: a snap of his head, the other hurt and shocked.
+define chomp who:pokemon other:pokemon
+  who walk to other
+  who face other
+  other face who
+  who pose headbutt
+  wait 0.2s
+  sound strike
+  other hurt
+  other emote shock
+  other jump height 8
+  wait 0.5s
+end
+
+# A high five: face to face, they jump up together, glad.
+define high_five who:pokemon other:pokemon
+  who walk to other
+  who face other
+  other face who
+  wait 0.2s
+  who jump height 10 &
+  other jump height 10
+  sound click
+  who emote joy silent
+  other emote joy
+  wait 0.4s
+end
+
+# He gives the other a leg up: crouched, the other climbs on his head and springs off there.
+define boost who:pokemon other:pokemon to where:place
+  other walk to who
+  who face other
+  who pose cringe
+  other ride on who head
+  wait 0.4s
+  who tremble
+  wait 0.4s
+  who tremble off
+  other get_off to where
+  who pose off
+end
+
+# He gives the other a leg up: crouched, the other climbs on his head and springs off before him.
+define boost who:pokemon other:pokemon
+  other walk to who
+  who face other
+  who pose cringe
+  other ride on who head
+  wait 0.4s
+  who tremble
+  wait 0.4s
+  who tremble off
+  other get_off to front_of who
+  who pose off
+end
+
+# He lifts the other up over his head, with an effort, and holds him there (put_down to set him down).
+define lift who:pokemon other:pokemon
+  who walk to other
+  who face other
+  who pose cringe
+  who tremble
+  who emote sweat silent
+  wait 0.5s
+  who tremble off
+  who pose off
+  who carry other
+  who hop happy
+end
