@@ -226,8 +226,9 @@ pub fn animations(folder: &Path) -> BTreeMap<String, Animation> {
     for block in text.split("<Anim>").skip(1) {
         let block = block.split("</Anim>").next().unwrap_or(block);
         let Some(name) = tag(block, "Name") else { continue };
-        let group =
-            tag(block, "Index").and_then(|index| index.parse().ok()).or_else(|| GROUPS.iter().find(|(known, _)| *known == name).map(|(_, group)| *group as u32));
+        let group = tag(block, "Index")
+            .and_then(|index| index.parse().ok())
+            .or_else(|| GROUPS.iter().find(|(known, _)| *known == name).map(|(_, group)| *group as u32));
         let Some(group) = group else { continue };
         if let Some(copy) = tag(block, "CopyOf") {
             copies.push((name, group, copy));

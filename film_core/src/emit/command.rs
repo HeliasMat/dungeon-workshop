@@ -274,4 +274,3 @@ fn said_from(verb: &str, words: &[String]) -> Option<usize> {
     let placed = verb == "hud" && words.first().is_some_and(|place| engine::hud_place(place).is_some());
     Some(if placed { at + 1 } else { at })
 }
-
