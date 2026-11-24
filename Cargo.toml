@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "engine", "film_core", "film_acting", "film_moving", "film_dungeon", "film_fights", "film_fishing", "film", "language", "dive", "scene_player", "preview", "game", "workshop", "workshop_resources", "workshop_film", "workshop_decor", "workshop_script", "workshop_wiki", "workshop_dungeon", "workshop_music", "workshop_sound", "workshop_picture", "workshop_base", "decor", "rom_formats", "media", "shell", "spritecollab", "stage_view", "dungeon_lsp", "emulator"]
+members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "engine", "film_core", "film_acting", "film_moving", "film_dungeon", "film_fights", "film_fishing", "film", "language", "dive", "scene_player", "ds_export", "preview", "game", "workshop", "workshop_resources", "workshop_film", "workshop_decor", "workshop_script", "workshop_wiki", "workshop_dungeon", "workshop_music", "workshop_sound", "workshop_picture", "workshop_base", "decor", "rom_formats", "media", "shell", "spritecollab", "stage_view", "dungeon_lsp", "emulator"]
 
 # What every crate's manifest says alike (each takes it with `x.workspace = true`).
 [workspace.package]
@@ -56,6 +56,12 @@ overflow-checks = false
 debug-assertions = false
 
 [profile.dev.package.scene_player]
+opt-level = 3
+overflow-checks = false
+debug-assertions = false
+
+# (The DS export, as the player that ran it: built alike, it writes alike.)
+[profile.dev.package.ds_export]
 opt-level = 3
 overflow-checks = false
 debug-assertions = false

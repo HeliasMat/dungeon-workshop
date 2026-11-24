@@ -6,6 +6,11 @@ language (`scene_player export-ds`), put in a copy of your own ROM
 (`tools/ds/patch_rom.py`), and played in an emulator. What exports and what
 does not: `tools/ds/LIMITS.md`.
 
+The export is the library `ds_export` (`ds_export/src/lib.rs`: `film`,
+`dungeon`, `table`), which `scene_player export-ds` calls; what each word
+becomes on the DS is declared with the word (`film_core/src/ds.rs`), and
+the Python side, what puts it in the ROM, is `tools/ds/`.
+
 ## Writing a film for the DS
 
 A line `for ds` before the first scene (the Script's **DS Mode** writes it)

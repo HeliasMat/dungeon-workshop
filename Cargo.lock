@@ -801,6 +801,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
 
 [[package]]
+name = "ds_export"
+version = "0.2.0"
+dependencies = [
+ "engine",
+ "film",
+ "game",
+ "image",
+ "png",
+ "preview",
+ "rules",
+ "scenes",
+ "serde_json",
+]
+
+[[package]]
 name = "dungeon_lsp"
 version = "0.2.0"
 dependencies = [
@@ -2952,13 +2967,13 @@ dependencies = [
 name = "scene_player"
 version = "0.2.0"
 dependencies = [
+ "ds_export",
  "engine",
  "film",
  "game",
  "glam",
  "image",
  "language",
- "png",
  "preview",
  "rules",
  "scenes",

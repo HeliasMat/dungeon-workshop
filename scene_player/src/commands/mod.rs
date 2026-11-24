@@ -6,7 +6,6 @@ mod agents;
 mod checking;
 mod chrono;
 mod ds;
-mod ds_map;
 mod dungeons;
 mod help;
 pub mod json;

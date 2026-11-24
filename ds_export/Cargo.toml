@@ -1,0 +1,25 @@
+[package]
+name = "ds_export"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "ds_export: a film or a dungeon exported to Explorers of Sky (ExplorerScript, maps, JSON)"
+readme = "../docs/DS.md"
+publish.workspace = true
+
+# What a film plays, read as Sky's operations; its fights by their rules.
+[dependencies]
+engine = { path = "../engine" }
+film = { path = "../film" }
+game = { path = "../game" }
+preview = { path = "../preview" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+serde_json.workspace = true
+image.workspace = true
+png = "0.18"
+
+[lints]
+workspace = true

@@ -4,7 +4,7 @@ A small program that plays a scene by itself, without the game: a window, the sp
 
 `main.rs` chooses the command, `commands/` does them all, `window.rs` holds the window, `moment.rs` reads moments, `pack.rs` makes a pack. The film itself comes from `preview`, the same as for the Workshop: compiling it (`film`), playing it frame by frame or at once, its images; its drawing, from `stage_view`.
 
-It reads the game's files in `data/` (`rom/`, and what the tools add in `extra/`). So it needs `film` and `preview` for the films, `game` for a game (a `.game`, a `.dwpack`, and a film played alone as a game of one cutscene), `rules` for the tables, `shell` and `stage_view` to show.
+It reads the game's files in `data/` (`rom/`, and what the tools add in `extra/`). So it needs `film` and `preview` for the films, `game` for a game (a `.game`, a `.dwpack`, and a film played alone as a game of one cutscene), `rules` for the tables, `shell` and `stage_view` to show, `ds_export` for `export-ds`.
 
 ```bash
 cargo build --release -p scene_player

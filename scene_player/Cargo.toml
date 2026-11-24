@@ -11,6 +11,7 @@ publish.workspace = true
 
 # Plays a film or a game by itself, in the shell, and all its commands.
 [dependencies]
+ds_export = { path = "../ds_export" }
 engine = { path = "../engine" }
 film = { path = "../film" }
 language = { path = "../language" }
@@ -23,7 +24,6 @@ game = { path = "../game" }
 glam.workspace = true
 serde_json.workspace = true
 image.workspace = true
-png = "0.18"
 
 [lints]
 workspace = true
