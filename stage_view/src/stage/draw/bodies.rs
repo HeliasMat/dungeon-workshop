@@ -17,6 +17,8 @@ use crate::stage::pose::way_of;
 /// darker; where one goes into the sand.
 const FOAM: [[u8; 3]; 2] = [[248, 252, 255], [176, 224, 248]];
 const SAND: [[u8; 3]; 2] = [[231, 175, 119], [183, 103, 79]];
+/// How many frames the water's wave takes to go a pixel along a sunk body.
+const WAVE_STEP: usize = 8;
 
 /// A little star of whole pixels, going round the corners of a thing's picture.
 fn glint(world: &mut Screen, (x, y): (i32, i32), frame: &shell::images::Frame, close: f32, clock: usize) {
@@ -88,17 +90,26 @@ impl Play {
             let Some(frame) = shown.picture(way) else {
                 return;
             };
-            let alpha = actor.shown_opacity() * if actor.attributes & attribute::SEEN_THROUGH != 0 { 0.5 } else { 1.0 };
+            // (Seen through, or a ghost by nature going through a wall: half
+            // there, as the game shows one in a wall.)
+            let place = &self.sim.stage.place;
+            let in_a_wall = place.ghosts.contains(&who) && place.ground.as_ref().is_some_and(|ground| ground.blocked(at, 0));
+            let alpha = actor.shown_opacity() * if actor.attributes & attribute::SEEN_THROUGH != 0 || in_a_wall { 0.5 } else { 1.0 };
             let afloat = at - Vec2::new(0.0, actor.shown_height() + frame.lift() as f32);
             let raised = afloat + Vec2::new(0.0, actor.sunk);
             let size = close * actor.shown_scale();
             // (Sunk in the water: so much lower, and nothing of it under the
             // surface: where the lowest of its pictures, this way, this
             // animation, reached; the same line whatever it does, its flippers
-            // going in and out of it.)
+            // going in and out of it. The water's line waves by a pixel, its
+            // crests going by; the sand's stays still.)
             let under = (actor.sunk > 0.0).then(|| {
                 let deepest = shown.steps(way).iter().map(|step| lowest_row(step) as i32 + 1 - step.origin.1).max().unwrap_or(0);
-                (at_pixel(view, at).1 + (deepest as f32 * size) as i32, if actor.in_sand { SAND } else { FOAM })
+                let row = at_pixel(view, at).1 + (deepest as f32 * size) as i32;
+                match actor.in_sand {
+                    true => shell::Surface { row, colours: SAND, wave: None },
+                    false => shell::Surface { row, colours: FOAM, wave: Some(clock / WAVE_STEP) },
+                }
             });
             // (What its node keeps of its own: an angle, a slant, a size one
             // way, a pivot, a flip up and down, how it looks.)
@@ -140,7 +151,7 @@ impl Play {
                     * Affine2::from_translation(-feet);
                 let map = node * spun * sprite;
                 let (fx, around) = super::effects_of(&looks.effects, close, seconds);
-                let paint = shell::Paint { below: under.map(|(row, _)| row), fx, ..super::paint_of(looks, colour, alpha) };
+                let paint = shell::Paint { below: under.map(|surface| surface.row), fx, ..super::paint_of(looks, colour, alpha) };
                 world.blit_with(frame, map, &paint, &around);
                 let (low, high) = shell::blit::bounds(&map, (picture.x, picture.y));
                 (low.x as i32 - 1, low.y as i32 - 1, high.x as i32 + 1, high.y as i32 + 1)

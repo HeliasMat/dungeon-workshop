@@ -86,6 +86,22 @@ impl PlaceBeat {
                 line.push(word("flies"));
                 line.extend(group(who));
             }
+            PlaceBeat::Lands(who) => {
+                line.push(word("lands"));
+                line.extend(group(who));
+            }
+            PlaceBeat::Ghosts(who) => {
+                line.push(word("ghosts"));
+                line.extend(group(who));
+            }
+            PlaceBeat::Hovers(who) => {
+                line.push(word("hovers"));
+                line.extend(group(who));
+            }
+            PlaceBeat::Swims { depth, who } => {
+                line.extend([word("swims"), depth.to_string()]);
+                line.extend(group(who));
+            }
             PlaceBeat::Name { name, spot: at } => line.extend([word("setspot"), format!("n:{name}"), spot(at)]),
             PlaceBeat::Find { var, who, spot: at, apart, exact } => {
                 // (No one: a field that is no one, for the view.)
@@ -203,6 +219,10 @@ mod tests {
             PlaceBeat::Ground { middle: at, ground: None },
             PlaceBeat::Ground { middle: at, ground: Some(Ground::new(vec![vec![true, false], vec![false, true]])) },
             PlaceBeat::Flies(vec![a, b]),
+            PlaceBeat::Lands(vec![a]),
+            PlaceBeat::Ghosts(vec![a, b]),
+            PlaceBeat::Hovers(vec![b]),
+            PlaceBeat::Swims { depth: 8.5, who: vec![a] },
             PlaceBeat::Find { var: "v".into(), who: Some(a), spot: Spot::Of(b), apart: true, exact: false },
             PlaceBeat::Find { var: "v".into(), who: None, spot: Spot::Word(at.into()), apart: false, exact: true },
             PlaceBeat::Spread { who: vec![a, b], picture: true },

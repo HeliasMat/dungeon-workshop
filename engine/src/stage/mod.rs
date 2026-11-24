@@ -53,6 +53,8 @@ mod words;
 
 /// How far behind one who follows stops, when not told.
 pub(crate) const FOLLOW_GAP: f32 = 22.0;
+/// How who hovers by nature bobs: how high, how many frames.
+const HOVER: (f32, f32) = (2.0, 60.0);
 
 pub use air::*;
 pub use camera::*;
@@ -311,6 +313,37 @@ impl Stage {
         }
     }
 
+    /// Who swims by nature is in the water where no one walks (sunk so deep)
+    /// and out of it on the ground; not while in the air or carried.
+    fn in_the_water(&mut self) {
+        // (Who hovers by nature bobs once there.)
+        let here: Vec<Who> = self.place.hovering.iter().copied().filter(|who| self.cast.contains_key(who)).collect();
+        for who in here {
+            self.place.hovering.remove(&who);
+            self.with(who, |actor| actor.air.float = crate::stage::motion::Swing::new(HOVER.0, HOVER.1));
+        }
+        let Some(ground) = self.place.ground.as_ref() else {
+            return;
+        };
+        for (who, depth) in &self.place.swimmers {
+            let Some(actor) = self.cast.get_mut(who) else {
+                continue;
+            };
+            let wet = !actor.carried() && actor.air.height < 2.0 && ground.blocked(actor.position, 0);
+            match (wet, self.place.swimming.contains(who)) {
+                (true, false) => {
+                    (actor.sunk, actor.in_sand) = (*depth, false);
+                    self.place.swimming.insert(*who);
+                }
+                (false, true) => {
+                    actor.sunk = 0.0;
+                    self.place.swimming.remove(who);
+                }
+                _ => {}
+            }
+        }
+    }
+
     /// Who follows, wanders; what is carried goes with who has it.
     fn move_by_themselves(&mut self, frames: f32) {
         // (Who goes round someone goes round where that one is now.)
@@ -344,6 +377,7 @@ impl Stage {
             self.step_aside(frames);
         }
         self.pass_handing(frames);
+        self.in_the_water();
         self.carried_along();
         self.attached_along();
         let places: HashMap<Who, Vec2> = self.cast.iter().map(|(who, actor)| (*who, actor.position)).collect();

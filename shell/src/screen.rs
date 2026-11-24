@@ -59,6 +59,27 @@ pub struct Tint {
     pub alpha: f32,
 }
 
+/// The surface a sunk sprite goes into (water, sand): the row of the screen
+/// it is at, its two colours, and, if it waves, how far its wave has gone
+/// along it (a pixel of the picture each step).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Surface {
+    pub row: i32,
+    pub colours: [[u8; 3]; 2],
+    pub wave: Option<usize>,
+}
+
+/// How long a wave of the surface is, in pixels of the picture, and how
+/// much of it is a crest (a pixel higher).
+const WAVE: usize = 10;
+const CREST: usize = 4;
+
+/// Whether that column of a picture is under a crest of the wave, gone so
+/// far along it.
+fn crest(column: usize, wave: usize) -> bool {
+    (column + WAVE - wave % WAVE) % WAVE < CREST
+}
+
 impl Screen {
     pub fn new(scale: usize) -> Self {
         let (wide, high) = (SCREEN_WIDTH * scale, SCREEN_HEIGHT * scale);
@@ -250,11 +271,15 @@ impl Screen {
     }
 
     /// The same, drawn the other way round, left to right, if `flipped`; none
-    /// of it from the row `under` down (under the water's surface, or the
-    /// sand's), a line of that surface's two colours on it.
-    pub fn sprite_turned(&mut self, frame: &Frame, (x, y): (i32, i32), size: f32, tint: Tint, flipped: bool, under: Option<(i32, [[u8; 3]; 2])>) {
+    /// of it from the surface down (under the water, or the sand: its row,
+    /// its two colours, how far its wave has gone), a line of that surface's
+    /// colours on it.
+    pub fn sprite_turned(&mut self, frame: &Frame, (x, y): (i32, i32), size: f32, tint: Tint, flipped: bool, under: Option<Surface>) {
         let Tint { colour, alpha } = tint;
-        let (under, surface) = (under.map(|(row, _)| row), under.map_or([[0; 3]; 2], |(_, surface)| surface));
+        let (under, surface, wave) = match under {
+            Some(Surface { row, colours, wave }) => (Some(row), colours, wave),
+            None => (None, [[0; 3]; 2], None),
+        };
         let size = size.max(0.01);
         let (wide, high) = ((frame.wide as f32 * size) as i32, (frame.high as f32 * size) as i32);
         let (left, top) = (x - wide / 2, y - high / 2);
@@ -269,16 +294,26 @@ impl Screen {
         let plain = colour == [255.0; 3] && alpha >= 1.0;
         let source = frame.rgba.as_chunks::<4>().0;
         let low = under.map_or(high, |under| high.min(under - top));
+        // (The surface waving, if it does: a whole pixel of the picture higher
+        // on some of its columns, the crests going along it.)
+        let pixel = size.round().max(1.0) as i32;
+        let lows: Vec<i32> = match wave {
+            Some(wave) => self.columns.iter().map(|&column| (low - if crest(column, wave) { pixel } else { 0 }).min(high)).collect(),
+            None => vec![low; self.columns.len()],
+        };
         // (Where it goes into the water, a line of foam on it: light, darker,
         // by turns, of whole pixels.)
-        if under.is_some() && low > 0 && low < high {
-            let from = (low as f32 / size) as usize * frame.wide;
+        if under.is_some() {
             let source = frame.rgba.as_chunks::<4>().0;
-            let pixel = size.round().max(1.0) as i32;
             for (at, &column) in self.columns.clone().iter().enumerate() {
+                let low = lows[at];
+                if low <= 0 || low >= high {
+                    continue;
+                }
+                let from = (low as f32 / size) as usize * frame.wide;
                 if source.get(from + column).is_some_and(|colour| colour[3] > 0) {
                     let x = left + first + at as i32;
-                    let foam = surface[(column / 3) % 2];
+                    let foam = surface[((column + wave.unwrap_or(0)) / 3) % 2];
                     for y in (top + low).max(0)..(top + low + pixel).min(self.high as i32) {
                         let start = (y as usize * self.wide + x as usize) * 4;
                         self.rgba[start..start + 3].copy_from_slice(&foam);
@@ -286,14 +321,18 @@ impl Screen {
                 }
             }
         }
-        for row in (-top).max(0)..low.min(self.high as i32 - top) {
+        let lowest = lows.iter().copied().max().unwrap_or(low);
+        for row in (-top).max(0)..lowest.min(self.high as i32 - top) {
             let from = (row as f32 / size) as usize * frame.wide;
             let Some(source) = source.get(from..from + frame.wide) else {
                 continue;
             };
             let start = (top + row) as usize * self.wide + (left + first) as usize;
             let line = self.rgba[start * 4..(start + self.columns.len()) * 4].as_chunks_mut::<4>().0;
-            for (pixel, &column) in line.iter_mut().zip(&self.columns) {
+            for ((pixel, &column), &low) in line.iter_mut().zip(&self.columns).zip(&lows) {
+                if row >= low {
+                    continue;
+                }
                 let [red, green, blue, shows] = source[column];
                 if plain {
                     match shows {

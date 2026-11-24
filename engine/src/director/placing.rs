@@ -88,11 +88,24 @@ impl Director {
                 stage.place.middle = middle;
                 stage.place.ground = ground;
                 stage.place.flying.clear();
+                stage.place.swimmers.clear();
+                stage.place.swimming.clear();
+                stage.place.ghosts.clear();
+                stage.place.hovering.clear();
                 stage.place.entrances.clear();
                 stage.place.leaving.clear();
                 stage.place.entering.clear();
             }
             PlaceBeat::Flies(who) => stage.place.flying.extend(who),
+            PlaceBeat::Lands(who) => {
+                stage.place.flying.retain(|one| !who.contains(one));
+                stage.place.swimmers.retain(|one, _| !who.contains(one));
+                stage.place.ghosts.retain(|one| !who.contains(one));
+                stage.place.hovering.retain(|one| !who.contains(one));
+            }
+            PlaceBeat::Swims { depth, who } => stage.place.swimmers.extend(who.into_iter().map(|one| (one, depth))),
+            PlaceBeat::Ghosts(who) => stage.place.ghosts.extend(who),
+            PlaceBeat::Hovers(who) => stage.place.hovering.extend(who),
             PlaceBeat::Name { name, spot } => {
                 let at = stage.find(None, &spot, false, true);
                 stage.place.spots.insert(name, at);

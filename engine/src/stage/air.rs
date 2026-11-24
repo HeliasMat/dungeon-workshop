@@ -69,11 +69,12 @@ impl Stage {
                 particle.life = 70.0 + life * 50.0;
                 particle.colour = colour.unwrap_or([200, 200, 205]);
             }
-            // (Bubbles: going up from all round, wobbling a little.)
+            // (Bubbles: going up from all round, wobbling a little; sharp
+            // pixels of water, no glow.)
             ParticleKind::Bubbles => {
                 particle.at += Vec2::new((way - 0.5) * 24.0, (far - 0.5) * 12.0);
                 particle.speed = Vec2::new((spread - 0.5) * 0.3, -0.5 - far * 0.5);
-                (particle.life, particle.blinks) = (45.0 + life * 30.0, true);
+                (particle.life, particle.blinks, particle.sharp) = (45.0 + life * 30.0, true, true);
                 particle.colour = colour.unwrap_or([150, 215, 255]);
             }
             // (Dust: coming down softly from above.)
@@ -83,10 +84,10 @@ impl Stage {
                 particle.life = 60.0 + life * 40.0;
                 particle.colour = colour.unwrap_or([235, 220, 150]);
             }
-            // (Drops: flung every way, falling.)
+            // (Drops: flung every way, falling; sharp pixels of water, no glow.)
             ParticleKind::Drops => {
                 particle.speed = Vec2::from_angle(way * std::f32::consts::TAU) * (0.7 + far);
-                (particle.fall, particle.life) = (0.07, 22.0 + life * 16.0);
+                (particle.fall, particle.life, particle.sharp) = (0.07, 22.0 + life * 16.0, true);
                 particle.colour = colour.unwrap_or([120, 190, 255]);
             }
             // (A healing glow: going straight up, blinking.)

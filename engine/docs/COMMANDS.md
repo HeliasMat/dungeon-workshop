@@ -531,6 +531,10 @@ What `film/` writes for what depends on the stage at the moment the line plays (
 |---|---|
 | `ground <x> <y> <lines\|->` | the place's ground (`0` and `1`, lines separated by `/`) and its middle |
 | `flies <who...>` | those who fly in this scene: they take up no place |
+| `lands <who...>` | those who flew or swam walk on the ground again: walls hold them |
+| `swims <pixels> <who...>` | those who swim by nature: sunk so many pixels where no one walks (the water), not on the ground; a `sink` of theirs wins |
+| `ghosts <who...>` | those who pass through walls by nature: seen through while in one |
+| `hovers <who...>` | those who hover by nature: a little bob in the air (2 pixels, a second), once on the stage |
 | `setspot n:<name> <spot>` | names a place, found now |
 | `find <var> <who\|-> <spot> [apart] [exact]` | finds a place for who, in `{var_x}` and `{var_y}` |
 | `spread <frame\|place> <who...>` | they move apart at the start of a scene, the view on them |
@@ -637,6 +641,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `game` | `game talk who:code rest...` |
 | `gathers` | `gathers var:word spot:word step:word rest...` |
 | `gauge` | `gauge [rest...]` · `gauge [place:word] off` |
+| `ghosts` | `ghosts who:code` |
 | `give` | `give item:word from:word to:word [frames:duration] [keep]` |
 | `glance` | `glance who:code [frames:duration] [wait]` · `glance @ x:coordinate y:coordinate rest...` |
 | `go` | `go who:code x:coordinate y:coordinate frames:duration slide:word rest...` |
@@ -651,6 +656,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `hold` | `hold item:word who:code` · `hold item:word off` |
 | `holdgaze` | `holdgaze who:code [rest...]` |
 | `hop` | `hop who:code x:coordinate y:coordinate height:number frames:duration` · `hop` |
+| `hovers` | `hovers who:code` |
 | `hud` | `hud [rest...]` · `hud [place:word] off` |
 | `if` | `if condition...` |
 | `image` | `image name:word file:word x:coordinate y:coordinate` · `image name:word off` |
@@ -662,6 +668,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `keeponly` | `keeponly rest...` |
 | `keepspeaker` | `keepspeaker [rest...]` |
 | `label` | `label label:word` |
+| `lands` | `lands who:code` |
 | `large` | `large item:word` · `large off` |
 | `layer` | `layer who:code rest...` |
 | `leaves` | `leaves who:code rightleftentrance:word [run]` |
@@ -747,6 +754,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `still` | `still who:code rest...` · `still rest...` |
 | `stop` | `stop who:code` |
 | `swapcontrol` | `swapcontrol rest...` · `swapcontrol off` |
+| `swims` | `swims pixels:number who:code` |
 | `t` | `t duration:duration` · `t frames:duration` |
 | `takeable` | `takeable item:word [off]` |
 | `tempo` | `tempo speed:number` |

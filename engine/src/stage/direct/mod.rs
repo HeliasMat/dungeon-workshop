@@ -114,10 +114,14 @@ impl Stage {
             }),
             BodyBeat::Shadow { who, on } => self.with(who, |actor| actor.shadowless = !on),
             BodyBeat::Flip { who, on } => self.with(who, |actor| actor.flipped = on),
-            BodyBeat::Sink { who, depth, sand } => self.with(who, |actor| {
-                actor.sunk = depth;
-                actor.in_sand = sand;
-            }),
+            BodyBeat::Sink { who, depth, sand } => {
+                self.place.swimmers.remove(&who);
+                self.place.swimming.remove(&who);
+                self.with(who, |actor| {
+                    actor.sunk = depth;
+                    actor.in_sand = sand;
+                });
+            }
             // (As put, where it stands, the way it faces.)
             BodyBeat::Reset(who) => self.with(who, |actor| *actor = Actor::at(actor.position, actor.direction)),
             BodyBeat::Status { who, icon, add } => {

@@ -23,6 +23,26 @@ pub fn flies(who: Vec<Who>) -> Beat {
     Beat::Place(PlaceBeat::Flies(who))
 }
 
+/// Those who swim by nature, sunk so deep in the water.
+pub fn swims(depth: f32, who: Vec<Who>) -> Beat {
+    Beat::Place(PlaceBeat::Swims { depth, who })
+}
+
+/// Those who pass through walls by nature, seen through in one.
+pub fn ghosts(who: Vec<Who>) -> Beat {
+    Beat::Place(PlaceBeat::Ghosts(who))
+}
+
+/// Those who hover by nature, bobbing a little once there.
+pub fn hovers(who: Vec<Who>) -> Beat {
+    Beat::Place(PlaceBeat::Hovers(who))
+}
+
+/// Those who flew or swam walk on the ground again.
+pub fn lands(who: Vec<Who>) -> Beat {
+    Beat::Place(PlaceBeat::Lands(who))
+}
+
 /// Someone walks out of the place by that way (running, if told), and is gone.
 pub fn leaves(who: Who, by: Exit, run: bool) -> Beat {
     Beat::Place(PlaceBeat::Leaves { who, by, run })

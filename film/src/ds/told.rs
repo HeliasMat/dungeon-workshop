@@ -230,8 +230,17 @@ fn at_once(film: &mut Film, scene: &Scene) {
         // (Setting them there, not acting: put, a crowd, a frame of many; who speaks acts.)
         let placed = matches!(
             beat,
-            Beat::Place(PlaceBeat::Crowd { .. } | PlaceBeat::Gathers { .. } | PlaceBeat::Spread { .. } | PlaceBeat::Flies(_) | PlaceBeat::Find { .. })
-                | Beat::View(ViewBeat::Body { .. })
+            Beat::Place(
+                PlaceBeat::Crowd { .. }
+                    | PlaceBeat::Gathers { .. }
+                    | PlaceBeat::Spread { .. }
+                    | PlaceBeat::Flies(_)
+                    | PlaceBeat::Lands(_)
+                    | PlaceBeat::Swims { .. }
+                    | PlaceBeat::Ghosts(_)
+                    | PlaceBeat::Hovers(_)
+                    | PlaceBeat::Find { .. }
+            ) | Beat::View(ViewBeat::Body { .. })
                 | Beat::Body(BodyBeat::Put { .. })
         );
         let crowd_framed = matches!(beat, Beat::View(ViewBeat::Frame { who, .. }) if who.len() > FEW);

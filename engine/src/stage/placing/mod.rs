@@ -2,7 +2,7 @@
 //! stands there, spots said in relation to someone. What is seen on the way
 //! is noted, for whoever watches the scene.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::problem::{Arg, point, told};
 
@@ -45,6 +45,13 @@ pub struct Placing {
     /// Those who walk at a pace of their own, until their next walk.
     pub paced: HashSet<Who>,
     pub flying: HashSet<Who>,
+    /// Those who swim by nature, how deep (see `PlaceBeat::Swims`), and
+    /// those of them sunk by it now; those seen through in a wall.
+    pub swimmers: HashMap<Who, f32>,
+    pub swimming: HashSet<Who>,
+    pub ghosts: HashSet<Who>,
+    /// Those who hover by nature, not yet set bobbing (see `PlaceBeat::Hovers`).
+    pub hovering: HashSet<Who>,
     pub spots: HashMap<String, Vec2>,
     /// The place's ways in and out, by name (see `PlaceBeat::Entrances`).
     pub entrances: Vec<(String, Vec2)>,
@@ -235,13 +242,16 @@ impl Stage {
     }
 
     /// A place found as a line says it: on free ground, unless it says it
-    /// is exact or who is meant flies. The middle if it is not known.
+    /// is exact or who is meant flies, or swims by nature and it is where
+    /// no one walks (the water). The middle if it is not known.
     pub(crate) fn find(&mut self, who: Option<Who>, spot: &Spot, apart: bool, exact: bool) -> Vec2 {
         let Some(at) = self.point(who, spot) else {
             return self.place.middle;
         };
         let flying = who.is_some_and(|who| self.place.flying.contains(&who));
-        if exact || who.is_none() || flying || matches!(spot, Spot::Exact(_)) {
+        let in_the_water =
+            who.is_some_and(|who| self.place.swimmers.contains_key(&who)) && self.place.ground.as_ref().is_some_and(|ground| ground.blocked(at, 0));
+        if exact || who.is_none() || flying || in_the_water || matches!(spot, Spot::Exact(_)) {
             return at;
         }
         // (No collisions: just there; only two sent to the same word, or to

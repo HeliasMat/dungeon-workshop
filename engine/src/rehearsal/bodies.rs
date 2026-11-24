@@ -24,7 +24,8 @@ impl Watch {
             let held = self.still.get(who).filter(|(at, _)| at.distance(actor.position) < 1.0 && !setting_off).map_or(0, |(_, frames)| frames + LOOK_EVERY);
             self.still.insert(*who, (actor.position, held));
             // (Who rides, or is carried, is on its mount, not the ground.)
-            let grounded = actor.shown_height() < 8.0 && !stage.place.flying.contains(who) && !actor.carried();
+            // (Nor who swims by nature, in the water.)
+            let grounded = actor.shown_height() < 8.0 && !stage.place.flying.contains(who) && !stage.place.swimming.contains(who) && !actor.carried();
             if held >= AT_REST && !actor.busy() && grounded {
                 resting.push((*who, actor.position));
             }

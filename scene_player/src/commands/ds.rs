@@ -1940,6 +1940,15 @@ impl<'a> Writer<'a> {
                 self.line(&format!("SetAnimation<object OBJECT_N{object}>({set});"));
             }
             Beat::Body(BodyBeat::ThingName { who: Who::Thing { .. }, .. }) => {}
+            // Over walls, through them, in the water, by a word or by nature
+            // (`fly`, `swim`, a ghost): Sky's actors go anywhere a script sends them.
+            Beat::Place(PlaceBeat::Flies(_) | PlaceBeat::Lands(_) | PlaceBeat::Swims { .. } | PlaceBeat::Ghosts(_) | PlaceBeat::Hovers(_)) => {}
+            // Sunk in the water: Sky draws its actors whole (R-DS-LOSS).
+            Beat::Body(BodyBeat::Sink { .. }) => {}
+            // The water thrown up, its rings, bubbles, a wake: Sky's scripts have no
+            // particles of their own (R-DS-LOSS).
+            Beat::Screen(ScreenBeat::Particles { .. } | ScreenBeat::Emitter { .. } | ScreenBeat::EmitterOff(_))
+                if matches!(word, Some("swim" | "dive" | "plunge" | "surface" | "get_out")) => {}
             // The engine's evolution (slowed, shining, growing): Sky's white flash instead, below.
             Beat::View(ViewBeat::Tempo(_)) | Beat::Body(BodyBeat::Colour { .. } | BodyBeat::Scale { .. }) | Beat::Screen(ScreenBeat::Particles { .. })
                 if word == Some("evolve") => {}
@@ -2488,6 +2497,14 @@ impl<'a> Writer<'a> {
                 let Some(actor) = self.who(number, *who) else { return };
                 let up = if on.is_some() { high.round().max(0.0) as i32 } else { 0 };
                 let pace = speed(high.max(8.0), 8.0);
+                self.line(&format!("MoveHeight<actor {actor}>({pace}, {up});"));
+                self.wait_for(&actor);
+            }
+            // Up in the air or down to the ground (`fly`, `land`).
+            Beat::Body(BodyBeat::Rise { who, height, frames }) => {
+                let Some(actor) = self.who(number, *who) else { return };
+                let up = height.round().max(0.0) as i32;
+                let pace = speed(height.abs().max(8.0), frames.0.max(8.0));
                 self.line(&format!("MoveHeight<actor {actor}>({pace}, {up});"));
                 self.wait_for(&actor);
             }

@@ -276,6 +276,15 @@ pub enum PlaceBeat {
     Ground { middle: Vec2, ground: Option<Ground> },
     /// Those who fly in this scene: they stand on nothing.
     Flies(Vec<Who>),
+    /// Those who flew (or swam) stand on the ground again: walls hold them.
+    Lands(Vec<Who>),
+    /// Those who swim by nature: where no one walks (the water), sunk so
+    /// deep; on the ground, not.
+    Swims { depth: f32, who: Vec<Who> },
+    /// Those who pass through walls by nature: seen through while in one.
+    Ghosts(Vec<Who>),
+    /// Those who hover by nature: a little bob in the air, once on the stage.
+    Hovers(Vec<Who>),
     /// A spot gets a name, found now.
     Name { name: String, spot: Spot },
     /// A place found now, put in two numbers (`<var>_x`, `<var>_y`), for whom
@@ -348,8 +357,8 @@ fn spot_at(fields: &Fields, at: usize) -> Option<Spot> {
 
 declare! {
     PlaceBeat;
-    hand: "advance", "alllook", "arrives", "crowd", "entrances", "find", "flies", "flock", "gathers", "goes", "ground", "leaves", "roundcheck",
-        "seats", "setspot", "spread";
+    hand: "advance", "alllook", "arrives", "crowd", "entrances", "find", "flies", "flock", "ghosts", "hovers", "lands", "gathers", "goes", "ground", "leaves", "roundcheck",
+        "seats", "setspot", "spread", "swims";
     "shot" => Shot { close: f32, who: Opt<Who> },
     "roams" => Roams { who: Who, wide: f32 },
 }
@@ -373,6 +382,9 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("entrances", &["name:word x:coordinate rest..."], "the place's entrances (`data/extra/decors.txt`): `film/` writes them on its own"),
     Form::new("find", &["var:word who:word spot:word [apart] [exact]"], "finds a place for who, in `{var_x}` and `{var_y}`"),
     Form::new("flies", &["who:code"], "those who fly in this scene: they take up no place"),
+    Form::new("lands", &["who:code"], "those who flew or swam walk on the ground again: walls hold them"),
+    Form::new("ghosts", &["who:code"], "those who pass through walls by nature: seen through while in one"),
+    Form::new("hovers", &["who:code"], "those who hover by nature: a little bob in the air (2 pixels, a second), once on the stage"),
     Form::new("flock", &["spot:word walkrun:word who:code"], "a crowd goes to this place, its middle there, each keeping their place (straight ahead)"),
     Form::new("gathers", &["var:word spot:word step:word rest..."], "each on free ground around the place, their place in `{var<n>_x}`"),
     Form::new(
@@ -392,6 +404,11 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("setspot", &["rest..."], "names a place, found now"),
     Form::new("shot", &["zoom:number who:word"], "this zoom, less if the body needs it"),
     Form::new("spread", &["frameplace:word who:code"], "they move apart at the start of a scene, the view on them"),
+    Form::new(
+        "swims",
+        &["pixels:number who:code"],
+        "those who swim by nature: sunk so many pixels where no one walks (the water), not on the ground; a `sink` of theirs wins",
+    ),
 ];
 
 pub(super) fn read(fields: &Fields) -> Option<PlaceBeat> {
@@ -402,6 +419,10 @@ pub(super) fn read(fields: &Fields) -> Option<PlaceBeat> {
     Some(match fields.verb()? {
         "ground" => PlaceBeat::Ground { middle: point_of(fields, 1)?, ground: Ground::parse(fields.named(3, "a ground (0101/1100…)")?) },
         "flies" => PlaceBeat::Flies(group_of(fields, 1, end)?),
+        "lands" => PlaceBeat::Lands(group_of(fields, 1, end)?),
+        "ghosts" => PlaceBeat::Ghosts(group_of(fields, 1, end)?),
+        "hovers" => PlaceBeat::Hovers(group_of(fields, 1, end)?),
+        "swims" => PlaceBeat::Swims { depth: fields.real(1)?, who: group_of(fields, 2, end)? },
         "setspot" => {
             PlaceBeat::Name { name: fields.lookup(1, "a name (n:…)", |name| name.strip_prefix("n:").map(str::to_string))?, spot: spot_at(fields, 2)? }
         }

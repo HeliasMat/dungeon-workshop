@@ -19,5 +19,5 @@ pub mod window;
 
 pub use blit::{Around, Fx, Mix, Paint, blit, blit_with};
 pub use error::Error;
-pub use screen::{Laid, Screen, Tint};
+pub use screen::{Laid, Screen, Surface, Tint};
 pub use window::{Key, Keys, Window};
