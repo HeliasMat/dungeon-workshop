@@ -6,8 +6,8 @@
 
 use eframe::egui::{self, Color32, Sense, vec2};
 
-use super::decors::Decors;
 use super::edit::{Item, Kind};
+use crate::Decors;
 use workshop_base::theme;
 
 mod fields;
@@ -21,7 +21,7 @@ mod resident;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use fields::typed;
+pub use fields::typed;
 pub use hierarchy::hierarchy;
 pub use history::history;
 pub use inspector::inspector;

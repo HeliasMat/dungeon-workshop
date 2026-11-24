@@ -9,7 +9,7 @@ use super::fields::{rule_field, typed};
 use super::inspector::{component, prop, reset};
 use super::landmark::{facing_and_wander, with_facing_and_wander};
 use super::piece::Changing;
-use crate::decors::Decors;
+use crate::Decors;
 use crate::edit;
 use workshop_base::theme;
 

@@ -8,7 +8,7 @@ use eframe::egui::{self, Color32, RichText, Sense, pos2, vec2};
 
 use super::layers::layers;
 use super::{badge_of, cross_button, paint_badge};
-use crate::decors::Decors;
+use crate::Decors;
 use crate::edit::{self, Item, Kind};
 use workshop_base::theme;
 

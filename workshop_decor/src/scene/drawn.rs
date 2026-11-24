@@ -6,9 +6,9 @@ use decor::doc::Pose;
 use eframe::egui::{self, Color32, Pos2, Rect, Stroke, StrokeKind, Vec2, pos2, vec2};
 
 use super::{Drawn, Read, View, grid_step};
-use crate::decors::{Decors, paint_art, tag};
 use crate::edit::{self, Item, Kind};
 use crate::terrains::Tool;
+use crate::{Decors, paint_art, tag};
 use workshop_base::theme;
 
 /// The decor's things in the order they are drawn: under those who live
@@ -177,7 +177,7 @@ pub(super) fn draw(painter: &egui::Painter, decors: &Decors, read: &Read, things
 fn residents(painter: &egui::Painter, decors: &Decors, lives: &[Item], view: View, seconds: f64) -> Vec<String> {
     let mut bodies_asked: Vec<String> = Vec::new();
     for one in lives {
-        let key = crate::decors::body_key(one);
+        let key = crate::body_key(one);
         match decors.body_known(&key) {
             Some(Some(body)) => {
                 if let Some((texture, around)) = body.at(one.facing, if one.still { 0.0 } else { seconds }) {

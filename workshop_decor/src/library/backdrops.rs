@@ -10,7 +10,7 @@ use eframe::egui::{self, Color32, Rect, Sense, Stroke, StrokeKind, pos2, vec2};
 
 use super::Source;
 use super::cards::{CHOSEN_FILL, CHOSEN_LINE, card_words, paint_checks, paint_framed};
-use crate::decors::Decors;
+use crate::Decors;
 use crate::edit;
 use crate::workshop::BackdropInfo;
 use workshop_base::theme;
@@ -97,7 +97,7 @@ fn card(ui: &mut egui::Ui, decors: &mut Decors, backdrop: &BackdropInfo, used: b
     let room = Rect::from_min_size(rect.min + vec2(4.0, 4.0), vec2(wide - 8.0, wide * 0.75 - 8.0));
     picture(ui, decors, backdrop.level, room, used || chosen);
     if used {
-        crate::decors::tag(ui.painter(), room.left_bottom() + vec2(2.0, -2.0), "this decor's backdrop", theme::DECOR);
+        crate::tag(ui.painter(), room.left_bottom() + vec2(2.0, -2.0), "this decor's backdrop", theme::DECOR);
     }
     card_words(ui.painter(), rect, &backdrop.place, &format!("{} · {} × {}", backdrop.kind.shown(), backdrop.size[0], backdrop.size[1]));
     let response = response.on_hover_ui(|ui| larger(ui, decors, backdrop));

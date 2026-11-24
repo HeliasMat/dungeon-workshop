@@ -7,8 +7,8 @@ use eframe::egui::{self, Color32, Rect, RichText, Sense, Stroke, StrokeKind, pos
 
 use super::search::{from_said, title_of};
 use super::{Picked, colour_of};
-use crate::decors::{Decors, PieceArt, paint_art};
 use crate::workshop::PieceInfo;
+use crate::{Decors, PieceArt, paint_art};
 use workshop_base::theme;
 
 /// The colour a card chosen is filled and outlined with.
@@ -88,7 +88,7 @@ fn card(ui: &mut egui::Ui, decors: &mut Decors, piece: &PieceInfo, mark: Mark, p
         square_face(ui, piece, art.as_ref(), rect, size, frame);
     }
     if mark.stamping {
-        crate::decors::tag(ui.painter(), rect.left_bottom() + vec2(3.0, -31.0), "stamp", theme::DECOR);
+        crate::tag(ui.painter(), rect.left_bottom() + vec2(3.0, -31.0), "stamp", theme::DECOR);
     }
     // (Its star: shown when pointed at, or when it is a favourite.)
     let favourite = decors.lib.favourites.contains(&piece.name);

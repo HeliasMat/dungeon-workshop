@@ -5,8 +5,8 @@
 
 use eframe::egui::{self, Color32, Pos2, Rect, pos2, vec2};
 
-use crate::decors::{Decors, section, tag};
 use crate::edit::{self, Kind};
+use crate::{Decors, section, tag};
 use workshop_base::theme;
 
 /// How fast one walks, in pixels a second (as the game, about).

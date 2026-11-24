@@ -3,8 +3,8 @@
 use eframe::egui::{self, Color32, FontId, Sense, pos2, vec2};
 
 use super::{Resources, Shelf};
-use crate::decors::Decors;
 use workshop_base::theme;
+use workshop_decor::Decors;
 
 pub fn tree(ui: &mut egui::Ui, resources: &mut Resources, decors: &mut Decors) {
     resources.read_now = 0;

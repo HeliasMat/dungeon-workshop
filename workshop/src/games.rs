@@ -258,7 +258,7 @@ fn left(ui: &mut egui::Ui, games: &mut Games) {
         let mut made: Option<String> = None;
         let field = |ui: &mut egui::Ui, key: &str, hint: &str| {
             let now = game::head(&text, key).unwrap_or_default();
-            crate::panels::typed(ui, egui::Id::new(("game card", key)), &now, 1, hint).map(|value| game::with_head(&text, key, &value))
+            workshop_decor::panels::typed(ui, egui::Id::new(("game card", key)), &now, 1, hint).map(|value| game::with_head(&text, key, &value))
         };
         if let Some(changed) = row(ui, "Title", |ui| field(ui, "title", "its name on the title screen")) {
             made = Some(changed);
@@ -274,7 +274,7 @@ fn left(ui: &mut egui::Ui, games: &mut Games) {
             for (at, hint) in [(0, "hero"), (1, "partner")] {
                 ui.scope(|ui| {
                     ui.set_width(110.0);
-                    if let Some(name) = crate::panels::typed(ui, egui::Id::new(("game team", at)), &members[at], 1, hint) {
+                    if let Some(name) = workshop_decor::panels::typed(ui, egui::Id::new(("game team", at)), &members[at], 1, hint) {
                         members[at] = name.trim().to_lowercase();
                         made = Some(game::with_head(&text, "team", members.join(" ").trim()));
                     }
@@ -293,14 +293,14 @@ fn left(ui: &mut egui::Ui, games: &mut Games) {
                 }
                 // (The game's own places and the library's, by kind of place, each by its name.)
                 let project = games.session.library().at(&open.game.folder);
-                let kinds = crate::decors::place_kinds(games.session.library());
+                let kinds = workshop_base::project::place_kinds(games.session.library());
                 let decors: Vec<(String, String, decor::tags::PlaceKind)> = project
                     .names("decors", "decor")
                     .into_iter()
                     .map(|decor| {
                         let text = std::fs::read_to_string(project.decor(&decor)).unwrap_or_default();
-                        let kind = crate::decors::decor_kind(&kinds, &decor, &text);
-                        (crate::decors::decor_title(&decor, &text), decor, kind)
+                        let kind = workshop_decor::decor_kind(&kinds, &decor, &text);
+                        (workshop_decor::decor_title(&decor, &text), decor, kind)
                     })
                     .collect();
                 for (kind, group) in decor::tags::grouped(decors, |decor| decor.2) {

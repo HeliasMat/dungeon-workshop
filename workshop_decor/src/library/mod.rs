@@ -19,9 +19,9 @@ use std::path::PathBuf;
 use decor::tags::{CATEGORIES, Category, PlaceKind};
 use eframe::egui::{self, Color32, Rect, Sense, Stroke, StrokeKind, pos2, vec2};
 
-use crate::decors::{Decors, paint_art};
 use crate::edit;
 use crate::terrains::Tool;
+use crate::{Decors, paint_art};
 use workshop_base::project::Entry;
 use workshop_base::theme;
 
@@ -678,7 +678,7 @@ pub fn paint_ghost(decors: &mut Decors, painter: &egui::Painter, name: &str, cor
         paint_art(painter, &art, rect, (true, true), 0, false, Color32::from_white_alpha(170));
     }
     painter.rect_stroke(rect, 0.0, Stroke::new(1.0_f32, theme::DECOR), StrokeKind::Outside);
-    crate::decors::tag(painter, rect.left_top() - vec2(0.0, 4.0), &format!("{said}{} {}", corner[0], corner[1]), Color32::WHITE);
+    crate::tag(painter, rect.left_top() - vec2(0.0, 4.0), &format!("{said}{} {}", corner[0], corner[1]), Color32::WHITE);
 }
 
 /// While a card is dragged over the scene: where it would land, seen through
@@ -695,12 +695,12 @@ pub fn ghost(
     let Some(name) = response.dnd_hover_payload::<String>() else { return };
     let Some(at) = response.hover_pos() else { return };
     if let Some(model) = name.strip_prefix("model:") {
-        crate::decors::tag(painter, at + vec2(10.0, 0.0), &format!("model {model}"), theme::DECOR);
+        crate::tag(painter, at + vec2(10.0, 0.0), &format!("model {model}"), theme::DECOR);
         return;
     }
     if let Some(level) = name.strip_prefix("backdrop:").and_then(|level| level.parse::<i64>().ok()) {
         let said = decors.backdrops.iter().find(|one| one.level == level).map_or(format!("place {level}"), |one| one.place.clone());
-        crate::decors::tag(painter, at + vec2(12.0, 0.0), &format!("let go: the decor laid on {said}"), theme::DECOR);
+        crate::tag(painter, at + vec2(12.0, 0.0), &format!("let go: the decor laid on {said}"), theme::DECOR);
         return;
     }
     let corner = crate::placing::landing(place_at, decors.size_of(&name), step, snap);

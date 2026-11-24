@@ -101,7 +101,7 @@ pub(super) fn spoken_line(lead: &str, who: &str, face: &str, manners: &str, said
 
 /// A line said: who, the face, how, what.
 fn spoken(ui: &mut egui::Ui, films: &Films, looked: &mut Looked, (who, faces, manners, said): (String, String, String, String)) {
-    crate::decors::section(ui, "Line");
+    workshop_decor::section(ui, "Line");
     ui.add_space(4.0);
     let (mut new_who, mut new_face, mut new_manners, mut new_said) = (who.clone(), faces.clone(), manners.clone(), said.clone());
     egui::Grid::new("speech line").num_columns(2).spacing([10.0, 6.0]).show(ui, |ui| {
@@ -152,7 +152,7 @@ fn fields(ui: &mut egui::Ui, films: &mut Films, looked: &mut Looked, fresh: bool
     let Some(read) = films.fields.get(&line) else {
         return;
     };
-    crate::decors::section(ui, &format!("{} · {}", read.word, read.family));
+    workshop_decor::section(ui, &format!("{} · {}", read.word, read.family));
     ui.add_space(4.0);
     if !fresh {
         ui.label(theme::weak("the film plays again: the fields come back in a moment"));
@@ -253,7 +253,7 @@ fn spans_of(films: &Films, line: usize) -> Vec<(usize, usize, bool)> {
 
 /// When it plays (a click: there), who is there then.
 fn when_it_plays(ui: &mut egui::Ui, films: &Films, looked: &mut Looked) {
-    crate::decors::section(ui, "When It Plays");
+    workshop_decor::section(ui, "When It Plays");
     ui.add_space(4.0);
     let spans = spans_of(films, looked.line);
     if spans.is_empty() {
@@ -286,7 +286,7 @@ fn when_it_plays(ui: &mut egui::Ui, films: &Films, looked: &mut Looked) {
 
 /// What is said of it (and how to put it right), what playing it said wrong, what was last said.
 fn what_is_said(ui: &mut egui::Ui, films: &Films, told: &[film::service::Diagnostic], looked: &mut Looked) {
-    crate::decors::section(ui, "What Is Said of It");
+    workshop_decor::section(ui, "What Is Said of It");
     ui.add_space(4.0);
     let played: Vec<&String> = films.wrong.iter().filter(|(known, _)| *known as usize == looked.line).map(|(_, why)| why).collect();
     if told.is_empty() && played.is_empty() {

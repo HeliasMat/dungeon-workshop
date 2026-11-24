@@ -24,24 +24,15 @@
 mod app;
 mod bug;
 mod capture;
-mod decors;
-mod edit;
 mod emulate;
 mod films;
 mod first;
 mod games;
 mod home;
-mod library;
-mod panels;
-mod placing;
 mod quant_tool;
 mod resources;
-mod scene;
 mod settings;
 mod spritecollab;
-mod terrains;
-mod walk;
-mod workshop;
 
 fn main() -> eframe::Result {
     bug::told_as_bugs();

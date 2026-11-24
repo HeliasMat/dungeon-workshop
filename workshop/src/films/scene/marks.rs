@@ -79,13 +79,13 @@ fn bodies(painter: &Painter, films: &Films, scripts: &mut Scripts, drawn: &Frame
         }
         if !pointed && films.focus_who.as_ref() == Some(name) {
             painter.rect_stroke(frame, 0.0, Stroke::new(2.0_f32, theme::FILM), StrokeKind::Outside);
-            crate::decors::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::FILM);
+            workshop_decor::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::FILM);
         } else if !pointed && (named.contains(name) || scripts.lit_who_track.as_ref() == Some(name)) {
             painter.rect_stroke(frame, 0.0, Stroke::new(2.0_f32, theme::POINTED), StrokeKind::Outside);
-            crate::decors::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::POINTED);
+            workshop_decor::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::POINTED);
         } else if films.names || pointed {
             painter.rect_stroke(frame, 0.0, Stroke::new(1.0_f32, if pointed { Color32::WHITE } else { theme::DECOR }), StrokeKind::Outside);
-            crate::decors::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, if pointed { Color32::WHITE } else { theme::DECOR });
+            workshop_decor::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, if pointed { Color32::WHITE } else { theme::DECOR });
         }
     }
 }
@@ -131,7 +131,7 @@ fn held(painter: &Painter, films: &Films, drawn: &Frame, place: &Place, view: &V
                 painter.line_segment([place.to_screen(*from), place.to_screen(feet)], Stroke::new(1.0_f32, Color32::from_white_alpha(140)));
             }
             painter.circle_filled(place.to_screen(feet), 3.0, Color32::WHITE);
-            crate::decors::tag(painter, place.to_screen(feet) + vec2(6.0, 4.0), &format!("{name} {} {}", feet[0], feet[1]), Color32::WHITE);
+            workshop_decor::tag(painter, place.to_screen(feet) + vec2(6.0, 4.0), &format!("{name} {} {}", feet[0], feet[1]), Color32::WHITE);
         }
         (Some(Held::Measure(from)), Some(at)) => {
             let to = place.to_place(at);
@@ -139,7 +139,7 @@ fn held(painter: &Painter, films: &Films, drawn: &Frame, place: &Place, view: &V
             let far = (dx * dx + dy * dy).sqrt();
             painter.line_segment([place.to_screen(*from), at], Stroke::new(1.5_f32, theme::FILM));
             painter.circle_filled(place.to_screen(*from), 2.5, theme::FILM);
-            crate::decors::tag(painter, at + vec2(8.0, 4.0), &format!("{:.0} px · {:.1} tiles  ({:+.0} {:+.0})", far, far / 8.0, dx, dy), theme::FILM);
+            workshop_decor::tag(painter, at + vec2(8.0, 4.0), &format!("{:.0} px · {:.1} tiles  ({:+.0} {:+.0})", far, far / 8.0, dx, dy), theme::FILM);
         }
         _ => {}
     }

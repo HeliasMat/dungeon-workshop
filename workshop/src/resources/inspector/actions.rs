@@ -9,8 +9,8 @@ use eframe::egui::{self, RichText};
 use super::super::grid::opened;
 use super::super::{Asked, Item, Resources, Shelf};
 use super::{plural, word_replaced};
-use crate::decors::Decors;
 use workshop_base::theme;
+use workshop_decor::Decors;
 
 /// The row of what to do with it.
 pub(super) fn buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {

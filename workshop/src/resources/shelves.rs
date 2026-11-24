@@ -5,8 +5,8 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use super::{Item, Shelf, game_shelves};
-use crate::decors::Decors;
 use workshop_base::session::Session;
+use workshop_decor::Decors;
 
 /// A Pokémon's number in the Pokédex, by its number in the game (those of the project: theirs, less 2000).
 pub(super) fn dex_of(session: &Session, number: i64) -> i64 {

@@ -7,8 +7,8 @@ use super::dropped::take_dropped;
 use super::pictures::paint_item;
 use super::toolbar;
 use super::{Item, Resources, Shelf};
-use crate::decors::Decors;
 use workshop_base::theme;
+use workshop_decor::Decors;
 
 /// How the things lie: the width for them, a card's size, how many in a row, a row's height.
 #[derive(Clone, Copy, Debug, PartialEq)]

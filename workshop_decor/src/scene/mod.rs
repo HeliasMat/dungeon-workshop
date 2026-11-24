@@ -14,9 +14,9 @@
 
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Vec2, vec2};
 
-use crate::decors::{Carry, Decors, PieceArt};
 use crate::edit::{self, Item};
 use crate::terrains::Tool;
+use crate::{Carry, Decors, PieceArt};
 use workshop_base::theme;
 
 mod choosing;
@@ -28,7 +28,7 @@ mod moving;
 mod tests;
 
 /// One thing to draw: a piece somewhere, which of its layers.
-pub(crate) struct Drawn {
+pub struct Drawn {
     pub art: PieceArt,
     pub rect: Rect,
     pub layers: (bool, bool),
@@ -120,7 +120,7 @@ impl Read {
 }
 
 /// The step of the decor's grid (`grid n`, else 8).
-pub(crate) fn grid_step(text: &str) -> f32 {
+pub fn grid_step(text: &str) -> f32 {
     text.lines()
         .find_map(|line| match line.split_whitespace().collect::<Vec<_>>().as_slice() {
             ["grid", step] => step.parse::<f32>().ok(),

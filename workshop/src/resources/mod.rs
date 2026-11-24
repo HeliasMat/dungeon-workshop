@@ -20,9 +20,9 @@ use workshop_base::session::Session;
 use eframe::egui::{self, Rect, Vec2, pos2, vec2};
 use shell::sound::Hears;
 
-use super::decors::Decors;
 use pictures::sheet_of;
 use shelves::{favourites_file, filter_words, made_list};
+use workshop_decor::Decors;
 
 mod dropped;
 mod game_shelves;

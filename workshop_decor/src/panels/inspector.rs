@@ -8,9 +8,9 @@ use super::fields::{add, rule_field};
 use super::landmark::landmark;
 use super::paint_badge;
 use super::piece::piece;
-use crate::decors::{Decors, paint_thumb};
 use crate::edit::{self, Item, Kind};
 use crate::terrains::Tool;
+use crate::{Decors, paint_thumb};
 use workshop_base::theme;
 
 /// How wide the labels are, left of the values.
@@ -53,7 +53,7 @@ pub(super) fn reset(ui: &mut egui::Ui, differs: bool) -> bool {
 }
 
 /// The head: a picture (or a badge), a name, what it is and where.
-pub(super) fn head(ui: &mut egui::Ui, art: Option<&crate::decors::PieceArt>, badge: (&str, Color32, &str), title: &str, under: &str) {
+pub(super) fn head(ui: &mut egui::Ui, art: Option<&crate::PieceArt>, badge: (&str, Color32, &str), title: &str, under: &str) {
     ui.add_space(4.0);
     ui.horizontal(|ui| {
         let (square, _) = ui.allocate_exact_size(vec2(56.0, 56.0), Sense::hover());

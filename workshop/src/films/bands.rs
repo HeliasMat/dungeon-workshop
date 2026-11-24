@@ -437,7 +437,7 @@ fn stretched(ui: &egui::Ui, strip: &Strip, films: &mut Films, response: &egui::R
     if let (Some((_, start)), Some(at)) = (films.stretching, response.interact_pointer_pos()) {
         let seconds = seconds_between(start, strip.axis.frame_of(at.x));
         strip.painter.vline(at.x, strip.rect.y_range(), Stroke::new(1.0_f32, Color32::WHITE));
-        crate::decors::tag(&strip.painter, pos2(at.x + 4.0, at.y - 18.0), &format!("{seconds} s"), Color32::WHITE);
+        workshop_decor::tag(&strip.painter, pos2(at.x + 4.0, at.y - 18.0), &format!("{seconds} s"), Color32::WHITE);
         if response.drag_stopped()
             && let Some((line, _)) = films.stretching.take()
         {

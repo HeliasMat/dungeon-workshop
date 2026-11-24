@@ -3,13 +3,13 @@
 use eframe::egui;
 
 use super::inspector::prop;
-use crate::decors::Decors;
+use crate::Decors;
 use crate::edit::{self, Kind};
 use workshop_base::theme;
 
 /// A field typed in: what it says while it has the keys, written (given
 /// back) once it lets them go changed.
-pub(crate) fn typed(ui: &mut egui::Ui, id: egui::Id, now: &str, rows: usize, hint: &str) -> Option<String> {
+pub fn typed(ui: &mut egui::Ui, id: egui::Id, now: &str, rows: usize, hint: &str) -> Option<String> {
     let mut typed = ui.data(|data| data.get_temp::<String>(id)).unwrap_or_else(|| now.to_string());
     let field = if rows > 1 {
         ui.add(egui::TextEdit::multiline(&mut typed).id(id.with("field")).code_editor().desired_rows(rows).desired_width(f32::INFINITY).hint_text(hint))

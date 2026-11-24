@@ -3,7 +3,7 @@
 use eframe::egui::{self, vec2};
 
 use super::row;
-use crate::decors::Decors;
+use crate::Decors;
 use workshop_base::theme;
 
 /// Each change, the first first: a click goes back (or forth) to it.

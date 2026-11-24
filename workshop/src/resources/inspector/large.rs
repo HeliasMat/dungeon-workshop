@@ -8,8 +8,8 @@ use eframe::egui::{self, Color32, Painter, Pos2, Rect, RichText, Sense, Stroke, 
 use super::super::pictures::{animations_of, body_sheet, face_name, faces_of, paint_item, read_png};
 use super::super::{Item, Resources, Sheet, Shelf};
 use super::{Shown, section};
-use crate::decors::Decors;
 use workshop_base::theme;
+use workshop_decor::Decors;
 use workshop_picture::fitted;
 
 /// What is shown of the one chosen: a person's body (if it has no faces, or

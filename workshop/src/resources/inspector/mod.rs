@@ -9,8 +9,8 @@
 use eframe::egui::{self, FontId, Sense, pos2, vec2};
 
 use super::{Resources, Sheet, Shelf};
-use crate::decors::Decors;
 use workshop_base::theme;
+use workshop_decor::Decors;
 use workshop_script::Scripts;
 
 mod about;

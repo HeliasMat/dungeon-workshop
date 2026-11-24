@@ -37,7 +37,7 @@ pub fn state(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
             }
         });
         ui.add_space(4.0);
-        crate::decors::section(ui, "Camera");
+        workshop_decor::section(ui, "Camera");
         ui.add_space(4.0);
         let camera = &moment.camera;
         egui::Grid::new("camera now").num_columns(2).spacing([10.0, 4.0]).show(ui, |ui| {
@@ -66,7 +66,7 @@ pub fn state(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
             ui.label(theme::text(format!("« {said} »"), theme::SMALL, theme::TEXT));
         }
         ui.add_space(8.0);
-        crate::decors::section(ui, &format!("Characters ({})", moment.bodies.len()));
+        workshop_decor::section(ui, &format!("Characters ({})", moment.bodies.len()));
         ui.add_space(4.0);
         if moment.bodies.is_empty() {
             ui.label(theme::weak("nobody on stage"));
@@ -110,7 +110,7 @@ pub fn state(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
             ui.add_space(2.0);
         }
         ui.add_space(8.0);
-        crate::decors::section(ui, &format!("Objects ({})", moment.objects.len()));
+        workshop_decor::section(ui, &format!("Objects ({})", moment.objects.len()));
         ui.add_space(4.0);
         if moment.objects.is_empty() {
             ui.label(theme::weak("no object the film put"));

@@ -5,7 +5,7 @@
 
 use eframe::egui::{self, Color32, Rect, pos2, vec2};
 
-use crate::decors::Decors;
+use crate::Decors;
 use crate::terrains::Tool;
 use workshop_base::theme;
 

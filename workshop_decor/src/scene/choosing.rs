@@ -8,8 +8,8 @@ use eframe::egui::{self, Color32, Pos2, Rect, Stroke, Vec2, pos2, vec2};
 
 use super::moving::Camera;
 use super::{Element, Read, View};
-use crate::decors::{Carry, Decors, tag};
 use crate::edit::{self, Kind};
+use crate::{Carry, Decors, tag};
 use workshop_base::theme;
 
 /// What the tool asks, done once all is seen: the text made, what to

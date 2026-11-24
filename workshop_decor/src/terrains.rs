@@ -19,9 +19,9 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use decor::terrain::{NONE, Painted};
 use eframe::egui::{self, Color32, Pos2, Rect, RichText, Sense, Stroke, StrokeKind, pos2, vec2};
 
-use crate::decors::{Decors, PieceArt, made_art, section, texture};
 use crate::scene::Drawn;
 use crate::workshop::{Ask, Solved, TerrainInfo};
+use crate::{Decors, PieceArt, made_art, section, texture};
 use workshop_base::theme;
 
 /// What the mouse does on the scene.
@@ -380,7 +380,7 @@ fn brush_shown(painter: &egui::Painter, brushes: &Brushes, centre: Pos2, alt: bo
     let colour = Color32::from_rgb(colour[0], colour[1], colour[2]);
     if alt {
         painter.rect_stroke(Rect::from_center_size(centre, vec2(10.0, 10.0)), 0.0, Stroke::new(1.5_f32, Color32::WHITE), StrokeKind::Outside);
-        crate::decors::tag(painter, centre + vec2(10.0, -6.0), "eyedropper", Color32::WHITE);
+        crate::tag(painter, centre + vec2(10.0, -6.0), "eyedropper", Color32::WHITE);
         return;
     }
     match brushes.shape {
@@ -392,7 +392,7 @@ fn brush_shown(painter: &egui::Painter, brushes: &Brushes, centre: Pos2, alt: bo
         Shape::Rectangle => _ = painter.circle_filled(centre, 3.0, colour),
         Shape::Fill => {
             painter.circle_filled(centre, 3.0, colour);
-            crate::decors::tag(painter, centre + vec2(10.0, -6.0), "fill", colour);
+            crate::tag(painter, centre + vec2(10.0, -6.0), "fill", colour);
         }
     }
 }
@@ -408,7 +408,7 @@ fn terrain_under(text: &str, (cx, cy): (i64, i64)) -> Option<(i64, u8)> {
 }
 
 /// A stroke begun: on the terrain chosen, else the first of that place, else a new one.
-fn painting_begun(brushes: &mut Brushes, open: &crate::decors::Open, (cx, cy): (i64, i64), erase: bool) -> Painting {
+fn painting_begun(brushes: &mut Brushes, open: &crate::Open, (cx, cy): (i64, i64), erase: bool) -> Painting {
     let level = brushes.level;
     let lines = terrain_lines(&open.text);
     let chosen = open.chosen.and_then(|(line, _)| lines.iter().find(|(number, painted)| *number == line && painted.level == level));
@@ -665,7 +665,7 @@ fn strew(
     if let (Some(points), Some(art)) = (&decors.brushes.strewing, art) {
         for point in points {
             let rect = Rect::from_min_max(to_screen(*point), to_screen([point[0] + w, point[1] + h]));
-            crate::decors::paint_art(painter, &art, rect, (true, true), 0, false, Color32::from_white_alpha(220));
+            crate::paint_art(painter, &art, rect, (true, true), 0, false, Color32::from_white_alpha(220));
         }
     }
 }
@@ -816,7 +816,7 @@ pub fn strew_panel(ui: &mut egui::Ui, decors: &mut Decors) {
         if let Some(name) = &name
             && let Some(art) = decors.art_now(name)
         {
-            crate::decors::paint_thumb(ui.painter(), &art, square.shrink(3.0));
+            crate::paint_thumb(ui.painter(), &art, square.shrink(3.0));
         }
         ui.label(match &name {
             Some(name) => theme::text(decors.shown_name(name), theme::BODY, theme::STRONG),

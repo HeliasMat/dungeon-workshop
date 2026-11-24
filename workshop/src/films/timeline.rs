@@ -351,7 +351,7 @@ fn playhead_on_ruler(ui: &egui::Ui, films: &Films, axis: Axis, ruler: Rect, poin
         ));
     }
     if let Some(at) = pointer.filter(|at| at.x >= content.min.x && ruler.contains(*at)) {
-        crate::decors::tag(ui.painter(), pos2(at.x + 4.0, ruler.max.y + 18.0), &clock(axis.frame_of(at.x) as f64), Color32::WHITE);
+        workshop_decor::tag(ui.painter(), pos2(at.x + 4.0, ruler.max.y + 18.0), &clock(axis.frame_of(at.x) as f64), Color32::WHITE);
     }
 }
 

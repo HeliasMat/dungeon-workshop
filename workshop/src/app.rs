@@ -162,7 +162,7 @@ pub struct Work {
     /// A space asked to be looked at.
     pub go: Option<Space>,
     /// The Decor space's own.
-    pub decors: crate::decors::Decors,
+    pub decors: workshop_decor::Decors,
     /// The Film space's Script; the film played.
     pub scripts: workshop_script::Scripts,
     pub films: crate::films::Films,
@@ -216,7 +216,7 @@ impl App {
             said: String::new(),
             making: None,
             go: None,
-            decors: crate::decors::Decors::new(&session, context),
+            decors: workshop_decor::Decors::new(&session, context),
             scripts: workshop_script::Scripts::new(&session, context),
             films: crate::films::Films::new(&session, context),
             resources: crate::resources::Resources::new(&session, context),
@@ -283,11 +283,11 @@ impl App {
         }
         // (`WORKSHOP_TOOL=terrain|scatter|walls|walk`: that brush in hand, for a picture.)
         app.work.decors.brushes.tool = match launch.tool.as_deref() {
-            Some("terrain") => crate::terrains::Tool::Terrain,
-            Some("scatter") => crate::terrains::Tool::Strew,
-            Some("walls") => crate::terrains::Tool::Walls,
-            Some("walk") => crate::terrains::Tool::Walk,
-            _ => crate::terrains::Tool::Choose,
+            Some("terrain") => workshop_decor::terrains::Tool::Terrain,
+            Some("scatter") => workshop_decor::terrains::Tool::Strew,
+            Some("walls") => workshop_decor::terrains::Tool::Walls,
+            Some("walk") => workshop_decor::terrains::Tool::Walk,
+            _ => workshop_decor::terrains::Tool::Choose,
         };
         app
     }
@@ -561,7 +561,7 @@ impl App {
             return;
         };
         // (What the mouse does: choose, paint terrains, strew.)
-        use crate::terrains::Tool;
+        use workshop_decor::terrains::Tool;
         for (tool, word, key, said) in [
             (Tool::Choose, "Choose", "V", "take, move the elements"),
             (Tool::Terrain, "Terrain", "B", "paint terrains with the tiles of a place of the game"),
@@ -599,7 +599,7 @@ impl App {
                 theme::FIELD
             }))
         };
-        let step = crate::scene::grid_step(&open.text);
+        let step = workshop_decor::scene::grid_step(&open.text);
         let snap_said = toggle(ui, "Snap", decors.snap)
             .on_hover_text(format!("what is laid or carried lands on the grid of {step:.0} pixels (S; Alt held: the other way for a moment)"));
         let walls_shown = !decors.is_hidden("walls");
@@ -608,9 +608,9 @@ impl App {
         // (The layer what is laid goes on: under the characters, as the game, or in front of them.)
         let mut layer = decors.active_layer;
         egui::ComboBox::from_id_salt("lays on")
-            .selected_text(format!("Lays on: {}", crate::placing::layer_name(layer)))
+            .selected_text(format!("Lays on: {}", workshop_decor::placing::layer_name(layer)))
             .show_ui(ui, |ui| {
-                for (word, name, meaning) in crate::placing::PIECE_LAYERS {
+                for (word, name, meaning) in workshop_decor::placing::PIECE_LAYERS {
                     ui.selectable_value(&mut layer, word, name).on_hover_text(meaning);
                 }
             })
@@ -640,7 +640,7 @@ impl App {
             decors.living = !living;
         }
         if fit {
-            crate::decors::fit(decors);
+            workshop_decor::fit(decors);
         }
         if grid_said.clicked() {
             decors.grid = !grid;
@@ -683,7 +683,7 @@ impl App {
             self.work.decors.lib.focus = true;
         }
         // (S: snapping; C: the walls shown. Not while walking: S walks.)
-        let walking = self.work.decors.brushes.tool == crate::terrains::Tool::Walk;
+        let walking = self.work.decors.brushes.tool == workshop_decor::terrains::Tool::Walk;
         if !walking && context.input(|input| !input.modifiers.any() && input.key_pressed(egui::Key::S)) {
             self.work.decors.snap = !self.work.decors.snap;
         }
@@ -694,7 +694,7 @@ impl App {
             self.save();
         }
         // (V, B, N: the mouse chooses, paints terrains, strews.)
-        use crate::terrains::Tool;
+        use workshop_decor::terrains::Tool;
         let tool = context.input(|input| {
             if input.modifiers.any() {
                 return None;
@@ -887,12 +887,12 @@ impl egui_dock::TabViewer for Panels<'_> {
             Panel::Project => crate::home::project(ui, self.work),
             Panel::List => crate::home::list(ui, self.work),
             Panel::Preview => crate::home::preview(ui, self.work),
-            Panel::DecorScene => crate::scene::scene(ui, &mut self.work.decors),
-            Panel::Hierarchy => crate::panels::hierarchy(ui, &mut self.work.decors),
-            Panel::History => crate::panels::history(ui, &mut self.work.decors),
-            Panel::DecorInspector => crate::panels::inspector(ui, &mut self.work.decors),
+            Panel::DecorScene => workshop_decor::scene::scene(ui, &mut self.work.decors),
+            Panel::Hierarchy => workshop_decor::panels::hierarchy(ui, &mut self.work.decors),
+            Panel::History => workshop_decor::panels::history(ui, &mut self.work.decors),
+            Panel::DecorInspector => workshop_decor::panels::inspector(ui, &mut self.work.decors),
             Panel::Library => {
-                crate::library::library(ui, &mut self.work.decors, &self.work.project.decors);
+                workshop_decor::library::library(ui, &mut self.work.decors, &self.work.project.decors);
                 // (A decor found by the Library's search, opened.)
                 if let Some(path) = self.work.decors.lib.asked_open.take() {
                     self.work.decors.open(&path);
@@ -1115,7 +1115,7 @@ impl eframe::App for App {
 }
 
 /// The walls shown over the decor, or hidden (C, the tools' Walls).
-fn toggle_walls(decors: &mut crate::decors::Decors) {
+fn toggle_walls(decors: &mut workshop_decor::Decors) {
     if !decors.hidden.remove("walls") {
         decors.hidden.insert("walls");
     }

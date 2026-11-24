@@ -6,7 +6,7 @@ use eframe::egui::{self, RichText};
 use super::badge_of;
 use super::fields::rule_field;
 use super::inspector::{component, head, prop, raw, remarks};
-use crate::decors::Decors;
+use crate::Decors;
 use crate::edit::{self, Item, Kind};
 use workshop_base::theme;
 

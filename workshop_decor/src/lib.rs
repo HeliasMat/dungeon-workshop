@@ -5,6 +5,22 @@
 //! place; the things of the scenes; the models). The Scene: `scene`; the
 //! Hierarchy and the Inspector: `panels`; the brushes: `terrains`; the
 //! text changed by what is done: `edit`.
+//!
+//! A crate of Dungeon Workshop: the decor open (`Decors`), its Scene (`scene`),
+//! its panels (`panels`), brushes (`terrains`), the Library (`library`), where
+//! things land (`placing`); inside, its text changed by what is done (`edit`),
+//! a Pokémon walked in it (`walk`), the decors' tool on its thread
+//! (`workshop`). It uses `workshop_base` (the session, the look, safe saves)
+//! and `decor` (the decors' language and tool).
+
+mod edit;
+pub mod library;
+pub mod panels;
+pub mod placing;
+pub mod scene;
+pub mod terrains;
+mod walk;
+mod workshop;
 
 use std::sync::Arc;
 
@@ -455,7 +471,7 @@ impl Decors {
     }
 
     /// A piece as it is laid, asked if it is not there yet.
-    pub(crate) fn art_now(&mut self, name: &str) -> Option<PieceArt> {
+    pub fn art_now(&mut self, name: &str) -> Option<PieceArt> {
         self.art(name)
     }
 
@@ -723,7 +739,7 @@ pub(crate) fn paint_art(painter: &egui::Painter, art: &PieceArt, rect: Rect, lay
 }
 
 /// A piece drawn whole in a square (a tile of the Library, the Inspector).
-pub(crate) fn paint_thumb(painter: &egui::Painter, art: &PieceArt, room: Rect) {
+pub fn paint_thumb(painter: &egui::Painter, art: &PieceArt, room: Rect) {
     if let Some(first) = art.lower.first() {
         paint_art(painter, art, fitted(first.size_vec2(), room), (true, true), 0, false, Color32::WHITE);
     }
@@ -755,7 +771,7 @@ fn fitted(size: Vec2, room: Rect) -> Rect {
 }
 
 /// A label on a dark tag, its bottom left there.
-pub(crate) fn tag(painter: &egui::Painter, at: Pos2, said: &str, colour: Color32) {
+pub fn tag(painter: &egui::Painter, at: Pos2, said: &str, colour: Color32) {
     let galley = painter.layout_no_wrap(said.to_string(), egui::FontId::proportional(theme::SMALL), colour);
     let room = Rect::from_min_size(at - vec2(0.0, galley.size().y + 4.0), galley.size() + vec2(8.0, 4.0));
     painter.rect_filled(room, 2.0, Color32::from_black_alpha(200));
@@ -770,7 +786,7 @@ pub fn fit(decors: &mut Decors) {
 }
 
 /// A section's title, across the panel.
-pub(crate) fn section(ui: &mut egui::Ui, title: &str) {
+pub fn section(ui: &mut egui::Ui, title: &str) {
     egui::Frame::new().fill(theme::TOOLS).inner_margin(egui::Margin::symmetric(6, 3)).show(ui, |ui| {
         ui.set_width(ui.available_width());
         ui.label(RichText::new(title).strong());
@@ -785,8 +801,6 @@ pub(crate) fn body_key(one: &Item) -> String {
         None => one.name.clone(),
     }
 }
-
-pub use workshop_base::project::place_kinds;
 
 /// A decor's kind of place: its own line in `place_kinds.txt`, else the place of the game it is built on (`level`).
 pub fn decor_kind(kinds: &decor::tags::PlaceKinds, name: &str, text: &str) -> decor::tags::PlaceKind {

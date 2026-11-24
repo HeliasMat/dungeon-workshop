@@ -425,10 +425,10 @@ fn grouped_decors(work: &Work, entries: Vec<Entry>) -> (Vec<Entry>, Option<Vec<(
     if work.home.shelf != Shelf::Decors || !work.home.sought.trim().is_empty() {
         return (entries, None);
     }
-    let kinds = crate::decors::place_kinds(work.session.library());
+    let kinds = workshop_base::project::place_kinds(work.session.library());
     let kind_of = |entry: &Entry| {
         let name = entry.path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
-        crate::decors::decor_kind(&kinds, &name, &entry.text)
+        workshop_decor::decor_kind(&kinds, &name, &entry.text)
     };
     let groups = decor::tags::grouped(entries, kind_of);
     let sections = groups.iter().map(|(kind, group)| (*kind, group.len())).collect();
