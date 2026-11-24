@@ -21,7 +21,8 @@
 //! time; nothing of the game is written here.
 //!
 //! Inside: `writer` writes the beats (`writer/`, a file for each kind of
-//! beat), `map` makes a decor a map of Sky's.
+//! beat), `sky` is what it knows of Sky (its data read, its tables), `map`
+//! makes a decor a map of Sky's, `dungeon` writes a dungeon.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -35,11 +36,13 @@ use engine::{Beat, FlowBeat};
 
 mod dungeon;
 mod map;
+mod sky;
 mod writer;
 
 pub use dungeon::dungeon;
 
-use writer::{DECOR_LEVEL, Game, Writer};
+use sky::{DECOR_LEVEL, Game};
+use writer::Writer;
 
 /// A film to export: what it is called, its text, what it compiled to, the
 /// tables it compiled with, and its project's art (to stage its fights by
