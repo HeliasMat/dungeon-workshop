@@ -65,6 +65,17 @@ pub fn stamped(stamp: &Stamp) -> Stamp {
     Stamp { name: stamp.name.clone(), laid: stamp.laid + 1 }
 }
 
+/// The step of the decor's grid (`grid n`, else 8).
+pub fn grid_step(text: &str) -> f32 {
+    text.lines()
+        .find_map(|line| match line.split_whitespace().collect::<Vec<_>>().as_slice() {
+            ["grid", step] => step.parse::<f32>().ok(),
+            _ => None,
+        })
+        .unwrap_or(8.0)
+        .max(1.0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Stamp, landing, layer_name, next_layer, nudge, snap, snapping, stamp_clicked, stamped};
@@ -109,15 +120,4 @@ mod tests {
         assert_eq!(stamp_clicked(Some(&twice), "e1_1"), None, "the same card: stopped");
         assert_eq!(stamp_clicked(Some(&twice), "e2_1").map(|stamp| stamp.name), Some("e2_1".to_string()));
     }
-}
-
-/// The step of the decor's grid (`grid n`, else 8).
-pub fn grid_step(text: &str) -> f32 {
-    text.lines()
-        .find_map(|line| match line.split_whitespace().collect::<Vec<_>>().as_slice() {
-            ["grid", step] => step.parse::<f32>().ok(),
-            _ => None,
-        })
-        .unwrap_or(8.0)
-        .max(1.0)
 }

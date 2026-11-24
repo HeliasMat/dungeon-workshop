@@ -449,30 +449,6 @@ pub(crate) fn literal_head(form: &str) -> (bool, Vec<&str>) {
     (who_first, head)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_families_and_the_others_are_each_once() {
-        for (at, family) in FAMILIES.iter().enumerate() {
-            assert!(!FAMILIES[..at].contains(family), "{family} twice");
-        }
-        for (name, _) in OPTIONAL {
-            assert!(FAMILIES[CORE..].contains(&name) && !is_core(name), "{name}");
-        }
-        for (at, other) in OTHERS.iter().enumerate() {
-            assert!(FAMILIES.contains(&other.family), "{}: {}", other.word, other.family);
-            assert!(!OTHERS[..at].iter().any(|known| known.word == other.word), "“{}” twice", other.word);
-            assert!(other.ds.is_some(), "{}: no DS status", other.word);
-        }
-        assert_eq!(literal_head("transition fade in [d]"), (false, vec!["transition", "fade", "in"]));
-        assert_eq!(literal_head("who face side|other|away"), (true, vec!["face"]));
-        assert_eq!(literal_head("wait all"), (false, vec!["wait", "all"]));
-        assert_eq!(library_of("Fishing"), Some("fishing"));
-    }
-}
-
 /// The DS of the words of a lexicon, as each declares it (`ds`).
 impl Lexicon {
     /// How that word stands on the DS, if it is a word of the vocabulary
@@ -515,5 +491,29 @@ fn same_as(word: &str) -> &str {
         "plunge" => "dive",
         "dismount" => "get_off",
         word => word,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_families_and_the_others_are_each_once() {
+        for (at, family) in FAMILIES.iter().enumerate() {
+            assert!(!FAMILIES[..at].contains(family), "{family} twice");
+        }
+        for (name, _) in OPTIONAL {
+            assert!(FAMILIES[CORE..].contains(&name) && !is_core(name), "{name}");
+        }
+        for (at, other) in OTHERS.iter().enumerate() {
+            assert!(FAMILIES.contains(&other.family), "{}: {}", other.word, other.family);
+            assert!(!OTHERS[..at].iter().any(|known| known.word == other.word), "“{}” twice", other.word);
+            assert!(other.ds.is_some(), "{}: no DS status", other.word);
+        }
+        assert_eq!(literal_head("transition fade in [d]"), (false, vec!["transition", "fade", "in"]));
+        assert_eq!(literal_head("who face side|other|away"), (true, vec!["face"]));
+        assert_eq!(literal_head("wait all"), (false, vec!["wait", "all"]));
+        assert_eq!(library_of("Fishing"), Some("fishing"));
     }
 }
