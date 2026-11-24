@@ -1956,7 +1956,7 @@ impl<'a> Writer<'a> {
             Beat::Speech(SpeechBeat::Bubble { .. }) if matches!(word, Some("chatter")) || word.is_none() => {}
             // The engine's evolution (slowed, shining, growing): Sky's white flash instead, below.
             Beat::View(ViewBeat::Tempo(_)) | Beat::Body(BodyBeat::Colour { .. } | BodyBeat::Scale { .. }) | Beat::Screen(ScreenBeat::Particles { .. })
-                if word == Some("evolve") => {}
+                if matches!(word, Some("evolve" | "transform")) => {}
             // Evolving: a shine, the screen white, the evolved one (an actor of its
             // own) put where the other stood, the other hidden, the screen back.
             Beat::Body(BodyBeat::Disguise { who, like: Some(like) }) if word == Some("evolve") => {
@@ -1976,6 +1976,18 @@ impl<'a> Writer<'a> {
                 self.line("screen_FadeIn(1, 30);");
                 self.line("WaitScreenFade();");
                 self.became.insert(*who, *like);
+            }
+            // Transformed: a shine, the screen white and back; Sky's actors keep
+            // their look (R-DS-LOSS).
+            Beat::Body(BodyBeat::Mimic { who, .. }) => {
+                let Some(old) = self.who(number, *who) else { return };
+                self.line(&format!("SetEffect<actor {old}>(691, 3);"));
+                self.line("Wait(40);");
+                self.line("screen_WhiteOut(1, 30);");
+                self.line("WaitScreenFade();");
+                self.line(&format!("SetEffect<actor {old}>(EFFECT_NONE, 3);"));
+                self.line("screen_FadeIn(1, 30);");
+                self.line("WaitScreenFade();");
             }
             Beat::Screen(ScreenBeat::Grey(_)) if !self.started => {}
             // The light: Sky's screen_FlushOut, evening orange or night blue

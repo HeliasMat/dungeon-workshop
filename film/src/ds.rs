@@ -244,6 +244,7 @@ pub const WORDS: &[(&str, Export, &str)] = &[
         Export::Close,
         "a stats-up shine, the screen white, the evolved one (an actor of its own) put where it stood and shown, the other hidden; no change of species (Sky's scripts have none)",
     ),
+    ("transform", Export::Close, "a stats-up shine, the screen white and back; he keeps his look (Sky's actors change no sprite)"),
     ("join", Export::Direct, "its emote and hop, then as Sky: me_Play(5), message_Mail(\"[CN]… joined the team!\"), WaitMe(5)"),
     (
         "roar",
@@ -373,6 +374,7 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("attack", "a crouch, the attack and an effect of its type: not the move's own animation"),
     ("use", "a crouch, the attack and an effect of its type: not the move's own animation"),
     ("evolve", "no change of species: the evolved one is another actor"),
+    ("transform", "he keeps his look: only the shine and the white screen"),
     ("dodge", "the “Missed!” won't show"),
     ("finish", "no slow motion"),
     ("fight", "no bars and no log: its blows as attacks, its lines said"),

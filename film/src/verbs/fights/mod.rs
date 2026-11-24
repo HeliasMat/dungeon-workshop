@@ -49,6 +49,12 @@ pub const WORDS: &[Word] = &[
     )
     .does(used),
     Word::new("evolve", &["who:pokemon into:pokemon"], "do evolution, the game's sentence").maybe(fought_word),
+    Word::new(
+        "transform",
+        &["who:pokemon back", "who:pokemon into form:pokemon"],
+        "_change, mimic, _changed (the evolution's light, no sentence): he looks like the other, his name and his lines his own; back: as he was",
+    )
+    .does(transformed),
     Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise")
         .does(blows::roared),
     Word::new(
@@ -229,6 +235,24 @@ fn boss_looms(film: &mut Film, who: &str) {
 /// Who the line says wins, if it says.
 fn winner_of(line: &Line) -> Option<String> {
     line.args.word("wins").map(plain)
+}
+
+/// `ditto transform into pikachu`: the evolution's light (slowed, a
+/// silhouette growing and shrinking, a flash), and he looks like the other;
+/// still himself, his name, his portrait and his lines his own.
+/// `ditto transform back`: the same, back to himself.
+fn transformed(film: &mut Film, line: &Line) {
+    let who = plain(line.args.word("who").unwrap_or_default());
+    let like = match line.args.word("form") {
+        Some(form) => match film.coded(&plain(form)) {
+            Some(like) => Some(like),
+            None => return,
+        },
+        None => None,
+    };
+    film.call(line.number, "_change", &[&who]);
+    film.on(&who, |one| emit::mimic(one, like));
+    film.call(line.number, "_changed", &[&who]);
 }
 
 /// A line of the fights: one reader for all their words, a fight being one

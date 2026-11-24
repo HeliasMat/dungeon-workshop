@@ -207,6 +207,8 @@ mod tests {
             BodyBeat::Slow { who: hero, by: 0.01 },
             BodyBeat::Disguise { who: hero, like: Some(krabby) },
             BodyBeat::Disguise { who: hero, like: None },
+            BodyBeat::Mimic { who: hero, like: Some(krabby) },
+            BodyBeat::Mimic { who: hero, like: None },
             BodyBeat::Popup { who: krabby, text: "12 damage".to_string(), colour: [255, 40, 40] },
             BodyBeat::Move { who: hero, id: MoveId(85), target: Some(krabby) },
             BodyBeat::Move { who: hero, id: MoveId(85), target: None },

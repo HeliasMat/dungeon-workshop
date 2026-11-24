@@ -18,6 +18,16 @@ scene: beach eevee piplup
 eevee evolve umbreon
 piplup (surprised): Wow!
 
+== transform
+> Someone transforms into another, of the scene or a species not there: the evolution's light, without its sentence, and they look like the other while staying themselves: their name, portrait and lines are their own. transform back: themselves again.
+scene: beach ditto pikachu
+ditto put center
+pikachu put left
+ditto transform into pikachu
+ditto: Two of us!
+ditto transform back
+pikachu (surprised): Wow.
+
 == attack
 > Someone uses a move of the game, by its name, as the game shows it: their own animation, the move's effects and sound, the target knocked back and hurt. No bars, no numbers: fight does those.
 scene: beach pikachu piplup

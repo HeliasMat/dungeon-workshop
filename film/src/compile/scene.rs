@@ -205,15 +205,27 @@ impl Film {
         }
         self.by_nature(scene, &cast, &placed);
         // (A crowd stands in its own circle, its first one with it; what
-        // someone evolves into is that one, not one more.)
+        // someone evolves into is that one, not one more; what one
+        // transforms into, not named at the head, a look only.)
         let crowds = named_after(scene, "crowd");
-        let forms: HashSet<String> = scene
+        let mut forms: HashSet<String> = scene
             .lines
             .iter()
             .filter(|item| item.text.split_whitespace().count() == 3 && item.text.starts_with("evolve"))
             .filter_map(|item| item.text.split_whitespace().nth(2))
             .map(plain)
             .collect();
+        for item in &scene.lines {
+            let words: Vec<String> = item.text.split_whitespace().map(plain).collect();
+            // (`transform ditto into charizard`, or who first.)
+            if let [first, second, into, form] = words.as_slice()
+                && (first == "transform" || second == "transform")
+                && into == "into"
+                && !listed.contains(form)
+            {
+                forms.insert(form.clone());
+            }
+        }
         cast.retain(|who| !placed.contains(who) && !crowds.contains(who) && !forms.contains(who));
         // (Who is there from the start is named at the head of the scene; the
         // others come by a line that says so: nothing about the stage hidden

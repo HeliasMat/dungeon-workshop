@@ -301,7 +301,7 @@ impl Sim {
                     self.show(who, who, facts);
                 }
             }
-            Beat::Body(BodyBeat::Disguise { who, like }) => self.show(who, like.unwrap_or(who), facts),
+            Beat::Body(BodyBeat::Disguise { who, like } | BodyBeat::Mimic { who, like }) => self.show(who, like.unwrap_or(who), facts),
             Beat::Screen(ScreenBeat::Backdrop(level, _, _)) => {
                 (self.banner, self.place) = (None, Some(level));
                 self.stage.place_walls(walls_of(&facts.art.folder, level));

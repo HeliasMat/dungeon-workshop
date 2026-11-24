@@ -1,6 +1,7 @@
 # The gestures of the library: what each one does, in the words of the
 # language. `_evolution` is the library's own (`who evolve species`), never
-# written in a film.
+# written in a film; `_change` and `_changed` too (`who transform into
+# other`: the evolution's light, his look changed between them).
 
 # He evolves: slowed, a silhouette growing and shrinking, a flash, then what he becomes.
 define _evolution who:word form:word
@@ -15,6 +16,29 @@ define _evolution who:word form:word
   end
   flash white
   who disguise form
+  particles sparks who 40 white
+  who uncolour 40f
+  wait who
+  tempo 1
+  sound alert
+end
+
+# A transformation begins: slowed, a silhouette growing and shrinking, a flash.
+define _change who:word
+  tempo 0.5
+  who colour 0 0 0 30f
+  wait who
+  repeat 3
+    who scale 1.3 12f
+    wait who
+    who scale 1 12f
+    wait who
+  end
+  flash white
+end
+
+# A transformation ends: sparks, his colours back.
+define _changed who:word
   particles sparks who 40 white
   who uncolour 40f
   wait who

@@ -33,6 +33,7 @@ declare! {
     "ride" => Ride { who: Who, on: OrOff<Who>, high: f32 = 16.0, beside: f32 = 0.0 },
     "give" => Give { what: Who, from: Who, to: Who, frames: Frames = Frames(30.0), keeps: Keeps },
     "disguise" => Disguise { who: Who, like: OrOff<Who> },
+    "mimic" => Mimic { who: Who, like: OrOff<Who> },
     "large" => Large(who: OrOff<Who>),
     "takeable" => Takeable { who: Who, on: IfAbsent<OnOff> = true },
     "shine" => Shine { who: Who, on: IfAbsent<OnOff> = true },
@@ -79,6 +80,11 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "disguise",
         &["who:code other:code", "who:code off"],
         "they have the other's picture, and their name and face in what they say: an illusion (`disguise fake partner`), an evolution",
+    ),
+    Form::new(
+        "mimic",
+        &["who:code other:code", "who:code off"],
+        "they have the other's picture only: their name and face in what they say stay their own (a transformation)",
     ),
     Form::new(
         "drawing",

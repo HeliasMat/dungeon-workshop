@@ -316,6 +316,12 @@ pub enum BodyBeat {
         who: Who,
         like: Option<Who>,
     },
+    /// Someone shown with another's picture, still itself in what it says
+    /// (none: its own picture again).
+    Mimic {
+        who: Who,
+        like: Option<Who>,
+    },
     /// A few words rising from someone and fading: a blow's number, a
     /// status taken.
     Popup {

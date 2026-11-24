@@ -77,6 +77,12 @@ pub fn pose(who: Who, pose: Pose) -> Beat {
     Beat::Body(BodyBeat::Pose { who, pose })
 }
 
+/// Someone shown with another's picture, still itself in what it says (none:
+/// its own again).
+pub fn mimic(who: Who, like: Option<Who>) -> Beat {
+    Beat::Body(BodyBeat::Mimic { who, like })
+}
+
 /// Someone trembles for that many frames, that many pixels to and fro.
 pub fn tremble(who: Who, frames: f32, strength: f32) -> Beat {
     Beat::Body(BodyBeat::Tremble { who, frames: Frames(frames), strength })

@@ -192,6 +192,7 @@ pub const WORDS: &[Planned] = &[
     word("Fights", "attack", "who attack Move [at target]"),
     word("Fights", "use", "who use Move [on target|at x y]"),
     word("Fights", "evolve", "who evolve species"),
+    word("Fights", "transform", "who transform into other / who transform back"),
     word("Fights", "join", "who join [team]"),
     word("Fights", "roar", "who roar [hard]"),
     word("Fights", "charge", "who charge [Move]"),

@@ -92,6 +92,7 @@ Names hold for the whole file; the words of lines are never touched (except `{na
 | `fishline <who> <item> [x y]` / `fishline <who> <item> holds` / `fishline <who> off` | a fishing line, from the end of their rod (`tip` in their variant's table) to the item, which flies in an arc to the point, or in front of them; `holds`: only tied to what is already there (a catch, where it comes out of the water); they keep an eye on it |
 | `image <name> <file> <x> <y>` / `image <name> off` | a picture of your own (a PNG, path from the scene: `../images/sign.png`) put on a point: a sign, a drawing |
 | `disguise <who> <other>` / `disguise <who> off` | they have the other's picture, and their name and face in what they say: an illusion (`disguise fake partner`), an evolution |
+| `mimic <who> <other>` / `mimic <who> off` | they have the other's picture only: their name and face in what they say stay their own (a transformation) |
 
 ## 4. Moving
 Movements do not wait: the scene goes on. `waitfor <who>` waits until they have finished, `waitall` until no one moves any more.
@@ -680,6 +681,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `log` | `log text...` |
 | `lookat` | `lookat who:code x:coordinate y:coordinate` |
 | `measure` | `measure name:word a:word b:number` |
+| `mimic` | `mimic who:code other:code` · `mimic who:code off` |
 | `minimap` | `minimap who:code` · `minimap off` |
 | `mirror` | `mirror who:code model:word` · `mirror who:code off` |
 | `mood` | `mood who:code face:word` · `mood who:code -` |

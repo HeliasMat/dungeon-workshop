@@ -137,9 +137,12 @@ impl Beat {
             | Beat::Sound(SoundBeat::SoundFrom { from: who, .. } | SoundBeat::Play(Played { pan: Side::From { who, .. }, .. })) => vec![(Named, who)],
             Beat::Body(BodyBeat::FishLine { who, to: Some(other), .. } | BodyBeat::Throw { who, at: other, .. })
             | Beat::Data(DataBeat::Sees { who, other, .. }) => vec![(Named, who), (Named, other)],
-            Beat::Body(BodyBeat::Carry { what: who, by: other, .. } | BodyBeat::Ride { who, on: other, .. } | BodyBeat::Disguise { who, like: other }) => {
-                std::iter::once((Named, who)).chain(other.as_mut().map(|other| (Named, other))).collect()
-            }
+            Beat::Body(
+                BodyBeat::Carry { what: who, by: other, .. }
+                | BodyBeat::Ride { who, on: other, .. }
+                | BodyBeat::Disguise { who, like: other }
+                | BodyBeat::Mimic { who, like: other },
+            ) => std::iter::once((Named, who)).chain(other.as_mut().map(|other| (Named, other))).collect(),
             Beat::Play(PlayBeat::ControlTeam(who)) | Beat::Motion(MotionBeat::KeepOnly(who)) => who.iter_mut().map(|who| (Named, who)).collect(),
             Beat::Flow(FlowBeat::After { beat, .. } | FlowBeat::Every { beat, .. }) => beat.named(),
             // (A property of someone, of the emitter on someone, a point by
