@@ -1948,7 +1948,9 @@ impl<'a> Writer<'a> {
             // The water thrown up, its rings, bubbles, a wake: Sky's scripts have no
             // particles of their own (R-DS-LOSS).
             Beat::Screen(ScreenBeat::Particles { .. } | ScreenBeat::Emitter { .. } | ScreenBeat::EmitterOff(_))
-                if matches!(word, Some("swim" | "dive" | "plunge" | "surface" | "get_out")) => {}
+                if matches!(word, Some("swim" | "dive" | "plunge" | "surface" | "get_out" | "burrow" | "pop_out")) => {}
+            // Into the ground and out of it: no shadow taken away (R-DS-LOSS).
+            Beat::Body(BodyBeat::Shadow { .. }) if matches!(word, Some("burrow" | "pop_out")) => {}
             // Bubbles (a line said in one, a crowd's chatter): Sky has none; the
             // time they take is kept (R-DS-LOSS).
             Beat::Speech(SpeechBeat::Bubble { .. }) if matches!(word, Some("chatter")) || word.is_none() => {}

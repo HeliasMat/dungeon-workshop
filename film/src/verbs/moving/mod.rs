@@ -16,6 +16,7 @@ use crate::words::{SPOTS, plain};
 pub mod body;
 pub mod contact;
 pub mod flying;
+pub mod hiding;
 pub mod riding;
 pub mod swimming;
 

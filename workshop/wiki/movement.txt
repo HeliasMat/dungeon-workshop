@@ -157,6 +157,39 @@ pidgey fly
 pidgey fly to 90 330
 pikachu (surprised): Over the cliff!
 
+== hide
+> Someone hides behind someone, a thing of the scene or a point of the place: just behind it, a little higher up the screen, so that it is drawn over them (a place's roof or foliage covers whoever stands behind it); they turn to us and crouch. hide off: up again.
+scene: beach pikachu snorlax
+pikachu put left
+snorlax put 430 210
+pikachu hide behind snorlax
+pikachu (worried): Shh...
+pikachu hide off
+
+== peek
+> Someone hiding looks out: up, a glance one way and the other, then crouched again.
+scene: beach pikachu snorlax
+pikachu put left
+snorlax put 430 210
+pikachu hide behind snorlax
+pikachu peek
+pikachu (worried): Still there...
+
+== burrow
+> Someone digs into the ground where they stand (or at a place, walking there first): they tremble, clods of earth are flung, and the ground cuts them step by step until they are gone.
+scene: beach diglett pikachu
+diglett put center
+diglett burrow
+pikachu (surprised): Where did it go?
+
+== pop_out
+> Someone under the ground comes out of it, where they burrowed or at the place told: clods of earth, up through the ground, a hop.
+scene: beach diglett pikachu
+diglett put center
+diglett burrow
+diglett pop_out at 380 240
+pikachu (surprised): There!
+
 == take_off
 > fly, another word: someone takes off and flies, bobbing in the air, so high or to a place.
 scene: lake pidgey pikachu

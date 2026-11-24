@@ -124,6 +124,10 @@ pub const WORDS: &[Planned] = &[
     word("Movement", "get_out", "who get_out [to where]"),
     word("Movement", "fly", "who fly [to where] [height h]"),
     word("Movement", "land", "who land [at where]"),
+    word("Movement", "hide", "who hide behind other|thing|where / who hide off"),
+    word("Movement", "peek", "who peek"),
+    word("Movement", "burrow", "who burrow [at where]"),
+    word("Movement", "pop_out", "who pop_out [at where]"),
     // Turning
     word("Turning", "face", "who face side|other|away [fast|slow]"),
     word("Turning", "look", "who look around|left|right|up|down"),

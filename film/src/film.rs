@@ -125,6 +125,9 @@ pub struct Staging {
     pub swimming: BTreeSet<String>,
     pub under: BTreeSet<String>,
     pub flying: BTreeMap<String, f32>,
+    /// Who hides (`hide`), and who is under the ground (`burrow`).
+    pub hidden: BTreeSet<String>,
+    pub buried: BTreeSet<String>,
 }
 
 impl Staging {
