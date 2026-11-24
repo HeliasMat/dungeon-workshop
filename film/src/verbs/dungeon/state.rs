@@ -2,8 +2,6 @@
 //! mission (the whole film); what lies on the floor at hand (gone at the
 //! next scene).
 
-use std::collections::BTreeSet;
-
 use crate::film::Kept;
 
 /// A shop: its keeper, and each thing laid out (its word, its code, its price).
@@ -25,14 +23,6 @@ pub struct DungeonState {
     /// The guild's: the mission the team took (`take_job`).
     pub mission: Option<String>,
     pub map_team: Option<(bool, Vec<String>)>,
-    /// The rocks of a cave-in, in the way (`rockslide`, `smash`).
-    pub rubble: Vec<String>,
-    /// The foes beaten and gone (`foe_ko`): where they lay is kept.
-    pub downed: BTreeSet<String>,
-    /// The crystals lit so far (`crystal`).
-    pub lit: BTreeSet<String>,
-    /// The footprints on the ground (`footprints`), until `clear_footprints`.
-    pub tracks: Vec<String>,
     /// A shop on the floor (`shop`): its keeper, and what it sells, the
     /// code of each thing laid out and its price.
     pub shop: Option<Shop>,
@@ -53,10 +43,6 @@ impl Default for DungeonState {
             recruits: Vec::new(),
             mission: None,
             map_team: None,
-            rubble: Vec::new(),
-            downed: BTreeSet::new(),
-            lit: BTreeSet::new(),
-            tracks: Vec::new(),
             shop: None,
             dark: false,
             traps: Vec::new(),

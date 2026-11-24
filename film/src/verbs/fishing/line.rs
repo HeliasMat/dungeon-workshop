@@ -228,19 +228,14 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
             }
         }
         Some((caught, lands)) => {
-            let (name, word, pokemon) = caught_name(film, &caught);
-            // (Where it lands, when the line says: the rest is found as the film plays.)
-            let landed = point_of(line).or_else(|| written(&lands).map(|(x, y)| (x as i32, y as i32)));
+            let (word, pokemon) = caught_word(film, &caught);
             film.kept::<FishingState>().catches.entry(who.clone()).or_default().push(Caught {
                 code: caught.clone(),
-                name,
                 word,
                 pokemon,
-                size: None,
                 kept: false,
                 released: false,
                 water,
-                landed,
             });
             cheer(film, true);
             // (The line tied to it where it comes out, not cast: it flies
@@ -296,12 +291,10 @@ const TOWED: i32 = 6;
 const BACK_CATCH_HIGH: i32 = 8;
 const BACK_CATCH_SIDE: i32 = 20;
 
-/// What came out of the water: its name as said, its word, whether a Pokémon.
-fn caught_name(film: &mut Film, caught: &str) -> (String, String, bool) {
+/// What came out of the water: its word, whether a Pokémon.
+fn caught_word(film: &mut Film, caught: &str) -> (String, bool) {
     if film.actor(caught).is_some() {
-        return (crate::verbs::dungeon::called_by(film, caught), caught.to_string(), true);
+        return (caught.to_string(), true);
     }
-    let key = film.things.stuff.iter().find(|stuff| stuff.code == caught).map_or(caught.to_string(), |stuff| stuff.key.clone());
-    let name = crate::screen::capitalized(&known_thing(film, std::slice::from_ref(&key)).map_or(key.clone(), |thing| thing.name));
-    (name, key, false)
+    (film.things.stuff.iter().find(|stuff| stuff.code == caught).map_or(caught.to_string(), |stuff| stuff.key.clone()), false)
 }
