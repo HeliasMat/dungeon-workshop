@@ -906,7 +906,7 @@ fn keys_timed_by_the_music_or_a_mark_are_so_many_frames_from_now() {
     director.vars.insert(MUSIC_CLOCK.to_string(), 300.0);
     director.vars.insert(names::CLOCK.to_string(), 500.0);
     director.vars.insert("_mark_blow".to_string(), 450.0);
-    let key = |at| Key { at, value: crate::props::Given::Is(crate::props::Value::Number(1.0)), ease: crate::stage::Ease::Linear };
+    let key = |at| Key { at, value: crate::props::Given::Is(crate::props::Value::Number(1.0)), ease: crate::base::Ease::Linear };
     let beat = Beat::Node(NodeBeat::Animate {
         node: NodeRef::Who(Who::Monster(25)),
         prop: crate::props::PropId::X,

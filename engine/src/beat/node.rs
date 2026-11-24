@@ -11,9 +11,9 @@ use std::fmt;
 
 use super::parse::Fields;
 use super::*;
+use crate::base::Ease;
+use crate::base::Inherit;
 use crate::props::{self, Given, PropId};
-use crate::stage::Ease;
-use crate::stage::node::Inherit;
 
 /// A node of the stage, as a beat names it: someone or something of the
 /// cast, a node by its name (a picture's, or one a film made), the caption,

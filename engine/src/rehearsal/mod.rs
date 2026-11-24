@@ -15,8 +15,9 @@ use std::collections::{HashMap, HashSet};
 
 use glam::Vec2;
 
+use crate::base::*;
 use crate::beat::*;
-use crate::director::{Call, Director, LINE, Mark, StoryEvent};
+use crate::director::{Call, Director, LINE, Mark, StoryEvent, without_tags};
 use crate::problem::{point, told};
 use crate::stage::{Stage, attribute};
 use crate::vocabulary::Vocabulary;
@@ -231,17 +232,6 @@ fn place(director: &Director) -> String {
     let beat = director.beat(at).map(|beat| format!("{beat:?}")).unwrap_or_default();
     let beat: String = beat.chars().take(60).collect();
     format!("scene “{name}”, near {beat}")
-}
-
-/// Words without what writes them (`[CS:N]`).
-pub(crate) fn without_tags(text: &str) -> String {
-    let mut in_tag = false;
-    text.chars()
-        .filter(|letter| {
-            in_tag = (in_tag || *letter == '[') && *letter != ']';
-            !in_tag && *letter != ']'
-        })
-        .collect()
 }
 
 /// A way one faces, by its name (`down`, `right`...).

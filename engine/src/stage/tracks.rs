@@ -398,7 +398,8 @@ impl Stage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::beat::{Frames, Key, KeyTime};
+    use crate::base::{EaseFamily, Frames};
+    use crate::beat::{Key, KeyTime};
     use crate::who::Who;
 
     fn pika() -> NodeRef {

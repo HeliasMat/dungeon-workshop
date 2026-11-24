@@ -17,6 +17,7 @@
 use glam::{Affine2, Mat2};
 
 use super::*;
+pub use crate::base::Inherit;
 use crate::beat::{NodeBeat, NodeRef, Sort};
 use crate::props::{Blend, Given, NodeKind, PropId, Rgba, Value};
 
@@ -201,53 +202,6 @@ impl Looks {
     /// sprite always was (its tint and opacity are its owner's).
     pub fn is_plain(&self) -> bool {
         self.add == [0; 3] && self.fill.is_none() && self.blend == Blend::Normal && !self.smooth && self.effects.is_none()
-    }
-}
-
-/// What a node takes from the one it hangs on (see `Node::parent`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Inherit {
-    pub pos: bool,
-    pub angle: bool,
-    pub scale: bool,
-    pub opacity: bool,
-    pub colour: bool,
-}
-
-impl Default for Inherit {
-    /// All of it.
-    fn default() -> Self {
-        Inherit { pos: true, angle: true, scale: true, opacity: true, colour: true }
-    }
-}
-
-impl Inherit {
-    /// Nothing of it.
-    pub const NONE: Inherit = Inherit { pos: false, angle: false, scale: false, opacity: false, colour: false };
-
-    /// What it takes, by the words a line says (`pos angle scale opacity
-    /// colour`): only those; none if a word is none of them.
-    pub fn of_words(words: &[String]) -> Option<Inherit> {
-        let mut inherit = Inherit::NONE;
-        for word in words {
-            match word.as_str() {
-                "pos" | "position" => inherit.pos = true,
-                "angle" => inherit.angle = true,
-                "scale" => inherit.scale = true,
-                "opacity" => inherit.opacity = true,
-                "colour" | "tint" => inherit.colour = true,
-                _ => return None,
-            }
-        }
-        Some(inherit)
-    }
-
-    /// The words of what it takes, as the engine's lines write them.
-    pub fn words(self) -> Vec<&'static str> {
-        [(self.pos, "pos"), (self.angle, "angle"), (self.scale, "scale"), (self.opacity, "opacity"), (self.colour, "colour")]
-            .into_iter()
-            .filter_map(|(taken, word)| taken.then_some(word))
-            .collect()
     }
 }
 

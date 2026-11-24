@@ -1,7 +1,6 @@
 //! Who a beat is about.
 
 use super::*;
-use crate::stage::{Halo, Lit};
 
 /// What a beat does with someone it names.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

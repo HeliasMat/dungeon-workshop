@@ -64,9 +64,9 @@ fn what_is_seen_as_a_film_goes_by_is_told_with_its_line() {
 }
 
 /// The ground of a place: open, with a rock over the tiles 3 and 4 of its row 3.
-fn rock_ground() -> crate::stage::Ground {
+fn rock_ground() -> crate::base::Ground {
     let rows: Vec<Vec<bool>> = (0..8).map(|y| (0..16).map(|x| y == 3 && (3..=4).contains(&x)).collect()).collect();
-    crate::stage::Ground::new(rows)
+    crate::base::Ground::new(rows)
 }
 
 #[test]

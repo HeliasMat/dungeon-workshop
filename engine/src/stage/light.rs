@@ -69,13 +69,6 @@ pub struct Wipe {
     pub side: u8,
 }
 
-/// A circle of light: on what, how wide.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Lit {
-    pub on: Cam,
-    pub radius: f32,
-}
-
 /// A bolt of lightning: where it strikes, the frames it still shows, what
 /// its zigzag is drawn from.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -83,14 +76,6 @@ pub struct Bolt {
     pub at: Vec2,
     pub left: f32,
     pub drawn: u32,
-}
-
-/// A soft light (see `ScreenBeat::Halo`): on what, how wide, of what colour.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Halo {
-    pub on: Cam,
-    pub radius: f32,
-    pub colour: [u8; 3],
 }
 
 /// A picture shown instead of the scene, which goes on behind it (see

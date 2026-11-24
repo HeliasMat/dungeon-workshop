@@ -7,7 +7,7 @@ use glam::Vec2;
 
 use super::parse::Fields;
 use super::*;
-use crate::stage::Ground;
+use crate::base::Ground;
 
 /// A place as a line says it (see `Spot::parse`).
 #[derive(Clone, Debug, PartialEq)]

@@ -1,8 +1,8 @@
 //! How a `ViewBeat` is written as its line (read by `beat::view`).
 
-use crate::beat::{Cam, ViewBeat};
 #[cfg(test)]
-use crate::stage::Ease;
+use crate::base::Ease;
+use crate::beat::{Cam, ViewBeat};
 use crate::vocabulary::Vocabulary;
 
 fn cam(on: &Cam) -> Vec<String> {
@@ -103,7 +103,7 @@ mod tests {
     use super::*;
     use crate::Frames;
     use crate::beat::Beat;
-    use crate::stage::Lit;
+    use crate::beat::Lit;
     use crate::vocabulary::SAMPLE;
     use crate::who::Who;
     use glam::Vec2;
@@ -118,7 +118,7 @@ mod tests {
             ViewBeat::Camera(Some(pikachu.clone())),
             ViewBeat::Ease(Ease::Smooth),
             ViewBeat::Ease(Ease::Linear),
-            ViewBeat::Ease(Ease::Out(crate::stage::EaseFamily::Quad)),
+            ViewBeat::Ease(Ease::Out(crate::base::EaseFamily::Quad)),
             ViewBeat::Ease(Ease::Bezier([0.4, 0.0, 0.2, 1.0])),
             ViewBeat::Pan { to: at.clone(), frames: Frames(30.0) },
             ViewBeat::Pan { to: pikachu.clone(), frames: Frames(45.5) },

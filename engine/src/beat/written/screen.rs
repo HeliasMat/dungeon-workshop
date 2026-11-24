@@ -1,6 +1,7 @@
 //! How a `ScreenBeat` is written as its line (read by `beat::screen`).
 
-use crate::beat::names::{colour_named, light_named, weather_named};
+use crate::base::colour_named;
+use crate::beat::names::{light_named, weather_named};
 use crate::beat::{Cam, PARTICLES, ParticleKind, ScreenBeat, Weather};
 use crate::vocabulary::Vocabulary;
 
@@ -209,7 +210,7 @@ mod tests {
     use super::*;
     use crate::Frames;
     use crate::beat::Beat;
-    use crate::stage::Halo;
+    use crate::beat::Halo;
     use crate::vocabulary::SAMPLE;
     use crate::who::Who;
     use glam::Vec2;

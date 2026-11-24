@@ -3,7 +3,6 @@
 use super::declare::{Bit, OnOff, Opt, Text, declare};
 use super::parse::Fields;
 use super::*;
-use crate::stage::Halo;
 
 /// What is shown: the place, the light, what is in the air, words over all.
 #[derive(Clone, Debug, PartialEq)]

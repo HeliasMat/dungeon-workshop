@@ -7,7 +7,6 @@ use std::fmt;
 use glam::Vec2;
 
 use super::*;
-use crate::stage::{Halo, Lit};
 
 /// A number of a beat: as written, or one of the engine's numbers by its
 /// name, known as the scene plays (`{_lieu3_x}`: a place found by the stage).

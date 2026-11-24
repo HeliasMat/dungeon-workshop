@@ -36,7 +36,7 @@ impl DataBeat {
                     Some(time) => frames(time.0)?,
                 };
                 // (`timer` alone, or `timer_<name>` by its name.)
-                match var.strip_prefix(crate::director::TIMER) {
+                match var.strip_prefix(crate::beat::TIMER) {
                     Some("") => line(&["timer", &time]),
                     Some(named) => line(&["timer", named.strip_prefix('_')?, &time]),
                     None => return None,
@@ -66,8 +66,8 @@ mod tests {
             DataBeat::Position { who: Who::Monster(7), x: "x".into(), y: "y".into() },
             DataBeat::Sees { var: var(), who: Who::Monster(7), other: Who::Monster(25), distance: 80.0, angle: 45.0 },
             DataBeat::SetText { var: var(), text: "hello you".into() },
-            DataBeat::Timer { var: crate::director::TIMER.to_string(), frames: Some(Frames(1800.0)) },
-            DataBeat::Timer { var: format!("{}_bomb", crate::director::TIMER), frames: None },
+            DataBeat::Timer { var: crate::beat::TIMER.to_string(), frames: Some(Frames(1800.0)) },
+            DataBeat::Timer { var: format!("{}_bomb", crate::beat::TIMER), frames: None },
         ] {
             let fields = Beat::Data(beat.clone()).fields(&SAMPLE).expect("a line");
             assert_eq!(Beat::parse(&fields, &SAMPLE).ok(), Some(Beat::Data(beat)), "{fields:?}");

@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 use super::*;
-use crate::beat::Frames;
+use crate::base::Frames;
 
 fn words(text: &str) -> Vec<String> {
     text.split_whitespace().map(str::to_string).collect()

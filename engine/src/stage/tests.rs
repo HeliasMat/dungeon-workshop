@@ -1,4 +1,5 @@
 use super::*;
+use crate::base::EaseFamily;
 
 fn run(stage: &mut Stage, frames: usize) -> Option<Vec2> {
     let mut focus = Some(Vec2::ZERO);

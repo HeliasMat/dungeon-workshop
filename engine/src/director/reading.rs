@@ -4,8 +4,6 @@
 //! [`read_after`] it is written out, and the check finds a line gone too
 //! fast under [`least_shown`].
 
-use crate::rehearsal::without_tags;
-
 /// The letters the box writes out a frame at the game's usual speed (the
 /// options' “normal”).
 pub const LETTERS_A_FRAME: f32 = 1.0;
@@ -55,6 +53,17 @@ pub fn line_frames(name: &str, text: &str, shouted: bool) -> u32 {
 /// a short read.
 pub fn least_shown(page: &str) -> f32 {
     writing_frames(page) + ENOUGH_START + letters(page) as f32 * ENOUGH_LETTER
+}
+
+/// Words without what writes them (`[CS:N]`).
+pub(crate) fn without_tags(text: &str) -> String {
+    let mut in_tag = false;
+    text.chars()
+        .filter(|letter| {
+            in_tag = (in_tag || *letter == '[') && *letter != ']';
+            !in_tag && *letter != ']'
+        })
+        .collect()
 }
 
 #[cfg(test)]

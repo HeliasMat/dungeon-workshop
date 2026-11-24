@@ -10,9 +10,10 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use glam::Vec2;
 
+use crate::base::*;
 use crate::beat::*;
 use crate::stage::{Gauge, Stage};
-use crate::vocabulary::Vocabulary;
+use crate::vocabulary::{GameAsk, Vocabulary};
 use crate::who::Who;
 
 mod beats;

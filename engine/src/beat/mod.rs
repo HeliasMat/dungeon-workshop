@@ -6,7 +6,7 @@ use glam::Vec2;
 
 use crate::language::speaker;
 use crate::problem::ParseError;
-use crate::vocabulary::Vocabulary;
+use crate::vocabulary::{GameAsk, Vocabulary};
 use crate::who::Who;
 
 mod asking;
@@ -16,7 +16,6 @@ mod data;
 mod declare;
 mod flow;
 mod forms;
-mod game;
 mod kinds;
 mod motion;
 mod names;
@@ -28,17 +27,18 @@ mod play;
 mod screen;
 mod sound;
 mod speech;
-mod units;
+
 mod view;
 mod written;
 
+use crate::base::{AnimId, Direction, EmoteId, Frames, MoveId, SongId, SoundId, colour_named};
 pub use asking::*;
 pub use body::{BodyBeat, Play, SheetAnim, Stacked};
 pub use cast::Role;
 pub use data::DataBeat;
+pub(crate) use data::TIMER;
 pub use flow::{FlowBeat, LineEnd};
 pub use forms::{Form, form_of, forms};
-pub use game::GameAsk;
 pub use kinds::*;
 pub use motion::MotionBeat;
 pub use names::*;
@@ -50,7 +50,6 @@ pub use play::PlayBeat;
 pub use screen::ScreenBeat;
 pub use sound::{Played, Side, SoundBeat, SoundOf, pan_of};
 pub use speech::SpeechBeat;
-pub use units::{AnimId, Direction, EmoteId, Frames, MoveId, SongId, SoundId};
 pub use view::ViewBeat;
 #[cfg(test)]
 mod tests;
@@ -215,7 +214,7 @@ impl Beat {
                 return Some(beat);
             }
         }
-        let sample: Vec<String> = line.iter().map(|field| crate::lint::braces_as_one(field)).collect();
+        let sample: Vec<String> = line.iter().map(|field| braces_as_one(field)).collect();
         Beat::parse(&sample, words).ok()?;
         Some(Beat::Flow(FlowBeat::Filled(line)))
     }
@@ -260,4 +259,16 @@ impl Beat {
     pub fn staged(&self) -> bool {
         !matches!(self, Beat::Course(_))
     }
+}
+
+/// A field with what its braces name as 1 (`{x}`, `n{i}`: `1`, `n1`).
+pub(crate) fn braces_as_one(field: &str) -> String {
+    let mut field = field.to_string();
+    while let Some(close) = field.find('}') {
+        let Some(open) = field[..close].rfind('{') else {
+            break;
+        };
+        field.replace_range(open..=close, "1");
+    }
+    field
 }

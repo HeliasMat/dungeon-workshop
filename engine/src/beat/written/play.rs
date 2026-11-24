@@ -1,8 +1,8 @@
 //! How a `PlayBeat` is written as its line (read by `beat::play`).
 
 use super::data::value;
+use crate::base::Rect;
 use crate::beat::{HUD_PLACES, PlayBeat, colour_named};
-use crate::stage::Rect;
 use crate::vocabulary::Vocabulary;
 
 /// The colours a gauge may be written in, by the names `colour_named` reads.
@@ -73,8 +73,8 @@ impl PlayBeat {
 
 #[cfg(test)]
 mod tests {
+    use crate::base::Rect;
     use crate::beat::{Beat, GaugeOf, PlayBeat, Value};
-    use crate::stage::Rect;
     use crate::vocabulary::SAMPLE;
     use crate::who::Who;
 

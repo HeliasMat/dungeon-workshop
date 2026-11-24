@@ -3,7 +3,7 @@
 use super::declare::{Bit, IfAbsent, OnOff, Opt, declare};
 use super::parse::Fields;
 use super::*;
-use crate::stage::{Ease, Lit};
+use crate::base::Ease;
 
 /// Where the view looks, and how fast time goes.
 #[derive(Clone, Debug, PartialEq)]

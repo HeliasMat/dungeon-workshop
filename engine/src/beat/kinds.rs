@@ -76,3 +76,18 @@ pub enum Cam {
     At(Point),
     Who(Who),
 }
+
+/// A circle of light: on what, how wide.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Lit {
+    pub on: Cam,
+    pub radius: f32,
+}
+
+/// A soft light (see `ScreenBeat::Halo`): on what, how wide, of what colour.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Halo {
+    pub on: Cam,
+    pub radius: f32,
+    pub colour: [u8; 3],
+}

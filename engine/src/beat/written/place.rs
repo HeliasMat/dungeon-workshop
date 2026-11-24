@@ -186,8 +186,8 @@ impl PlaceBeat {
 mod tests {
     use glam::Vec2;
 
+    use crate::base::Ground;
     use crate::beat::{Beat, CrowdForm, CrowdShape, Direction, Exit, Formation, Gait, Pace, PlaceBeat, Spot};
-    use crate::stage::Ground;
     use crate::vocabulary::SAMPLE;
     use crate::who::Who;
 

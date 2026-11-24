@@ -18,7 +18,7 @@ use std::fmt;
 use glam::Vec2;
 
 use super::{Prop, Type, Unit};
-use crate::beat::{Frames, colour_named};
+use crate::base::{Frames, colour_named};
 use crate::problem::codes;
 
 /// A colour: red, green, blue, and how much of it shows, of 255.

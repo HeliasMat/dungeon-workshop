@@ -1,9 +1,7 @@
 //! What changes by itself over time: a value going somewhere, a swing, a
 //! box things are in.
 
-use glam::Vec2;
-
-use super::Ease;
+use crate::base::Ease;
 
 /// What can go gradually from a value to another.
 pub trait Mix: Copy {
@@ -84,38 +82,6 @@ impl Swing {
     }
 }
 
-/// A box, its left under its right, its top under its bottom.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Rect {
-    pub left: f32,
-    pub top: f32,
-    pub right: f32,
-    pub bottom: f32,
-}
-
-impl Rect {
-    /// The box between two corners, in whatever order they come.
-    pub fn new(a: Vec2, b: Vec2) -> Self {
-        Rect { left: a.x.min(b.x), top: a.y.min(b.y), right: a.x.max(b.x), bottom: a.y.max(b.y) }
-    }
-
-    /// Whether a point is in it, or that near.
-    pub fn holds(&self, at: Vec2, margin: f32) -> bool {
-        at.x > self.left - margin && at.x < self.right + margin && at.y > self.top - margin && at.y < self.bottom + margin
-    }
-
-    /// The nearest point in it.
-    pub fn clamp(&self, at: Vec2) -> Vec2 {
-        at.clamp(Vec2::new(self.left, self.top), Vec2::new(self.right, self.bottom))
-    }
-}
-
-impl From<[f32; 4]> for Rect {
-    fn from([left, top, right, bottom]: [f32; 4]) -> Self {
-        Rect::new(Vec2::new(left, top), Vec2::new(right, bottom))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -144,13 +110,5 @@ mod tests {
             }
             assert_eq!((now, tween), ([255.0; 3], None));
         }
-    }
-
-    #[test]
-    fn a_box_holds_what_is_in_it() {
-        let box_of = Rect::from([10.0, 10.0, 0.0, 0.0]);
-        assert_eq!(box_of.left, 0.0);
-        assert!(box_of.holds(Vec2::new(5.0, 5.0), 0.0) && !box_of.holds(Vec2::new(12.0, 5.0), 0.0) && box_of.holds(Vec2::new(12.0, 5.0), 3.0));
-        assert_eq!(box_of.clamp(Vec2::new(20.0, 5.0)), Vec2::new(10.0, 5.0));
     }
 }

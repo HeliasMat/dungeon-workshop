@@ -3,7 +3,7 @@
 use super::declare::{OnOff, declare};
 use super::parse::Fields;
 use super::*;
-use crate::stage::Rect;
+use crate::base::Rect;
 
 /// What the player does in a scene.
 #[derive(Clone, Debug, PartialEq)]

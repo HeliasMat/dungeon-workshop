@@ -200,9 +200,9 @@ fn a_beat_names_each_one_once_with_what_it_does() {
 #[test]
 fn a_glide_is_told_how_to_go() {
     let line = |text: &str| Beat::parse(&text.split(' ').map(str::to_string).collect::<Vec<String>>(), &SAMPLE).ok();
-    assert_eq!(line("ease linear"), Some(Beat::View(ViewBeat::Ease(crate::stage::Ease::Linear))));
-    assert_eq!(line("ease out"), Some(Beat::View(ViewBeat::Ease(crate::stage::Ease::Out(crate::stage::EaseFamily::Quad)))));
-    assert_eq!(line("ease smooth"), Some(Beat::View(ViewBeat::Ease(crate::stage::Ease::Smooth))));
+    assert_eq!(line("ease linear"), Some(Beat::View(ViewBeat::Ease(crate::base::Ease::Linear))));
+    assert_eq!(line("ease out"), Some(Beat::View(ViewBeat::Ease(crate::base::Ease::Out(crate::base::EaseFamily::Quad)))));
+    assert_eq!(line("ease smooth"), Some(Beat::View(ViewBeat::Ease(crate::base::Ease::Smooth))));
     assert_eq!(line("ease weird"), None);
 }
 

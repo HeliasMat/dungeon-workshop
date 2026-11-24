@@ -880,7 +880,7 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `words.rs`, `screen.rs`, `check.rs` | the little words (faces, emotions, spots), the words on screen (box, bubble, colours), what is wrong, with the film's line and the closest names |
 | `film/src/tests/` | what each word gives, where it leaves everyone on the real scene |
 
-What depends on the scene is not decided here: `front_of a`, `to b`, formations, who comes in, crowds, the path, the free tile are written as they are (`find`, `goes`, `arrives`, `crowd`... see `engine/src/beat/place.rs`) and are worked out on the `Stage` when the line plays (`stage/placing/`, `stage/ground.rs`). The same goes for the view: `view.rs` only translates the words into camera beats (`engine/src/stage/camera/`), which frames, picks the distance and glides. A `.film` goes through no text file: `.txt` and the engine's language remain for `story.txt`, `>` lines and packs.
+What depends on the scene is not decided here: `front_of a`, `to b`, formations, who comes in, crowds, the path, the free tile are written as they are (`find`, `goes`, `arrives`, `crowd`... see `engine/src/beat/place.rs`) and are worked out on the `Stage` when the line plays (`stage/placing/`, `engine/src/base/ground.rs`). The same goes for the view: `view.rs` only translates the words into camera beats (`engine/src/stage/camera/`), which frames, picks the distance and glides. A `.film` goes through no text file: `.txt` and the engine's language remain for `story.txt`, `>` lines and packs.
 
 **The view's words** are a single family: `frame` (`snap`, `follows`, `free`, people and a place together) and `glide`.
 

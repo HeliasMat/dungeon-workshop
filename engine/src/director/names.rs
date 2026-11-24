@@ -3,9 +3,6 @@
 /// The number the last answer chosen is kept in (0 for the first).
 pub(crate) const ANSWER: &str = "answer";
 
-/// The seconds a countdown has left (see `DataBeat::Timer`).
-pub(crate) const TIMER: &str = "timer";
-
 /// What Enter does while the player walks someone about (see
 /// [`Director::press`](crate::Director::press)): the presses counted; whether someone is close
 /// enough to talk to, and who (as a number: `if target == eevee`); how

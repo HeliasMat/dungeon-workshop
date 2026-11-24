@@ -123,15 +123,3 @@ pub(super) fn numbers_never_given(lines: &[(usize, Vec<String>)], words: &Vocabu
     }
     problems
 }
-
-/// A field with what its braces name as 1 (`{x}`, `n{i}`: `1`, `n1`).
-pub(crate) fn braces_as_one(field: &str) -> String {
-    let mut field = field.to_string();
-    while let Some(close) = field.find('}') {
-        let Some(open) = field[..close].rfind('{') else {
-            break;
-        };
-        field.replace_range(open..=close, "1");
-    }
-    field
-}

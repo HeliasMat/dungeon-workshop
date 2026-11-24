@@ -111,8 +111,8 @@ pub(super) fn read(fields: &Fields) -> Option<DataBeat> {
         // (`timer 30s`, `timer off`; named, as many as wanted: `timer bomb 30s`.)
         "timer" => {
             let (var, time) = match (fields.has(1), fields.has(2)) {
-                (true, true) => (format!("{}_{}", crate::director::TIMER, fields.named(1, "a name")?), 2),
-                (true, false) => (crate::director::TIMER.to_string(), 1),
+                (true, true) => (format!("{}_{}", TIMER, fields.named(1, "a name")?), 2),
+                (true, false) => (TIMER.to_string(), 1),
                 _ => return None,
             };
             DataBeat::Timer {
@@ -141,3 +141,6 @@ pub(super) fn read(fields: &Fields) -> Option<DataBeat> {
         _ => return None,
     })
 }
+
+/// The seconds a countdown has left (see `DataBeat::Timer`).
+pub(crate) const TIMER: &str = "timer";

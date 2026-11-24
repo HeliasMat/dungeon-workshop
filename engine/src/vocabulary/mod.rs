@@ -4,6 +4,10 @@
 //! `rules`), a value made of tables; a table left empty is words a
 //! scene cannot use.
 
+mod asks;
+
+pub use asks::GameAsk;
+
 /// A list of names and what each stands for.
 type Named<T> = &'static [(&'static str, T)];
 
@@ -25,7 +29,7 @@ pub struct Vocabulary {
     /// What a line of the game's own asks of it, typed as it plays (its
     /// numbers filled): `getmoney 50` the money, `getitem 109 2` an item.
     /// The engine hands it over as it is (`Call::Game`), not as a line.
-    pub host_asks: fn(&[String]) -> Option<crate::beat::GameAsk>,
+    pub host_asks: fn(&[String]) -> Option<GameAsk>,
     /// What is offered last when an item is asked for, and how the items
     /// offered are written.
     pub no_item: &'static str,

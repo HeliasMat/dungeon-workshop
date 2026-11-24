@@ -47,7 +47,7 @@ impl NodeBeat {
             NodeBeat::Attach { node, to, offset, inherit } => {
                 let mut rest = vec![node.to_string(), to.to_string()];
                 rest.extend(offset.iter().flat_map(|at| [at.x.to_string(), at.y.to_string()]));
-                if *inherit != crate::stage::node::Inherit::default() {
+                if *inherit != crate::base::Inherit::default() {
                     rest.push("inherit".to_string());
                     rest.extend(inherit.words().into_iter().map(str::to_string));
                 }
@@ -62,10 +62,10 @@ impl NodeBeat {
 mod tests {
     use glam::Vec2;
 
+    use crate::base::Inherit;
+    use crate::base::{Ease, EaseFamily};
     use crate::beat::{Beat, Frames, Key, KeyTime, NodeBeat, NodeRef, Num, PathShape, Point, Sort, TrackMode};
     use crate::props::{Given, PropId, Value};
-    use crate::stage::node::Inherit;
-    use crate::stage::{Ease, EaseFamily};
     use crate::vocabulary::SAMPLE;
     use crate::who::Who;
 
