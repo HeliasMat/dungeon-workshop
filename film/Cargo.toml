@@ -18,4 +18,5 @@ rules = { path = "../rules" }
 scenes = { path = "../scenes" }
 story = { path = "../story" }
 engine = { path = "../engine" }
+bincode.workspace = true
 glam.workspace = true

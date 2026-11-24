@@ -97,6 +97,32 @@ pub struct Level {
     pub size: (i32, i32),
 }
 
+/// How a species goes about by nature, as the game's tables say
+/// (`rules::tables::Species::movement`): it walks, floats over everything,
+/// passes through walls, swims, or walks on lava too.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Movement {
+    Walks,
+    Hovers,
+    Ghost,
+    Lava,
+    Swims,
+}
+
+impl Movement {
+    /// The game's movement type: 2 hovering, 3 intangible, 4 lava, 5 water;
+    /// the others walk.
+    pub fn of(kind: u8) -> Movement {
+        match kind {
+            2 => Movement::Hovers,
+            3 => Movement::Ghost,
+            4 => Movement::Lava,
+            5 => Movement::Swims,
+            _ => Movement::Walks,
+        }
+    }
+}
+
 /// All of the game's files a film needs.
 #[derive(Debug, Default)]
 pub struct Tables {
@@ -111,6 +137,10 @@ pub struct Tables {
     /// Where each monster's head, hands and middle are (`points.txt`), by
     /// its number: from where it stands, y downwards, facing us.
     pub points: HashMap<String, [(i32, i32); 4]>,
+    /// How each monster goes about by nature, by its number: the game's
+    /// movement types (`Movement`), from its tables (`dungeons.bin`); none
+    /// told, it walks.
+    pub movements: HashMap<String, Movement>,
     /// The faces each monster's portraits have, by its number (`happy` is
     /// 1), as `portraits/` holds them.
     pub portraits: HashMap<String, HashSet<u16>>,

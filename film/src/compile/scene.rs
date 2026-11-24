@@ -13,6 +13,7 @@ use crate::film::{Film, Sortie};
 use crate::ir::{Instr, Shape};
 use crate::names::species;
 use crate::tables::MAP_LEVEL;
+use crate::tables::Movement;
 use crate::text::cast::{placed_by_a_line, puts_someone, who_acts};
 use crate::text::first_word;
 use crate::verbs::command;
@@ -71,9 +72,9 @@ pub(super) fn place_songs(film: &Film, scenes: &mut [SceneOf]) -> Vec<(usize, St
 /// any) is of the head too: the scene opens on it, never on a view that
 /// cuts its big bodies off before it lands.
 fn setting_lines(lines: &[Instr]) -> usize {
-    let sets = |item: &Instr| {
     // (Who flies there from the start, `pidgey fly [height 30]`; not a
     // flight to somewhere, which one sees.)
+    let sets = |item: &Instr| {
         item.verb().is_some_and(|verb| SETTING.contains(&verb))
             && !(item.verb() == Some("camera") && item.words().first().is_some_and(|word| word == "from"))
             && !(item.verb() == Some("fly") && !matches!(item.words().len(), 1 | 3))
@@ -81,10 +82,10 @@ fn setting_lines(lines: &[Instr]) -> usize {
     let as_it_is = |item: &Instr| match item.verb() {
         // (The weather alone; `weather a rain` is someone's move.)
         Some("weather") => item.words().len() == 1,
-        Some("look" | "ambient" | "prop" | "anim" | "front_of_leaves" | "under_leaves" | "in_leaves") => true,
         // (Who is in the water from the start, `lapras swim`; who walks
         // whatever his kind, `lapras walk`.)
         Some("swim" | "walk") => item.words().len() == 1,
+        Some("look" | "ambient" | "prop" | "anim" | "front_of_leaves" | "under_leaves" | "in_leaves") => true,
         _ => false,
     };
     let head = lines.iter().take_while(|item| sets(item) || as_it_is(item)).count();
@@ -202,6 +203,7 @@ impl Film {
                 None => self.not_a(flying.join(" "), "Pokémon of the scene"),
             }
         }
+        self.by_nature(scene, &cast, &placed);
         // (A crowd stands in its own circle, its first one with it; what
         // someone evolves into is that one, not one more.)
         let crowds = named_after(scene, "crowd");
@@ -238,6 +240,48 @@ impl Film {
             }
         }
         (cast, placed)
+    }
+
+    /// How each goes about by nature, as the game's tables say, unless a
+    /// line of the scene says `who walk`: a hovering kind floats and goes
+    /// straight over all (`flies`); a ghost goes through walls, seen through
+    /// in them; one of the water, put where no one walks (the water), is in
+    /// it (`swims`). The film's own `swim`, `fly`, `land` come after, and
+    /// win.
+    fn by_nature(&mut self, scene: &SceneOf, cast: &[String], placed: &[String]) {
+        let walking: HashSet<String> = scene
+            .lines
+            .iter()
+            .filter(|item| item.verb() == Some("walk") && item.words().len() == 1)
+            .filter_map(|item| item.words().first())
+            .map(|named| plain(named))
+            .collect();
+        let mut seen: HashSet<&String> = HashSet::new();
+        for who in cast.iter().chain(placed).filter(|who| !walking.contains(*who)) {
+            if !seen.insert(who) {
+                continue;
+            }
+            let Some(code) = self.actor(who) else { continue };
+            match self.movement_of(&code) {
+                Movement::Walks => {}
+                Movement::Hovers => {
+                    self.on(who, |one| emit::flies(vec![one]));
+                    self.on(who, |one| emit::hovers(vec![one]));
+                }
+                Movement::Ghost => {
+                    self.on(who, |one| emit::flies(vec![one]));
+                    self.on(who, |one| emit::ghosts(vec![one]));
+                }
+                // (A place's lava is ground no one walks on, as its walls: not told apart.)
+                Movement::Lava => {}
+                // (On land it walks round the water as anyone; put in it, or
+                // walked into it, it is in it.)
+                Movement::Swims => {
+                    let depth = crate::verbs::moving::swimming::depth_of(self, who);
+                    self.on(who, |one| emit::swims(depth, vec![one]));
+                }
+            }
+        }
     }
 
     /// What sets a scene, played before it shows: the song that plays goes

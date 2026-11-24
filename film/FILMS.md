@@ -194,6 +194,7 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 
 **Flying.** `pidgey fly [height 30]` (or `take_off`) lifts him off the ground (24 pixels, wings heard) and he bobs there, his shadow on the ground under him, smaller the higher he is; at the head of a scene he is up there before it shows. `pidgey fly to 90 330 [in 2s]` flies him straight there, over the walls. `pidgey land [at where]` brings him down with his landing, walking again. Who rides him goes up with him.
 
+**By nature.** Each species goes about as the game's tables say, with no word to write: a hovering kind bobs a little and goes straight over everything; a ghost goes through walls, seen through while in one; a kind of the water put where no one walks (the water) is put there exactly and is in it, out of it on the shore (on land it walks round the water as anyone: `swim` takes it across). A place's lava is ground no one walks on, as its walls: a kind of the lava is not told apart. `swim`, `fly` and `land` come after and win; `lapras walk`, alone (at the head of the scene, or later), keeps one on its feet.
 
 **A move out of a fight.** `piplup use Hypnosis on pikachu`, `pikachu use Protect`, `pikachu use Thunderbolt at 350 170`: the move by its name, as the game shows it (his own animation, its effects and its sound), turned to the one or the point it is used on; no one knocked back nor hurt, nothing missed (that is `attack`). Only moves: `a uses Oran Berry`, in a directed fight, is another word. On DS, as `attack` (`R-DS-LOSS`).
 

@@ -37,9 +37,10 @@ pub const WORDS: &[Word] = &[
             "who:pokemon [to] where:place [slow|brisk|slowly|fast] [in time:duration] [arrives arrival:duration]",
             "who:pokemon [to] where:place [slow|brisk|slowly|fast] via path...",
             "who:pokemon via path... [slow|brisk|slowly|fast] [in time:duration] [arrives arrival:duration]",
+            "who:pokemon",
             "rest...",
         ],
-        "find, goes; approach (to someone); leaves (to offleft); slow, brisk: its pace; backward: its back to where it goes, stepping; via a b: by those places first",
+        "find, goes; approach (to someone); leaves (to offleft); slow, brisk: its pace; backward: its back to where it goes, stepping; via a b: by those places first; alone (`lapras walk`): on its feet whatever its kind, no floating, swimming nor going through walls (lands)",
     )
     .does(walked),
     Word::new(
@@ -364,7 +365,24 @@ fn walked(film: &mut Film, line: &Line) {
         return;
     }
     let who = super::who_said(line);
+    if !line.args.has("where") && !line.args.has("via") {
+        on_its_feet(film, &who);
+        return;
+    }
     if line.args.has("via") { go_by(film, line, &who) } else { walks(film, line, &who) }
+}
+
+/// `lapras walk`: on its feet, whatever its kind (a hovering kind does not
+/// bob, one of the water is not sunk in it, a ghost goes round walls).
+fn on_its_feet(film: &mut Film, who: &str) {
+    film.on(who, |one| emit::lands(vec![one]));
+    film.on(who, |one| emit::float(one, 0.0, 60.0));
+    if film.staging.swimming.remove(who) {
+        film.on(who, |one| emit::sink(one, 0.0, false));
+    }
+    if film.staging.flying.remove(who).is_some() {
+        film.on(who, |one| emit::rise(one, 0.0, 1.0));
+    }
 }
 
 fn came_in(film: &mut Film, line: &Line) {

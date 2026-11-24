@@ -1,7 +1,7 @@
 # The Wiki's pages: the Movement family, going about (workshop/src/wiki/written.rs).
 
 == walk
-> Someone walks to a place or to someone, step by step: slow or brisk sets the pace, backward walks with their back to where they go, via a b goes by those places first. The film waits until they get there; end the line with & to go on at once.
+> Someone walks to a place or to someone, step by step: slow or brisk sets the pace, backward walks with their back to where they go, via a b goes by those places first. The film waits until they get there; end the line with & to go on at once. Alone (lapras walk), it keeps someone on their feet whatever their kind: no hovering, swimming nor going through walls.
 scene: beach pikachu piplup
 pikachu put left
 piplup put right

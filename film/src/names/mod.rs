@@ -99,6 +99,11 @@ impl Film {
         self.tables.points.get(species(code)?).copied()
     }
 
+    /// How someone goes about by nature (walking, if its tables do not say).
+    pub fn movement_of(&self, code: &str) -> crate::tables::Movement {
+        species(code).and_then(|number| self.tables.movements.get(number)).copied().unwrap_or(crate::tables::Movement::Walks)
+    }
+
     /// Whether someone's sprite has that animation (none: its sheets are
     /// not known, a variant painted by hand, no data).
     pub fn has_animation(&self, code: &str, group: u16) -> Option<bool> {

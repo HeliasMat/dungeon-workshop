@@ -83,12 +83,10 @@ fn who_is_not_found_says_the_nearest() {
 fn a_tile_of_the_games_grid() {
     let played = played("scene: town\nkrabby put tile 42 26\n");
     assert_eq!(point_of(&played, "krabby"), Vec2::new(340.0, 212.0));
-    let taken = self::played(&format!(
-        "collisions on
-{}",
-        scene(&["krabby put tile 0 0"])
-    ));
-    assert!(notes(&taken).iter().any(|note| note.contains("krabby cannot be on tile 0 0")), "{:?}", notes(&taken));
+    // (Pikachu walks: krabby and piplup, of the water by nature, would be
+    // put in it, where no one walks.)
+    let taken = self::played("collisions on\nscene: town pikachu\npikachu put tile 0 0\n");
+    assert!(notes(&taken).iter().any(|note| note.contains("pikachu cannot be on tile 0 0")), "{:?}", notes(&taken));
 }
 
 #[test]
