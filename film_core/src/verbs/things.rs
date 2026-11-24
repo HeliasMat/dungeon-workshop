@@ -19,8 +19,8 @@ pub const WORDS: &[Word] = &[
     Word::new("close", &["thing:word"], "pose image 1, sound").maybe(worked),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("things", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("things", WORDS);
 
 /// The things laid just where they are said, under who stands on them: in
 /// the water, on an islet one cannot walk to, flat in the ground.

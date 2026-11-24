@@ -152,7 +152,7 @@ fn fields(ui: &mut egui::Ui, films: &mut Films, looked: &mut Looked, fresh: bool
     let Some(read) = films.fields.get(&line) else {
         return;
     };
-    workshop_decor::section(ui, &format!("{} · {}", read.word, read.family));
+    workshop_decor::section(ui, &format!("{} · {}", read.word, read.group));
     ui.add_space(4.0);
     if !fresh {
         ui.label(theme::weak("the film plays again: the fields come back in a moment"));

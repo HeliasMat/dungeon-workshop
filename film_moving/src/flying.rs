@@ -27,8 +27,8 @@ pub const WORDS: &[Word] = &[
     .does(landed),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("flying", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("flying", WORDS);
 
 /// How high one flies, when the line does not say; how long the way up
 /// takes, and down.

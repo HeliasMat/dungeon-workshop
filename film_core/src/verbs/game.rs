@@ -49,8 +49,8 @@ pub const WORDS: &[Word] = &[
     .instant(),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("game", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("game", WORDS);
 
 /// What a scene the game makes knows: who the player walks, how many talks so far.
 #[derive(Default)]

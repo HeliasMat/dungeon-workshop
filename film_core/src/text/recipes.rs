@@ -590,7 +590,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                             crate::order::told_who_first(film, number, &words, verb);
                         }
                         if let Some(bound) = as_in_the_text.then(|| grammar::bind(film, &recipe.form, &written[1..]).ok()).flatten() {
-                            let read = crate::compile::ReadAs { word: verb.clone(), family: "recipe", values: bound.values };
+                            let read = crate::compile::ReadAs { word: verb.clone(), group: "recipe", values: bound.values };
                             film.read_as.entry(number).or_insert(read);
                         }
                         // (Its places given in two numbers, to be told if they have a name.)

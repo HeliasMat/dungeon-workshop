@@ -53,8 +53,8 @@ pub const WORDS: &[Word] = &[
     Word::new("_spectators", &["off", "joy|sorrow", "*who"], "then, at each catch: emote joy, jump; at each loss: emote sweat; joy, sorrow: they react at once; off").does(watched),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("fishing", WORDS).with_pictures(PICTURES);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("fishing", WORDS).with_pictures(PICTURES);
 
 mod state;
 pub use state::{Caught, FishingState};

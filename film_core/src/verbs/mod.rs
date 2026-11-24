@@ -1,9 +1,9 @@
-//! The words of a film, by what they do: a family a theme, each with its
-//! own words (`WORDS`, its `FAMILY`): a word, its forms, what it writes for
-//! the engine, who it names, how it plays. The families here are those the
+//! The words of a film, by what they do: a group a theme, each with its
+//! own words (`WORDS`, its `GROUP`): a word, its forms, what it writes for
+//! the engine, who it names, how it plays. The groups here are those the
 //! core leans on; the others are a crate each (`film_fishing`...), and
 //! `film` gathers them all in their order (`Lexicon`). A line goes to the
-//! families whose form of its word fits, the narrower first; what none plays
+//! groups whose form of its word fits, the narrower first; what none plays
 //! is the engine's own command (`engine`), or a recipe of the film's.
 //!
 //! What a form says, word by word (one reader, `crate::grammar`, checks each
@@ -15,7 +15,7 @@
 //! - `d:duration` (`1.5s`, `6f`), `n:number`, `word`: one word of that kind;
 //! - `thing...`: one word or more (`Oran Berry`); `text...` (or `name:text...`):
 //!   words said, all the rest, if any, never someone; `rest...`: the rest of
-//!   a word whose end its own family reads (who is in it named, `named_by`);
+//!   a word whose end its own group reads (who is in it named, `named_by`);
 //! - `a|b|c`: one of those words; `[...]`: what may be left out.
 //!
 //! Of a word's forms, the first that fits gives it its values: the narrower
@@ -119,7 +119,7 @@ pub enum Play {
     /// It plays it: the form said all.
     Does(fn(&mut Film, &Line)),
     /// It plays it, or tells that it is not its own after all (false: the
-    /// next family may), by what only the film at hand knows (`ola people`:
+    /// next group may), by what only the film at hand knows (`ola people`:
     /// a crowd of that name).
     Maybe(fn(&mut Film, &Line) -> bool),
 }
@@ -218,7 +218,7 @@ impl Word {
 /// numbers, as its point); only those of the scene.
 pub fn brought_by(film: &mut Film, verb: &str, words: &[String]) -> Vec<(String, Comes)> {
     let mut out: Vec<(String, Comes)> = Vec::new();
-    let entries = film.lexicon.all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == verb);
+    let entries = film.lexicon.all_groups().flat_map(|group| group.words.iter()).filter(|known| known.word == verb);
     for (word, brings) in entries.filter_map(|word| Some((word, word.brings?))) {
         let args = match first_fitting(film, word, words) {
             Some(args) => Some(args),
@@ -244,7 +244,7 @@ pub fn brought_by(film: &mut Film, verb: &str, words: &[String]) -> Vec<(String,
 /// click`) nor words said (`text...`), nor what is left out. None if no
 /// form of it fits; as its entry says otherwise (`Names`).
 pub fn named_by(film: &mut Film, verb: &str, words: &[String]) -> Option<Vec<String>> {
-    let entries: Vec<&Word> = film.lexicon.all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == verb).collect();
+    let entries: Vec<&Word> = film.lexicon.all_groups().flat_map(|group| group.words.iter()).filter(|known| known.word == verb).collect();
     let spliced = spots_as_points(film, words);
     for said in [words, spliced.as_slice()] {
         for word in &entries {
@@ -325,15 +325,15 @@ impl Line {
 
     /// A line a word makes for another (`eat a`, for the master's apple):
     /// that word and its words, read by the one reader as a film's line is:
-    /// the values of the first form of that word's family that fits.
-    pub fn word(film: &mut Film, family: &str, verb: &str, rest: Vec<String>, like: &Line) -> Line {
+    /// the values of the first form of that word's group that fits.
+    pub fn word(film: &mut Film, group: &str, verb: &str, rest: Vec<String>, like: &Line) -> Line {
         let made = Instr::word(like.number, verb, &rest, like.wait);
         let text = made.text.trim_end_matches([' ', '&']).to_string();
         let verb = plain(verb);
         let shape = Shape::Word { verb: verb.clone(), words: rest.clone(), wait: like.wait };
         let mut line = Line { verb, text, rest, number: like.number, wait: like.wait, block: Vec::new(), args: Default::default(), shape };
         let (fitting, _) = fitting_forms(film, &line);
-        line.args = fitting.into_iter().find(|(from, _)| *from == family).map(|(_, bound)| bound).unwrap_or_default();
+        line.args = fitting.into_iter().find(|(from, _)| *from == group).map(|(_, bound)| bound).unwrap_or_default();
         line
     }
 }
@@ -344,7 +344,7 @@ pub fn who_said(line: &Line) -> String {
 }
 
 /// The words of a theme.
-pub struct Family {
+pub struct Group {
     pub name: &'static str,
     pub words: &'static [Word],
     /// The pictures of one's own (`images/`, by name) its words pick by
@@ -352,19 +352,19 @@ pub struct Family {
     pub pictures: &'static [&'static str],
 }
 
-impl Family {
-    /// The family of that name, those its words.
-    pub const fn new(name: &'static str, words: &'static [Word]) -> Family {
-        Family { name, words, pictures: &[] }
+impl Group {
+    /// The group of that name, those its words.
+    pub const fn new(name: &'static str, words: &'static [Word]) -> Group {
+        Group { name, words, pictures: &[] }
     }
 
     /// Its words pick those pictures of one's own by themselves.
-    pub const fn with_pictures(self, pictures: &'static [&'static str]) -> Family {
-        Family { pictures, ..self }
+    pub const fn with_pictures(self, pictures: &'static [&'static str]) -> Group {
+        Group { pictures, ..self }
     }
 
     /// A line of its word, its form fitting: played, or not its own (false:
-    /// the next family may). What the word keeps for a moment
+    /// the next group may). What the word keeps for a moment
     /// (`film.temps`) is released once its line is written.
     fn plays(&self, film: &mut Film, line: &Line) -> bool {
         let Some(play) = self.words.iter().find(|word| word.word == line.verb).and_then(|word| word.play) else {
@@ -483,7 +483,7 @@ fn command_here(film: &mut Film, item: &Instr) {
             return;
         }
     }
-    // (The line must fit one of its word's forms; the families
+    // (The line must fit one of its word's forms; the groups
     // whose form fits play it first; one that only the engine's form fits
     // goes to the engine.)
     let (fitting, why) = fitting_forms(film, &line);
@@ -493,8 +493,8 @@ fn command_here(film: &mut Film, item: &Instr) {
     }
     // (Written the word first, said of someone: who first now, `pikachu walk to b`.)
     if item.from.0.is_none()
-        && let Some((family, _)) = fitting.first()
-        && crate::order::said_of_someone(film, family, &line.verb, &line.rest)
+        && let Some((group, _)) = fitting.first()
+        && crate::order::said_of_someone(film, group, &line.verb, &line.rest)
     {
         let written = film.here.1.clone();
         crate::order::told_who_first(film, line.number, &written, &line.verb);
@@ -503,8 +503,8 @@ fn command_here(film: &mut Film, item: &Instr) {
     // spot still by its name: for who edits it by its fields. Not those a
     // recipe, a scene or a word writes with its number.)
     let as_in_the_text = item.span.is_some();
-    if let Some((family, bound)) = fitting.first().filter(|_| as_in_the_text) {
-        let read = crate::compile::ReadAs { word: line.verb.clone(), family, values: bound.values.clone() };
+    if let Some((group, bound)) = fitting.first().filter(|_| as_in_the_text) {
+        let read = crate::compile::ReadAs { word: line.verb.clone(), group, values: bound.values.clone() };
         film.read_as.entry(line.number).or_insert(read);
     }
     // (A place said in numbers where the place has a name for it: its name
@@ -547,32 +547,32 @@ fn command_here(film: &mut Film, item: &Instr) {
             }
         }
     }
-    let fitting_families: Vec<&str> = fitting.iter().map(|(family, _)| *family).collect();
+    let fitting_groups: Vec<&str> = fitting.iter().map(|(group, _)| *group).collect();
     for (x, y) in said {
         if let Some((name, at_x, at_y)) = named_near(film, x, y) {
             film.remark(line.number, format!("{x} {y} is the place's spot “{name}” ({at_x}, {at_y}): write {name}"));
         }
     }
-    if fitting_families.is_empty() && !why.is_empty() {
+    if fitting_groups.is_empty() && !why.is_empty() {
         film.wrong(line.number, format!("“{}”: {}", line.text, why.join("; ")));
         return;
     }
-    let has = |family: &Family| family.words.iter().any(|word| word.word == line.verb);
-    let by_the_engine_only = !fitting_families.is_empty() && fitting_families.iter().all(|family| lexicon::ENGINE_FAMILIES.contains(family));
-    // (Each family is given what its own form read in the line. When the
-    // engine's form fits too, the families whose form does not are not
+    let has = |group: &Group| group.words.iter().any(|word| word.word == line.verb);
+    let by_the_engine_only = !fitting_groups.is_empty() && fitting_groups.iter().all(|group| lexicon::ENGINE_GROUPS.contains(group));
+    // (Each group is given what its own form read in the line. When the
+    // engine's form fits too, the groups whose form does not are not
     // asked: what the fitting ones let go is the engine's, `anim krabby
     // DeepBreath` a game animation once no character has it.)
-    let engine_fits = fitting_families.iter().any(|family| lexicon::ENGINE_FAMILIES.contains(family));
+    let engine_fits = fitting_groups.iter().any(|group| lexicon::ENGINE_GROUPS.contains(group));
     let ordered = film
         .lexicon
-        .families()
+        .groups()
         .iter()
-        .filter(|family| fitting_families.contains(&family.name))
-        .chain(film.lexicon.families().iter().filter(|family| !engine_fits && !fitting_families.contains(&family.name)));
-    for family in ordered.into_iter().filter(|family| !by_the_engine_only && has(family)) {
-        line.args = fitting.iter().find(|(from, _)| *from == family.name).map(|(_, bound)| bound.clone()).unwrap_or_default();
-        if family.plays(film, &line) {
+        .filter(|group| fitting_groups.contains(&group.name))
+        .chain(film.lexicon.groups().iter().filter(|group| !engine_fits && !fitting_groups.contains(&group.name)));
+    for group in ordered.into_iter().filter(|group| !by_the_engine_only && has(group)) {
+        line.args = fitting.iter().find(|(from, _)| *from == group.name).map(|(_, bound)| bound.clone()).unwrap_or_default();
+        if group.plays(film, &line) {
             return;
         }
     }
@@ -580,7 +580,7 @@ fn command_here(film: &mut Film, item: &Instr) {
         film.unknown(line.number, "unknown word", &first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
     } else if line.verb == "else" && line.rest.is_empty() {
         film.beat(crate::emit::otherwise());
-    } else if fitting_families.is_empty() {
+    } else if fitting_groups.is_empty() {
         // (Only the words the language has a form for: `engine.rs`.)
         film.wrong(
             line.number,
@@ -649,18 +649,18 @@ pub(crate) fn wrong_form(film: &mut Film, verb: &str, first: &str, rest: &[Strin
 /// told to say its name.
 const NAMED_NEAR: i32 = 12;
 
-/// The forms the line fits, by family, each with what it read (the first
-/// form of a family that fits); and why the others do not.
+/// The forms the line fits, by group, each with what it read (the first
+/// form of a group that fits); and why the others do not.
 fn fitting_forms(film: &mut Film, line: &Line) -> (Vec<(&'static str, crate::grammar::Bound)>, Vec<String>) {
     let mut fitting: Vec<(&'static str, crate::grammar::Bound)> = Vec::new();
     let mut why = Vec::new();
-    for family in film.lexicon.all_families() {
-        for word in family.words.iter().filter(|word| word.word == line.verb) {
+    for group in film.lexicon.all_groups() {
+        for word in group.words.iter().filter(|word| word.word == line.verb) {
             for shape in word.forms {
                 match crate::grammar::bind(film, &crate::grammar::read(shape), &line.rest) {
-                    Ok(mut bound) if !fitting.iter().any(|(known, _)| *known == family.name) => {
+                    Ok(mut bound) if !fitting.iter().any(|(known, _)| *known == group.name) => {
                         placed(film, line, &mut bound);
-                        fitting.push((family.name, bound));
+                        fitting.push((group.name, bound));
                     }
                     Ok(_) => {}
                     Err(reason) => why.push(format!("“{} {shape}”: {reason}", word.word)),
@@ -722,9 +722,9 @@ fn engine_time(
     verb: &str,
     fitting: &[(&'static str, crate::grammar::Bound)],
 ) -> Option<(crate::time::WordTime, crate::grammar::Bound)> {
-    lexicon.engine_families().into_iter().find_map(|family| {
-        let word = family.words.iter().find(|word| word.word == verb)?;
-        let bound = fitting.iter().find(|(from, _)| *from == family.name)?.1.clone();
+    lexicon.engine_groups().into_iter().find_map(|group| {
+        let word = group.words.iter().find(|word| word.word == verb)?;
+        let bound = fitting.iter().find(|(from, _)| *from == group.name)?.1.clone();
         Some((word.timing(), bound))
     })
 }
@@ -746,7 +746,7 @@ pub(crate) fn things_in(film: &mut Film, verb: &str, words: &[String]) -> Vec<St
     if matches!(verb, "every" | "after") && words.len() > 2 {
         return things_in(film, &plain(&words[1]), &words[2..]);
     }
-    let forms = film.lexicon.all_families().flat_map(|family| family.words.iter()).filter(|word| word.word == verb).flat_map(|word| word.forms.iter());
+    let forms = film.lexicon.all_groups().flat_map(|group| group.words.iter()).filter(|word| word.word == verb).flat_map(|word| word.forms.iter());
     for form in forms {
         if let Ok(bound) = crate::grammar::bind(film, &crate::grammar::read(form), words) {
             return bound.values.into_iter().filter(|value| value.kind == crate::grammar::Kind::Thing).flat_map(|value| value.words).collect();

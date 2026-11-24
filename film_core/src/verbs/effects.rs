@@ -34,8 +34,8 @@ pub const WORDS: &[Word] = &[
     .does(super::aura::aura),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("effects", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("effects", WORDS);
 
 /// The word that is no move: it has its own bolt.
 const BOLT: &str = "bolt";

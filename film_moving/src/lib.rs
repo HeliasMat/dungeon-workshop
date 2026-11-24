@@ -100,8 +100,8 @@ pub const WORDS: &[Word] = &[
     Word::new("spot", &["name:word where:place"], "spot throne 400 200: setspot, a spot of the film's, by its name").maybe(spot_said),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("moving", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("moving", WORDS);
 
 /// The frames someone walks up to another in, when no pace is said.
 const APPROACH: i32 = 40;
@@ -296,7 +296,7 @@ fn names_a_spot(film: &mut Film, line: &Line) {
     film.spots.insert(name);
 }
 
-/// A line no form of the family fits: what is wrong with it, told.
+/// A line no form of the group fits: what is wrong with it, told.
 fn told_wrong(film: &mut Film, line: &Line) {
     let said = line.args.words("rest");
     if film.who(&line.text, said, line.number).is_some() {

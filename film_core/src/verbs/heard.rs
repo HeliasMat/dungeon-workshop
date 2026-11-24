@@ -37,8 +37,8 @@ pub const WORDS: &[Word] = &[
         .maybe(jingled),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("heard", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("heard", WORDS);
 
 /// The game's little tunes by what its scenes play them for (its scripts'
 /// numbers): an item received, a treasure obtained, a reward, a new place

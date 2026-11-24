@@ -1,10 +1,10 @@
 //! The language of the films whole: its core (`film_core`, the text read,
-//! the scenes compiled, what is written for the engine) and every family of
+//! the scenes compiled, what is written for the engine) and every group of
 //! its words, gathered in their order (`LEXICON`). What a program asks of
 //! the films' language it asks here: a film compiled, its words, the
 //! language's service for editors.
 //!
-//! - the families: the core's own (`film_core::verbs`), and those of a crate
+//! - the groups: the core's own (`film_core::verbs`), and those of a crate
 //!   each;
 //! - `service`: what an editor asks of a film's text (problems, hovers,
 //!   completions, the outline);
@@ -22,39 +22,39 @@ pub use film_core::{
     performer_first, plan, plot, scene_line, screen, shared_files, shared_path, shown_form, tables, time, words,
 };
 
-/// The families of the language's words, the narrower first: a line goes to
+/// The groups of the language's words, the narrower first: a line goes to
 /// the first whose form of its word fits.
-const FAMILIES: [film_core::verbs::Family; 26] = [
-    film_core::plot::FAMILY,
-    film_acting::FAMILY,
-    film_core::verbs::game::FAMILY,
-    film_fishing::FAMILY,
-    film_dungeon::FAMILY,
-    film_dungeon::guild::FAMILY,
-    film_core::verbs::things::FAMILY,
-    film_core::verbs::heard::FAMILY,
-    film_core::verbs::view::FAMILY,
-    film_core::verbs::sky::FAMILY,
-    film_core::verbs::effects::FAMILY,
-    film_fights::FAMILY,
-    film_core::verbs::items::FAMILY,
-    film_moving::swimming::FAMILY,
-    film_moving::flying::FAMILY,
-    film_moving::riding::FAMILY,
-    film_moving::contact::FAMILY,
-    film_moving::hiding::FAMILY,
-    film_moving::FAMILY,
-    film_moving::body::FAMILY,
-    film_core::verbs::pictures::FAMILY,
-    film_core::verbs::rituals::FAMILY,
-    film_core::verbs::crowds::FAMILY,
-    film_core::verbs::said::FAMILY,
-    film_core::verbs::timing::FAMILY,
-    film_core::verbs::nodes::FAMILY,
+const GROUPS: [film_core::verbs::Group; 26] = [
+    film_core::plot::GROUP,
+    film_acting::GROUP,
+    film_core::verbs::game::GROUP,
+    film_fishing::GROUP,
+    film_dungeon::GROUP,
+    film_dungeon::guild::GROUP,
+    film_core::verbs::things::GROUP,
+    film_core::verbs::heard::GROUP,
+    film_core::verbs::view::GROUP,
+    film_core::verbs::sky::GROUP,
+    film_core::verbs::effects::GROUP,
+    film_fights::GROUP,
+    film_core::verbs::items::GROUP,
+    film_moving::swimming::GROUP,
+    film_moving::flying::GROUP,
+    film_moving::riding::GROUP,
+    film_moving::contact::GROUP,
+    film_moving::hiding::GROUP,
+    film_moving::GROUP,
+    film_moving::body::GROUP,
+    film_core::verbs::pictures::GROUP,
+    film_core::verbs::rituals::GROUP,
+    film_core::verbs::crowds::GROUP,
+    film_core::verbs::said::GROUP,
+    film_core::verbs::timing::GROUP,
+    film_core::verbs::nodes::GROUP,
 ];
 
-/// The language: every family of its words, in their order.
-pub static LEXICON: Lexicon = Lexicon::new(&FAMILIES);
+/// The language: every group of its words, in their order.
+pub static LEXICON: Lexicon = Lexicon::new(&GROUPS);
 
 /// A film's text turned into lines, with these tables (its project's, its
 /// data's, its language).
@@ -83,7 +83,7 @@ pub fn subject_first(first: &str, second: Option<&str>, text: &str) -> bool {
     LEXICON.subject_first(first, second, text)
 }
 
-/// Every word of the films' language: its family, its word, its forms, what
+/// Every word of the films' language: its group, its word, its forms, what
 /// it writes (`Lexicon::every_word`).
 pub fn every_word() -> impl Iterator<Item = (&'static str, &'static str, &'static [&'static str], &'static str)> {
     LEXICON.every_word()

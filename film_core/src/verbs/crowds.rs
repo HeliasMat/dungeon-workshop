@@ -18,8 +18,8 @@ pub const WORDS: &[Word] = &[
     .does(crowd_said),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("crowds", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("crowds", WORDS);
 
 /// The most a crowd or a gathering has: more would not fit on any screen.
 const MOST_IN_A_CROWD: usize = 200;

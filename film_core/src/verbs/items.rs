@@ -29,8 +29,8 @@ pub const WORDS: &[Word] = &[
     .does(thrown),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("items", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("items", WORDS);
 
 /// The bites of a thing eaten: what is left of it, the frames between two.
 const BITES: [f32; 3] = [0.75, 0.5, 0.25];

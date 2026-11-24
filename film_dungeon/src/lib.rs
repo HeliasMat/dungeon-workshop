@@ -51,8 +51,8 @@ pub const WORDS: &[Word] = &[
     Word::new("steal", &["who:pokemon thing..."], "picks up without paying; the shopkeeper: emote, tremble, quake, popup, sound, battlelog").does(steals),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("dungeon", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("dungeon", WORDS);
 
 /// The stairs' and the traps' pictures (data/hand/, `scene_player dungeons`).
 const STAIRS: &str = "stairs";

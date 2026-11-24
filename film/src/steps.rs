@@ -77,7 +77,7 @@ pub fn steps(text: &str, tables: std::sync::Arc<film_core::tables::Tables>) -> S
             .filter(|value| !value.words.is_empty())
             .map(|value| format!("{}={} ({:?})", value.name, value.words.join(" "), value.kind))
             .collect();
-        let _ = writeln!(out, "{number:>4}   “{}” of the family {}: {}", read.word, read.family, values.join(", "));
+        let _ = writeln!(out, "{number:>4}   “{}” of the group {}: {}", read.word, read.group, values.join(", "));
     }
 
     title(&mut out, "7. The beats written", "emit: what each line has the engine play, typed (written here in its words)");

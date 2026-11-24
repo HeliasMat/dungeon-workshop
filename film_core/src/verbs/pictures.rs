@@ -21,8 +21,8 @@ pub const WORDS: &[Word] = &[
         .does(bannered),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("pictures", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("pictures", WORDS);
 
 /// A picture in the place of the scene, at once.
 fn show(film: &mut Film, shown: &Picture) {

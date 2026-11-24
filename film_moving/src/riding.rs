@@ -49,8 +49,8 @@ pub const WORDS: &[Word] = &[
     .does(put_down),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("riding", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("riding", WORDS);
 
 /// A hop on or off: how high, how many frames.
 const HOP_HEIGHT: f32 = 28.0;

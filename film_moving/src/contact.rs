@@ -13,8 +13,8 @@ pub const WORDS: &[Word] = &[Word::new(
 )
 .does(pushed)];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("contact", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("contact", WORDS);
 
 /// `a push b [wins b]`: they lock and strain, and one throws the other
 /// back: who the line says, else the heavier, else a.

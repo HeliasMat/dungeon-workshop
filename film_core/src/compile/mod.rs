@@ -133,7 +133,7 @@ pub struct Written {
 #[derive(Clone, Debug)]
 pub struct ReadAs {
     pub word: String,
-    pub family: &'static str,
+    pub group: &'static str,
     pub values: Vec<crate::grammar::Value>,
 }
 

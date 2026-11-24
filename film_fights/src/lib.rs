@@ -83,8 +83,8 @@ pub const WORDS: &[Word] = &[
     .does(blows::dodged),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("fights", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("fights", WORDS);
 
 fn bar_opens(film: &mut Film, line: &Line) {
     // (`fight pikachu 12 30 [floor]`: the top line of a dungeon, or its name

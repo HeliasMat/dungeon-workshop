@@ -34,8 +34,8 @@ pub const WORDS: &[Word] = &[
     Word::new("together", &[""], "together … end: each line starts at the same time (parallel), and the film waits for the longest (waituntil)").maybe(together_said).until(),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("timing", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("timing", WORDS);
 
 /// What only the scene's own course can play.
 const NOT_MEANWHILE: [&str; 5] = ["fight", "ask", "menu", "dungeon", "ground_place"];

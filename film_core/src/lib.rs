@@ -5,7 +5,7 @@
 //! - `text`: the text read by the language, its recipes played out, who each
 //!   scene names;
 //! - `compile`: a film's scenes, and what is said in them;
-//! - `verbs`: what a word is (`Word`, `Family`, `Lexicon`), a line played
+//! - `verbs`: what a word is (`Word`, `Group`, `Lexicon`), a line played
 //!   by the family whose form fits; the families the language leans on, a
 //!   file by theme;
 //! - `names`: what a film calls those it shows, things, places, ways;
@@ -53,7 +53,7 @@ pub use order::{performer_first, shown_form};
 pub use screen::coloured;
 pub use text::front::formatted;
 pub use text::recipes::{Told, shared_files, shared_path};
-pub use verbs::{Family, Lexicon, Word, internal, scene_line};
+pub use verbs::{Group, Lexicon, Word, internal, scene_line};
 
 /// A film by a path, or a name of the project's films (the shared
 /// library's: `library/films`), else of a game's `films/`

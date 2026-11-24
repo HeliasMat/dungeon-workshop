@@ -13,8 +13,8 @@ pub const WORDS: &[Word] =
         .names(film_core::verbs::Names::NoOne)
         .does(job)];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("guild", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("guild", WORDS);
 
 /// `job take Find Bellsprout`: a job taken from the guild's board: the
 /// board, the words, the tune; `job done Find Bellsprout`: the job done, the

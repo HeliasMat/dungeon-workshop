@@ -40,8 +40,8 @@ pub const WORDS: &[Word] = &[
     .does(gets_out),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("swimming", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("swimming", WORDS);
 
 /// His bob on the water: how high, how long.
 const BOB: f32 = 2.0;

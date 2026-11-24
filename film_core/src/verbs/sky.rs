@@ -22,8 +22,8 @@ pub const WORDS: &[Word] = &[
     .maybe(weather_said),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("sky", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("sky", WORDS);
 
 /// The light of each moment of the day.
 const HOURS: [(&str, &str); 5] = [("dawn", "dawn"), ("morning", "dawn"), ("day", "normal"), ("evening", "evening"), ("night", "night")];

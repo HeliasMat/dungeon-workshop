@@ -184,7 +184,7 @@ fn print_of(context: &Context, path: &std::path::Path) -> (String, Vec<String>) 
     {
         left = written.left_as_fields.iter().map(|(_, fields)| fields[0].clone()).collect();
         for (number, read) in &written.read_as {
-            made += &format!("line {number} read {} ({}) {:?}\n", read.word, read.family, read.values);
+            made += &format!("line {number} read {} ({}) {:?}\n", read.word, read.group, read.values);
         }
     }
     (made, left)

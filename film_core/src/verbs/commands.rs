@@ -1,12 +1,12 @@
 //! Every command of the engine a word of the language: those the language
-//! gives no word of their own (`engine.rs`, the families) are words here,
+//! gives no word of their own (`engine.rs`, the groups) are words here,
 //! each with the forms the engine declares for it (`engine::forms`, next to
 //! its beat's reading in `engine/src/beat/`) and what it does. Nothing is
 //! read from the docs: `engine/docs/COMMANDS.md` has its table of forms
 //! written from the engine, and a test here checks its rows by theme say
 //! the same.
 
-use super::{Family, Lexicon, Word};
+use super::{Group, Lexicon, Word};
 
 /// The commands with no word of their own that last until who goes gets
 /// there (their time in the registry: the others are instant).
@@ -19,9 +19,9 @@ const KEPT: [&str; 7] = ["banner", "fade", "flee", "follow", "ride", "shake", "t
 /// The engine's commands no word of the films names: each its forms as the
 /// engine declares them and what it writes (`name: what it does`). `runto`
 /// lasts until who goes gets there; the others are instant. Read once by
-/// the lexicon (`Lexicon::commands`): the words of its families are taken.
-pub(super) fn family(lexicon: &'static Lexicon) -> Family {
-    let taken = |own: &str| !KEPT.contains(&own) && lexicon.all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == own));
+/// the lexicon (`Lexicon::commands`): the words of its groups are taken.
+pub(super) fn group(lexicon: &'static Lexicon) -> Group {
+    let taken = |own: &str| !KEPT.contains(&own) && lexicon.all_groups_but_commands().any(|group| group.words.iter().any(|known| known.word == own));
     let words: Vec<Word> = engine::commands()
         .iter()
         .filter(|own| !taken(own))
@@ -32,7 +32,7 @@ pub(super) fn family(lexicon: &'static Lexicon) -> Family {
             if WALKS.contains(&own) { word.until() } else { word }
         })
         .collect();
-    Family::new("commands", Box::leak(words.into_boxed_slice()))
+    Group::new("commands", Box::leak(words.into_boxed_slice()))
 }
 
 #[cfg(test)]
@@ -183,11 +183,11 @@ mod tests {
         name
     }
 
-    /// The commands family should be, from the docs: one line of Rust a word.
+    /// The commands group should be, from the docs: one line of Rust a word.
     fn table_from_docs() -> Vec<String> {
         let documented = from_docs();
         let taken = |word: &str| {
-            !KEPT.contains(&word) && crate::verbs::lexicon::BARE.all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == word))
+            !KEPT.contains(&word) && crate::verbs::lexicon::BARE.all_groups_but_commands().any(|group| group.words.iter().any(|known| known.word == word))
         };
         engine::commands()
             .iter()
@@ -205,7 +205,7 @@ mod tests {
             .collect()
     }
 
-    /// The commands family is, one line of Rust a word.
+    /// The commands group is, one line of Rust a word.
     fn table_of_code() -> Vec<String> {
         crate::verbs::lexicon::BARE
             .commands()
@@ -231,10 +231,10 @@ mod tests {
             .map(|line| format!("the docs: {line}"))
             .chain(code.iter().filter(|line| !docs.contains(line)).map(|line| format!("the code: {line}")))
             .collect();
-        assert!(differ.is_empty(), "engine/docs/COMMANDS.md and the commands family (film_core/src/verbs/commands.rs) differ:\n{}", differ.join("\n"));
+        assert!(differ.is_empty(), "engine/docs/COMMANDS.md and the commands group (film_core/src/verbs/commands.rs) differ:\n{}", differ.join("\n"));
     }
 
-    /// Every command's rows by theme, those the families have a word for
+    /// Every command's rows by theme, those the groups have a word for
     /// too, say the forms and what it does the engine declares.
     #[test]
     fn the_docs_say_every_command_as_the_engine_declares_it() {
@@ -253,12 +253,12 @@ mod tests {
 
     #[test]
     fn every_command_of_the_engine_has_a_word() {
-        let family = crate::verbs::lexicon::BARE.commands();
-        assert!(family.words.len() > 100, "{}", family.words.len());
+        let group = crate::verbs::lexicon::BARE.commands();
+        assert!(group.words.len() > 100, "{}", group.words.len());
         for own in engine::commands() {
-            assert!(crate::verbs::lexicon::BARE.all_families().any(|family| family.words.iter().any(|word| word.word == *own)), "“{own}” has no word");
+            assert!(crate::verbs::lexicon::BARE.all_groups().any(|group| group.words.iter().any(|word| word.word == *own)), "“{own}” has no word");
         }
-        for word in family.words {
+        for word in group.words {
             assert!(engine::commands().contains(&word.word), "“{}” is no command of the engine", word.word);
         }
         assert_eq!(form_of("<who> <x> <y> [<time>]"), "who:code x:coordinate y:coordinate [time:duration]");
@@ -271,7 +271,7 @@ mod tests {
         assert_eq!(form_of("<sound> [volume v] [pitch n]"), "sound:word [volume v:number] [pitch n:number]");
         assert_eq!(either("<key> <who\\|@ x y> [time]"), ["<key> <who> [time]", "<key> @ <x> <y> [time]"]);
         // (Each form reads.)
-        for word in family.words {
+        for word in group.words {
             for form in word.forms {
                 let _ = crate::grammar::read(form);
             }

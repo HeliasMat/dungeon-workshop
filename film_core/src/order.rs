@@ -65,7 +65,7 @@ pub(crate) fn told_who_first(film: &mut Film, number: usize, written: &[(String,
 /// family's forms that fits it: its first part one who acts (a team given
 /// only one).
 pub(crate) fn said_of_someone(film: &mut Film, family: &str, verb: &str, rest: &[String]) -> bool {
-    let Some(word) = film.lexicon.word_of_family(family, verb) else { return false };
+    let Some(word) = film.lexicon.word_of_group(family, verb) else { return false };
     for form in word.forms {
         let pieces = crate::grammar::read(form);
         let Ok(bound) = crate::grammar::bind(film, &pieces, rest) else { continue };

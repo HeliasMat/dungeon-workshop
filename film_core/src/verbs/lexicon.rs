@@ -1,4 +1,4 @@
-//! The words of the language gathered: the families of words, the narrower
+//! The words of the language gathered: the groups of words, the narrower
 //! first, as the one who assembles the language lists them (`film`), between
 //! the text's own words and the engine's; and what is read once of them, the
 //! library's recipes (`film/recipes/`), the engine's commands no word names,
@@ -9,56 +9,56 @@
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
-use super::{Family, Word, commands, engine};
+use super::{Group, Word, commands, engine};
 use crate::text::recipes::Recipe;
 
 /// The text's own words and the engine's: forms, never played here.
-const TEXT: Family = Family::new("text", crate::text::WORDS);
-const ENGINE: Family = Family::new("engine", engine::WORDS);
+const TEXT: Group = Group::new("text", crate::text::WORDS);
+const ENGINE: Group = Group::new("engine", engine::WORDS);
 
-/// The families of the engine's own commands: a line only they fit is the
+/// The groups of the engine's own commands: a line only they fit is the
 /// engine's, whatever word of a film shares its name (`fade 30`).
-pub(super) const ENGINE_FAMILIES: [&str; 2] = ["engine", "commands"];
+pub(super) const ENGINE_GROUPS: [&str; 2] = ["engine", "commands"];
 
-/// The words of the language: its families, the narrower first; what is read
+/// The words of the language: its groups, the narrower first; what is read
 /// of them once, the first time it is asked.
 pub struct Lexicon {
-    families: &'static [Family],
+    groups: &'static [Group],
     recipes: OnceLock<Vec<Recipe>>,
-    commands: OnceLock<Family>,
+    commands: OnceLock<Group>,
     known: OnceLock<HashSet<String>>,
 }
 
 impl Lexicon {
-    /// The language of those families, the narrower first (the text's words
+    /// The language of those groups, the narrower first (the text's words
     /// and the engine's around them).
-    pub const fn new(families: &'static [Family]) -> Lexicon {
-        Lexicon { families, recipes: OnceLock::new(), commands: OnceLock::new(), known: OnceLock::new() }
+    pub const fn new(groups: &'static [Group]) -> Lexicon {
+        Lexicon { groups, recipes: OnceLock::new(), commands: OnceLock::new(), known: OnceLock::new() }
     }
 
-    /// The families of the words written for films, the narrower first.
-    pub fn families(&self) -> &'static [Family] {
-        self.families
+    /// The groups of the words written for films, the narrower first.
+    pub fn groups(&self) -> &'static [Group] {
+        self.groups
     }
 
-    /// Every family, the text's and the engine's too: those whose forms a line is read by.
-    pub(crate) fn all_families(&'static self) -> impl Iterator<Item = &'static Family> {
-        self.all_families_but_commands().chain(std::iter::once(self.commands()))
+    /// Every group, the text's and the engine's too: those whose forms a line is read by.
+    pub(crate) fn all_groups(&'static self) -> impl Iterator<Item = &'static Group> {
+        self.all_groups_but_commands().chain(std::iter::once(self.commands()))
     }
 
-    /// The families of the words written for films, and of the engine's
+    /// The groups of the words written for films, and of the engine's
     /// commands given a form of their own (`engine.rs`).
-    pub(crate) fn all_families_but_commands(&'static self) -> impl Iterator<Item = &'static Family> {
-        std::iter::once(&TEXT).chain(self.families.iter()).chain(std::iter::once(&ENGINE))
+    pub(crate) fn all_groups_but_commands(&'static self) -> impl Iterator<Item = &'static Group> {
+        std::iter::once(&TEXT).chain(self.groups.iter()).chain(std::iter::once(&ENGINE))
     }
 
-    /// The family of the engine's commands that no word of these families names.
-    pub(crate) fn commands(&'static self) -> &'static Family {
-        self.commands.get_or_init(|| commands::family(self))
+    /// The group of the engine's commands that no word of these groups names.
+    pub(crate) fn commands(&'static self) -> &'static Group {
+        self.commands.get_or_init(|| commands::group(self))
     }
 
-    /// The engine's own families: the commands given a form here, then the others.
-    pub(super) fn engine_families(&'static self) -> [&'static Family; 2] {
+    /// The engine's own groups: the commands given a form here, then the others.
+    pub(super) fn engine_groups(&'static self) -> [&'static Group; 2] {
         [&ENGINE, self.commands()]
     }
 
@@ -68,11 +68,11 @@ impl Lexicon {
     }
 
     /// The pictures of one's own (`images/`, by name) that words pick by
-    /// themselves, no line naming them, each with the family of words that
+    /// themselves, no line naming them, each with the group of words that
     /// does (fishing's bobber). A film drawing one lists its file in
     /// `Written::pictures`.
     pub fn own_pictures(&self) -> impl Iterator<Item = (&'static str, &'static str)> {
-        self.families.iter().flat_map(|family| family.pictures.iter().map(|picture| (family.name, *picture)))
+        self.groups.iter().flat_map(|group| group.pictures.iter().map(|picture| (group.name, *picture)))
     }
 
     /// A line of that word, with what is given each name (`("who", "eevee")`),
@@ -83,7 +83,7 @@ impl Lexicon {
     pub fn line_of(&'static self, word: &str, given: &[(&str, &str)]) -> Result<String, String> {
         let given: Vec<(&str, Vec<String>)> = given.iter().map(|(name, said)| (*name, said.split_whitespace().map(str::to_string).collect())).collect();
         let given: Vec<(&str, &[String])> = given.iter().map(|(name, said)| (*name, said.as_slice())).collect();
-        let forms = self.all_families().flat_map(|family| family.words.iter()).filter(|known| known.word == word).flat_map(|known| known.forms.iter());
+        let forms = self.all_groups().flat_map(|group| group.words.iter()).filter(|known| known.word == word).flat_map(|known| known.forms.iter());
         let shortest = forms
             .filter_map(|form| {
                 let pieces = crate::grammar::read(form);
@@ -140,10 +140,10 @@ impl Lexicon {
         second.is_some_and(|second| !self.is_word(first, text) && self.is_word(second, text) && self.takes_someone_first(second, text))
     }
 
-    /// The word of that name in that family (the text's, the engine's, the
+    /// The word of that name in that group (the text's, the engine's, the
     /// commands' too).
-    pub(crate) fn word_of_family(&'static self, family: &str, verb: &str) -> Option<&'static Word> {
-        self.all_families().filter(|known| known.name == family).flat_map(|known| known.words.iter()).find(|word| word.word == verb)
+    pub(crate) fn word_of_group(&'static self, group: &str, verb: &str) -> Option<&'static Word> {
+        self.all_groups().filter(|known| known.name == group).flat_map(|known| known.words.iter()).find(|word| word.word == verb)
     }
 
     /// Every word of the films' language: where it is read, its forms, what it
@@ -168,16 +168,16 @@ impl Lexicon {
             }
         }
         std::iter::once(&TEXT)
-            .chain(self.families.iter())
-            .flat_map(|family| family.words.iter().map(|word| (family.name, word.word, word.forms, word.writes)))
+            .chain(self.groups.iter())
+            .flat_map(|group| group.words.iter().map(|word| (group.name, word.word, word.forms, word.writes)))
             .chain(recipes.into_iter().map(|recipe| (recipe.from.as_str(), recipe.name.as_str(), &[][..], recipe.told_and_doc.as_str())))
     }
 
-    /// The time of a word of a family (`every_word`'s), as the registry says it;
+    /// The time of a word of a group (`every_word`'s), as the registry says it;
     /// a recipe's, by its lines.
-    pub fn word_time(&'static self, family: &str, word: &str) -> crate::time::WordTime {
-        self.all_families()
-            .filter(|known| known.name == family)
+    pub fn word_time(&'static self, group: &str, word: &str) -> crate::time::WordTime {
+        self.all_groups()
+            .filter(|known| known.name == group)
             .flat_map(|known| known.words.iter())
             .find(|known| known.word == word)
             .map_or(crate::time::WordTime::ByLine, Word::timing)
@@ -194,7 +194,7 @@ impl Lexicon {
     }
 }
 
-/// The language with no family of words but the text's and the engine's:
+/// The language with no group of words but the text's and the engine's:
 /// what the core's own tests read with.
 #[cfg(test)]
 pub(crate) static BARE: Lexicon = Lexicon::new(&[]);

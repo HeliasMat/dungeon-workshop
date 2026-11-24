@@ -86,8 +86,8 @@ pub const WORDS: &[Word] = &[
     .maybe(emoted),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("acting", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("acting", WORDS);
 
 /// The game's emote balloons by their v2.1 names: the effect, its sound
 /// (as the game's scripts play them beside it most), if any.

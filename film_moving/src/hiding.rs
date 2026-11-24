@@ -36,8 +36,8 @@ pub const WORDS: &[Word] = &[
     .does(popped_out),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("hiding", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("hiding", WORDS);
 
 /// How far over the obstacle's feet one hides, on the screen.
 const BEHIND: f32 = 6.0;

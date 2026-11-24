@@ -19,8 +19,8 @@ pub const WORDS: &[Word] = &[
     Word::new("wander", &["who:pokemon [n:number]"], "roams").does(roamed),
 ];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("body", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("body", WORDS);
 
 /// `wait 2s`, `wait all`, `wait a b`; `wait wind`: what is
 /// played beside the film under that name.

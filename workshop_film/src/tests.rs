@@ -84,7 +84,7 @@ fn the_inspector_edits_a_field_of_a_line_written_who_first() {
     };
     // (Read as the word first: `walk pikachu to piplup slow`.)
     let values = vec![value("who", &["pikachu"], Kind::Someone, 0), value("where", &["piplup"], Kind::Place, 2), value("slow", &["slow"], Kind::Word, 3)];
-    let read = film::ReadAs { word: "walk".to_string(), family: "moving", values };
+    let read = film::ReadAs { word: "walk".to_string(), group: "moving", values };
     let text = "scene: beach pikachu piplup eevee\n  pikachu walk to piplup slow\n";
     let words = |said: &str| said.split_whitespace().map(str::to_string).collect::<Vec<String>>();
     assert_eq!(with_field(text, 2, &read, "who", &words("eevee")).as_deref(), Ok("scene: beach pikachu piplup eevee\n  eevee walk to piplup slow\n"));

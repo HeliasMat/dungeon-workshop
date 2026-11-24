@@ -25,7 +25,7 @@ use crate::ir::Instr;
 use crate::verbs::{Line, Word};
 use crate::words::plain;
 
-/// The words of the family: `go`.
+/// The words of the group: `go`.
 pub const WORDS: &[Word] = &[Word::new(
     "go",
     &["moment name:text...", "scene name:word"],
@@ -33,8 +33,8 @@ pub const WORDS: &[Word] = &[Word::new(
 )
 .maybe(went)];
 
-/// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("story", WORDS);
+/// Its words, a group of the language (`Lexicon`).
+pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("story", WORDS);
 
 /// The number a film holds which moment of another scene it goes to.
 const GOING: &str = "_go_moment";
