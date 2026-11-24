@@ -3,20 +3,19 @@
 //! `Place` (`place`); and what is remarked once all is laid (`remarks`).
 
 pub mod compose;
-mod place;
-
-pub use place::Place;
 
 use std::rc::Rc;
 
-use crate::cut::{Cut, cut};
+use crate::cut::cut;
 use crate::fault::{Diagnostic, Location};
 use crate::lang::{Decor, Line, closest, numbers, points_of, read_path, said, zone_of};
+use crate::piece::Cut;
 use crate::pixels::{Grid, Mask, TILE, grown};
 use crate::random::Rng;
-use crate::weave::{Band, FRINGE, Loom, Workshop, Woven, as_tiles, path_shape, rounded, weave, weave_columns};
+use crate::weave::{Band, FRINGE, Loom, Woven, as_tiles, path_shape, rounded, weave, weave_columns};
+use crate::workshop::Workshop;
 
-use place::lcm;
+use crate::place::{Place, lcm};
 
 /// The most frames a place of ours has.
 const MOST_FRAMES: usize = 24;
@@ -277,7 +276,7 @@ impl<'a> Builder<'a> {
                 }
             }
             Some(crate::lang::Base::Level { level, x, y, hollow, .. }) => {
-                place.lay_level(self.workshop, level, x, y)?;
+                place.lay_level(&self.workshop.game, level, x, y)?;
                 if hollow {
                     self.hollow(place, level, x, y);
                 }
@@ -286,7 +285,7 @@ impl<'a> Builder<'a> {
                 let mut rows = self.decor.plan.clone();
                 crate::room::squared(&mut rows);
                 let made = crate::room::laid(&self.workshop.game.folder, &dungeon, floor, &rows, &self.decor.file, line)?;
-                place.lay_room(&made);
+                made.lay_on(place);
                 place.decor.entrances.extend(made.spots.iter().cloned());
                 place.decor.shown.get_or_insert(made.shown.clone());
             }
@@ -369,7 +368,7 @@ impl<'a> Builder<'a> {
             }
         }
         let mut index = made.lower_index.take().unwrap_or_default();
-        place::fill_holes(&mut made.lower, &mut index, &holes);
+        crate::place::fill_holes(&mut made.lower, &mut index, &holes);
         made.lower_index = (!index.is_empty()).then_some(index);
         made
     }
@@ -380,7 +379,7 @@ impl<'a> Builder<'a> {
         let level = loom.piece.place().unwrap_or(-1);
         let source = self.workshop.source(level)?;
         let with_index = loom.tiles.first().is_some_and(|tile| tile.indices.is_some());
-        let table = if with_index { Some(place.table(self.workshop, level)?) } else { None };
+        let table = if with_index { Some(place.table(&self.workshop.game, level)?) } else { None };
         let laying = place.new_laying();
         let frames = place.lower.len();
         for row in 0..chosen.h {
@@ -392,7 +391,7 @@ impl<'a> Builder<'a> {
                 let at = at as usize;
                 let (x, y) = (column * TILE, row * TILE);
                 let tile = &loom.tiles[at];
-                place.shade(self.workshop, &loom.tile_shade(at), x as i64, y as i64);
+                place.shade(&self.workshop.ramps, &loom.tile_shade(at), x as i64, y as i64);
                 let opaque: Vec<bool> = (0..TILE * TILE).map(|cell| tile.frames.iter().any(|frame| frame[cell][3] > 0)).collect();
                 for frame in 0..frames {
                     let pixels = &tile.frames[frame % tile.frames.len()];
@@ -599,7 +598,7 @@ impl<'a> Builder<'a> {
         for (x, y) in points_of(&self.at(line), &line.words[1..])? {
             let owner = place.names.len() as i32;
             place.names.push(file.clone());
-            place.lay_picture(self.workshop, &pictures, x - room, y - room, owner, line.layer.as_deref())?;
+            place.lay_picture(&self.workshop.game, &pictures, x - room, y - room, owner, line.layer.as_deref())?;
             if let Some(spot) = &line.name {
                 place.decor.entrances.push((line.number, x + picture.w as i64 / 2, y + picture.h as i64 + TILE as i64, spot.clone()));
             }
@@ -610,7 +609,7 @@ impl<'a> Builder<'a> {
     fn lay_thing(&self, place: &mut Place, made: &Cut, x: i64, y: i64, name: &str, line: &Line) -> Result<(), Diagnostic> {
         let owner = place.names.len() as i32;
         place.names.push(name.to_string());
-        place.lay_cut(self.workshop, made, x, y, owner, line.layer.as_deref())
+        place.lay_cut((&self.workshop.game, &self.workshop.ramps), made, x, y, owner, line.layer.as_deref())
     }
 
     fn check_overlap(&self, place: &mut Place, line: &Line, made: &Cut, x: i64, y: i64, name: &str) {
@@ -671,7 +670,7 @@ impl<'a> Builder<'a> {
     /// A tree, its foot at fx, fy: its shadow on the ground, it on the upper layer.
     fn tree(&self, place: &mut Place, made: &Cut, fx: i64, fy: i64, line: &Line) -> Result<(), Diagnostic> {
         let before = place.walls.clone();
-        place.lay_cut(self.workshop, made, fx - made.foot.0, fy - made.foot.1, 0, line.layer.as_deref())?;
+        place.lay_cut((&self.workshop.game, &self.workshop.ramps), made, fx - made.foot.0, fy - made.foot.1, 0, line.layer.as_deref())?;
         place.tree_walls = place.tree_walls.or(&place.walls.minus(&before));
         place.trees.push((line.number, fx, fy));
         Ok(())

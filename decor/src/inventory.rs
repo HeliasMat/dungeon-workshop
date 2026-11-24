@@ -20,7 +20,7 @@ use std::path::Path;
 use crate::fault::Diagnostic;
 use crate::pixels::{Mask, Picture, TILE, components, grown};
 use crate::source::Source;
-use crate::weave::Workshop;
+use crate::workshop::Workshop;
 
 /// What the file says first.
 const HEAD: [&str; 6] = [

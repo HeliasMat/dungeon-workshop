@@ -186,7 +186,7 @@ fn place_names(data: &str) -> BTreeMap<i64, String> {
 /// (the same to the pixel, turned over or not: not offered again) and the
 /// places they are in; its category, its name and tags as our eyes saw it
 /// (`library/tables/piece_tags.txt`).
-fn pieces(workshop: &decor::weave::Workshop, data: &str) -> Vec<PieceInfo> {
+fn pieces(workshop: &decor::workshop::Workshop, data: &str) -> Vec<PieceInfo> {
     let tables = decor::pieces_folder(&workshop.project);
     let kinds = decor::tags::PlaceKinds::of(&tables);
     // (A place the game leaves unnamed, `P05P04A`: by our name for it.)
@@ -239,7 +239,7 @@ fn pieces(workshop: &decor::weave::Workshop, data: &str) -> Vec<PieceInfo> {
 
 /// The backdrops there are, by kind of place, then by name: each place of the game whose rest the catalogue
 /// has (`decor inventory`).
-fn backdrops(workshop: &decor::weave::Workshop, data: &str) -> Vec<BackdropInfo> {
+fn backdrops(workshop: &decor::workshop::Workshop, data: &str) -> Vec<BackdropInfo> {
     let kinds = decor::tags::PlaceKinds::of(&decor::pieces_folder(&workshop.project));
     let names = place_names(data);
     let mut out: Vec<BackdropInfo> = workshop
@@ -280,7 +280,7 @@ const MOST_SAMPLES: u64 = 48;
 /// one left out where it shows nothing). Its colours that change with time
 /// (water shimmering) too: the piece laid alone, sampled as often as its
 /// fastest change, over the time its frames and colours take to come back.
-fn art(workshop: &decor::weave::Workshop, name: &str) -> Option<Art> {
+fn art(workshop: &decor::workshop::Workshop, name: &str) -> Option<Art> {
     let cut = decor::laid_cut(workshop, name).ok()?;
     let picture = |frame: &decor::pixels::Picture| Picture { w: frame.w, h: frame.h, rgba: frame.cells.iter().flatten().copied().collect() };
     let shows = |frames: &[decor::pixels::Picture]| frames.iter().any(|frame| frame.cells.iter().any(|rgba| rgba[3] > 0));
@@ -298,7 +298,7 @@ fn art(workshop: &decor::weave::Workshop, name: &str) -> Option<Art> {
 /// One line laid alone at 0 0, sampled as often as its fastest change
 /// (its frames, its colours that change with time) over the time all take
 /// to come back; none if no colour of it changes.
-fn sampled(workshop: &decor::weave::Workshop, line: &str, (w, h): (usize, usize)) -> Option<Art> {
+fn sampled(workshop: &decor::workshop::Workshop, line: &str, (w, h): (usize, usize)) -> Option<Art> {
     let text = format!("decor: piece {} {}\n{line}\n", w.next_multiple_of(8).max(16), h.next_multiple_of(8).max(16));
     let place = decor::read("piece", &text).and_then(|read| decor::built(workshop, read)).ok()?;
     if place.cycles.is_empty() {
@@ -338,8 +338,8 @@ fn sampled(workshop: &decor::weave::Workshop, line: &str, (w, h): (usize, usize)
 }
 
 /// A place's terrains, each with a patch of it.
-fn tileset(workshop: &decor::weave::Workshop, level: i64) -> Vec<TerrainInfo> {
-    let Ok(set) = decor::terrain::tileset(workshop, level) else {
+fn tileset(workshop: &decor::workshop::Workshop, level: i64) -> Vec<TerrainInfo> {
+    let Ok(set) = workshop.tileset(level) else {
         return Vec::new();
     };
     set.terrains
@@ -360,10 +360,10 @@ fn picture_of(frame: &decor::pixels::Picture) -> Picture {
 
 /// A terrain line solved: its frames (its colours that change seen as in
 /// the first), its walls.
-fn terrain(workshop: &decor::weave::Workshop, line: &str) -> Option<Solved> {
+fn terrain(workshop: &decor::workshop::Workshop, line: &str) -> Option<Solved> {
     let words: Vec<String> = line.split_whitespace().skip(1).map(str::to_string).collect();
     let painted = decor::terrain::Painted::read(&words).ok()?;
-    let cut = decor::terrain::cut(workshop, &painted).ok()?;
+    let cut = decor::terrain::cut_of(&*workshop.tileset(painted.level).ok()?, &painted);
     let walls = Picture {
         w: cut.solid.w,
         h: cut.solid.h,
@@ -373,7 +373,7 @@ fn terrain(workshop: &decor::weave::Workshop, line: &str) -> Option<Solved> {
 }
 
 /// A terrain line's colours that change with time, sampled (the line laid at 0 0).
-fn terrain_living(workshop: &decor::weave::Workshop, line: &str) -> Option<Solved> {
+fn terrain_living(workshop: &decor::workshop::Workshop, line: &str) -> Option<Solved> {
     let mut solved = terrain(workshop, line)?;
     let mut words: Vec<String> = line.split_whitespace().map(str::to_string).collect();
     if words.len() > 3 {
@@ -387,8 +387,8 @@ fn terrain_living(workshop: &decor::weave::Workshop, line: &str) -> Option<Solve
 }
 
 /// A place's own ground as a terrain line, at 0 0.
-fn place_ground(workshop: &decor::weave::Workshop, level: i64) -> Option<String> {
-    let set = decor::terrain::tileset(workshop, level).ok()?;
+fn place_ground(workshop: &decor::workshop::Workshop, level: i64) -> Option<String> {
+    let set = workshop.tileset(level).ok()?;
     let (columns, rows) = (set.corners.w - 1, set.corners.h - 1);
     Some(decor::terrain::of_the_place(&set, 0, 0, (0, 0, columns, rows)).line())
 }

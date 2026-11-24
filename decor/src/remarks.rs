@@ -3,10 +3,10 @@
 //! that show (two things side by side whose colours never touch in the
 //! places they come from, along a line of the grid).
 
-use crate::build::Place;
 use crate::fault::Diagnostic;
 use crate::pixels::{Grid, Mask, TILE, border, component, components, grown, has, key_of, unique};
-use crate::weave::Workshop;
+use crate::place::Place;
+use crate::workshop::Workshop;
 
 /// A join shows when its colours never touch in the game along this many pixels.
 const RUN: usize = 6;

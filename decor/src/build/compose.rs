@@ -18,13 +18,13 @@
 
 use std::rc::Rc;
 
-use super::place::{Place, lcm};
 use super::{MOST_FRAMES, walled};
-use crate::cut::Cut;
 use crate::fault::{Diagnostic, Location};
 use crate::lang::{Decor, Line, points_of, zone_of};
+use crate::piece::Cut;
 use crate::pixels::TILE;
-use crate::weave::Workshop;
+use crate::place::{Place, lcm};
+use crate::workshop::Workshop;
 
 /// Whether a decor says only what this builder lays.
 pub fn simple(decor: &Decor) -> bool {
@@ -41,14 +41,15 @@ pub fn simple(decor: &Decor) -> bool {
 /// A terrain line's piece: its tiles solved.
 pub(crate) fn terrain_cut(workshop: &Workshop, line: &Line, at: &Location) -> Result<Rc<Cut>, Diagnostic> {
     let painted = crate::terrain::Painted::read(&line.words).map_err(|why| at.wrong(why))?;
-    Ok(Rc::new(crate::terrain::cut(workshop, &painted).map_err(|why| why.within(at.clone()))?))
+    let set = workshop.tileset(painted.level).map_err(|why| why.within(at.clone()))?;
+    Ok(Rc::new(crate::terrain::cut_of(&set, &painted)))
 }
 
 /// A terrain laid at its corner, on the ground, its walls with it.
 pub(crate) fn lay_terrain(workshop: &Workshop, place: &mut Place, line: &Line, at: &Location) -> Result<(), Diagnostic> {
     let painted = crate::terrain::Painted::read(&line.words).map_err(|why| at.wrong(why))?;
     let cut = terrain_cut(workshop, line, at)?;
-    place.lay_cut(workshop, &cut, painted.x, painted.y, 0, None)
+    place.lay_cut((&workshop.game, &workshop.ramps), &cut, painted.x, painted.y, 0, None)
 }
 
 /// A piece as this line lays it: turned over, without its shadow, still.
@@ -115,7 +116,7 @@ pub fn composed(workshop: &Workshop, decor: Decor) -> Result<Place, Diagnostic> 
                 while y < y1 {
                     let mut x = x0;
                     while x < x1 {
-                        place.lay_cut(workshop, cut, x, y, 0, line.layer.as_deref())?;
+                        place.lay_cut((&workshop.game, &workshop.ramps), cut, x, y, 0, line.layer.as_deref())?;
                         x += w;
                     }
                     y += h;
@@ -126,7 +127,7 @@ pub fn composed(workshop: &Workshop, decor: Decor) -> Result<Place, Diagnostic> 
                     let (x, y) = if line.foot { (x - cut.foot.0, y - cut.foot.1) } else { (x, y) };
                     let owner = place.names.len() as i32;
                     place.names.push(name.clone());
-                    place.lay_cut(workshop, cut, x, y, owner, line.layer.as_deref())?;
+                    place.lay_cut((&workshop.game, &workshop.ramps), cut, x, y, owner, line.layer.as_deref())?;
                     let (w, h) = cut.size();
                     if x < 0 || y < 0 || x + w as i64 > decor.width as i64 || y + h as i64 > decor.height as i64 {
                         place.remark(line.number, format!("\"{name}\" goes past the place at {x} {y}"));

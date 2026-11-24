@@ -9,7 +9,7 @@ use std::process::ExitCode;
 use decor::catalogue::{Catalogue, Piece};
 use decor::fault::Diagnostic;
 use decor::lang::{VERBS, closest, help};
-use decor::weave::Workshop;
+use decor::workshop::Workshop;
 
 /// What went wrong: the command said wrong (its usage), or a place or a piece.
 enum Failed {
@@ -91,7 +91,7 @@ impl Asked {
     }
 
     /// A place built and told.
-    fn one(&self, name: &str, workshop: &Workshop) -> Result<decor::build::Place, Failed> {
+    fn one(&self, name: &str, workshop: &Workshop) -> Result<decor::place::Place, Failed> {
         let (place, level) = decor::make(workshop, decor::load(&self.project, name, self.from.as_deref())?, &self.extra)?;
         if self.json {
             println!("{}", decor::told_json(&place, level));

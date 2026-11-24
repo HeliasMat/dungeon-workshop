@@ -15,13 +15,11 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::cut::Cut;
-use crate::fault::Diagnostic;
 use crate::matte::Shade;
+use crate::piece::Cut;
 use crate::pixels::{Grid, Mask, Picture, TILE};
 use crate::random::Rng;
 use crate::source::Source;
-use crate::weave::Workshop;
 
 /// No terrain: nothing laid there.
 pub const NONE: u8 = u8::MAX;
@@ -178,16 +176,6 @@ fn told(quarters: &[([f64; 3], usize)]) -> (Vec<[f64; 3]>, Vec<f64>) {
 
 fn nearest_of(means: &[[f64; 3]], colour: [f64; 3]) -> usize {
     (0..means.len()).min_by(|a, b| apart(means[*a], colour).total_cmp(&apart(means[*b], colour))).unwrap_or(0)
-}
-
-/// A place's tileset, learned once and kept by the workshop.
-pub fn tileset(workshop: &Workshop, level: i64) -> Result<Rc<Tileset>, Diagnostic> {
-    if let Some(known) = workshop.tilesets.borrow().get(&level) {
-        return Ok(known.clone());
-    }
-    let made = Rc::new(learned(&*workshop.source(level)?));
-    workshop.tilesets.borrow_mut().insert(level, made.clone());
-    Ok(made)
 }
 
 /// What a place's lower layer teaches: its tiles, their corners, their neighbours.
@@ -673,14 +661,9 @@ impl Painted {
     }
 }
 
-/// A terrain as a piece to lay: its tiles solved, every frame of them,
-/// their colours that change, their walls.
-pub fn cut(workshop: &Workshop, painted: &Painted) -> Result<Cut, Diagnostic> {
-    let set = tileset(workshop, painted.level)?;
-    Ok(cut_of(&set, painted))
-}
-
-/// The same, of a tileset at hand.
+/// A terrain as a piece to lay, of a tileset at hand (`Workshop::tileset`):
+/// its tiles solved, every frame of them, their colours that change, their
+/// walls.
 pub fn cut_of(set: &Tileset, painted: &Painted) -> Cut {
     let solved = set.solved(&painted.corners, (painted.x.div_euclid(TILE as i64), painted.y.div_euclid(TILE as i64)));
     let (w, h) = ((solved.w * TILE).max(1), (solved.h * TILE).max(1));

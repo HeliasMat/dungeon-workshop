@@ -3,21 +3,28 @@
 //! into data/extra (never committed), as the game reads its places; and the
 //! dungeon rooms (`<name>.room`), laid with a floor's own tiles.
 //!
-//! - `fault`: what goes wrong, and on which line of which file;
-//! - `lang`: a place's file read;
-//! - `catalogue`: the pieces, in the order they are written;
-//! - `source`: the game's places as the decors read them;
-//! - `matte`: a piece cut out of its ground, a shadow dropped on another;
-//! - `cut`: the pieces cut; `weave`: grounds, bands and paths woven;
+//! Its modules go one way, each using only those below it:
+//!
+//! - the base: `fault`, what goes wrong, and on which line of which file;
+//!   `pixels`, `random`: grids, colours and masks, chance from a seed;
+//!   `grounds`, `tags` (what our eyes say of the pieces and of the places);
+//!   `animate`, `catalogue` (the pieces, in the order they are written),
+//!   `source` (the game's places as the decors read them), `tilesets`;
+//!   `matte`: a piece cut out of its ground, a shadow dropped on another;
+//! - `piece`: a piece as it is laid (`Cut`); `weave`: grounds, bands and
+//!   paths woven of a loom;
 //! - `terrain`: terrains painted, of a place's own tiles (autotiling);
-//! - `build`: a place laid, line after line; `remarks`: what it remarks;
-//! - `write`: written into data/extra;
-//! - `room`: the dungeon rooms, and whole floors made as the game makes them;
-//! - `inventory`: every thing of the game's places, found by itself;
-//!   `sort`: those offered, one of each; `tags`: what our eyes say of them
-//!   (a category, a name, tags) and of the places (their kind);
-//! - `sheets`: what is looked at, in target/decors/;
-//! - `pixels`, `random`: grids, colours and masks; chance from a seed.
+//! - `lang`: a place's file read;
+//! - `place`: a place being laid (`Place`); `doc`: a decor's text edited;
+//! - `workshop`: what a place is made with, and what is worked out of it
+//!   once and kept (`Workshop`: a place's grounds, looms, tilesets, the
+//!   pieces cut); `write`: written into data/extra;
+//! - `cut`: the pieces cut; `remarks`: what a place laid remarks; `room`: the
+//!   dungeon rooms, and whole floors made as the game makes them;
+//!   `inventory`: every thing of the game's places, found by itself;
+//! - `build`: a place laid, line after line; `sort`: the things offered,
+//!   one of each;
+//! - `sheets`: what is looked at, in target/decors/.
 
 pub mod animate;
 pub mod build;
@@ -29,7 +36,9 @@ pub mod grounds;
 pub mod inventory;
 pub mod lang;
 pub mod matte;
+pub mod piece;
 pub mod pixels;
+pub mod place;
 pub mod random;
 pub mod remarks;
 pub mod room;
@@ -40,6 +49,7 @@ pub mod tags;
 pub mod terrain;
 pub mod tilesets;
 pub mod weave;
+pub mod workshop;
 pub mod write;
 
 #[cfg(test)]
@@ -49,11 +59,12 @@ use crate::fault::Diagnostic;
 use assets::project::Project;
 use std::path::{Path, PathBuf};
 
-use build::{Builder, Place};
+use build::Builder;
 use catalogue::Catalogue;
 use lang::{Decor, closest, parse};
+use place::Place;
 use source::Game;
-use weave::Workshop;
+use workshop::Workshop;
 
 /// The pieces the ROM keeps apart (`decor inventory`), made from the user's
 /// own copy at extraction, in that data folder's `extra/`.
@@ -319,7 +330,7 @@ pub fn workshop(project: &Project, data: &str) -> Result<Workshop, Diagnostic> {
 /// A piece as a decor lays it, for one who draws it himself (an editor):
 /// cut from its place, a place's rest hollowed of its elements; kept by the
 /// workshop, cut once.
-pub fn laid_cut(workshop: &Workshop, name: &str) -> Result<std::rc::Rc<cut::Cut>, Diagnostic> {
+pub fn laid_cut(workshop: &Workshop, name: &str) -> Result<std::rc::Rc<piece::Cut>, Diagnostic> {
     if let Some(known) = workshop.cuts.borrow().get(name).cloned() {
         return Ok(known);
     }

@@ -14,7 +14,7 @@ use std::hash::{Hash, Hasher};
 use crate::catalogue::Piece;
 use crate::cut::cut;
 use crate::pixels::Picture;
-use crate::weave::Workshop;
+use crate::workshop::Workshop;
 
 /// Fewer pixels than this: a speck.
 const SPECK: usize = 64;

@@ -8,9 +8,9 @@ pub mod pieces;
 
 use std::path::PathBuf;
 
-use crate::build::Place;
 use crate::fault::Diagnostic;
 use crate::pixels::{Picture, TILE};
+use crate::place::Place;
 use crate::source::picture_at;
 use canvas::{Canvas, LETTER_HIGH, Rgb, text_wide};
 
@@ -177,9 +177,9 @@ pub fn ensemble(root: &std::path::Path, places: &[(String, Picture)], out: &str)
 /// A place's terrains, as `terrain` paints them: each its letter, colour,
 /// share and tile; the place made again of its own corners beside it as it
 /// is (`terrains_<level>.png`). What is said of them.
-pub fn terrains(workshop: &crate::weave::Workshop, level: i64, letters: &str) -> Result<String, Diagnostic> {
-    use crate::terrain::{NONE, of_the_place, tileset};
-    let set = tileset(workshop, level)?;
+pub fn terrains(workshop: &crate::workshop::Workshop, level: i64, letters: &str) -> Result<String, Diagnostic> {
+    use crate::terrain::{NONE, of_the_place};
+    let set = workshop.tileset(level)?;
     let source = workshop.source(level)?;
     let (columns, rows) = (set.corners.w - 1, set.corners.h - 1);
     let painted = of_the_place(&set, 0, 0, (0, 0, columns, rows));

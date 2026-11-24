@@ -8,10 +8,10 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::build::Place;
 use crate::fault::Diagnostic;
 use crate::lang::{Decor, plain};
 use crate::pixels::TILE;
+use crate::place::Place;
 use crate::source::{Game, Info};
 
 /// The first level a place of ours may take (the game's go to 458).

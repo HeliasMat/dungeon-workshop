@@ -21,10 +21,10 @@ pub mod generate;
 
 use std::path::{Path, PathBuf};
 
-use crate::build::Place;
 use crate::fault::{Diagnostic, Location};
 use crate::lang::{Decor, closest, plain};
 use crate::pixels::{Grid, Mask, Picture, TILE};
+use crate::place::Place;
 use crate::source::{Cycle, Game};
 
 /// A tile of a dungeon, in pixels; the chunks in a row of a tileset's atlas.
@@ -247,6 +247,32 @@ pub struct Laid {
     pub spots: Vec<(usize, i64, i64, String)>,
     pub shown: String,
     pub tileset: i64,
+}
+
+impl Laid {
+    /// Laid under all of a place, from its top left corner: its picture in
+    /// every frame, its colours that change with time as they are, its walls.
+    pub(crate) fn lay_on(&self, place: &mut Place) {
+        let (w, h) = (self.picture.w.min(place.decor.width), self.picture.h.min(place.decor.height));
+        for frame in 0..place.lower.len() {
+            for y in 0..h {
+                for x in 0..w {
+                    place.lower[frame].set(x, y, self.picture.get(x, y));
+                    place.lower_index[frame].set(x, y, self.indices.get(x, y));
+                }
+            }
+        }
+        // (Its palettes keep their numbers: what each pixel shows is the tileset's.)
+        for (palette, cycle) in &self.cycles {
+            place.slots.push(((-1000 - self.tileset, *palette), *palette));
+            place.cycles.push((*palette, cycle.clone()));
+        }
+        for row in 0..self.walls.h.min(place.walls.h) {
+            for column in 0..self.walls.w.min(place.walls.w) {
+                place.walls.set(column, row, self.walls.get(column, row));
+            }
+        }
+    }
 }
 
 /// A layout's rows as wide as the widest (a wall where one is short).

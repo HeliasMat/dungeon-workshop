@@ -2,16 +2,18 @@
 //! game's data (data/rom), that a build is the same each time, the pieces
 //! cut as their options say, and the sheets written.
 
-use crate::build::{Builder, Place, ragged_zone};
+use crate::build::{Builder, ragged_zone};
 use crate::catalogue::KINDS;
 use crate::cut::cut;
 use crate::fault::Location;
 use crate::lang::{Decor, parse, points_of, read_path, zone_of};
 use crate::matte::{Shade, shaded, thing_shadow};
 use crate::pixels::{Grid, Mask, Rgba, grown};
+use crate::place::Place;
 use crate::random::Rng;
 use crate::remarks::{grouped, joins, reach};
-use crate::weave::{Workshop, rounded, turned};
+use crate::weave::{rounded, turned};
+use crate::workshop::Workshop;
 
 fn words(said: &[&str]) -> Vec<String> {
     said.iter().map(|word| word.to_string()).collect()

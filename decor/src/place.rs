@@ -4,12 +4,13 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::cut::Cut;
 use crate::fault::{Diagnostic, Location};
 use crate::lang::Decor;
+use crate::matte::Ramps;
 use crate::matte::{Shade, shaded};
+use crate::piece::Cut;
 use crate::pixels::{Grid, Mask, Picture, TILE};
-use crate::weave::Workshop;
+use crate::source::Game;
 
 /// The most palettes changing with time a place of ours has.
 const PALETTES: usize = 16;
@@ -189,14 +190,14 @@ impl Place {
         self.remarks.push(Diagnostic::at(line, said).as_remark());
     }
 
-    pub(super) fn new_laying(&mut self) -> i32 {
+    pub(crate) fn new_laying(&mut self) -> i32 {
         self.layings += 1;
         self.layings
     }
 
     /// Colours changing with time: each palette of a source gets one of ours.
-    pub(super) fn table(&mut self, workshop: &Workshop, level: i64) -> Result<[u8; 256], Diagnostic> {
-        let source = workshop.source(level)?;
+    pub(crate) fn table(&mut self, game: &Game, level: i64) -> Result<[u8; 256], Diagnostic> {
+        let source = game.source(level)?;
         let mut out = [0u8; 256];
         for (palette, cycle) in &source.info.cycles {
             let slot = match self.slots.iter().find(|(known, _)| *known == (level, *palette)) {
@@ -228,14 +229,14 @@ impl Place {
 
     /// Frames of a picture over a layer at x, y, what is opaque of it; its
     /// colours that change with time with it. What of it was seen.
-    fn lay(&mut self, workshop: &Workshop, layer: Layer, laid: Laid, (x, y): (i64, i64), laying: i32) -> Result<Mask, Diagnostic> {
+    fn lay(&mut self, game: &Game, layer: Layer, laid: Laid, (x, y): (i64, i64), laying: i32) -> Result<Mask, Diagnostic> {
         let Laid { frames, index, level } = laid;
         let (w, h) = (frames[0].w, frames[0].h);
         let Some((x0, y0, x1, y1)) = self.clip(x, y, w, h) else {
             return Ok(Mask::new(0, 0));
         };
         let table = match index {
-            Some(_) => Some(self.table(workshop, level)?),
+            Some(_) => Some(self.table(game, level)?),
             None => None,
         };
         let (bw, bh) = (x1 - x0, y1 - y0);
@@ -280,7 +281,7 @@ impl Place {
     }
 
     /// A shade over the lower layer at x, y: its ground made darker or lighter.
-    pub(super) fn shade(&mut self, workshop: &Workshop, shade: &Shade, x: i64, y: i64) {
+    pub(crate) fn shade(&mut self, ramps: &Ramps, shade: &Shade, x: i64, y: i64) {
         let (w, h) = (shade.factor.w, shade.factor.h);
         let Some((x0, y0, x1, y1)) = self.clip(x, y, w, h) else {
             return;
@@ -301,7 +302,7 @@ impl Place {
         }
         for frame in 0..self.lower.len() {
             let mut region: Vec<[u8; 4]> = (0..bw * bh).map(|at| self.lower[frame].get(x0 + at % bw, y0 + at / bw)).collect();
-            shaded(&mut region, &part, &workshop.ramps);
+            shaded(&mut region, &part, ramps);
             for (at, mut rgba) in region.into_iter().enumerate() {
                 let (px, py) = (x0 + at % bw, y0 + at / bw);
                 if mask.cells[at] {
@@ -343,12 +344,12 @@ impl Place {
 
     /// A place of the game under all, at x, y, as it is: its layers, its
     /// colours that change with time, its walls (on the grid of 8).
-    pub(super) fn lay_level(&mut self, workshop: &Workshop, level: i64, x: i64, y: i64) -> Result<(), Diagnostic> {
-        let source = workshop.source(level)?;
+    pub(crate) fn lay_level(&mut self, game: &Game, level: i64, x: i64, y: i64) -> Result<(), Diagnostic> {
+        let source = game.source(level)?;
         let laying = self.new_laying();
-        self.lay(workshop, Layer::Lower, Laid { frames: &source.frames, index: source.indices.as_ref(), level }, (x, y), laying)?;
+        self.lay(game, Layer::Lower, Laid { frames: &source.frames, index: source.indices.as_ref(), level }, (x, y), laying)?;
         if !source.upper.is_empty() {
-            self.lay(workshop, Layer::Upper, Laid { frames: &source.upper, index: source.upper_indices.as_ref(), level }, (x, y), laying)?;
+            self.lay(game, Layer::Upper, Laid { frames: &source.upper, index: source.upper_indices.as_ref(), level }, (x, y), laying)?;
         }
         if let Some(walls) = &source.walls {
             let (dx, dy) = (x.div_euclid(TILE as i64), y.div_euclid(TILE as i64));
@@ -365,42 +366,18 @@ impl Place {
     }
 
     /// Holes in its lower layer filled with its ground (`fill_holes`).
-    pub(super) fn fill_holes(&mut self, holes: &Mask) {
+    pub(crate) fn fill_holes(&mut self, holes: &Mask) {
         fill_holes(&mut self.lower, &mut self.lower_index, holes);
-    }
-
-    /// A dungeon's floor under all, from its top left corner: its picture in
-    /// every frame, its colours that change with time as they are, its walls.
-    pub(super) fn lay_room(&mut self, made: &crate::room::Laid) {
-        let (w, h) = (made.picture.w.min(self.decor.width), made.picture.h.min(self.decor.height));
-        for frame in 0..self.lower.len() {
-            for y in 0..h {
-                for x in 0..w {
-                    self.lower[frame].set(x, y, made.picture.get(x, y));
-                    self.lower_index[frame].set(x, y, made.indices.get(x, y));
-                }
-            }
-        }
-        // (Its palettes keep their numbers: what each pixel shows is the tileset's.)
-        for (palette, cycle) in &made.cycles {
-            self.slots.push(((-1000 - made.tileset, *palette), *palette));
-            self.cycles.push((*palette, cycle.clone()));
-        }
-        for row in 0..made.walls.h.min(self.walls.h) {
-            for column in 0..made.walls.w.min(self.walls.w) {
-                self.walls.set(column, row, made.walls.get(column, row));
-            }
-        }
     }
 
     /// One of our own pictures at x, y, as it is (never made larger): over
     /// the ground (`ground`, `objects`) or before who passes (`over`); no
     /// wall of its own (`wall` says where one may not walk).
-    pub(super) fn lay_picture(&mut self, workshop: &Workshop, pictures: &[Picture], x: i64, y: i64, owner: i32, layer: Option<&str>) -> Result<(), Diagnostic> {
+    pub(crate) fn lay_picture(&mut self, game: &Game, pictures: &[Picture], x: i64, y: i64, owner: i32, layer: Option<&str>) -> Result<(), Diagnostic> {
         let laying = self.new_laying();
         let on = if layer == Some("over") { Layer::Upper } else { Layer::Lower };
         let picture = &pictures[0];
-        let seen = self.lay(workshop, on, Laid { frames: pictures, index: None, level: -1 }, (x, y), laying)?;
+        let seen = self.lay(game, on, Laid { frames: pictures, index: None, level: -1 }, (x, y), laying)?;
         if let Some((x0, y0, _, _)) = self.clip(x, y, picture.w, picture.h) {
             for by in 0..seen.h {
                 for bx in 0..seen.w {
@@ -415,9 +392,9 @@ impl Place {
 
     /// A piece at x, y: its shade, its lower and upper layers (or all on one,
     /// `layer`), its walls.
-    pub(super) fn lay_cut(&mut self, workshop: &Workshop, cut: &Cut, x: i64, y: i64, owner: i32, layer: Option<&str>) -> Result<(), Diagnostic> {
+    pub(crate) fn lay_cut(&mut self, (game, ramps): (&Game, &Ramps), cut: &Cut, x: i64, y: i64, owner: i32, layer: Option<&str>) -> Result<(), Diagnostic> {
         let laying = self.new_laying();
-        self.shade(workshop, &cut.shade, x, y);
+        self.shade(ramps, &cut.shade, x, y);
         let (mut lower, mut upper) = (cut.lower.clone(), cut.upper.clone());
         let (mut lower_index, mut upper_index) = (cut.lower_index.as_ref(), cut.upper_index.as_ref());
         if let Some(layer) = layer {
@@ -427,8 +404,8 @@ impl Place {
             (lower_index, upper_index) = (None, None);
         }
         let level = cut.level;
-        let seen_lower = self.lay(workshop, Layer::Lower, Laid { frames: &lower, index: lower_index, level }, (x, y), laying)?;
-        let seen_upper = self.lay(workshop, Layer::Upper, Laid { frames: &upper, index: upper_index, level }, (x, y), laying)?;
+        let seen_lower = self.lay(game, Layer::Lower, Laid { frames: &lower, index: lower_index, level }, (x, y), laying)?;
+        let seen_upper = self.lay(game, Layer::Upper, Laid { frames: &upper, index: upper_index, level }, (x, y), laying)?;
         let (w, h) = (cut.solid.w, cut.solid.h);
         let Some((x0, y0, x1, y1)) = self.clip(x, y, w, h) else {
             return Ok(());
@@ -472,7 +449,7 @@ fn merged(cut: &Cut) -> Vec<Picture> {
         .collect()
 }
 
-pub(super) fn lcm(numbers: &[usize]) -> usize {
+pub(crate) fn lcm(numbers: &[usize]) -> usize {
     fn gcd(a: usize, b: usize) -> usize {
         if b == 0 { a } else { gcd(b, a % b) }
     }

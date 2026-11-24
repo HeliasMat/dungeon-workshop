@@ -15,12 +15,14 @@ use super::canvas::{Canvas, LETTER_HIGH, Rgb};
 use super::{game_picture, sheet_path};
 use crate::build::Builder;
 use crate::catalogue::{KINDS, Level, Piece};
-use crate::cut::{Cut, cut};
+use crate::cut::cut;
 use crate::fault::Diagnostic;
 use crate::lang::parse;
 use crate::matte::shaded;
+use crate::piece::Cut;
 use crate::pixels::{Grid, Mask, Rgba, TILE, border, component, has, key_of, unique};
-use crate::weave::{Workshop, named_colours, seen_in, shadow_colours};
+use crate::weave::shadow_colours;
+use crate::workshop::{Workshop, named_colours, seen_in};
 
 /// The grey between the two halves, the grid on them, the labels.
 const GAP: Rgb = [128; 3];
