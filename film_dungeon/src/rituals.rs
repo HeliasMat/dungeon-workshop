@@ -3,12 +3,12 @@
 use engine::{Pose, Who};
 use glam::Vec2;
 
-use super::said::told_or_logged;
-use crate::emit;
-use crate::film::Film;
-use crate::spots::formations::on_rang;
-use crate::verbs::{Line, Word};
-use crate::words::plain;
+use film_core::emit;
+use film_core::film::Film;
+use film_core::spots::formations::on_rang;
+use film_core::verbs::{Line, Word};
+use film_core::words::plain;
+use film_speech::said::told_or_logged;
 
 pub const WORDS: &[Word] = &[
     Word::new("sleep", &["who:pokemon"], "pose sleep, status sleep").does(dort),
@@ -30,7 +30,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("rituals", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("rituals", WORDS);
 
 fn meal(film: &mut Film, who: &[String]) {
     // (Dinner is called; each goes to a place where the game's scenes seat
@@ -66,7 +66,7 @@ fn meal(film: &mut Film, who: &[String]) {
 /// from the front only (his walk, his cast and his pull all round).
 fn faces_us(film: &mut Film, who: &str) {
     // (The engine turns him to the first way he is painted in by itself.)
-    if crate::names::fisher(film, who) {
+    if film_core::names::fisher(film, who) {
         film.on(who, |who| emit::views(who, vec![engine::Direction::Down]));
     }
 }
@@ -112,8 +112,8 @@ fn rank(film: &mut Film, line: &Line) -> bool {
     let args = &line.args;
     // (`rank pokepals gold`: the team rises to the game's rank.)
     if let Some(team) = args.word("team") {
-        let team = crate::screen::capitalized(&plain(team));
-        let rank = args.words("rank").iter().map(|word| crate::screen::capitalized(&plain(word))).collect::<Vec<_>>().join(" ");
+        let team = film_core::screen::capitalized(&plain(team));
+        let rank = args.words("rank").iter().map(|word| film_core::screen::capitalized(&plain(word))).collect::<Vec<_>>().join(" ");
         film.beat(emit::jingle(7));
         told_or_logged(film, &format!("Team {team} reached the [CS:Y]{rank} Rank[CR]!"));
         return true;

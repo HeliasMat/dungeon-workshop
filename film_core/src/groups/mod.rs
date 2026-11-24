@@ -15,10 +15,7 @@
 pub mod aura;
 pub mod crowds;
 pub mod game;
-pub mod heard;
 pub mod items;
-pub mod rituals;
-pub mod said;
 pub mod story;
 pub mod things;
 pub mod timing;

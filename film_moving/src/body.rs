@@ -28,7 +28,7 @@ fn waited(film: &mut Film, line: &Line) {
     let args = &line.args;
     let those: Vec<String> = args.words("who").iter().map(|one| plain(one)).collect();
     if args.has("sound") {
-        film_core::groups::heard::waited_sound(film, line);
+        film_speech::heard::waited_sound(film, line);
     } else if args.has("music") {
         if film_core::groups::timing::music_known(film, line.number, "wait music") {
             film.beat(emit::wait_reached(engine::MUSIC_CLOCK, f64::from(args.frames("d").unwrap_or_default())));

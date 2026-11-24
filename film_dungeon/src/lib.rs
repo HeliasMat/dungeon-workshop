@@ -17,6 +17,7 @@ use film_core::verbs::{Line, Word};
 use film_core::words::plain;
 
 pub mod guild;
+pub mod rituals;
 mod state;
 pub use state::DungeonState;
 mod events;

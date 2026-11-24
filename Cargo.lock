@@ -1140,6 +1140,7 @@ dependencies = [
  "film_fights",
  "film_fishing",
  "film_moving",
+ "film_speech",
  "film_view",
  "glam",
  "language",
@@ -1153,6 +1154,7 @@ version = "0.2.0"
 dependencies = [
  "engine",
  "film_core",
+ "film_speech",
  "scenes",
 ]
 
@@ -1176,7 +1178,9 @@ version = "0.2.0"
 dependencies = [
  "engine",
  "film_core",
+ "film_speech",
  "film_view",
+ "glam",
  "scenes",
 ]
 
@@ -1188,6 +1192,7 @@ dependencies = [
  "engine",
  "film_core",
  "film_dungeon",
+ "film_speech",
  "film_view",
  "rules",
  "scenes",
@@ -1211,6 +1216,16 @@ dependencies = [
  "engine",
  "film_acting",
  "film_core",
+ "film_speech",
+]
+
+[[package]]
+name = "film_speech"
+version = "0.2.0"
+dependencies = [
+ "engine",
+ "film_core",
+ "scenes",
 ]
 
 [[package]]

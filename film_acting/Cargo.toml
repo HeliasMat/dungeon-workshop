@@ -12,6 +12,7 @@ publish.workspace = true
 [dependencies]
 engine = { path = "../engine" }
 film_core = { path = "../film_core" }
+film_speech = { path = "../film_speech" }
 scenes = { path = "../scenes" }
 
 [lints]

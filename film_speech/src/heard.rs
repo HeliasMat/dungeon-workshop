@@ -3,13 +3,13 @@
 //! side, louder, higher, looped, by a name), ambients beside each other,
 //! and each stopped or faded by its name.
 
-use crate::film::Film;
-use crate::verbs::{Line, Names, Word};
-use crate::words::{digits, engine_word, heard_word, plain};
 use engine::{Beat, Frames, MoveId, Played, Side, SongId, SoundBeat, SoundId, SoundOf};
+use film_core::film::Film;
+use film_core::verbs::{Line, Names, Word};
+use film_core::words::{digits, engine_word, heard_word, plain};
 use scenes::vocabulary::POKEMON;
 
-use crate::emit;
+use film_core::emit;
 
 pub const WORDS: &[Word] = &[
     Word::new(
@@ -47,7 +47,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("heard", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("heard", WORDS);
 
 /// The game's little tunes by what its scenes play them for (its scripts'
 /// numbers): an item received, a treasure obtained, a reward, a new place
@@ -173,7 +173,7 @@ pub(crate) fn sound_named(film: &mut Film, words: &[String], number: usize) -> O
     let hidden = |film: &mut Film, what: &str| {
         film.remark(
             number,
-            format!("“{name}” is {what} and a sound of ours ({}/{name}.wav): the game's comes first; rename the file", crate::tables::OWN_SOUNDS),
+            format!("“{name}” is {what} and a sound of ours ({}/{name}.wav): the game's comes first; rename the file", film_core::tables::OWN_SOUNDS),
         );
     };
     match found(film, words, own) {
@@ -370,13 +370,16 @@ fn name_said(line: &Line) -> String {
 mod tests {
     use super::*;
 
+    /// The language with no group of words but the text's and the engine's.
+    static BARE: film_core::Lexicon = film_core::Lexicon::new(&[]);
+
     fn words(text: &str) -> Vec<String> {
         text.split_whitespace().map(str::to_string).collect()
     }
 
     #[test]
     fn how_a_sound_plays_is_read_past_its_name() {
-        let film = Film::with(&crate::verbs::BARE, Default::default());
+        let film = Film::with(&BARE, Default::default());
         let (name, how) = name_and_how(&film, &words("soft wind left volume 0.5 pitch -3 loop as wind in 2s"));
         assert_eq!(name, words("soft wind"));
         assert_eq!(how.pan, Some(Side::At(-1.0)));
@@ -390,7 +393,7 @@ mod tests {
 
     #[test]
     fn a_name_is_the_games_sound_first_then_a_moves_then_ours() {
-        let film = Film::with(&crate::verbs::BARE, Default::default());
+        let film = Film::with(&BARE, Default::default());
         let own = vec!["flash".to_string(), "my_noise".to_string()];
         let game = POKEMON.sound("flash").expect("a sound of the game");
         assert_eq!(found(&film, &words("flash"), &own), Found::Game(game, true));

@@ -281,7 +281,7 @@ fn narrated(film: &mut Film, line: &Line) -> bool {
             film.wait(frames as i64);
         }
         "sign" => film.narrate(&film_core::screen::on_screen(said)),
-        _ => film_core::groups::said::told_or_logged(film, said),
+        _ => film_speech::said::told_or_logged(film, said),
     }
     true
 }

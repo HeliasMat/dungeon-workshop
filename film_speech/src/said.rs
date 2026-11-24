@@ -4,11 +4,11 @@
 use engine::Voice;
 use scenes::fight::said;
 
-use crate::emit;
-use crate::film::Film;
-use crate::screen::in_a_bubble;
-use crate::verbs::{Line, Names, Word};
-use crate::words::{EMOTION_SOUNDS, EMOTIONS, of, plain};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::screen::in_a_bubble;
+use film_core::verbs::{Line, Names, Word};
+use film_core::words::{EMOTION_SOUNDS, EMOTIONS, of, plain};
 
 pub const WORDS: &[Word] = &[
     Word::new("bubble", &["who:pokemon text..."], "bubble")
@@ -32,7 +32,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a group of the language (`Lexicon`).
-pub const GROUP: crate::verbs::Group = crate::verbs::Group::new("said", WORDS);
+pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("said", WORDS);
 
 /// What a crowd says when it chatters: short, of no one's story.
 const CHATTER: [&str; 12] = ["!", "...", "?", "Oh!", "Hm.", "Ha ha!", "Yes!", "No way!", "Wow...", "Look!", "Hey!", "Really?"];
@@ -78,7 +78,7 @@ fn bubble_said(film: &mut Film, line: &Line) -> bool {
         Some("think") => Voice::Thought,
         _ => Voice::Said,
     };
-    film.bubble(&crate::verbs::who_said(line), &in_a_bubble(&said), voice);
+    film.bubble(&film_core::verbs::who_said(line), &in_a_bubble(&said), voice);
     true
 }
 
@@ -114,7 +114,7 @@ fn box_said(film: &mut Film, line: &Line) {
 
 /// `choice A | B`, then `answer 1` ... `answer 2` ... `end`.
 fn choice_said(film: &mut Film, line: &Line) -> bool {
-    let crate::ir::Shape::Choice { options } = &line.shape else {
+    let film_core::ir::Shape::Choice { options } = &line.shape else {
         return false;
     };
     let options = film.names_in(&options.join("|"));
@@ -133,7 +133,7 @@ fn emotion_said(film: &mut Film, line: &Line) -> bool {
     if line.args.has("d") {
         return false;
     }
-    let (who, kind) = (crate::verbs::who_said(line), plain(line.args.word("kind").unwrap_or_default()));
+    let (who, kind) = (film_core::verbs::who_said(line), plain(line.args.word("kind").unwrap_or_default()));
     match of(&EMOTIONS, &kind) {
         Some(shown) => emote(film, &who, &kind, shown),
         None => {

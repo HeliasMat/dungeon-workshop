@@ -13,6 +13,7 @@ publish.workspace = true
 engine = { path = "../engine" }
 film_acting = { path = "../film_acting" }
 film_core = { path = "../film_core" }
+film_speech = { path = "../film_speech" }
 
 [lints]
 workspace = true

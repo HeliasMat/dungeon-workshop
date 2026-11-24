@@ -8,10 +8,10 @@ use engine::Cam;
 use scenes::vocabulary::POKEMON;
 
 use film_core::film::Film;
-use film_core::groups::said::told_or_logged;
 use film_core::verbs::{Line, Word};
 use film_core::words::{digits, plain};
 use film_core::{emit, fields};
+use film_speech::said::told_or_logged;
 
 mod state;
 pub use state::Combat;

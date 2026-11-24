@@ -14,6 +14,7 @@ assets = { path = "../assets" }
 engine = { path = "../engine" }
 film_core = { path = "../film_core" }
 film_view = { path = "../film_view" }
+film_speech = { path = "../film_speech" }
 film_dungeon = { path = "../film_dungeon" }
 rules = { path = "../rules" }
 scenes = { path = "../scenes" }
