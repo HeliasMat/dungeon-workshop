@@ -25,11 +25,9 @@ fn wrong(text: &str) -> String {
 
 #[test]
 fn reads_a_place() {
-    let made = parse(
-        "# a comment\ndecor: cove 64 128\nlevel 470\nname The Cove\ncenter 32 40\n\nground beach_sand\nput beach_rock 8 16, 24 32\n",
-        "cove.decor",
-    )
-    .expect("read");
+    let made =
+        parse("# a comment\ndecor: cove 64 128\nlevel 470\nname The Cove\ncenter 32 40\n\nground beach_sand\nput beach_rock 8 16, 24 32\n", "cove.decor")
+            .expect("read");
     assert_eq!(
         (made.name.as_str(), made.width, made.height, made.level, made.shown.as_deref(), made.middle),
         ("cove", 64, 128, Some(470), Some("The Cove"), Some((32, 40)))
