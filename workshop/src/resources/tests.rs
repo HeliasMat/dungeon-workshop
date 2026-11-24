@@ -147,7 +147,7 @@ fn the_backdrops_lines_are_good() {
 #[test]
 fn the_tilesets_lines_are_good() {
     let session = workshop_base::session::Session::for_tests();
-    let Some(offered) = crate::dungeon::offered(&session) else { return };
+    let Some(offered) = workshop_dungeon::offered(&session) else { return };
     let known = game::dungeon_check::Known::of(&offered.book);
     for line in listed(super::Shelf::Tilesets).iter().filter_map(super::Item::line) {
         let dungeon = game::dungeon_check::Dungeon::read(&format!("name: Tried\nfloors: 3\n{line}\n"));

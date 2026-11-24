@@ -290,7 +290,7 @@ pub enum Asked {
     Film(PathBuf),
     Decor(PathBuf),
     /// A dungeon or a boss fight, to open in the Dungeon space.
-    Dungeon(crate::dungeons::Open),
+    Dungeon(workshop_dungeon::dungeons::Open),
 }
 
 /// The Resources space as the window keeps it.

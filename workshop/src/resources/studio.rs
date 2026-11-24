@@ -112,7 +112,7 @@ pub fn studio(ui: &mut egui::Ui, resources: &mut Resources) {
         crate::resources::Maker::Picture(painting) => workshop_picture::paint(ui, painting),
         crate::resources::Maker::Sound(making) => workshop_sound::make_sound(ui, making, &mut resources.audio, resources.volume),
         crate::resources::Maker::Music(music) => workshop_music::make_music(ui, music, &mut resources.audio, resources.volume),
-        crate::resources::Maker::Dungeon(dungeon) => crate::dungeon::make_dungeon(ui, dungeon, &mut resources.audio, resources.volume),
+        crate::resources::Maker::Dungeon(dungeon) => workshop_dungeon::make_dungeon(ui, dungeon, &mut resources.audio, resources.volume),
     };
     match done {
         Some(workshop_base::done::Done::Picture(word)) => {
@@ -126,9 +126,9 @@ pub fn studio(ui: &mut egui::Ui, resources: &mut Resources) {
         }
         Some(workshop_base::done::Done::Fight(word)) => {
             let fight = if word.is_empty() {
-                crate::dungeon::DungeonMaking::new_fight(&resources.session, "new_fight")
+                workshop_dungeon::DungeonMaking::new_fight(&resources.session, "new_fight")
             } else {
-                crate::dungeon::DungeonMaking::open_fight(&resources.session, &word)
+                workshop_dungeon::DungeonMaking::open_fight(&resources.session, &word)
             };
             resources.open_making(crate::resources::Maker::Dungeon(Box::new(fight)));
         }

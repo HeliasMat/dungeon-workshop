@@ -169,7 +169,7 @@ pub struct Work {
     /// The Resources space's own.
     pub resources: crate::resources::Resources,
     /// The Dungeon space's own.
-    pub dungeons: crate::dungeons::Dungeons,
+    pub dungeons: workshop_dungeon::dungeons::Dungeons,
     /// The Game space's own.
     pub games: crate::games::Games,
     /// The Emulator space's own.
@@ -220,7 +220,7 @@ impl App {
             scripts: crate::script::Scripts::new(&session, context),
             films: crate::films::Films::new(&session, context),
             resources: crate::resources::Resources::new(&session, context),
-            dungeons: crate::dungeons::Dungeons::new(&session),
+            dungeons: workshop_dungeon::dungeons::Dungeons::new(&session),
             games: crate::games::Games::new(&session),
             emulate: crate::emulate::Emulate::new(&session),
             session,
@@ -404,7 +404,7 @@ impl App {
             }
             Space::Decor => self.decor_tools(ui),
             Space::Film => self.film_tools(ui),
-            Space::Dungeon => crate::dungeons::tabs(ui, &mut self.work.dungeons),
+            Space::Dungeon => workshop_dungeon::dungeons::tabs(ui, &mut self.work.dungeons),
             Space::Game => crate::games::tools(ui, &mut self.work.games),
             Space::Emulator => crate::emulate::tools(ui, &mut self.work.emulate, self.work.film.as_deref()),
             Space::Assets if self.work.resources.creating() => crate::resources::making_tabs(ui, &mut self.work.resources),
@@ -462,7 +462,7 @@ impl App {
     pub fn go_to(&mut self, going: Going) {
         match going {
             Going::Dungeon(word, fight) => {
-                self.work.dungeons.open(if fight { crate::dungeons::Open::Fight(word) } else { crate::dungeons::Open::Dungeon(word) });
+                self.work.dungeons.open(if fight { workshop_dungeon::dungeons::Open::Fight(word) } else { workshop_dungeon::dungeons::Open::Dungeon(word) });
                 self.space = Space::Dungeon;
             }
             Going::Decor(path) => {
@@ -494,7 +494,7 @@ impl App {
                 }
             }
             crate::games::Asked::DungeonFile(path) => {
-                self.work.dungeons.open(crate::dungeons::Open::File(path));
+                self.work.dungeons.open(workshop_dungeon::dungeons::Open::File(path));
                 self.space = Space::Dungeon;
             }
         }
@@ -1052,7 +1052,7 @@ impl eframe::App for App {
         // (Something being made: on the whole window, its tabs in the tools bar; the panels when it is put aside.)
         if self.space == Space::Dungeon {
             egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::PANEL).inner_margin(egui::Margin::symmetric(4, 4))).show(context, |ui| {
-                crate::dungeons::page(ui, &mut self.work.dungeons);
+                workshop_dungeon::dungeons::page(ui, &mut self.work.dungeons);
             });
         } else if self.space == Space::Game {
             egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::PANEL)).show(context, |ui| {

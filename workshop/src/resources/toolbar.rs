@@ -69,12 +69,12 @@ fn create_menu(ui: &mut egui::Ui, resources: &mut Resources) {
         }
     }
     if ui.button("A Dungeon…").on_hover_text("in the Dungeon space: turn-based floors, its Pokémon, its items; in a film: `dungeon <word>`").clicked() {
-        resources.asked = Some(Asked::Dungeon(crate::dungeons::Open::NewDungeon));
+        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::NewDungeon));
         ui.close();
     }
     if ui.button("A Boss Fight…").on_hover_text("in the Dungeon space: an arena, a boss, its guards, its phases; a dungeon names it: `fight: <word>`").clicked()
     {
-        resources.asked = Some(Asked::Dungeon(crate::dungeons::Open::NewFight));
+        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::NewFight));
         ui.close();
     }
     ui.separator();

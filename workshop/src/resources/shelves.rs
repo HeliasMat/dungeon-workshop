@@ -181,7 +181,7 @@ fn sounds(session: &Session) -> Vec<Item> {
 
 /// The dungeons written: each its name, floors, look, those met; the first of them pictured.
 fn dungeons(session: &Session) -> Vec<Item> {
-    crate::dungeon::summaries(session)
+    workshop_dungeon::summaries(session)
         .into_iter()
         .map(|dungeon| {
             let floors = if dungeon.floors == 0 {
@@ -200,7 +200,7 @@ fn dungeons(session: &Session) -> Vec<Item> {
 
 /// The boss fights: each dungeon that has one, by its boss.
 fn bosses(session: &Session) -> Vec<Item> {
-    crate::dungeon::fight_summaries(session)
+    workshop_dungeon::fight_summaries(session)
         .into_iter()
         .filter_map(|dungeon| {
             let boss = dungeon.boss?;

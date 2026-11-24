@@ -4231,7 +4231,6 @@ version = "0.2.0"
 dependencies = [
  "assets",
  "decor",
- "dive",
  "eframe",
  "egui_dock",
  "emulator",
@@ -4248,6 +4247,7 @@ dependencies = [
  "spritecollab",
  "stage_view",
  "workshop_base",
+ "workshop_dungeon",
  "workshop_music",
  "workshop_picture",
  "workshop_sound",
@@ -4267,6 +4267,24 @@ dependencies = [
  "shell",
  "spritecollab",
  "stage_view",
+]
+
+[[package]]
+name = "workshop_dungeon"
+version = "0.2.0"
+dependencies = [
+ "assets",
+ "decor",
+ "dive",
+ "eframe",
+ "film",
+ "game",
+ "glam",
+ "image",
+ "media",
+ "rules",
+ "shell",
+ "workshop_base",
 ]
 
 [[package]]

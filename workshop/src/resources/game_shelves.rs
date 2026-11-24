@@ -28,8 +28,8 @@ pub(super) const WEATHERS: [(&str, &str, &str); 7] = [
 ];
 
 /// The game's tables (`dungeons.bin`), if they are there.
-fn book(session: &Session) -> Option<std::sync::Arc<crate::dungeon::Offered>> {
-    crate::dungeon::offered(session)
+fn book(session: &Session) -> Option<std::sync::Arc<workshop_dungeon::Offered>> {
+    workshop_dungeon::offered(session)
 }
 
 /// The effects the game has (`effects.txt`), by their numbers.

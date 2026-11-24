@@ -13,7 +13,7 @@ const MAX_STAT: i32 = 255;
 
 /// The species a Pokémon of the project is: its own number, or (a variant) the one it is a variant of.
 pub fn species_of(session: &workshop_base::session::Session, number: i64) -> Option<u16> {
-    let offered = crate::dungeon::offered(session)?;
+    let offered = crate::offered(session)?;
     let book = &offered.book;
     let number = u16::try_from(number).ok()?;
     if book.species(number).is_some_and(|species| !species.growth.is_empty()) {
@@ -29,7 +29,7 @@ fn quoted(said: &str) -> String {
 
 /// The table, as text.
 pub fn table(session: &workshop_base::session::Session, species: u16) -> Result<String, String> {
-    let offered = crate::dungeon::offered(session).ok_or("the game's tables are missing (dungeons.bin: extractor)")?;
+    let offered = crate::offered(session).ok_or("the game's tables are missing (dungeons.bin: extractor)")?;
     let book = &offered.book;
     let kind = book.species(species).ok_or_else(|| format!("no species No. {species} in the game's tables"))?;
     if kind.growth.is_empty() {

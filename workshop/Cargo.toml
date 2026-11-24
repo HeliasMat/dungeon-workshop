@@ -15,7 +15,6 @@ publish.workspace = true
 [dependencies]
 assets = { path = "../assets" }
 decor = { path = "../decor" }
-dive = { path = "../dive" }
 emulator = { path = "../emulator" }
 engine = { path = "../engine" }
 film = { path = "../film" }
@@ -28,6 +27,7 @@ shell = { path = "../shell" }
 spritecollab = { path = "../spritecollab" }
 stage_view = { path = "../stage_view" }
 workshop_base = { path = "../workshop_base" }
+workshop_dungeon = { path = "../workshop_dungeon" }
 workshop_music = { path = "../workshop_music" }
 workshop_picture = { path = "../workshop_picture" }
 workshop_sound = { path = "../workshop_sound" }

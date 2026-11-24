@@ -41,7 +41,7 @@ fn dungeon_buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {
             .on_hover_text("open it in the Dungeon space (and try it)")
             .clicked()
     {
-        resources.asked = Some(Asked::Dungeon(crate::dungeons::Open::Dungeon(item.word.clone())));
+        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::Dungeon(item.word.clone())));
     }
     if item.shelf == Shelf::Bosses
         && ui
@@ -49,7 +49,7 @@ fn dungeon_buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {
             .on_hover_text("open it in the Dungeon space")
             .clicked()
     {
-        resources.asked = Some(Asked::Dungeon(crate::dungeons::Open::Fight(item.word.clone())));
+        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::Fight(item.word.clone())));
     }
 }
 

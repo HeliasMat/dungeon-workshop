@@ -2,6 +2,12 @@
 //! look of a game dungeon's floors, its music, the Pokémon met there and what
 //! lies there, written as `library/dungeons/<word>.dungeon` (see
 //! `rules::own`); and tried at once, played in the editor with the keys.
+//!
+//! A crate of Dungeon Workshop: the editor of one dungeon or boss fight
+//! (`DungeonMaking`, drawn by `make_dungeon`), the Dungeon space that lists
+//! them all (`dungeons`), a species exported as CSV (`level_csv`). It uses
+//! `workshop_base` (the session, the look, safe saves) and the game's crates
+//! (`rules`, `game`, `dive`...).
 
 use std::collections::HashMap;
 use std::time::Instant;
@@ -20,11 +26,13 @@ mod arena;
 mod check;
 mod choosers;
 mod dungeon_columns;
+pub mod dungeons;
 mod editor;
 mod fight_columns;
 mod floor;
 mod form;
 mod layout;
+pub mod level_csv;
 mod lists;
 mod state;
 #[cfg(test)]
@@ -35,7 +43,7 @@ pub use lists::{Summary, fight_summaries, fight_summaries_in, summaries, summari
 
 /// What the game's tables offer: the dungeons whose floors can be taken,
 /// the Pokémon met in its dungeons, the items, its songs.
-pub(crate) struct Offered {
+pub struct Offered {
     looks: Vec<(u16, String, usize)>,
     species: Vec<(u16, String)>,
     items: Vec<String>,
@@ -46,12 +54,12 @@ pub(crate) struct Offered {
     /// Who can be of a team: those the game starts with or its dungeons meet.
     able: Vec<(u16, String)>,
     /// The game's tables, for what the rules say of a dungeon; what they offer, for its check.
-    pub(crate) book: Book,
+    pub book: Book,
     known: game::dungeon_check::Known,
 }
 
 /// What the editor offers, read from the session's data once (none without `dungeons.bin`).
-pub(crate) fn offered(session: &workshop_base::session::Session) -> Option<std::sync::Arc<Offered>> {
+pub fn offered(session: &workshop_base::session::Session) -> Option<std::sync::Arc<Offered>> {
     let data = session.data().to_string();
     (*session.kept.get(|| read_offered(&data).map(std::sync::Arc::new))).clone()
 }

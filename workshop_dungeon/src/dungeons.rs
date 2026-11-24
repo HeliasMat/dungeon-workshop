@@ -11,7 +11,7 @@ use workshop_base::session::Session;
 use eframe::egui::{self, RichText, Sense, vec2};
 use shell::sound::Hears;
 
-use crate::dungeon::{DungeonMaking, Summary};
+use crate::{DungeonMaking, Summary};
 use workshop_base::done::Done;
 use workshop_base::theme;
 
@@ -233,7 +233,7 @@ pub fn page(ui: &mut egui::Ui, dungeons: &mut Dungeons) {
     let Some(making) = dungeons.open.get_mut(at) else {
         return;
     };
-    match crate::dungeon::make_dungeon(ui, making, &mut dungeons.audio, dungeons.volume) {
+    match crate::make_dungeon(ui, making, &mut dungeons.audio, dungeons.volume) {
         Some(Done::Fight(word)) => dungeons.open(if word.is_empty() { Open::NewFight } else { Open::Fight(word) }),
         Some(Done::Closed) => {
             if dungeons.open[at].saved || dungeons.closing == Some(at) {
@@ -254,11 +254,11 @@ fn list(ui: &mut egui::Ui, dungeons: &mut Dungeons) {
         let (mut written, mut fights) = (Vec::new(), Vec::new());
         // (The open game's own first, then the shared library's.)
         if let Some(game) = dungeons.game_project() {
-            written.extend(crate::dungeon::summaries_in(session, &game));
-            fights.extend(crate::dungeon::fight_summaries_in(session, &game));
+            written.extend(crate::summaries_in(session, &game));
+            fights.extend(crate::fight_summaries_in(session, &game));
         }
-        written.extend(crate::dungeon::summaries(session));
-        fights.extend(crate::dungeon::fight_summaries(session));
+        written.extend(crate::summaries(session));
+        fights.extend(crate::fight_summaries(session));
         dungeons.lists = Some((Instant::now(), written, fights));
     }
     let game_title = dungeons.game.as_ref().map(|(_, title)| title.clone()).unwrap_or_default();

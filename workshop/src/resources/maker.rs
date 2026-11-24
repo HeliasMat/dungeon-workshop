@@ -9,7 +9,7 @@ pub enum Maker {
     Picture(Box<Painting>),
     Sound(Box<SoundMaking>),
     Music(Box<workshop_music::MusicMaking>),
-    Dungeon(Box<crate::dungeon::DungeonMaking>),
+    Dungeon(Box<workshop_dungeon::DungeonMaking>),
 }
 
 impl Maker {
@@ -19,10 +19,10 @@ impl Maker {
             "animation" => Maker::Picture(Box::new(Painting::new(session, "new_animation", 32, 32, 4))),
             "sound" => Maker::Sound(Box::new(SoundMaking::new(session, "new_sound"))),
             "music" => Maker::Music(Box::new(workshop_music::MusicMaking::new(session, "new_music"))),
-            "dungeon" => Maker::Dungeon(Box::new(crate::dungeon::DungeonMaking::new(session, "new_dungeon"))),
-            _ if kind.starts_with("dungeon:") => Maker::Dungeon(Box::new(crate::dungeon::DungeonMaking::open(session, &kind["dungeon:".len()..]))),
-            "fight" => Maker::Dungeon(Box::new(crate::dungeon::DungeonMaking::new_fight(session, "new_fight"))),
-            _ if kind.starts_with("fight:") => Maker::Dungeon(Box::new(crate::dungeon::DungeonMaking::open_fight(session, &kind["fight:".len()..]))),
+            "dungeon" => Maker::Dungeon(Box::new(workshop_dungeon::DungeonMaking::new(session, "new_dungeon"))),
+            _ if kind.starts_with("dungeon:") => Maker::Dungeon(Box::new(workshop_dungeon::DungeonMaking::open(session, &kind["dungeon:".len()..]))),
+            "fight" => Maker::Dungeon(Box::new(workshop_dungeon::DungeonMaking::new_fight(session, "new_fight"))),
+            _ if kind.starts_with("fight:") => Maker::Dungeon(Box::new(workshop_dungeon::DungeonMaking::open_fight(session, &kind["fight:".len()..]))),
             _ => Maker::Picture(Box::new(Painting::new(session, "new_image", 32, 32, 1))),
         }
     }
