@@ -1,3 +1,9 @@
-# Building with every core ran rustc out of memory here (6 GB machine).
+# Six jobs: a 16 GB machine with 12 threads; every core at once ran rustc out of memory
+# on the old 6 GB one, so not all of them.
 [build]
-jobs = 3
+jobs = 6
+
+# Windows: the LLVM linker shipped with Rust, much faster than link.exe on the many
+# test binaries and the big programs.
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
