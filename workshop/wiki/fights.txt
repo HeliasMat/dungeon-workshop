@@ -69,9 +69,10 @@ piplup put right
 pikachu finish piplup Thunderbolt
 
 == use
-> A move out of a fight, by its name, as the game shows it: they turn to the one it is used on (or to the point), their own animation, the move's effects and sound. No one is knocked back nor hurt, nothing missed: Protect, Hypnosis, Sunny Day, a move shown off.
+> A move out of a fight, by its name, as the game shows it: they turn to the one it is used on (or to the point), their own animation, the move's effects and sound. No one is knocked back nor hurt, nothing missed: Protect, Hypnosis, Sunny Day, a move shown off. No move, or its move: one their kind learns by their level, of their own type if it can. A move their kind never learns is remarked, and plays all the same.
 scene: beach pikachu piplup
 pikachu put left
 piplup put right
-piplup use Hypnosis on pikachu
-pikachu (dizzy): So... sleepy...
+piplup use Bubble on pikachu
+pikachu (dizzy): Bubbles... everywhere...
+pikachu use its move

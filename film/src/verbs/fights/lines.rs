@@ -16,9 +16,14 @@ const USUAL_LEVEL: i32 = 10;
 
 /// The number of the monster someone is now, evolved or not.
 pub(super) fn species_of(film: &mut Film, who: &str) -> i32 {
-    let form = film.staging.evolved.iter().find(|(_, old)| *old == who).map_or(who.to_string(), |(new, _)| new.clone());
-    let code = film.actor(&form).unwrap_or_default();
+    let code = code_now(film, who);
     species(&code).and_then(|number| number.parse().ok()).unwrap_or(-1)
+}
+
+/// The code of the monster someone is now, evolved or not (none: empty).
+pub(super) fn code_now(film: &mut Film, who: &str) -> String {
+    let form = film.staging.evolved.iter().find(|(_, old)| *old == who).map_or(who.to_string(), |(new, _)| new.clone());
+    film.actor(&form).unwrap_or_default()
 }
 
 pub(super) type Sides = [Vec<String>; 2];

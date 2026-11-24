@@ -190,7 +190,7 @@ pub const WORDS: &[Planned] = &[
     // Fights
     word("Fights", "fight", "fight who... vs who... [duel|double|relay] [boss] [level n]"),
     word("Fights", "attack", "who attack Move [at target]"),
-    word("Fights", "use", "who use Move [on target|at x y]"),
+    word("Fights", "use", "who use [Move|its move] [on target|at x y]"),
     word("Fights", "evolve", "who evolve species"),
     word("Fights", "transform", "who transform into other / who transform back"),
     word("Fights", "join", "who join [team]"),

@@ -109,6 +109,46 @@ impl Film {
         species(code).and_then(|number| self.tables.weights.get(number)).copied()
     }
 
+    /// What the game's tables say of someone's kind (none: not known).
+    pub fn kind_of(&self, code: &str) -> Option<&crate::tables::Kind> {
+        species(code).and_then(|number| self.tables.kinds.get(number))
+    }
+
+    /// Whether someone's kind ever learns that move, by level or by a
+    /// machine (none: its moves are not known).
+    pub fn learns(&self, code: &str, id: u16) -> Option<bool> {
+        let kind = self.kind_of(code).filter(|kind| !kind.learnset.is_empty())?;
+        Some(kind.learnset.iter().any(|(_, known)| *known == id) || kind.machines.contains(&id))
+    }
+
+    /// A move someone's kind has learnt by that level: of its own type and
+    /// hitting if it has one, else of its type, else hitting, else any; the
+    /// last learnt of them.
+    pub fn own_move(&self, code: &str, level: i32) -> Option<u16> {
+        let kind = self.kind_of(code)?;
+        let learnt: Vec<u16> = kind.learnset.iter().filter(|(at, _)| i32::from(*at) <= level.max(1)).map(|(_, id)| *id).collect();
+        let move_kind = |id: u16| self.tables.move_kinds.get(usize::from(id)).copied().unwrap_or_default();
+        let mine = |id: u16| move_kind(id).0 != 0 && (move_kind(id).0 == kind.types.0 || move_kind(id).0 == kind.types.1);
+        let hits = |id: u16| move_kind(id).1 > 0;
+        let wanted: [&dyn Fn(u16) -> bool; 4] = [&|id| mine(id) && hits(id), &mine, &hits, &|_| true];
+        wanted.iter().find_map(|wanted| learnt.iter().rev().copied().find(|id| wanted(*id)))
+    }
+
+    /// The word of a monster by its number: its own name's, else the first.
+    pub fn word_of_number(&self, number: &str) -> Option<String> {
+        let named: Vec<(&String, &crate::tables::Named)> = self.tables.monsters.iter().filter(|(_, row)| row.0 == number).collect();
+        named.iter().find(|(word, row)| **word == plain(&row.1)).or(named.first()).map(|(word, _)| (*word).clone())
+    }
+
+    /// The next form of someone's kind, the first that evolves from it
+    /// (`evolution`): its word (none: the last of its family).
+    pub fn next_form(&self, code: &str) -> Option<String> {
+        let number: u16 = species(code)?.parse().ok()?;
+        let mut later: Vec<u16> = self.tables.kinds.iter().filter(|(_, kind)| kind.from == number).filter_map(|(at, _)| at.parse().ok()).collect();
+        later.sort();
+        later.into_iter().find_map(|at| self.word_of_number(&at.to_string()))
+    }
+
     /// Whether someone's sprite has that animation (none: its sheets are
     /// not known, a variant painted by hand, no data).
     pub fn has_animation(&self, code: &str, group: u16) -> Option<bool> {

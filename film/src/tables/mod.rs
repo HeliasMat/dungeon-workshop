@@ -123,6 +123,20 @@ impl Movement {
     }
 }
 
+/// What the game's tables say of a monster (`rules::tables::Species`),
+/// for the films: its two types (0: none), its shadow (0 small, 1
+/// middling, 2 big), its family, the monster it evolves from (0: none),
+/// the moves it learns by level and those machines teach it.
+#[derive(Clone, Debug, Default)]
+pub struct Kind {
+    pub types: (u8, u8),
+    pub shadow: Option<u8>,
+    pub family: u16,
+    pub from: u16,
+    pub learnset: Vec<(u8, u16)>,
+    pub machines: Vec<u16>,
+}
+
 /// All of the game's files a film needs.
 #[derive(Debug, Default)]
 pub struct Tables {
@@ -144,6 +158,12 @@ pub struct Tables {
     /// How heavy each monster is, by its number, from its tables
     /// (`dungeons.bin`): who wins a shove (`push`).
     pub weights: HashMap<String, u16>,
+    /// What else the game's tables say of each monster, by its number
+    /// (`dungeons.bin`): its types, shadow, family, what it evolves from,
+    /// the moves it learns.
+    pub kinds: HashMap<String, Kind>,
+    /// Each move's type and power, by its number (`dungeons.bin`).
+    pub move_kinds: Vec<(u8, i32)>,
     /// The faces each monster's portraits have, by its number (`happy` is
     /// 1), as `portraits/` holds them.
     pub portraits: HashMap<String, HashSet<u16>>,

@@ -75,6 +75,9 @@ fn act_read(film: &mut Film, sides: &Sides, args: &crate::grammar::Bound, line: 
         return None;
     }
     let chosen = film.move_said(&words, number)?;
+    if let Ok(id) = chosen.parse::<u16>() {
+        super::never_learnt(film, &who, id, number);
+    }
     if down.contains(&who) {
         film.remark(number, format!("{who} is already K.O.: this line will not be played"));
     }

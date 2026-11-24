@@ -44,8 +44,15 @@ pub const WORDS: &[Word] = &[
     .does(attacked),
     Word::new(
         "use",
-        &["who:pokemon move:thing... on target:pokemon", "who:pokemon move:thing... at x:number y:number", "who:pokemon move:thing..."],
-        "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one); no knock back, no hurt",
+        &[
+            "who:pokemon move:thing... on target:pokemon",
+            "who:pokemon move:thing... at x:number y:number",
+            "who:pokemon move:thing...",
+            "who:pokemon on target:pokemon",
+            "who:pokemon at x:number y:number",
+            "who:pokemon",
+        ],
+        "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one); no knock back, no hurt; no move, or `its move`: one his kind learns by his level, of his type if it can",
     )
     .does(used),
     Word::new("evolve", &["who:pokemon into:pokemon"], "do evolution, the game's sentence").maybe(fought_word),
@@ -185,11 +192,15 @@ fn used(film: &mut Film, line: &Line) {
     let args = &line.args;
     let who = plain(args.word("who").unwrap_or_default());
     let named = args.words("move").join(" ");
-    let Some(id) = move_id(film, &named) else {
-        let tables = film.tables.clone();
-        film.unknown(line.number, "unknown move", &named, tables.moves.keys().map(String::as_str), "");
+    let own = named.is_empty() || named.to_lowercase() == "its move";
+    let Some(id) = (if own { own_move(film, &who, line.number) } else { move_id(film, &named) }) else {
+        if !own {
+            let tables = film.tables.clone();
+            film.unknown(line.number, "unknown move", &named, tables.moves.keys().map(String::as_str), "");
+        }
         return;
     };
+    never_learnt(film, &who, id, line.number);
     let Some(user) = film.one(&who) else {
         return;
     };
@@ -213,6 +224,31 @@ fn used(film: &mut Film, line: &Line) {
     };
     film.beat(emit::uses_move(user, engine::MoveId(id), target));
     film.wait_frames((STRIKE_FRAMES as i64 + STRUCK_FRAMES) as i32, line.wait);
+}
+
+/// The level someone is at in a film: his fight's, else a fight's usual.
+const OWN_LEVEL: i32 = 30;
+
+/// `a use`, `a use its move`: a move his kind learns by his level (its
+/// `learnset`), of his own type if it can; none known: told.
+fn own_move(film: &mut Film, who: &str, number: usize) -> Option<u16> {
+    let level = film.combat.levels.get(who).copied().unwrap_or(OWN_LEVEL);
+    let code = lines::code_now(film, who);
+    let chosen = film.own_move(&code, level);
+    if chosen.is_none() {
+        film.wrong(number, format!("{who} use: the game's tables give no move of his kind (name one: {who} use Tackle)"));
+    }
+    chosen
+}
+
+/// A move someone's kind never learns (by level nor by a machine): told as
+/// a remark, the scene played all the same.
+pub(super) fn never_learnt(film: &mut Film, who: &str, id: u16, number: usize) {
+    let code = lines::code_now(film, who);
+    if film.learns(&code, id) == Some(false) {
+        let named = film.tables.moves.values().find(|row| row.0 == id.to_string()).map_or(id.to_string(), |row| row.1.clone());
+        film.remark(number, format!("{who} never learns {named} (by level nor by a machine): played all the same"));
+    }
 }
 
 /// A move of the game by its name (`Thunderbolt`, `Thunder Punch`): its number.

@@ -237,7 +237,7 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     (
         "use",
         Export::Close,
-        "as attack, the one it is used on neither knocked back nor hurt: its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target (or on itself), a small shake",
+        "as attack (a move chosen by the kind's learnset the same), the one it is used on neither knocked back nor hurt: its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target (or on itself), a small shake",
     ),
     (
         "evolve",

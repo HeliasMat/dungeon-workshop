@@ -77,7 +77,13 @@ fn a_fight_goes_on_the_films_own_course() {
 fn a_fight_stated_in_advance() {
     let film = "scene: lava_field pikachu piplup groudon rayquaza\nfight directed pikachu piplup against groudon rayquaza level 60\nhp pikachu 320\nlevel piplup 40\nknows piplup ThunderShock Iron Defense\nnumber of turns 8\npikachu ThunderShock groudon\ngroudon Earthquake all misses\npiplup Hydro Pump groudon crit\npikachu Iron Tail rayquaza -30\npiplup Last Resort groudon ko\ngroudon Protect\nrandom until the end winner piplup\nend\n";
     let (lines, problems) = engine_lines(film);
-    assert_eq!(problems, ["remark: line 12: groudon is already K.O.: this line will not be played"]);
+    assert_eq!(
+        problems,
+        [
+            "remark: line 11: piplup never learns Last Resort (by level nor by a machine): played all the same",
+            "remark: line 12: groudon is already K.O.: this line will not be played"
+        ]
+    );
     let fight = lines.iter().find(|fields| starts(fields, &["fight", "directed"])).expect("a fight");
     assert_eq!(fight[index_of(fight, "level") + 1], "60");
     assert_eq!(fight[index_of(fight, "winner") + 1], "piplup");

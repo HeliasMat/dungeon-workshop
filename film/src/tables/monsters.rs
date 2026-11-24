@@ -55,10 +55,17 @@ fn portraits(folder: &str) -> HashMap<String, HashSet<u16>> {
     found
 }
 
-/// How each monster goes about by nature (those that do not walk only) and
-/// how heavy it is, by its number, from the game's tables (`dungeons.bin`),
-/// read once a data folder (none: everyone walks, no one weighs).
-type Natures = (HashMap<String, super::Movement>, HashMap<String, u16>);
+/// How each monster goes about by nature (those that do not walk only),
+/// how heavy it is, and what else the tables say of it, by its number; each
+/// move's type and power: from the game's tables (`dungeons.bin`), read
+/// once a data folder (none: everyone walks, no one weighs).
+#[derive(Clone, Default)]
+struct Natures {
+    movements: HashMap<String, super::Movement>,
+    weights: HashMap<String, u16>,
+    kinds: HashMap<String, super::Kind>,
+    moves: Vec<(u8, i32)>,
+}
 
 fn natures(folder: &str) -> Natures {
     static READ: std::sync::Mutex<Vec<(String, Natures)>> = std::sync::Mutex::new(Vec::new());
@@ -67,7 +74,7 @@ fn natures(folder: &str) -> Natures {
         return known.clone();
     }
     let tables = assets::data::read(folder, "dungeons.bin").and_then(|bytes| bincode::deserialize::<rules::tables::Tables>(&bytes).ok());
-    let species = tables.map(|tables| tables.species).unwrap_or_default();
+    let (species, slots) = tables.map(|tables| (tables.species, tables.move_slots)).unwrap_or_default();
     let movements = species
         .iter()
         .enumerate()
@@ -75,7 +82,23 @@ fn natures(folder: &str) -> Natures {
         .filter(|(_, movement)| *movement != super::Movement::Walks)
         .collect();
     let weights = species.iter().enumerate().filter(|(_, species)| species.weight > 0).map(|(number, species)| (number.to_string(), species.weight)).collect();
-    let found = (movements, weights);
+    let kinds = species
+        .iter()
+        .enumerate()
+        .map(|(number, species)| {
+            let kind = super::Kind {
+                types: species.types,
+                shadow: species.shadow,
+                family: species.family,
+                from: species.evolution.from,
+                learnset: species.learnset.iter().map(|(level, slot)| (*level, slot.id)).collect(),
+                machines: species.machines.clone(),
+            };
+            (number.to_string(), kind)
+        })
+        .collect();
+    let moves = slots.iter().map(|slot| (slot.type_id, slot.power)).collect();
+    let found = Natures { movements, weights, kinds, moves };
     read.push((folder.to_string(), found.clone()));
     found
 }
@@ -87,7 +110,8 @@ pub(super) fn read_monsters(tables: &mut Tables) {
     let sheets = assets::tables::sheets(&folder, "sprites.txt");
     tables.bodies = bodies(&sheets);
     tables.sprite_groups = sprite_groups(&sheets);
-    (tables.movements, tables.weights) = natures(&folder);
+    let natures = natures(&folder);
+    (tables.movements, tables.weights, tables.kinds, tables.move_kinds) = (natures.movements, natures.weights, natures.kinds, natures.moves);
     tables.points = assets::tables::points(&folder).into_iter().map(|(number, points)| (number.to_string(), points)).collect();
     tables.portraits = portraits(&folder);
     for (id, name) in numbered(&folder, "monsters.txt") {
@@ -174,6 +198,9 @@ fn read_variants(tables: &mut Tables, sheets: &[SheetRow]) {
         }
         if let Some(weight) = tables.weights.get(&of).copied() {
             tables.weights.entry(number.clone()).or_insert(weight);
+        }
+        if let Some(kind) = tables.kinds.get(&of).cloned() {
+            tables.kinds.entry(number.clone()).or_insert(kind);
         }
         let name = tables.monsters.values().find(|named| named.0 == of).map_or(String::new(), |named| named.1.clone());
         tables.monsters.insert(plain(&variant.word), (number.clone(), name));
