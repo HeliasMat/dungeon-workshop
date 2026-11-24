@@ -4,7 +4,10 @@
 
 use std::collections::BTreeSet;
 
-use crate::film::Shop;
+use crate::film::Kept;
+
+/// A shop: its keeper, and each thing laid out (its word, its code, its price).
+pub type Shop = (String, Vec<(String, String, i32)>);
 
 pub struct DungeonState {
     pub dungeon: Option<String>,
@@ -61,9 +64,10 @@ impl Default for DungeonState {
     }
 }
 
-impl DungeonState {
-    /// A new scene: nothing of the last floor's ground; whether it was dark.
-    pub fn new_scene(&mut self) -> bool {
+impl Kept for DungeonState {
+    /// A new scene: what lies on the floor at hand goes; the lights back on
+    /// if it was dark.
+    fn new_scene(&mut self) -> Option<engine::Beat> {
         let dark = self.dark;
         *self = DungeonState {
             dungeon: self.dungeon.take(),
@@ -76,6 +80,11 @@ impl DungeonState {
             map_team: self.map_team.take(),
             ..DungeonState::default()
         };
-        dark
+        dark.then(crate::emit::spotlight_off)
+    }
+
+    /// The top line of a dungeon's floor shows its log.
+    fn logs(&self) -> bool {
+        self.dungeon_hud.is_some()
     }
 }

@@ -117,9 +117,8 @@ impl Film {
         self.staging = crate::film::Staging::default();
         self.speaking = Default::default();
         self.things = Default::default();
-        self.fishing.new_scene();
-        if self.dungeon.new_scene() {
-            self.beat(emit::spotlight_off());
+        for beat in self.kept_new_scene() {
+            self.beat(beat);
         }
     }
 

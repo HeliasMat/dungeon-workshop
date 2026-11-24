@@ -4,7 +4,24 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::film::Caught;
+use crate::film::Kept;
+
+/// One thing a fisher pulled out of the water: who or what it is (its
+/// code, or who), its name as said, its word (the Pokémon's, or the thing's
+/// key); its size once measured; in his bucket or let go (still caught,
+/// told so at the end of the day); where it came out.
+#[derive(Clone, Debug)]
+pub struct Caught {
+    pub code: String,
+    pub name: String,
+    pub word: String,
+    pub pokemon: bool,
+    pub size: Option<i32>,
+    pub kept: bool,
+    pub released: bool,
+    pub water: Option<(i32, i32)>,
+    pub landed: Option<(i32, i32)>,
+}
 
 #[derive(Default)]
 pub struct FishingState {
@@ -26,11 +43,7 @@ pub struct FishingState {
     pub chains: BTreeMap<String, Vec<String>>,
     /// The glowing fish round each fisher's lantern (`lantern`).
     pub lanterns: BTreeMap<String, Vec<String>>,
-    /// Who rides on whose back (`ride`), and where those swimming were last
-    /// sent (`swim`).
-    pub mounts: BTreeMap<String, String>,
-    /// How many pixels each mount has sunk under its riders (by weight).
-    pub sunk: BTreeMap<String, f32>,
+    /// Where those swimming were last sent (`swim`).
     pub swum: BTreeMap<String, (i32, i32)>,
     /// The net basket each swimmer tows (`swim ... with net`): its code.
     pub nets: BTreeMap<String, String>,
@@ -48,9 +61,10 @@ pub struct FishingState {
     pub records: BTreeMap<String, i32>,
 }
 
-impl FishingState {
+impl Kept for FishingState {
     /// A new scene: nothing of the last one's water, what was caught kept.
-    pub fn new_scene(&mut self) {
+    fn new_scene(&mut self) -> Option<engine::Beat> {
         *self = FishingState { catches: std::mem::take(&mut self.catches), records: std::mem::take(&mut self.records), ..FishingState::default() };
+        None
     }
 }

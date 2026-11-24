@@ -172,13 +172,13 @@ fn directed_block(film: &mut Film, sides: &mut Sides, lines: &[Instr]) -> (Vec<S
             _ => None,
         };
         if speaker.is_some() {
-            let label = format!("fight{}_said{}", film.combat.written + 1, film.combat.asides.len());
-            film.combat.asides.push((label.clone(), number, item.clone()));
+            let label = format!("fight{}_said{}", film.kept::<Combat>().written + 1, film.kept::<Combat>().asides.len());
+            film.kept::<Combat>().asides.push((label.clone(), number, item.clone()));
             acts.extend(fields!["scene", label]);
             continue;
         }
         if let Shape::WhenLife { who, left, lines } = &item.shape {
-            film.combat.moments.push((who.clone(), *left, lines.clone()));
+            film.kept::<Combat>().moments.push((who.clone(), *left, lines.clone()));
             continue;
         }
         // (A line of its own word, or one that begins with a fighter: read by its form.)

@@ -28,6 +28,13 @@ pub struct Combat {
     pub dodging: Option<(String, usize, String)>,
 }
 
+impl crate::film::Kept for Combat {
+    /// A fight shows its log.
+    fn logs(&self) -> bool {
+        self.lead.is_some()
+    }
+}
+
 impl Combat {
     /// All of it goes but what lasts: the one way to end a fight.
     pub fn end(&mut self) {

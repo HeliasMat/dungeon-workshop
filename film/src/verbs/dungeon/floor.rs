@@ -56,13 +56,13 @@ pub(super) fn takes_stairs(film: &mut Film, line: &Line) {
     let floor = line.args.number("n").map(|floor| floor as i32);
     // (A dungeon that goes up: its floors are floors, not basements.)
     if line.args.has("up") {
-        film.dungeon.going_up = true;
+        film.kept::<DungeonState>().going_up = true;
     }
     film.beat(emit::fade(true, false, 30.0));
     film.beat(emit::wait_fade());
     if let Some(floor) = floor {
-        let name = film.dungeon.dungeon.clone().unwrap_or("Dungeon".to_string());
-        film.dungeon.floor = floor;
+        let name = film.kept::<DungeonState>().dungeon.clone().unwrap_or("Dungeon".to_string());
+        film.kept::<DungeonState>().floor = floor;
         let under = floor_said(film, floor);
         let shown = format!("{}{}{under}", crate::screen::on_screen(&name), crate::screen::BREAK);
         film.caption(120.0, &shown, true);
@@ -103,7 +103,7 @@ pub(super) const TRAPS: [(&str, &str); 24] = [
 pub(super) fn trapped(film: &mut Film, line: &Line) {
     // (`trap off`: the traps laid fade from the floor.)
     if line.args.has("off") {
-        for code in std::mem::take(&mut film.dungeon.traps) {
+        for code in std::mem::take(&mut film.kept::<DungeonState>().traps) {
             film.on(&code, |thing| emit::opacity(thing, 0.0, 20.0));
             film.on(&code, |thing| emit::after(20.0, 0.0, emit::gone(thing)));
         }
@@ -123,7 +123,7 @@ pub(super) fn trapped(film: &mut Film, line: &Line) {
         return;
     };
     let code = thing_apart(film, &thing);
-    film.dungeon.traps.push(code.clone());
+    film.kept::<DungeonState>().traps.push(code.clone());
     let Some(under) = film.spot_of(who) else {
         return;
     };

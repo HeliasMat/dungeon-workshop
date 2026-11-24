@@ -3,6 +3,7 @@
 //! training. (The reward, the night, the chores, a drink, signing up, an
 //! announcement, a diploma: recipes, `film/recipes/guild.film`.)
 
+use super::dungeon::DungeonState;
 use super::{Line, Word};
 use crate::emit;
 use crate::film::Film;
@@ -26,16 +27,16 @@ fn job(film: &mut Film, line: &Line) {
         super::pictures::cut_to(film, &shown);
         film.sound("click");
         film.narrate(&on_screen(&format!("Job accepted: {name}")));
-        film.dungeon.mission = Some(name);
+        film.kept::<DungeonState>().mission = Some(name);
         film.beat(emit::jingle(7));
         super::pictures::cut_back(film);
     } else if line.args.has("done") {
         film.beat(emit::music(scenes::vocabulary::POKEMON.song("mission_accomplished").map(engine::SongId)));
         film.narrate(&on_screen(&format!("Job complete: {name}!")));
-        film.dungeon.mission = None;
+        film.kept::<DungeonState>().mission = None;
     } else {
         film.sound("annoyed");
         film.narrate(&on_screen(&format!("Job failed: {name}...")));
-        film.dungeon.mission = None;
+        film.kept::<DungeonState>().mission = None;
     }
 }

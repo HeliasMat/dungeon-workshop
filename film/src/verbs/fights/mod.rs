@@ -93,12 +93,12 @@ fn bar_opens(film: &mut Film, line: &Line) {
     let args = &line.args;
     let number = |name: &str| args.number(name).map_or(1, |number| number as i32);
     let (lead, level, health) = (plain(args.word("who").unwrap_or_default()), number("lv"), number("hp"));
-    film.combat.lead = Some(lead.clone());
-    film.combat.bars = vec![(lead.clone(), health)];
-    film.combat.levels.insert(lead.clone(), level);
+    film.kept::<Combat>().lead = Some(lead.clone());
+    film.kept::<Combat>().bars = vec![(lead.clone(), health)];
+    film.kept::<Combat>().levels.insert(lead.clone(), level);
     if let Some(rival) = args.word("other").map(plain) {
-        film.combat.bars.push((rival.clone(), number("hp2")));
-        film.combat.levels.insert(rival.clone(), level);
+        film.kept::<Combat>().bars.push((rival.clone(), number("hp2")));
+        film.kept::<Combat>().levels.insert(rival.clone(), level);
         by_hand(film, "open", [vec![lead], vec![rival]], Vec::new());
         return;
     }
@@ -186,11 +186,11 @@ fn attacked(film: &mut Film, line: &Line) {
         None => None,
     };
     // (Charged for this move: it lands stronger; a dodge straight before: it misses.)
-    let strong = film.combat.charged.get(&who) == Some(&id);
+    let strong = film.kept::<Combat>().charged.get(&who) == Some(&id);
     if strong {
-        film.combat.charged.remove(&who);
+        film.kept::<Combat>().charged.remove(&who);
     }
-    let dodged = film.combat.dodging.take().filter(|(one, written, _)| Some(one) == target.as_ref() && blows::straight_after(film, *written));
+    let dodged = film.kept::<Combat>().dodging.take().filter(|(one, written, _)| Some(one) == target.as_ref() && blows::straight_after(film, *written));
     if let Some(target) = &target {
         film.face(&who, target);
     }
@@ -199,7 +199,7 @@ fn attacked(film: &mut Film, line: &Line) {
     let strike = strike_frames(film, &who, id);
     let moved = film.written.len();
     film.beat(emit::uses_move(user, engine::MoveId(id), aimed));
-    film.combat.blow = None;
+    film.kept::<Combat>().blow = None;
     if let (Some(target), Some(_)) = (&target, on) {
         if dodged.is_some() {
             blows::missed(film, target, strike);
@@ -213,12 +213,13 @@ fn attacked(film: &mut Film, line: &Line) {
                 blows::strong(film, strike);
             }
             let struck = start..film.written.len();
-            film.combat.blow = Some(blows::Blow { target: target.clone(), user, id: engine::MoveId(id), moved, struck, written: 0, strike });
+            film.kept::<Combat>().blow = Some(blows::Blow { target: target.clone(), user, id: engine::MoveId(id), moved, struck, written: 0, strike });
         }
     }
     film.wait_frames((strike as i64 + STRUCK_FRAMES) as i32, line.wait);
-    if let Some(blow) = film.combat.blow.as_mut() {
-        blow.written = film.written.len();
+    let written = film.written.len();
+    if let Some(blow) = film.kept::<Combat>().blow.as_mut() {
+        blow.written = written;
     }
 }
 
@@ -269,7 +270,7 @@ const OWN_LEVEL: i32 = 30;
 /// `a use`, `a use its move`: a move his kind learns by his level (its
 /// `learnset`), of his own type if it can; none known: told.
 fn own_move(film: &mut Film, who: &str, number: usize) -> Option<u16> {
-    let level = film.combat.levels.get(who).copied().unwrap_or(OWN_LEVEL);
+    let level = film.kept::<Combat>().levels.get(who).copied().unwrap_or(OWN_LEVEL);
     let code = lines::code_now(film, who);
     let chosen = film.own_move(&code, level);
     if chosen.is_none() {
@@ -355,7 +356,7 @@ fn next_form_of(film: &mut Film, who: &str, number: usize) -> Option<String> {
 pub(crate) fn fought_word(film: &mut Film, line: &Line) -> bool {
     let verb = line.verb.as_str();
     let whole = verb == "fight" && line.args.has("side_team");
-    let opens = verb == "fight" && film.combat.lead.is_none();
+    let opens = verb == "fight" && film.kept::<Combat>().lead.is_none();
     if whole || opens {
         super::dungeon::fight_begins(film);
     }

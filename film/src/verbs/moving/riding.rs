@@ -119,16 +119,16 @@ fn weighs_on(film: &mut Film, who: &str, mount: &str, number: usize) {
         return;
     };
     film.beat(emit::set_prop(engine::NodeRef::Who(node), engine::props::PropId::Height, engine::props::Given::Plus(engine::props::Value::Number(-sinks))));
-    *film.fishing.sunk.entry(mount.to_string()).or_default() += sinks;
-    film.fishing.sunk.insert(format!("{who}>"), sinks);
+    *film.staging.sunk.entry(mount.to_string()).or_default() += sinks;
+    film.staging.sunk.insert(format!("{who}>"), sinks);
 }
 
 /// A rider off: his mount as high as it was before him.
 fn eased(film: &mut Film, who: &str, mount: &str) {
-    let Some(sinks) = film.fishing.sunk.remove(&format!("{who}>")) else {
+    let Some(sinks) = film.staging.sunk.remove(&format!("{who}>")) else {
         return;
     };
-    if let Some(sunk) = film.fishing.sunk.get_mut(mount) {
+    if let Some(sunk) = film.staging.sunk.get_mut(mount) {
         *sunk -= sinks;
     }
     if let Some(node) = film.one(mount) {
@@ -148,7 +148,7 @@ fn gets_on(film: &mut Film, who: &str, mount: &str, high: f32, behind: f32, numb
     film.on(who, |who| emit::ride(who, Some(under), high, behind));
     weighs_on(film, who, mount, number);
     film.sound("click");
-    film.fishing.mounts.insert(who.to_string(), mount.to_string());
+    film.staging.mounts.insert(who.to_string(), mount.to_string());
 }
 
 /// Off whom he rides, he hops to that place: the one the line tells, or
@@ -179,7 +179,7 @@ fn hops_down(film: &mut Film, line: &Line, who: &str, beside: Option<String>) {
 /// `a get_off [to x y]`: off his mount's back, he hops there (beside it).
 fn got_off(film: &mut Film, line: &Line) {
     let who = super::super::who_said(line);
-    let mount = film.fishing.mounts.remove(&who);
+    let mount = film.staging.mounts.remove(&who);
     if let Some(mount) = &mount {
         eased(film, &who, mount);
     }
@@ -206,10 +206,10 @@ fn carried(film: &mut Film, line: &Line) {
 fn put_down(film: &mut Film, line: &Line) {
     let who = super::super::who_said(line);
     let what = plain(line.args.word("what").unwrap_or_default());
-    if film.fishing.mounts.get(&what) != Some(&who) {
+    if film.staging.mounts.get(&what) != Some(&who) {
         film.remark(line.number, format!("{who} put_down {what}: he is not carrying him ({who} carry {what})"));
     }
-    if film.fishing.mounts.remove(&what).is_some() {
+    if film.staging.mounts.remove(&what).is_some() {
         eased(film, &what, &who);
     }
     hops_down(film, line, &what, Some(who));

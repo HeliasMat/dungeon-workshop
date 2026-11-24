@@ -4,6 +4,7 @@
 use engine::{Beat, Direction, FlowBeat, MoveId, SoundId, Spot, Who};
 
 use super::super::Line;
+use super::Combat;
 use crate::emit;
 use crate::film::{Film, Sortie};
 use crate::spots::routes::found;
@@ -93,7 +94,7 @@ pub fn charged(film: &mut Film, line: &Line) {
             film.unknown(line.number, "unknown move", &named, tables.moves.keys().map(String::as_str), "");
             return;
         };
-        film.combat.charged.insert(who.clone(), id);
+        film.kept::<Combat>().charged.insert(who.clone(), id);
     }
     if let Some(group) = emit::anim_of("Charge") {
         film.on(&who, |one| emit::anim(one, group, true, false));
@@ -127,7 +128,7 @@ pub fn dodged(film: &mut Film, line: &Line) {
         film.not_a(&who, "a Pokémon of the scene");
         return;
     };
-    let blow = film.combat.blow.take().filter(|blow| blow.target == who && straight_after(film, blow.written));
+    let blow = film.kept::<Combat>().blow.take().filter(|blow| blow.target == who && straight_after(film, blow.written));
     let from = blow.as_ref().map(|blow| blow.user);
     let at = blow.as_ref().map_or(0.0, |blow| (blow.strike - SIDESTEP_FRAMES).max(0.0));
     let start = film.written.len();
@@ -162,7 +163,7 @@ pub fn dodged(film: &mut Film, line: &Line) {
         }
         None => {
             film.wait_frames(SIDESTEP_FRAMES as i64 + 4, line.wait);
-            film.combat.dodging = Some((who, film.written.len(), stood));
+            film.kept::<Combat>().dodging = Some((who, film.written.len(), stood));
         }
     }
 }

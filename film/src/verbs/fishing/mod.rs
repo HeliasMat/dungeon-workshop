@@ -25,7 +25,7 @@ use super::items::set_owner;
 use super::things::{arrives, thing_apart, thing_out};
 use super::{Line, Word};
 use crate::emit;
-use crate::film::{Caught, Film};
+use crate::film::Film;
 use crate::names::species;
 use crate::names::things::{known_thing, thing_named};
 use crate::spots::routes::found;
@@ -47,7 +47,7 @@ pub const WORDS: &[Word] = &[
 pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("fishing", WORDS).with_pictures(PICTURES);
 
 mod state;
-pub use state::FishingState;
+pub use state::{Caught, FishingState};
 mod catches;
 mod line;
 mod spectacle;
@@ -118,7 +118,7 @@ pub fn free_to_turn(film: &mut Film, who: &str) {
 
 /// The fish's shadow under his bobber, if one waits there, gone under.
 pub fn shadow_dives(film: &mut Film, who: &str) {
-    if let Some(code) = film.fishing.shadows.remove(who) {
+    if let Some(code) = film.kept::<FishingState>().shadows.remove(who) {
         film.on(&code, |code| emit::opacity(code, 0.0, 8.0));
     }
 }
@@ -126,20 +126,20 @@ pub fn shadow_dives(film: &mut Film, who: &str) {
 /// The tension of his line, if it was shown, gone with his line; full first
 /// if it snapped.
 pub fn tension_off(film: &mut Film, who: &str, snapped: bool) {
-    if film.fishing.tension.as_deref() == Some(who) {
+    if film.kept::<FishingState>().tension.as_deref() == Some(who) {
         if snapped {
             film.beat(emit::set(tension_of(who), emit::number(100)));
             film.wait(10);
         }
         film.beat(emit::hud(MIDDLE, None));
         film.beat(emit::gauge(MIDDLE, None));
-        film.fishing.tension = None;
+        film.kept::<FishingState>().tension = None;
     }
 }
 
 /// Those watching react: glad at a catch, sorry at one lost.
 pub fn cheer(film: &mut Film, glad: bool) {
-    for (at, one) in film.fishing.fans.clone().iter().enumerate() {
+    for (at, one) in film.kept::<FishingState>().fans.clone().iter().enumerate() {
         // (Not all at once: one after the other, a little.)
         let after = at as i32 * 6 + 1;
         if glad {
@@ -212,7 +212,7 @@ fn has_a_rod(film: &mut Film, who: &str, line: &Line) -> bool {
 
 /// What holds a line, told when there is none.
 fn line_of(film: &mut Film, who: &str, line: &Line) -> Option<String> {
-    let code = film.fishing.fishing.get(who).map(|(code, _)| code.clone());
+    let code = film.kept::<FishingState>().fishing.get(who).map(|(code, _)| code.clone());
     if code.is_none() {
         film.remark(line.number, format!("{who} has no line in the water: throw {who} line"));
     }
@@ -221,7 +221,7 @@ fn line_of(film: &mut Film, who: &str, line: &Line) -> Option<String> {
 
 /// Where his bobber is on the water, when it was cast to a point.
 fn bobber_at(film: &Film, who: &str) -> Option<(i32, i32)> {
-    let (x, y) = film.fishing.fishing.get(who)?.1.as_ref()?;
+    let (x, y) = film.kept_now::<FishingState>()?.fishing.get(who)?.1.as_ref()?;
     Some((x.parse().ok()?, y.parse().ok()?))
 }
 
@@ -291,8 +291,8 @@ fn bitten(film: &mut Film, line: &Line) -> bool {
     if line.args.has("who") {
         return false;
     }
-    let fisher = film.fishing.last_cast.clone().filter(|who| film.fishing.fishing.contains_key(who));
-    let Some(who) = fisher.or_else(|| film.fishing.fishing.keys().next_back().cloned()) else {
+    let fisher = film.kept::<FishingState>().last_cast.clone().filter(|who| film.kept::<FishingState>().fishing.contains_key(who));
+    let Some(who) = fisher.or_else(|| film.kept::<FishingState>().fishing.keys().next_back().cloned()) else {
         film.remark(line.number, "no line in the water for a fish to bite: who cast first".to_string());
         return true;
     };
@@ -315,7 +315,7 @@ fn names_bobber(film: &mut Film, line: &Line) {
     film.give_name(BOBBER.to_string(), code.clone());
     keeps_his_way(film, &who);
     if let Some((x, y)) = point_of(line) {
-        film.fishing.fishing.insert(who, (code, Some((x.to_string(), y.to_string()))));
+        film.kept::<FishingState>().fishing.insert(who, (code, Some((x.to_string(), y.to_string()))));
     }
 }
 
@@ -329,7 +329,7 @@ fn line_in(film: &mut Film, line: &Line) {
     let snapped = line.args.has("broken");
     shadow_dives(film, &who);
     tension_off(film, &who, snapped);
-    if let Some((code, _)) = film.fishing.fishing.remove(&who) {
+    if let Some((code, _)) = film.kept::<FishingState>().fishing.remove(&who) {
         film.on(&who, |who| emit::fishline(who, None, None, true));
         if !snapped {
             film.on(&code, emit::gone);

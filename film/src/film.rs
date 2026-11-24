@@ -67,23 +67,6 @@ pub struct Stuff {
     pub takeable: bool,
 }
 
-/// One thing a fisher pulled out of the water: who or what it is (its
-/// code, or who), its name as said, its word (the Pokémon's, or the thing's
-/// key); its size once measured; in his bucket or let go (still caught,
-/// told so at the end of the day); where it came out.
-#[derive(Clone, Debug)]
-pub struct Caught {
-    pub code: String,
-    pub name: String,
-    pub word: String,
-    pub pokemon: bool,
-    pub size: Option<i32>,
-    pub kept: bool,
-    pub released: bool,
-    pub water: Option<(i32, i32)>,
-    pub landed: Option<(i32, i32)>,
-}
-
 /// A thing in the air: the next line says how it lands.
 pub struct Flying {
     pub code: String,
@@ -92,8 +75,22 @@ pub struct Flying {
     pub thrower: String,
 }
 
-/// A shop: its keeper, and each thing laid out (its word, its code, its price).
-pub type Shop = (String, Vec<(String, String, i32)>);
+/// What a family keeps from one line to the next, of its own type, in the
+/// film (`Film::kept`): the film knows none of them, only that each may
+/// change at a new scene and may show a log.
+pub trait Kept: std::any::Any {
+    /// A new scene opens: what goes with the last one goes; a beat the new
+    /// scene opens with, if any.
+    fn new_scene(&mut self) -> Option<Beat> {
+        None
+    }
+
+    /// Whether the lines said now go to a log on the screen (a fight's, a
+    /// dungeon floor's), not to a box.
+    fn logs(&self) -> bool {
+        false
+    }
+}
 
 /// What the stage knows of the scene at hand, gone at the next one: who
 /// came on by a line, a vision, who evolved or was renamed. (Each family
@@ -128,6 +125,10 @@ pub struct Staging {
     /// Who hides (`hide`), and who is under the ground (`burrow`).
     pub hidden: BTreeSet<String>,
     pub buried: BTreeSet<String>,
+    /// Who rides on whose back (`ride`); how many pixels each mount has
+    /// sunk under its riders (by weight).
+    pub mounts: BTreeMap<String, String>,
+    pub sunk: BTreeMap<String, f32>,
     /// Who shows an aura of his type (`aura on`): the game's type.
     pub auras: BTreeMap<String, u8>,
 }
@@ -168,12 +169,11 @@ pub struct Film {
     /// The film's plan: a line each, its thread, placing and time (`time::plan`).
     pub plan: crate::time::Plan,
 
-    /// Fishing's own: what is in the water, who swims, what was caught.
-    pub fishing: crate::verbs::fishing::FishingState,
     /// A film one plays: who the player walks (`verbs/game.rs`).
     pub game: crate::verbs::game::Game,
-    /// A dungeon's own: its floor, its team, what lies on the floor at hand.
-    pub dungeon: crate::verbs::dungeon::DungeonState,
+    /// What each family keeps of its own (`Kept`), by its type: fishing's,
+    /// a dungeon's, a fight's.
+    kept: BTreeMap<std::any::TypeId, Box<dyn Kept>>,
     pub flying: Option<Flying>,
     /// The pictures the film calls its own, by name; their numbers, by file;
     /// the words that are things, not someone.
@@ -190,7 +190,6 @@ pub struct Film {
     /// with them (a film's are without).
     pub collisions: bool,
     pub clouds: i32,
-    pub combat: crate::verbs::fights::Combat,
     /// (The same film, the same fight.)
     pub chance: u64,
     pub seeing: bool,
@@ -275,9 +274,8 @@ impl Film {
             things: Default::default(),
             timing: Default::default(),
             plan: Default::default(),
-            fishing: Default::default(),
             game: Default::default(),
-            dungeon: Default::default(),
+            kept: BTreeMap::new(),
             flying: None,
             own: BTreeMap::new(),
             pictures: Vec::new(),
@@ -287,7 +285,6 @@ impl Film {
             acting: true,
             collisions: false,
             clouds: 8,
-            combat: Default::default(),
             chance: 7,
             seeing: false,
             last_spot: None,
@@ -345,6 +342,29 @@ impl Film {
     pub fn found_var(&mut self) -> String {
         self.found += 1;
         format!("_place{}", self.found)
+    }
+
+    /// What a family keeps of its own type, made the first time it is asked.
+    pub fn kept<T: Kept + Default>(&mut self) -> &mut T {
+        let kept = self.kept.entry(std::any::TypeId::of::<T>()).or_insert_with(|| Box::new(T::default()));
+        (&mut **kept as &mut dyn std::any::Any).downcast_mut().expect("kept by its type")
+    }
+
+    /// What a family keeps of its own type, if it kept anything yet.
+    pub fn kept_now<T: Kept>(&self) -> Option<&T> {
+        self.kept.get(&std::any::TypeId::of::<T>()).and_then(|kept| (&**kept as &dyn std::any::Any).downcast_ref())
+    }
+
+    /// Whether a family shows a log now (a fight's, a dungeon floor's): the
+    /// lines said go there.
+    pub fn logs(&self) -> bool {
+        self.kept.values().any(|kept| kept.logs())
+    }
+
+    /// A new scene opens: each family lets go of what goes with the last one;
+    /// the beats the new scene opens with.
+    pub fn kept_new_scene(&mut self) -> Vec<Beat> {
+        self.kept.values_mut().filter_map(|kept| kept.new_scene()).collect()
     }
 
     /// A number drawn: the same film, the same draws.

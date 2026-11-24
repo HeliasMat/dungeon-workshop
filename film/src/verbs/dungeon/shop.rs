@@ -48,7 +48,7 @@ pub(super) fn shop(film: &mut Film, line: &Line) {
         arrives(film, &code, thing);
         laid.push((thing.key.clone(), code, *price));
     }
-    film.dungeon.shop = Some((keeper.to_string(), laid));
+    film.kept::<DungeonState>().shop = Some((keeper.to_string(), laid));
     let name = called(film, keeper);
     logged(film, &format!("{name}: Welcome to my shop!"));
 }
@@ -56,7 +56,7 @@ pub(super) fn shop(film: &mut Film, line: &Line) {
 /// The thing a line names among the shop's goods, and its price.
 pub(super) fn on_sale(film: &mut Film, line: &Line) -> Option<(String, String, i32)> {
     let thing = Some(line.args.words("thing")).filter(|words| !words.is_empty()).and_then(|words| known_thing(film, words));
-    let found = thing.as_ref().and_then(|thing| film.dungeon.shop.as_ref()?.1.iter().find(|(key, ..)| *key == thing.key).cloned());
+    let found = thing.as_ref().and_then(|thing| film.kept::<DungeonState>().shop.as_ref()?.1.iter().find(|(key, ..)| *key == thing.key).cloned());
     if found.is_none() {
         film.wrong(line.number, "not in the shop: shop <shopkeeper> <item> <price>... first".to_string());
     }
@@ -70,7 +70,7 @@ pub(super) fn buys(film: &mut Film, line: &Line) {
     let Some((key, code, price)) = on_sale(film, line) else {
         return;
     };
-    let keeper = film.dungeon.shop.as_ref().map(|(keeper, _)| keeper.clone()).unwrap_or_default();
+    let keeper = film.kept::<DungeonState>().shop.as_ref().map(|(keeper, _)| keeper.clone()).unwrap_or_default();
     if let Some(at) = film.things.stuff.iter().position(|stuff| stuff.code == code) {
         take_up(film, who, at);
     }
@@ -80,7 +80,7 @@ pub(super) fn buys(film: &mut Film, line: &Line) {
     let thing = known_thing(film, std::slice::from_ref(&key)).map_or(key, |thing| thing.name);
     let name = called(film, who);
     logged(film, &format!("{name} bought the {thing} for {price} Poké!"));
-    if let Some((_, goods)) = film.dungeon.shop.as_mut() {
+    if let Some((_, goods)) = film.kept::<DungeonState>().shop.as_mut() {
         goods.retain(|(_, laid, _)| *laid != code);
     }
     film.wait_frames(40, line.wait);
@@ -94,7 +94,7 @@ pub(super) fn steals(film: &mut Film, line: &Line) {
     let Some((_, code, _)) = on_sale(film, line) else {
         return;
     };
-    let keeper = film.dungeon.shop.as_ref().map(|(keeper, _)| keeper.clone()).unwrap_or_default();
+    let keeper = film.kept::<DungeonState>().shop.as_ref().map(|(keeper, _)| keeper.clone()).unwrap_or_default();
     if let Some(at) = film.things.stuff.iter().position(|stuff| stuff.code == code) {
         take_up(film, who, at);
     }

@@ -35,7 +35,7 @@ const BUBBLES: [(&str, &str); 3] = [("bubble", "bubble"), ("thought", "think"), 
 /// In the log of a fight or of a dungeon's floor (its top line shown), else
 /// as a line of the game, without a portrait, for as long as it is read.
 pub fn told_or_logged(film: &mut Film, text: &str) {
-    if film.combat.lead.is_some() || film.dungeon.dungeon_hud.is_some() {
+    if film.logs() {
         // (Its numbers found as it plays put in then, as a caption's.)
         film.beat(emit::battle_log(said::log_frames() as f32, text));
     } else {

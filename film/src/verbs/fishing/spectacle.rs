@@ -73,7 +73,7 @@ pub(super) fn giant_passes(film: &mut Film, line: &Line) {
     let third = (frames / 3) as f32;
     film.beat(emit::after(third, 0.0, emit::quake(1.0, 40.0)));
     film.beat(emit::after(third, 0.0, emit::sound(engine::SoundId(rules::songs::noise::STUNNED))));
-    for one in film.fishing.fans.clone() {
+    for one in film.kept::<FishingState>().fans.clone() {
         film.on(&one, |one| emit::after(third, 0.0, emit::emote(one, scenes::vocabulary::emote::SWEAT, Some(60.0))));
     }
     film.wait(i64::from(frames));
@@ -106,11 +106,11 @@ pub(super) fn spouts(film: &mut Film, line: &Line) {
 /// on its back with it; a splash where it comes down.
 pub(super) fn leaps_a_wave(film: &mut Film, line: &Line) {
     let who = who_of(line);
-    let Some((x, y)) = film.fishing.swum.get(&who).copied() else {
+    let Some((x, y)) = film.kept::<FishingState>().swum.get(&who).copied() else {
         film.wrong(line.number, format!("jump {who} wave: where is he? (swim {who} to x y, before)"));
         return;
     };
-    let ahead = if film.fishing.swims_right.get(&who).copied().unwrap_or(false) { 40 } else { -40 };
+    let ahead = if film.kept::<FishingState>().swims_right.get(&who).copied().unwrap_or(false) { 40 } else { -40 };
     drops(film, &who, engine::ParticleKind::Drops, 16, Some(engine::Colour::Blue));
     film.sound("hop");
     film.on(&who, |who| emit::hop(who, (x + ahead) as f32, y as f32, 30.0, 40.0));
@@ -118,7 +118,7 @@ pub(super) fn leaps_a_wave(film: &mut Film, line: &Line) {
     drops(film, &who, engine::ParticleKind::Drops, 24, Some(engine::Colour::Blue));
     drops(film, &who, engine::ParticleKind::Rings, 3, None);
     film.sound("click");
-    film.fishing.swum.insert(who, (x + ahead, y));
+    film.kept::<FishingState>().swum.insert(who, (x + ahead, y));
     cheer(film, true);
     film.wait_frames(20, line.wait);
 }

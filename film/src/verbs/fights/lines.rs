@@ -4,6 +4,7 @@
 
 use std::collections::BTreeSet;
 
+use super::Combat;
 use crate::film::Film;
 use crate::ir::Instr;
 use crate::names::species;
@@ -46,7 +47,7 @@ pub(super) fn everyone(sides: &Sides) -> BTreeSet<String> {
 pub(super) fn about_those_in_it(film: &mut Film, those: &BTreeSet<String>) -> Vec<String> {
     let mut fields = Vec::new();
     for who in those {
-        if let Some(level) = film.combat.levels.get(who) {
+        if let Some(level) = film.kept::<Combat>().levels.get(who) {
             fields.extend(fields!["lv", who, level]);
         }
         if film.staging.evolved.values().any(|old| old == who) {
@@ -59,10 +60,13 @@ pub(super) fn about_those_in_it(film: &mut Film, those: &BTreeSet<String>) -> Ve
 /// Who a fight going on goes by, and its bars.
 pub(super) fn bars_said(film: &Film) -> Vec<String> {
     let mut fields = Vec::new();
-    if let Some(lead) = &film.combat.lead {
+    let Some(fight) = film.kept_now::<Combat>() else {
+        return fields;
+    };
+    if let Some(lead) = &fight.lead {
         fields.extend(fields!["lead", lead]);
     }
-    for (who, most) in &film.combat.bars {
+    for (who, most) in &fight.bars {
         fields.extend(fields!["bar", who, most]);
     }
     fields
@@ -98,14 +102,14 @@ pub(super) fn by_hand(film: &mut Film, sort: &str, sides: Sides, said: Vec<Strin
 /// round: the fight sends the story there at the right moment.
 pub(super) fn passages(film: &mut Film, number: usize) -> Vec<String> {
     let mut said = Vec::new();
-    if film.combat.moments.is_empty() && film.combat.asides.is_empty() {
+    if film.kept::<Combat>().moments.is_empty() && film.kept::<Combat>().asides.is_empty() {
         return said;
     }
-    film.combat.written += 1;
-    let written = film.combat.written;
+    film.kept::<Combat>().written += 1;
+    let written = film.kept::<Combat>().written;
     let past = format!("fight{written}_past");
     film.beat(emit::goto(past.clone()));
-    for (at, (who, share, lines)) in std::mem::take(&mut film.combat.moments).into_iter().enumerate() {
+    for (at, (who, share, lines)) in std::mem::take(&mut film.kept::<Combat>().moments).into_iter().enumerate() {
         let label = format!("fight{written}_{at}");
         film.beat(emit::label(label.clone()));
         for line in lines {
@@ -114,7 +118,7 @@ pub(super) fn passages(film: &mut Film, number: usize) -> Vec<String> {
         film.beat(emit::back());
         said.extend(fields!["when", who, share, label]);
     }
-    for (label, number, line) in std::mem::take(&mut film.combat.asides) {
+    for (label, number, line) in std::mem::take(&mut film.kept::<Combat>().asides) {
         film.beat(emit::label(label.clone()));
         film.play(&Instr { number, span: None, ..line });
         film.beat(emit::back());
@@ -159,7 +163,7 @@ pub(super) fn closed(film: &mut Film) {
     let mut fields = fields!["fight", "end"];
     fields.extend(bars_said(film));
     film.host(fields);
-    film.combat.end();
+    film.kept::<Combat>().end();
 }
 
 pub(super) fn named(film: &Film, word: &str) -> String {

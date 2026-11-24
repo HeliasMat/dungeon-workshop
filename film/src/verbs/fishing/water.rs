@@ -68,16 +68,16 @@ pub(super) fn shadow(film: &mut Film, line: &Line) {
     film.on(&second, |second| emit::anim(second, engine::AnimId(0), true, false));
     film.on(&second, |second| emit::go(second, (x + side * 4) as f32, (y + 4) as f32, SHADOW_TURNS as f32, true));
     film.beat(drops_at(x, y, engine::ParticleKind::Rings, 1, None));
-    film.fishing.shadows.insert(who, second);
+    film.kept::<FishingState>().shadows.insert(who, second);
     film.wait_frames(SHADOW_TURNS, line.wait);
 }
 
 /// The shadow under his bobber, if one waits there, darts off and is gone.
 pub(super) fn flees(film: &mut Film, who: &str) -> bool {
-    let (Some(code), Some((x, y))) = (film.fishing.shadows.get(who).cloned(), bobber_at(film, who)) else {
+    let (Some(code), Some((x, y))) = (film.kept::<FishingState>().shadows.get(who).cloned(), bobber_at(film, who)) else {
         return false;
     };
-    film.fishing.shadows.remove(who);
+    film.kept::<FishingState>().shadows.remove(who);
     let away = if (x / 8) % 2 == 0 { 130 } else { -130 };
     film.beat(drops_at(x, y, engine::ParticleKind::Rings, 2, None));
     film.on(&code, |code| emit::go(code, (x + away) as f32, (y + 12) as f32, 24.0, true));

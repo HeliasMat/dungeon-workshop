@@ -69,13 +69,13 @@ const ONE_BY_ONE: i32 = 14;
 /// stairs, the bottom, beaten, an orb, the wind, the badge): its top line
 /// and its map are not left over the black.
 pub fn floor_left(film: &mut Film) {
-    if film.dungeon.dungeon_hud.take().is_some() {
+    if film.kept::<DungeonState>().dungeon_hud.take().is_some() {
         top_line_off(film);
     }
-    if film.dungeon.map_team.take().is_some() {
+    if film.kept::<DungeonState>().map_team.take().is_some() {
         film.beat(emit::minimap(None, false));
     }
-    if std::mem::take(&mut film.dungeon.dark) {
+    if std::mem::take(&mut film.kept::<DungeonState>().dark) {
         film.beat(emit::spotlight_off());
     }
 }

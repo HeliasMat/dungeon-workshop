@@ -8,7 +8,7 @@ use super::*;
 /// one still out of the bucket (or in it, `bucketed`).
 pub(super) fn which(film: &mut Film, line: &Line, who: &str, asked: &str) -> Option<usize> {
     let named = line.args.word("catch").filter(|word| !digits(word)).map(plain);
-    let caught = film.fishing.catches.get(who).and_then(|all| match &named {
+    let caught = film.kept::<FishingState>().catches.get(who).and_then(|all| match &named {
         Some(word) => all.iter().rposition(|one| !one.released && (&one.word == word || &one.code == word)),
         None => all.iter().rposition(|one| !one.kept && !one.released),
     });
@@ -25,8 +25,8 @@ pub(super) fn released(film: &mut Film, line: &Line) {
     let Some(at) = which(film, line, &who, "release") else {
         return;
     };
-    let one = film.fishing.catches[&who][at].clone();
-    film.fishing.catches.get_mut(&who).expect("his")[at].released = true;
+    let one = film.kept::<FishingState>().catches[&who][at].clone();
+    film.kept::<FishingState>().catches.get_mut(&who).expect("his")[at].released = true;
     let told = point_of(line);
     let Some((x, y)) = told.or(one.water) else {
         film.wrong(line.number, format!("release {who}: where is the water? release {who} x y"));
@@ -57,6 +57,6 @@ pub(super) fn watched(film: &mut Film, line: &Line) {
     match () {
         _ if line.args.has("joy") => cheer(film, true),
         _ if line.args.has("sorrow") => cheer(film, false),
-        _ => film.fishing.fans = line.args.words("who").to_vec(),
+        _ => film.kept::<FishingState>().fans = line.args.words("who").to_vec(),
     }
 }

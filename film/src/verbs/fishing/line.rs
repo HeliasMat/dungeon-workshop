@@ -19,7 +19,7 @@ pub(super) fn cast(film: &mut Film, line: &Line) {
     let point = line.args.point("target").map(|(x, y)| (x.to_string(), y.to_string()));
     // (Cast again with his line still out: it is reeled in first, its bobber
     // gone from the water, not left floating there.)
-    if let Some((old, _)) = film.fishing.fishing.remove(&who) {
+    if let Some((old, _)) = film.kept::<FishingState>().fishing.remove(&who) {
         shadow_dives(film, &who);
         tension_off(film, &who, false);
         film.on(&who, |who| emit::fishline(who, None, None, true));
@@ -41,7 +41,7 @@ pub(super) fn cast(film: &mut Film, line: &Line) {
     // (On the water, it has its rings for a shadow.)
     film.on(&code, |code| emit::shadow(code, false));
     // (Cast off a back out at sea: on open water, wherever it falls.)
-    if film.fishing.mounts.contains_key(&who) {
+    if film.staging.mounts.contains_key(&who) {
         film.on(&code, |code| emit::flies(vec![code]));
     }
     film.sound("hop");
@@ -51,8 +51,8 @@ pub(super) fn cast(film: &mut Film, line: &Line) {
         (None, Some(to)) => film.on(&who, |who| emit::fishline(who, Some(to), None, true)),
         _ => film.unread(format!("{who} {code}")),
     }
-    film.fishing.fishing.insert(who.clone(), (code.clone(), point));
-    film.fishing.last_cast = Some(who.clone());
+    film.kept::<FishingState>().fishing.insert(who.clone(), (code.clone(), point));
+    film.kept::<FishingState>().last_cast = Some(who.clone());
     film.wait(i64::from(CAST));
     film.sound("click");
     drops(film, &code, engine::ParticleKind::Drops, 12, Some(engine::Colour::Blue));
@@ -112,7 +112,7 @@ pub(super) fn catch(film: &mut Film, line: &Line, word: Option<String>, who: &st
     if film.actor(&word).is_some() {
         // (Out at sea on a back, a point told is on the water: there it lands,
         // and swims, not carried off to the nearest shore.)
-        if let (true, Some((x, y))) = (film.fishing.mounts.contains_key(who), point_of(line)) {
+        if let (true, Some((x, y))) = (film.staging.mounts.contains_key(who), point_of(line)) {
             out_of_the_water(film, &word, code, at);
             film.on(&word, |word| emit::flies(vec![word]));
             return Some((word, crate::spots::xy(x, y)));
@@ -149,9 +149,9 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
     let word = line.args.word("catch").map(plain).and_then(|word| match word.as_str() {
         "random" => {
             // (What bites by chance: by his bait, if he put one on.)
-            let bait = film.fishing.bait.get(&who).map(|bait| plain(bait)).unwrap_or_default();
+            let bait = film.kept::<FishingState>().bait.get(&who).map(|bait| plain(bait)).unwrap_or_default();
             let table: &[&str] = BAITED.iter().find(|(kind, _)| bait.contains(kind)).map_or(&CATCHES, |(_, table)| table);
-            let drawn = table[(line.number * 7 + film.fishing.bait.len() * 3) % table.len()];
+            let drawn = table[(line.number * 7 + film.kept::<FishingState>().bait.len() * 3) % table.len()];
             film.remark(line.number, format!("{who} fishes at random: {}", if drawn == "-" { "nothing" } else { drawn }));
             (drawn != "-").then(|| drawn.to_string())
         }
@@ -173,8 +173,8 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
         film.on(&code, |code| emit::after((fought / 3) as f32, 0.0, emit::particles(bubbles.0, Cam::Who(code), 10, bubbles.1)));
         film.on(&code, |code| emit::after((fought * 2 / 3) as f32, 0.0, emit::particles(splash.0, Cam::Who(code), 20, splash.1)));
         // (Riding, the fish tows his mount out toward it, by the water.)
-        if let Some(mount) = film.fishing.mounts.get(&who).cloned() {
-            let from = film.fishing.swum.get(&mount).copied();
+        if let Some(mount) = film.staging.mounts.get(&who).cloned() {
+            let from = film.kept::<FishingState>().swum.get(&mount).copied();
             for at in 1..=3 {
                 let when = (fought * at / 4) as f32;
                 if let Some((x, y)) = from {
@@ -183,7 +183,7 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
                 film.on(&mount, |mount| emit::after(when, 0.0, emit::particles(splash.0, Cam::Who(mount), 12, splash.1)));
             }
             if let Some((x, y)) = from {
-                film.fishing.swum.insert(mount.clone(), (x, y - TOWED * 3));
+                film.kept::<FishingState>().swum.insert(mount.clone(), (x, y - TOWED * 3));
             }
             floating(film, &mount, engine::Colour::White, "It's pulling us!");
         }
@@ -196,9 +196,9 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
     drops(film, &code, engine::ParticleKind::Drops, 40, Some(engine::Colour::Blue));
     drops(film, &code, engine::ParticleKind::Bubbles, 12, None);
     drops(film, &code, engine::ParticleKind::Rings, 4, None);
-    let at = film.fishing.fishing.remove(&who).and_then(|(_, at)| at);
+    let at = film.kept::<FishingState>().fishing.remove(&who).and_then(|(_, at)| at);
     let held = catch(film, line, word, &who, &code, &at);
-    let bait = film.fishing.bait.remove(&who);
+    let bait = film.kept::<FishingState>().bait.remove(&who);
     tension_off(film, &who, false);
     film.on(&code, emit::gone);
     film.sound("shock");
@@ -231,7 +231,7 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
             let (name, word, pokemon) = caught_name(film, &caught);
             // (Where it lands, when the line says: the rest is found as the film plays.)
             let landed = point_of(line).or_else(|| written(&lands).map(|(x, y)| (x as i32, y as i32)));
-            film.fishing.catches.entry(who.clone()).or_default().push(Caught {
+            film.kept::<FishingState>().catches.entry(who.clone()).or_default().push(Caught {
                 code: caught.clone(),
                 name,
                 word,
@@ -246,7 +246,7 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
             // (The line tied to it where it comes out, not cast: it flies
             // from the water to beside him.)
             with_other(film, &who, &caught, |who, caught| emit::fishline(who, Some(caught), None, false));
-            let on_back = film.fishing.mounts.get(&who).cloned().filter(|_| point_of(line).is_none());
+            let on_back = film.staging.mounts.get(&who).cloned().filter(|_| point_of(line).is_none());
             match (&on_back, written(&lands)) {
                 // (Riding, and no point told: onto the back he rides, behind him.)
                 (Some(mount), _) => with_other(film, &caught, mount, |caught, mount| emit::throw(caught, mount, CATCH_HEIGHT as f32, CATCH_FRAMES as f32)),
