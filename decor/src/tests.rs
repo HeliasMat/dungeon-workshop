@@ -435,8 +435,17 @@ fn every_element_and_place_is_labelled() {
         .filter(|row| row.get(1).is_some_and(|code| !crate::sort::no_place(code)))
         .filter_map(|row| row.first().map(|level| level.to_string()))
         .collect();
-    let mut decors = crate::names(&project());
-    decors.extend(crate::games_own_places(&project()).into_iter().map(|(_, name)| name));
+    // Only the decors the repository ships (tracked by git): the user's own, made in
+    // the Workshop, are theirs to label or not.
+    let tracked = std::process::Command::new("git")
+        .args(["ls-files", "*.decor"])
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
+        .output()
+        .map(|out| String::from_utf8_lossy(&out.stdout).into_owned())
+        .unwrap_or_default();
+    let shipped = |name: &String| tracked.lines().any(|path| path.ends_with(&format!("/{name}.decor")));
+    let mut decors: Vec<String> = crate::names(&project()).into_iter().filter(shipped).collect();
+    decors.extend(crate::games_own_places(&project()).into_iter().map(|(_, name)| name).filter(shipped));
     let lacking: Vec<&String> = places.iter().chain(&decors).filter(|key| !kinds.by_key.contains_key(key.as_str())).collect();
     assert!(lacking.is_empty(), "places with no kind: {lacking:?}");
     let unknown: Vec<&String> = kinds.by_key.keys().filter(|key| !places.contains(key) && !decors.contains(key)).collect();
