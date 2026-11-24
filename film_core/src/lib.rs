@@ -18,8 +18,6 @@
 //! Only what the words say is known here. What depends on the scene as it
 //! stands is written as such (`Spot`, `PlaceBeat`) and found on the stage.
 
-#![forbid(unsafe_code)]
-
 pub mod check;
 pub mod codes;
 pub mod compile;

@@ -21,3 +21,6 @@ story = { path = "../story" }
 engine = { path = "../engine" }
 bincode.workspace = true
 glam.workspace = true
+
+[lints]
+workspace = true

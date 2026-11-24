@@ -17,3 +17,6 @@ engine = { path = "../engine" }
 
 [dev-dependencies]
 scenes = { path = "../scenes" }
+
+[lints]
+workspace = true

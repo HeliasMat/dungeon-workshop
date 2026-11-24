@@ -18,8 +18,6 @@
 //! - `vocabulary`: the words of a game, which whoever uses the engine gives
 //!   it: the engine knows none.
 
-#![forbid(unsafe_code)]
-
 mod beat;
 mod director;
 mod language;

@@ -2883,7 +2883,6 @@ version = "0.2.0"
 dependencies = [
  "bincode",
  "diagnostics",
- "glam",
  "serde",
 ]
 
@@ -2953,7 +2952,6 @@ dependencies = [
 name = "scene_player"
 version = "0.2.0"
 dependencies = [
- "bincode",
  "engine",
  "film",
  "game",

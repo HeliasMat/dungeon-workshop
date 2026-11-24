@@ -14,3 +14,6 @@ publish.workspace = true
 # fixes, and the text written back in order. Nothing here knows the game.
 [dependencies]
 diagnostics = { path = "../diagnostics" }
+
+[lints]
+workspace = true

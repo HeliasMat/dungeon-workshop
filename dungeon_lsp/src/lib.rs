@@ -6,8 +6,6 @@
 //! - `text`: places in a text, the service's and the protocol's;
 //! - `server`: what each message is answered.
 
-#![forbid(unsafe_code)]
-
 pub mod framing;
 pub mod server;
 pub mod text;

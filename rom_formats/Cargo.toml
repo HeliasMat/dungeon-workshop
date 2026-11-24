@@ -13,3 +13,6 @@ publish.workspace = true
 [dependencies]
 rules = { path = "../rules" }
 media = { path = "../media" }
+
+[lints]
+workspace = true

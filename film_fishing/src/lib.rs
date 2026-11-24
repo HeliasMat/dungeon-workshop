@@ -18,8 +18,6 @@
 //! his `Swing`, his pull his `Pull`, and where his line starts on each picture
 //! is told in his table (`pointe`). Here is only who shows what.
 
-#![forbid(unsafe_code)]
-
 use engine::{Beat, Cam, Num, Point, Pose, Who};
 use glam::Vec2;
 

@@ -20,3 +20,6 @@ shell = { path = "../shell" }
 media = { path = "../media" }
 glam.workspace = true
 image.workspace = true
+
+[lints]
+workspace = true

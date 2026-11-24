@@ -3,8 +3,6 @@
 //! here, split into its fields by `engine::read_fields`, its short forms
 //! written out by `lowering`. A film (`.film`) is `film`'s.
 
-#![forbid(unsafe_code)]
-
 use std::path::Path;
 
 use engine::{Diagnostic, Lines, StoryEvent, Vocabulary};

@@ -4,8 +4,6 @@
 //! emote balloons and their sounds, the effects (`data/rom/effects`). Their
 //! other forms, older, stay in the families they come from.
 
-#![forbid(unsafe_code)]
-
 use engine::{AnimId, Beat, BodyBeat, EmoteId, MotionBeat, Pose, Spot};
 
 use film_core::emit;

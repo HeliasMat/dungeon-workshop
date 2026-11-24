@@ -10,8 +10,6 @@
 //!   completions, the outline);
 //! - `steps`: a film's text shown as it goes through the language, step by step.
 
-#![forbid(unsafe_code)]
-
 pub mod service;
 pub mod steps;
 

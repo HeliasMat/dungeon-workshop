@@ -11,8 +11,6 @@
 //! Nothing here knows the game: names are only names, an argument only what
 //! was written. The vocabulary and the meaning come after.
 
-#![forbid(unsafe_code)]
-
 pub mod ast;
 pub mod diag;
 pub mod expr;

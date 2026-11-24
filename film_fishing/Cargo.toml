@@ -15,3 +15,6 @@ film_core = { path = "../film_core" }
 rules = { path = "../rules" }
 scenes = { path = "../scenes" }
 glam.workspace = true
+
+[lints]
+workspace = true

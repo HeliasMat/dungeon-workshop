@@ -5,8 +5,6 @@
 //! are the game's pictures (`scene_player dungeons`). The guild's jobs, taken
 //! from its board and done or failed, are its words too (`guild`).
 
-#![forbid(unsafe_code)]
-
 use engine::{Cam, Pose, Spot};
 use film_core::emit;
 use film_core::film::Film;

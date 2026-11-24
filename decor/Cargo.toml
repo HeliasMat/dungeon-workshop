@@ -16,3 +16,6 @@ diagnostics = { path = "../diagnostics" }
 assets = { path = "../assets" }
 media = { path = "../media" }
 image.workspace = true
+
+[lints]
+workspace = true

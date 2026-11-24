@@ -25,3 +25,6 @@ engine = { path = "../engine" }
 
 [dev-dependencies]
 glam.workspace = true
+
+[lints]
+workspace = true

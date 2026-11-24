@@ -4,8 +4,6 @@
 //!
 //! - `body`: what one does where it stands (looks, jumps, flies, rounds).
 
-#![forbid(unsafe_code)]
-
 use film_core::emit;
 use film_core::film::Film;
 use film_core::names::places::SIDES;

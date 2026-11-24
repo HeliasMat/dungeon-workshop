@@ -12,3 +12,6 @@ publish.workspace = true
 # The game's files as everything reads them (data/DATA.md): where each is,
 # the lists merged, and the tables typed. Nothing but std.
 [dependencies]
+
+[lints]
+workspace = true

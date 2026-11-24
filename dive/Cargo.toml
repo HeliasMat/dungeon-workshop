@@ -16,3 +16,6 @@ scenes = { path = "../scenes" }
 shell = { path = "../shell" }
 stage_view = { path = "../stage_view" }
 glam.workspace = true
+
+[lints]
+workspace = true

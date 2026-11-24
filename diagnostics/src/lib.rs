@@ -8,8 +8,6 @@
 //! Each block owns its codes (`language::diag::codes`, `engine::codes`,
 //! `film::codes`, …): this one gives none but the shape.
 
-#![forbid(unsafe_code)]
-
 pub mod span;
 pub mod text;
 

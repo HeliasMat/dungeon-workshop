@@ -22,3 +22,6 @@ media = { path = "../media" }
 stage_view = { path = "../stage_view" }
 glam.workspace = true
 bincode.workspace = true
+
+[lints]
+workspace = true

@@ -13,3 +13,6 @@ engine = { path = "../engine" }
 film = { path = "../film" }
 preview = { path = "../preview" }
 workshop_base = { path = "../workshop_base" }
+
+[lints]
+workspace = true

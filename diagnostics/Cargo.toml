@@ -13,3 +13,6 @@ publish.workspace = true
 # compared (`text`): at the bottom, so every block may say what is wrong
 # the same way. Each block keeps its own codes.
 [dependencies]
+
+[lints]
+workspace = true

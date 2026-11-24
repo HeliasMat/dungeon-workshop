@@ -4,8 +4,6 @@
 //! - `directed`: a fight stated in advance, its block read;
 //! - here: the words of a fight and the line each writes.
 
-#![forbid(unsafe_code)]
-
 use engine::Cam;
 use scenes::vocabulary::POKEMON;
 

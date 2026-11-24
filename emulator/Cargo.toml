@@ -15,3 +15,9 @@ publish.workspace = true
 [dependencies]
 libloading = "0.8"
 image.workspace = true
+
+# (Unsafe code where it speaks to the core, a C library: the workspace's
+# other lints.)
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
