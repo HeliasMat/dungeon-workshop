@@ -226,7 +226,7 @@ pub struct Film {
     pub uses: Vec<String>,
     /// What it is written for (`for ds`): told what the DS can't play.
     pub for_ds: Option<crate::ds::Mode>,
-    /// What the film read a line as, to be told when asked (`verifie --tout`):
+    /// What the film read a line as, to be told when asked (`scene_player check --all`):
     /// what `there` and `team` stood for.
     pub notes: Vec<(usize, String)>,
     /// How many recipes were called: each call's own numbers (`$px`).

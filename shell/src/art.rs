@@ -24,7 +24,7 @@ pub enum Sky {
     Rain,
 }
 
-/// (A tileset is `media`'s, read the same by the décors' tool.)
+/// (A tileset is `media`'s, read the same by the decors' tool.)
 pub use media::tileset::{CHUNK, CHUNKS_IN_ROW, Tileset, read_tileset};
 
 /// The first number of the tilesets of one's own: the game's stop before it.

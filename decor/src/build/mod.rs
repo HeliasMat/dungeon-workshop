@@ -241,7 +241,7 @@ impl<'a> Builder<'a> {
                 *self.workshop.half_laid.borrow_mut() = Some((begun, marks[..at].to_vec(), Rc::new(place.clone())));
             }
             match line.verb.as_str() {
-                "ground" => self.sol(&mut place, line)?,
+                "ground" => self.ground(&mut place, line)?,
                 "edge" => self.edge(&mut place, line)?,
                 "path" => self.path_line(&mut place, line)?,
                 "water" => self.pose(&mut place, line, &["water", "object"])?,
@@ -428,7 +428,7 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    fn sol(&self, place: &mut Place, line: &Line) -> Result<(), Diagnostic> {
+    fn ground(&self, place: &mut Place, line: &Line) -> Result<(), Diagnostic> {
         let loom = self.loom(line, &line.words[0], &["ground"])?;
         let (rows, columns) = (place.walls.h, place.walls.w);
         let mut wanted: Grid<i64> = Grid::new(columns, rows);

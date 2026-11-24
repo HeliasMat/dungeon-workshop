@@ -218,7 +218,7 @@ fn read_variants(tables: &mut Tables, sheets: &[SheetRow]) {
         }
     }
     tables.aiming = sheets.iter().filter(|row| row.animation == AIM_SHEET).map(|row| row.number.to_string()).collect();
-    // (A rod drawn in the pictures: its tips, `pointe` in the table.)
+    // (A rod drawn in the pictures: its tips, in `rod_tips.txt`.)
     tables.fishing = assets::tables::tips(&folder).into_keys().map(|(monster, _, _)| monster.to_string()).collect();
 }
 

@@ -91,7 +91,7 @@ fn places_of(events: &[StoryEvent]) -> Vec<u16> {
     places
 }
 
-/// An event of the game's story by its number, as `DONJON_START` names it:
+/// An event of the game's story by its number, written
 /// `read:84`.
 pub fn story_event(name: &str) -> Option<usize> {
     name.strip_prefix("read:")?.parse().ok()

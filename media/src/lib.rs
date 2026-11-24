@@ -4,7 +4,7 @@
 //! (`font`), songs and banks (`music`) and the synthesizer making sound of
 //! them (`audio`), the project's packed files (`pack`). No window, no audio
 //! device, no program run, no network: `shell` shows and plays them, the
-//! extraction and the décors' tool write them.
+//! extraction and the decors' tool write them.
 
 pub mod art_files;
 pub mod audio;

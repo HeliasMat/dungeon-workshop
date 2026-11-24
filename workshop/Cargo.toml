@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "L'Atelier des Donjons : l'éditeur des films, décors, donjons, combats de boss, images, sons et musiques"
+description = "Dungeon Workshop: the editor of films, decors, dungeons, boss fights, pictures, sounds and music"
 readme = "../README.md"
 publish.workspace = true
 

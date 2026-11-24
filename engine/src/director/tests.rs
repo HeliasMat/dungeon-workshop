@@ -915,7 +915,7 @@ fn keys_timed_by_the_music_or_a_mark_are_so_many_frames_from_now() {
             key(KeyTime::Music(Frames(720.0))),
             key(KeyTime::Mark { name: "blow".to_string(), plus: Frames(120.0) }),
             key(KeyTime::Music(Frames(100.0))),
-            key(KeyTime::Mark { name: "jamais".to_string(), plus: Frames(5.0) }),
+            key(KeyTime::Mark { name: "never".to_string(), plus: Frames(5.0) }),
         ],
         mode: TrackMode::Once,
         relative: false,

@@ -291,7 +291,7 @@ impl Run {
         format!("{name} drank the juice. Its IQ rose by {gain}!")
     }
 
-    /// The trades that make the Projet P find a new region.
+    /// The trades that make the Project P find a new region.
     const PROJECT_REGION: i32 = 30;
 
     /// What the café's Project P has found so far, by the trades made: new

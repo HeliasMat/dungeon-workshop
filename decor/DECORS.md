@@ -23,10 +23,10 @@ level 496                          # fixed at its birth (decor new, "New Decor")
 grid 16                            # the step of the Workshop's grid
 name The Village Well
 base level 323                     # underneath, as it is (or: base dungeon Beach Cave 3, then layout)
-ground herbe_bourg
-put tente_bourg 13 27              # to the pixel; layer objects when nothing is said
-put arbre_bourg 300 90 layer over
-put sapin_crepuscule 120 200 foot  # by its foot (where it touches the ground): trees in rows
+ground town_grass
+put town_tent 13 27                # to the pixel; layer objects when nothing is said
+put town_tree 300 90 layer over
+put dusk_fir 120 200 foot          # by its foot (where it touches the ground): trees in rows
 put e224_8 256 216 still           # a windmill of the game that does not turn: its first frame only
 image rowboat.png 40 50 layer ground  # an image of mine (library/images/), never enlarged
 spot well 120 80                   # a spot for the films, with nothing laid there
@@ -200,8 +200,8 @@ decor overview six_decors          # every place on one sheet
 
 # Elements
 decor pieces [word] [--backdrops]  # the catalogue by kind and by place; --backdrops: on black and on white
-decor element tente_bourg          # an element, large, on black and on white, its grid of tiles
-decor element pots_bourg pont_bourg   # several side by side
+decor element town_tent            # an element, large, on black and on white, its grid of tiles
+decor element town_pots town_bridge   # several side by side
 decor check [word]                 # what is left of their ground, the worst first
 decor grounds [word]               # each ground woven on a square: no word, those named; s52: those of place 52
 decor reassemble 323               # the elements of a place of the game put back in their place, on black
@@ -274,7 +274,7 @@ The sort takes about half a minute: it cuts each piece, place by place, forgetti
 
 ## What the Workshop writes too
 
-- `put rocher_plage 8 8 name big_rock`: a spot for the films at its foot (`put pikachu big_rock`), written with the entrances; `spot big_rock 40 60`: the same, without laying anything.
+- `put beach_rock 8 8 name big_rock`: a spot for the films at its foot (`put pikachu big_rock`), written with the entrances; `spot big_rock 40 60`: the same, without laying anything.
 - `… hidden`: the line kept, the thing not laid; `… locked`: the Workshop's mouse does not take it (nothing for the place).
 - `group name` … `end`: lines that go together in the Workshop; nothing for the place.
 - `wall x0 y0 x1 y1`, `free x0 y0 x1 y1`: the tiles touched, walled or left free, whatever was laid before (in the order of the lines).
@@ -283,7 +283,7 @@ The sort takes about half a minute: it cuts each piece, place by place, forgetti
   - The kinds: `wave` (its rows, by one pixel), `float` (it rises and sinks), `sway` (its top, in the wind), `glow` (it lights up and darkens), `twinkle` (points of light), `colours` (its colours cycle), `scroll` (what is inside it flows down), `blink`.
   - The speed: 24, 12 or 8 frames of 0.1 s per turn. The place takes as many frames as it needs, 24 at most.
   - The element keeps its corner. Those that move have two pixels of margin around them, and the colours the game cycles no longer cycle.
-- `ground sable_plage tiles 3,4 4,4 …`: a ground painted tile by tile (column, row of 8 pixels), woven without a seam like the others.
+- `ground beach_sand tiles 3,4 4,4 …`: a ground painted tile by tile (column, row of 8 pixels), woven without a seam like the others.
 
 ## An element case by case
 
@@ -338,10 +338,10 @@ target/debug/scene_player.exe dungeons           # once: the tileset of each flo
 decor dungeons cave                              # the dungeons and their floors
 decor view my_cave_room                # builds it, and its image in target/decors/
 decor all                                        # builds again every place and every room
-decor generate bois_etage Apple Woods 6 13       # a whole floor, made as the game does (seed 13)
+decor generate woods_floor Apple Woods 6 13       # a whole floor, made as the game does (seed 13)
 ```
 
-`generate` writes a `.decor` (`base dungeon`) with the layout of a whole floor made as the game makes them: rooms in a grid, a few empty cells, one-tile corridors joining them (and sometimes a loop), sometimes a pool; `s` the arrival in the first room, `e` the stairs in the farthest, `p q r` traps, `o t` items, sometimes `k` a shop (where the shopkeeper stands) and `m` a Monster House, each in its room, `a b c...` the middle of the other rooms. The same seed, the same floor. The layout written can be touched up by hand afterwards. Already made: `foret_brumeuse_etage`, `grotte_cascade_etage`, `plaines_elek_etage`, `falaise_trempee_etage`, `grotte_etuve_etage`, `mt_corne_etage`, `bois_aux_pommes_etage`.
+`generate` writes a `.decor` (`base dungeon`) with the layout of a whole floor made as the game makes them: rooms in a grid, a few empty cells, one-tile corridors joining them (and sometimes a loop), sometimes a pool; `s` the arrival in the first room, `e` the stairs in the farthest, `p q r` traps, `o t` items, sometimes `k` a shop (where the shopkeeper stands) and `m` a Monster House, each in its room, `a b c...` the middle of the other rooms. The same seed, the same floor. The layout written can be touched up by hand afterwards.
 
 It is written into `data/extra/` like the other places, and plays the same way: `scene: my_cave_room`.
 

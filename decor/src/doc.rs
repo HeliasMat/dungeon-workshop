@@ -654,8 +654,8 @@ fn shifted_line(line: &str, dx: i64, dy: i64) -> Option<String> {
     (made != line.split_whitespace().collect::<Vec<_>>().join(" ")).then_some(made)
 }
 
-/// A new decor's text, the one way one starts (`decor nouveau`, the
-/// Workshop's "Nouveau decor"): its name and title, its size, its level
+/// A new decor's text, the one way one starts (`decor new`, the
+/// Workshop's "New Decor"): its name and title, its size, its level
 /// (fixed once made), its ground, an edge (on a side) if one, its song if
 /// one, an entrance at its bottom middle.
 pub fn made(name: &str, title: &str, [wide, high]: [usize; 2], level: Option<i64>, ground: &str, edge: Option<(&str, &str)>, song: Option<u16>) -> String {
@@ -684,7 +684,7 @@ pub fn made(name: &str, title: &str, [wide, high]: [usize; 2], level: Option<i64
     text
 }
 
-/// A decor of before written as one of now (`decor migre`), building the
+/// A decor of before written as one of now (`decor migrate`), building the
 /// same: its level said (that one, if it says none), its layers by their
 /// names of now, hidden lines too.
 pub fn migrated(text: &str, level: i64) -> String {
@@ -787,26 +787,26 @@ mod tests {
 
     #[test]
     fn elements_copied_are_laid_again_aside_and_the_places_it_is_like_read() {
-        let text = "decor: a 64 64\nlike 11 12\nground herbe_bourg\n";
-        let made = pasted(text, "put rocher_plage 8 8 flip\nground autre\n  water mare 16 16", [16.0, 16.0]).expect("laid");
-        assert_eq!(made, "decor: a 64 64\nlike 11 12\nground herbe_bourg\nput rocher_plage 24 24 flip\nwater mare 32 32\n");
-        assert_eq!(pasted(text, "ground herbe_bourg", [0.0, 0.0]), None);
+        let text = "decor: a 64 64\nlike 11 12\nground town_grass\n";
+        let made = pasted(text, "put beach_rock 8 8 flip\nground other\n  water pond 16 16", [16.0, 16.0]).expect("laid");
+        assert_eq!(made, "decor: a 64 64\nlike 11 12\nground town_grass\nput beach_rock 24 24 flip\nwater pond 32 32\n");
+        assert_eq!(pasted(text, "ground town_grass", [0.0, 0.0]), None);
         assert_eq!(compared(text), ["11", "12"]);
     }
 
     #[test]
     fn a_decor_resized_from_an_anchor_moves_what_it_lays() {
-        let text = "decor: a 256 192\nentrance 128 184 down\nground herbe_bourg zone 0 0 64 64\nedge mer_plage 72\nput rocher_plage 8 8, 16 16 flip  # two\n# put caisse_jeu 40 40\npath terre from 0 100 to 128 100 width 16\nwall 0 0 8 8\nground sable tiles 1,1 2,1\nresident pikachu 50 60 down\nlink 11 0 0 8 8\n# A note.\n";
+        let text = "decor: a 256 192\nentrance 128 184 down\nground town_grass zone 0 0 64 64\nedge beach_sea 72\nput beach_rock 8 8, 16 16 flip  # two\n# put crate 40 40\npath dirt from 0 100 to 128 100 width 16\nwall 0 0 8 8\nground sable tiles 1,1 2,1\nresident pikachu 50 60 down\nlink 11 0 0 8 8\n# A note.\n";
         assert_eq!(resized(text, [300, 200], [0, 0]), text.replace("256 192", "300 200"), "from the top left: nothing moves");
         let moved = resized(text, [320, 208], anchor_of("bottom-right").expect("an anchor"));
         let lines: Vec<&str> = moved.lines().collect();
         assert_eq!(lines[0], "decor: a 320 208");
         assert_eq!(lines[1], "entrance 192 200 down");
-        assert_eq!(lines[2], "ground herbe_bourg zone 64 16 128 80");
-        assert_eq!(lines[3], "edge mer_plage 88");
-        assert_eq!(lines[4], "put rocher_plage 72 24, 80 32 flip  # two");
-        assert_eq!(lines[5], "# put caisse_jeu 104 56");
-        assert_eq!(lines[6], "path terre from 64 116 to 192 116 width 16");
+        assert_eq!(lines[2], "ground town_grass zone 64 16 128 80");
+        assert_eq!(lines[3], "edge beach_sea 88");
+        assert_eq!(lines[4], "put beach_rock 72 24, 80 32 flip  # two");
+        assert_eq!(lines[5], "# put crate 104 56");
+        assert_eq!(lines[6], "path dirt from 64 116 to 192 116 width 16");
         assert_eq!(lines[7], "wall 64 16 72 24");
         assert_eq!(lines[8], "ground sable tiles 9,3 10,3");
         assert_eq!(lines[9], "resident pikachu 114 76 down");
@@ -851,24 +851,24 @@ mod tests {
 
     #[test]
     fn a_ground_is_painted_on_tiles_and_taken_off_them() {
-        let text = "decor: a 64 64\nground herbe_bourg\nput rocher_plage 8 8\n";
-        let painted = with_tiles(text, "sable_plage", &[[2, 1], [1, 1]], false);
-        assert_eq!(painted.lines().nth(2), Some("ground sable_plage tiles 1,1 2,1"));
-        let more = with_tiles(&painted, "sable_plage", &[[1, 1], [0, 3]], false);
-        assert_eq!(more.lines().nth(2), Some("ground sable_plage tiles 1,1 2,1 0,3"));
-        let less = with_tiles(&more, "sable_plage", &[[1, 1], [2, 1], [0, 3]], true);
+        let text = "decor: a 64 64\nground town_grass\nput beach_rock 8 8\n";
+        let painted = with_tiles(text, "beach_sand", &[[2, 1], [1, 1]], false);
+        assert_eq!(painted.lines().nth(2), Some("ground beach_sand tiles 1,1 2,1"));
+        let more = with_tiles(&painted, "beach_sand", &[[1, 1], [0, 3]], false);
+        assert_eq!(more.lines().nth(2), Some("ground beach_sand tiles 1,1 2,1 0,3"));
+        let less = with_tiles(&more, "beach_sand", &[[1, 1], [2, 1], [0, 3]], true);
         assert_eq!(less, text, "no tile left: the line goes");
-        assert_eq!(painted_tiles(&more, "sable_plage").1.len(), 3);
+        assert_eq!(painted_tiles(&more, "beach_sand").1.len(), 3);
     }
 
     #[test]
     fn an_element_lives_and_tiles_are_walled_or_let_walk_on_by_hand() {
-        let pose = Pose::read("put rocher_plage 8 8 anim glow slow name feu").expect("a put");
-        assert_eq!((pose.animation.as_deref(), pose.pace.as_deref(), pose.spot.as_deref()), (Some("glow"), Some("slow"), Some("feu")));
-        assert_eq!(pose.line(), "put rocher_plage 8 8 anim glow slow name feu");
-        let text = "decor: a 64 64\nground herbe_bourg\n\n[life]\nmusic 3\n";
+        let pose = Pose::read("put beach_rock 8 8 anim glow slow name fire").expect("a put");
+        assert_eq!((pose.animation.as_deref(), pose.pace.as_deref(), pose.spot.as_deref()), (Some("glow"), Some("slow"), Some("fire")));
+        assert_eq!(pose.line(), "put beach_rock 8 8 anim glow slow name fire");
+        let text = "decor: a 64 64\nground town_grass\n\n[life]\nmusic 3\n";
         let walled = with_walls(text, &[[1, 2], [0, 2]], Walling::Wall);
-        assert_eq!(walled, "decor: a 64 64\nground herbe_bourg\nwall tiles 0,2 1,2\n\n[life]\nmusic 3\n");
+        assert_eq!(walled, "decor: a 64 64\nground town_grass\nwall tiles 0,2 1,2\n\n[life]\nmusic 3\n");
         let freed = with_walls(&walled, &[[1, 2], [3, 3]], Walling::Free);
         assert_eq!(painted_walls(&freed), (vec![[0, 2]], vec![[1, 2], [3, 3]]));
         assert_eq!(with_walls(&freed, &[[0, 2], [1, 2], [3, 3]], Walling::Built), text);
@@ -877,44 +877,44 @@ mod tests {
 
     #[test]
     fn a_pose_says_its_name_and_whether_it_is_hidden_or_locked() {
-        let pose = Pose::read("put rocher_plage 8 8 flip name gros_rocher locked hidden").expect("a put");
-        assert_eq!((pose.spot.as_deref(), pose.locked, pose.hidden, pose.turned), (Some("gros_rocher"), true, true, true));
-        assert_eq!(pose.line(), "put rocher_plage 8 8 flip name gros_rocher locked hidden");
-        let doc = "decor: a 64 64\ngroup falaise\nput rocher_plage 8 8\nend\nput caisse_jeu 8 8 hidden\n";
-        assert_eq!(groups(doc), vec![("falaise".to_string(), 3, 4)]);
+        let pose = Pose::read("put beach_rock 8 8 flip name big_rock locked hidden").expect("a put");
+        assert_eq!((pose.spot.as_deref(), pose.locked, pose.hidden, pose.turned), (Some("big_rock"), true, true, true));
+        assert_eq!(pose.line(), "put beach_rock 8 8 flip name big_rock locked hidden");
+        let doc = "decor: a 64 64\ngroup cliff\nput beach_rock 8 8\nend\nput crate 8 8 hidden\n";
+        assert_eq!(groups(doc), vec![("cliff".to_string(), 3, 4)]);
         assert_eq!(laid_in(doc).len(), 1, "the hidden one is not on the stage");
     }
 
     #[test]
     fn elements_chosen_together_are_moved_doubled_turned_and_taken_out_in_one_text() {
-        let text = "decor: a 256 192\nground herbe_bourg\nput rocher_plage 8 8\nput caisse_jeu 40 16, 80 16\n";
+        let text = "decor: a 256 192\nground town_grass\nput beach_rock 8 8\nput crate 40 16, 80 16\n";
         let moved = moved_many(text, &[(3, 0, [16.0, 24.0]), (4, 1, [96.0, 24.0])]);
-        assert_eq!(moved, "decor: a 256 192\nground herbe_bourg\nput rocher_plage 16 24\nput caisse_jeu 40 16, 96 24\n");
+        assert_eq!(moved, "decor: a 256 192\nground town_grass\nput beach_rock 16 24\nput crate 40 16, 96 24\n");
         let twice = doubled(text, &[3, 3], [16.0, 16.0]);
-        assert!(twice.ends_with("put caisse_jeu 40 16, 80 16\nput rocher_plage 24 24\n"), "{twice}");
+        assert!(twice.ends_with("put crate 40 16, 80 16\nput beach_rock 24 24\n"), "{twice}");
         let turned = each_pose(text, &[3, 4], |pose| Some(Pose { turned: true, ..pose }));
-        assert!(turned.contains("put rocher_plage 8 8 flip") && turned.contains("put caisse_jeu 40 16, 80 16 flip"));
-        assert_eq!(each_pose(text, &[4, 3], |_| None), "decor: a 256 192\nground herbe_bourg\n");
+        assert!(turned.contains("put beach_rock 8 8 flip") && turned.contains("put crate 40 16, 80 16 flip"));
+        assert_eq!(each_pose(text, &[4, 3], |_| None), "decor: a 256 192\nground town_grass\n");
     }
 
     #[test]
     fn an_element_laid_is_read_and_made_again() {
-        let pose = Pose::read("  put rocher_plage 440 224, 120 64 flip shadow off layer over").expect("laid");
-        assert_eq!((pose.name.as_str(), pose.points.clone(), pose.turned, pose.shadowless), ("rocher_plage", vec![[440.0, 224.0], [120.0, 64.0]], true, true));
+        let pose = Pose::read("  put beach_rock 440 224, 120 64 flip shadow off layer over").expect("laid");
+        assert_eq!((pose.name.as_str(), pose.points.clone(), pose.turned, pose.shadowless), ("beach_rock", vec![[440.0, 224.0], [120.0, 64.0]], true, true));
         assert_eq!(pose.layer.as_deref(), Some("over"));
-        assert_eq!(pose.line(), "  put rocher_plage 440 224, 120 64 flip shadow off layer over");
-        assert_eq!(pose.moved(1, [128.0, 72.0]).line(), "  put rocher_plage 440 224, 128 72 flip shadow off layer over");
-        assert_eq!(Pose::read("water mare 16 32").expect("water").line(), "water mare 16 32");
-        assert_eq!(Pose::read("ground sable_plage"), None);
+        assert_eq!(pose.line(), "  put beach_rock 440 224, 120 64 flip shadow off layer over");
+        assert_eq!(pose.moved(1, [128.0, 72.0]).line(), "  put beach_rock 440 224, 128 72 flip shadow off layer over");
+        assert_eq!(Pose::read("water pond 16 32").expect("water").line(), "water pond 16 32");
+        assert_eq!(Pose::read("ground beach_sand"), None);
         assert_eq!(Pose::read("put rien"), None);
     }
 
     #[test]
     fn a_decors_zones_and_paths_are_read_and_a_corner_moved() {
-        let doc = "ground fourre zone 0 0 640 192\npath terre from 280 480 to 280 368 width 32\nscatter cailloux 3 zone 64 160 520 240 flip\n";
+        let doc = "ground fourre zone 0 0 640 192\npath dirt from 280 480 to 280 368 width 32\nscatter cailloux 3 zone 64 160 520 240 flip\n";
         let found: Vec<(usize, String, [[f32; 2]; 2])> = zones(doc).into_iter().map(|zone| (zone.line, zone.word, zone.corners)).collect();
         assert_eq!(found, [(1, "ground".to_string(), [[0.0, 0.0], [640.0, 192.0]]), (3, "scatter".to_string(), [[64.0, 160.0], [520.0, 240.0]])]);
-        assert_eq!(paths(doc), [(2, "terre".to_string(), vec![[280.0, 480.0], [280.0, 368.0]])]);
+        assert_eq!(paths(doc), [(2, "dirt".to_string(), vec![[280.0, 480.0], [280.0, 368.0]])]);
         assert_eq!(
             zone_moved("  scatter cailloux 3 zone 64 160 520 240 flip", 1, [512.0, 248.0]).as_deref(),
             Some("  scatter cailloux 3 zone 64 160 512 248 flip")

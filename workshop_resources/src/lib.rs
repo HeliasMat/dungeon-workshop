@@ -511,7 +511,7 @@ impl Resources {
         }
         match self.sort {
             0 => items.sort_by_key(|item| (item.shelf, item.order, film::words::plain(&item.label))),
-            // (`Effet 2` before `Effet 10`: the words, then the number.)
+            // (`Effect 2` before `Effect 10`: the words, then the number.)
             1 => items.sort_by_key(|item| {
                 (
                     item.shelf,

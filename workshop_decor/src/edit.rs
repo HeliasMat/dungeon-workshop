@@ -892,7 +892,7 @@ mod tests {
     /// A backdrop set (under the pieces, over the grounds), changed where it is, taken out; the decor still reads.
     #[test]
     fn a_backdrop_is_set_changed_and_taken_out() {
-        let text = "decor: a 256 192\nname A\nground herbe_bourg\nput e1_1 8 8\n[life]\nresident pikachu 50 60 down\n";
+        let text = "decor: a 256 192\nname A\nground town_grass\nput e1_1 8 8\n[life]\nresident pikachu 50 60 down\n";
         let set = with_backdrop(text, 323);
         assert_eq!(text_line(&set, 4), "put r323 0 0 shadow off layer ground locked");
         assert_eq!(text_line(&set, 5), "put e1_1 8 8");

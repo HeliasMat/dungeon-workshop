@@ -420,7 +420,7 @@ mod tests {
             own.set(x, 5, true);
         }
         let apart = |x: usize, _: usize| if x < 15 { [200, 60, 60] } else { [60, 200, 60] };
-        assert_eq!(objects(&own, &apart).len(), 2, "deux couleurs : deux objets");
+        assert_eq!(objects(&own, &apart).len(), 2, "two colours: two objects");
         let alike = |_: usize, _: usize| [200, 160, 90];
         assert_eq!(objects(&own, &alike).len(), 1, "the same colours, touching: one fence");
         let mut alone = Mask::new(12, 12);

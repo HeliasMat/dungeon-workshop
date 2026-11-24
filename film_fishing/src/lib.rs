@@ -16,7 +16,7 @@
 //! `shadow a dives|flees`, `spectators joy|sorrow`. The rod is drawn in a
 //! variant's own pictures (`pikachu_pecheur`, painted by hand): his cast is
 //! his `Swing`, his pull his `Pull`, and where his line starts on each picture
-//! is told in his table (`pointe`). Here is only who shows what.
+//! is told in `rod_tips.txt`. Here is only who shows what.
 
 use engine::{Beat, Cam, Num, Point, Pose, Who};
 use glam::Vec2;

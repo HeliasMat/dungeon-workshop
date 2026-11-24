@@ -8,8 +8,8 @@
 //! A line of a decor: `terrain <level> x y columns rows <corners>`, its
 //! corners `(columns+1) x (rows+1)` letters (`a` the place's most seen
 //! terrain, `b` the next…; `.` nothing), rows apart by `/`, a letter followed
-//! by how many times it is repeated (`a12b3.4`); then `murs <lettres>` (or
-//! `murs aucun`): the terrains one does not walk on, if not those the place
+//! by how many times it is repeated (`a12b3.4`); then `walls <letters>` (or
+//! `walls none`): the terrains one does not walk on, if not those the place
 //! itself never lets walk on (its water, its cliffs).
 
 use std::collections::HashMap;

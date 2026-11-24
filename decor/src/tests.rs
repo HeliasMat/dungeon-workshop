@@ -26,27 +26,27 @@ fn wrong(text: &str) -> String {
 #[test]
 fn reads_a_place() {
     let made = parse(
-        "# a comment\ndecor: crique 64 128\nlevel 470\nname The Cove\ncenter 32 40\n\nground sable_plage\nput rocher_plage 8 16, 24 32\n",
-        "crique.decor",
+        "# a comment\ndecor: cove 64 128\nlevel 470\nname The Cove\ncenter 32 40\n\nground beach_sand\nput beach_rock 8 16, 24 32\n",
+        "cove.decor",
     )
     .expect("read");
     assert_eq!(
         (made.name.as_str(), made.width, made.height, made.level, made.shown.as_deref(), made.middle),
-        ("crique", 64, 128, Some(470), Some("The Cove"), Some((32, 40)))
+        ("cove", 64, 128, Some(470), Some("The Cove"), Some((32, 40)))
     );
     let lines: Vec<(usize, &str, &[String])> = made.lines.iter().map(|line| (line.number, line.verb.as_str(), line.words.as_slice())).collect();
-    assert_eq!(lines, [(7, "ground", &words(&["sable_plage"])[..]), (8, "put", &words(&["rocher_plage", "8", "16,", "24", "32"])[..])]);
+    assert_eq!(lines, [(7, "ground", &words(&["beach_sand"])[..]), (8, "put", &words(&["beach_rock", "8", "16,", "24", "32"])[..])]);
     assert_eq!(points_of(&Location::in_file("x", 1), &words(&["8", "16,", "24", "32"])).expect("points"), [(8, 16), (24, 32)]);
 }
 
 #[test]
 fn modifiers_and_zones() {
-    let made = parse("decor: c 64 64\nentrance 8 56 down\nground herbe_bourg zone 0 0 32 32\nput tente_bourg 8 8 flip shadow off layer over\nscatter touffe_bourg 3 zone 0 0 64 64 flip\n", "c.decor").expect("read");
+    let made = parse("decor: c 64 64\nentrance 8 56 down\nground town_grass zone 0 0 32 32\nput town_tent 8 8 flip shadow off layer over\nscatter town_tuft 3 zone 0 0 64 64 flip\n", "c.decor").expect("read");
     assert_eq!(made.entrances, [(2, 8, 56, "down".to_string())]);
     assert_eq!(zone_of(&Location::in_file("x", 1), &made.lines[0].words[1..], "").expect("zone"), (0, 0, 32, 32));
     let tent = &made.lines[1];
-    assert_eq!((tent.words.clone(), tent.mirrored, tent.shadow, tent.layer.as_deref()), (words(&["tente_bourg", "8", "8"]), true, false, Some("over")));
-    assert_eq!(made.lines[2].words, words(&["touffe_bourg", "3", "zone", "0", "0", "64", "64"]));
+    assert_eq!((tent.words.clone(), tent.mirrored, tent.shadow, tent.layer.as_deref()), (words(&["town_tent", "8", "8"]), true, false, Some("over")));
+    assert_eq!(made.lines[2].words, words(&["town_tuft", "3", "zone", "0", "0", "64", "64"]));
     assert!(made.lines[2].mirrored);
 }
 
@@ -87,8 +87,8 @@ fn paths() {
 
 #[test]
 fn a_piece_laid_is_at_the_pixel_and_reads_back() {
-    let line = crate::lang::laid("rocher_plage", 269.4, 213.0);
-    assert_eq!(line, "put rocher_plage 269 213");
+    let line = crate::lang::laid("beach_rock", 269.4, 213.0);
+    assert_eq!(line, "put beach_rock 269 213");
     let made = parse(
         &format!(
             "decor: c 576 384
@@ -98,13 +98,13 @@ fn a_piece_laid_is_at_the_pixel_and_reads_back() {
         "c.decor",
     )
     .expect("read");
-    assert_eq!(made.lines[0].words, words(&["rocher_plage", "269", "213"]));
+    assert_eq!(made.lines[0].words, words(&["beach_rock", "269", "213"]));
     assert_eq!(crate::lang::laid("x", -5.0, 3.0), "put x -5 3");
 }
 
 #[test]
 fn a_new_place_reads() {
-    let made = parse(&crate::doc::made("fresh", "", [321, 240], Some(500), "herbe_bourg", None, None), "fresh.decor").expect("read");
+    let made = parse(&crate::doc::made("fresh", "", [321, 240], Some(500), "town_grass", None, None), "fresh.decor").expect("read");
     assert_eq!((made.name.as_str(), made.width, made.height, made.level, made.shown.as_deref()), ("fresh", 321, 240, Some(500), Some("Fresh")));
     assert!(!made.entrances.is_empty());
 }
@@ -307,24 +307,24 @@ fn every_room_and_letter_is_reached_from_the_arrival() {
 
 #[test]
 fn a_floor_s_head_says_it() {
-    let text = crate::room::generate::make("bois_etage", "Apple Woods", 6, 13, 32, 20).expect("made");
-    assert!(text.contains("dungeon: bois_etage Apple Woods 6"));
+    let text = crate::room::generate::make("woods_floor", "Apple Woods", 6, 13, 32, 20).expect("made");
+    assert!(text.contains("dungeon: woods_floor Apple Woods 6"));
     assert!(floor_plan("Apple Woods", 6, 13).iter().all(|row| row.len() == 32));
 }
 
 #[test]
 fn things_named_hidden_locked_grouped_and_walls_said_by_hand_are_read() {
     let made = parse(
-        "decor: c 64 64\ngroup rochers\nput rocher_plage 8 8 name gros_rocher locked\nput rocher_plage 24 8 hidden\nend\nwall 0 0 16 16\nfree 32 32 48 48\nground sable_plage tiles 1,2 3,4\n",
+        "decor: c 64 64\ngroup rocks\nput beach_rock 8 8 name big_rock locked\nput beach_rock 24 8 hidden\nend\nwall 0 0 16 16\nfree 32 32 48 48\nground beach_sand tiles 1,2 3,4\n",
         "c.decor",
     )
     .expect("read");
     let laid: Vec<(&str, Option<&str>, bool)> = made.lines.iter().map(|line| (line.verb.as_str(), line.name.as_deref(), line.locked)).collect();
-    assert_eq!(laid, [("put", Some("gros_rocher"), true), ("wall", None, false), ("free", None, false), ("ground", None, false)], "the hidden one is not laid");
-    assert_eq!(made.groups, [("rochers".to_string(), 2, 5)]);
-    assert!(wrong("decor: c 64 64\ngroup a\nput rocher_plage 8 8\n").contains("end"));
+    assert_eq!(laid, [("put", Some("big_rock"), true), ("wall", None, false), ("free", None, false), ("ground", None, false)], "the hidden one is not laid");
+    assert_eq!(made.groups, [("rocks".to_string(), 2, 5)]);
+    assert!(wrong("decor: c 64 64\ngroup a\nput beach_rock 8 8\n").contains("end"));
     assert!(wrong("decor: c 64 64\nend\n").contains("group"));
-    assert!(wrong("decor: c 64 64\nput rocher_plage 8 8 name gros-rocher\n").contains("name"));
+    assert!(wrong("decor: c 64 64\nput beach_rock 8 8 name big-rock\n").contains("name"));
     assert!(wrong("decor: c 64 64\nwall 0 0 16\n").contains("numbers"));
 }
 

@@ -317,7 +317,7 @@ fn inside_colours(piece: &Piece, source: &Source) -> Result<Vec<i64>, Diagnostic
     Ok(inside)
 }
 
-/// The tiles of a sol, edge or path_line piece.
+/// The tiles of a ground, edge or path_line piece.
 fn loom_of(workshop: &Workshop, piece: &Piece) -> Result<Loom, Diagnostic> {
     let Level::Place(level) = piece.level else {
         return Err(piece.where_().wrong(format!("\"{}\": a ground comes from a place of the game", piece.name)));

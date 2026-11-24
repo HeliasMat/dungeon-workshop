@@ -285,7 +285,7 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | The game's pictures, their categories, their animations | `library/tables/images.txt` |
 | An object on stage: a game item, a decor piece, a picture of our own | `engine/src/stage/thing.rs` (`Thing`); its words: `film_core/src/groups/things.rs`, `items.rs`; the word for each decor piece: `library/tables/objects.txt`; our pictures: `library/images/` |
 | A Pokémon variant | painted by hand in `data/hand/`, its line in `data/extra/variants.txt` (none is provided) |
-| What a Pokémon wears | painted into a variant; where its rod's line starts: `pointe` in its table, written by hand in `data/extra/rod_tips.txt`, read by `Art::rod_tip` (`shell/src/art.rs`); its words: `film_fishing/src/` and the recipes in `film/recipes/fishing/`; the small things the words use (bobber, crosshair, footprints): `library/images/` |
+| What a Pokémon wears | painted into a variant; where its rod's line starts: written by hand in `data/extra/rod_tips.txt`, read by `Art::rod_tip` (`shell/src/art.rs`); its words: `film_fishing/src/` and the recipes in `film/recipes/fishing/`; the small things the words use (bobber, crosshair, footprints): `library/images/` |
 | What replaces the scene on screen | `engine/src/stage/light.rs` (`Cutaway`) |
 | Where a game file is, the merged lists, the tables read | `assets/src/data.rs` (where, merged) and `assets/src/tables.rs` (read: backgrounds, grounds, built places, names, walls); the keys of the lists: `assets/src/indexes.txt`; each file: `data/DATA.md` |
 | Where you can walk in each place | `data/extra/ground.txt`, made by `decor game_grounds`; places traced by hand: `library/tables/grounds.txt` |

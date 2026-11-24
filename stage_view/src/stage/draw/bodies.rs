@@ -182,7 +182,7 @@ impl Play {
                 continue;
             };
             let way = way_of(fisher.direction);
-            // (Where the rod drawn in his picture ends, if it is drawn: a variant's `pointe`.)
+            // (Where the rod drawn in his picture ends, if it is drawn: a variant's `rod_tips.txt`.)
             let tip = art.rod_tip(self.sim.cast.who(*who).0, shown.showing(), way, shown.step()).unwrap_or((0, -24));
             let from = fisher.shown_at() + Vec2::new(tip.0 as f32, tip.1 as f32 - fisher.shown_height());
             let end = held.shown_at() - Vec2::new(0.0, held.shown_height() + TIED);

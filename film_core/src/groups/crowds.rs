@@ -166,7 +166,7 @@ fn crowd_named(line: &Line) -> Option<&str> {
 }
 
 /// The ways the engine's lines are turned to: a crowd so named would turn
-/// them into its members (`put krabby 300 90 gauche`).
+/// them into its members (`put krabby 300 90 left`).
 const WAYS: [&str; 8] = ["up", "down", "left", "right", "upleft", "upright", "downleft", "downright"];
 
 /// Whether a word is one the engine reads as its own: no crowd can be named

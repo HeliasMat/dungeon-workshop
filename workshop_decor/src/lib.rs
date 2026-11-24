@@ -345,7 +345,7 @@ pub struct Decors {
     /// The layers hidden, locked (`edit::LAYERS`); the grid shown.
     pub hidden: HashSet<&'static str>,
     pub locked: HashSet<&'static str>,
-    /// The layer what is laid goes on (`sol`, `objets`, `dessus`); one shown alone;
+    /// The layer what is laid goes on (`ground`, `objects`, `over`); one shown alone;
     /// how much each is seen (1: wholly); the one the Hierarchy lists alone.
     pub active_layer: &'static str,
     pub solo: Option<&'static str>,

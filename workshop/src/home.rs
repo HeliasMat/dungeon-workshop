@@ -163,7 +163,7 @@ fn paint_picture(painter: &egui::Painter, home: &mut Home, context: &egui::Conte
     }
 }
 
-// --- The Projet ---
+// --- The Project ---
 
 pub fn project(ui: &mut egui::Ui, work: &mut Work) {
     ui.add_space(4.0);
@@ -217,7 +217,7 @@ pub fn project(ui: &mut egui::Ui, work: &mut Work) {
             (work.home.shelf, work.home.sought) = (shelf, String::new());
         }
     }
-    // (The things drawn: in the Ressources.)
+    // (The things drawn: in the Resources.)
     let drawn = std::fs::read_dir(work.session.library().images())
         .map_or(0, |files| files.flatten().filter(|file| file.path().extension().is_some_and(|own| own == "png")).count());
     if row(ui, "Drawn Objects", Some(theme::ASSETS), drawn, false, theme::TEXT).on_hover_text("in the Resources space").clicked() {
@@ -1011,7 +1011,7 @@ fn restored(session: &Session, path: &Path) -> Result<PathBuf, String> {
 fn duplicated(entry: &Entry) -> Result<PathBuf, String> {
     let stem = entry.path.file_stem().ok_or("no name")?.to_string_lossy().into_owned();
     let extension = entry.path.extension().map(|own| own.to_string_lossy().into_owned()).unwrap_or_default();
-    let mut to = entry.path.with_file_name(format!("{stem}_copie.{extension}"));
+    let mut to = entry.path.with_file_name(format!("{stem}_copy.{extension}"));
     let mut number = 2;
     while to.exists() {
         to = entry.path.with_file_name(format!("{stem}_copy{number}.{extension}"));

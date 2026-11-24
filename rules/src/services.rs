@@ -24,7 +24,7 @@ const DIGITS: u32 = 7;
 /// Items a page of a list shows.
 pub const LIST_PAGE: usize = 6;
 /// The keys of a list of items, told under it.
-const KEYS: &str = "Espace : marquer   R : trier";
+const KEYS: &str = "Space: mark   R: sort";
 
 /// A key, as the services read it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
