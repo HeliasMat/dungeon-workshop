@@ -568,7 +568,7 @@ impl App {
                 theme::FIELD
             }))
         };
-        let step = workshop_decor::scene::grid_step(&open.text);
+        let step = workshop_decor::placing::grid_step(&open.text);
         let snap_said = toggle(ui, "Snap", decors.snap)
             .on_hover_text(format!("what is laid or carried lands on the grid of {step:.0} pixels (S; Alt held: the other way for a moment)"));
         let walls_shown = !decors.is_hidden("walls");
