@@ -47,6 +47,7 @@ impl Stage {
                     Cam::At(at) => Some(at.vec2()),
                     Cam::Who(who) => self.cast.get(&who).map(|actor| match kind {
                         ParticleKind::Rings => actor.position,
+                        ParticleKind::Cinders | ParticleKind::Zap | ParticleKind::Drip | ParticleKind::Leaves => Stage::source(kind, actor),
                         _ => actor.position - Vec2::new(0.0, 16.0),
                     }),
                 };

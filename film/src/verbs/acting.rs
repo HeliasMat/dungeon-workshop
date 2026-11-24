@@ -517,6 +517,9 @@ fn posed(film: &mut Film, line: &Line) -> bool {
         return true;
     }
     let name = plain(line.args.word("name").unwrap_or_default());
+    if matches!(name.as_str(), "spin" | "dance") {
+        super::aura::moved(film, &who, super::aura::Mood::Dancing);
+    }
     // (`pose a sleep`, said with no way of playing it: the engine's own pose, lying asleep.)
     let said_how = line.args.has("once") || line.args.has("loop") || line.args.has("hold");
     let own = match name.as_str() {
@@ -673,6 +676,11 @@ fn balloon(film: &mut Film, who: &str, kind: &str, sound: bool) -> bool {
         return false;
     };
     film.on(who, |one| emit::emote(one, EmoteId(*id), Some(60.0)));
+    match kind {
+        "anger" => super::aura::moved(film, who, super::aura::Mood::Angry),
+        "sweat" | "shock" => super::aura::moved(film, who, super::aura::Mood::Scared),
+        _ => {}
+    }
     if let Some(heard) = heard.filter(|_| sound) {
         film.sound(heard);
     }

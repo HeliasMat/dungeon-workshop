@@ -158,6 +158,9 @@ impl Film {
         let who = if told { "-".to_string() } else { plain(name) };
         let who = self.staging.evolved.get(&who).cloned().unwrap_or(who);
         let face = if told { face } else { face_had(self, &who, face, number) };
+        if let Some(mood) = crate::verbs::aura::mood_of_face(&face).filter(|_| !told) {
+            crate::verbs::aura::moved(self, &who, mood);
+        }
         if self.acting && !told {
             act(self, &who, &face, &bare);
         }

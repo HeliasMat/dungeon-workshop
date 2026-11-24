@@ -234,6 +234,7 @@ pub const WORDS: &[(&str, Export, &str)] = &[
         Export::Close,
         "its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target, a small shake: not the move's own animation (dungeons only)",
     ),
+    ("aura", Export::Close, "nothing shown: the cinders, sparks, drops and leaves of a type are the engine's own particles"),
     (
         "use",
         Export::Close,
@@ -373,6 +374,7 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("status", "only confusion, poison, sleep, ice and stats show"),
     ("attack", "a crouch, the attack and an effect of its type: not the move's own animation"),
     ("use", "a crouch, the attack and an effect of its type: not the move's own animation"),
+    ("aura", "no aura: Sky's scripts have no particles of their own"),
     ("evolve", "no change of species: the evolved one is another actor"),
     ("transform", "he keeps his look: only the shine and the white screen"),
     ("dodge", "the “Missed!” won't show"),

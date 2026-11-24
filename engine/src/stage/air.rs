@@ -104,6 +104,35 @@ impl Stage {
                 (particle.life, particle.sharp, particle.ring) = (40.0 + life * 24.0, true, 9.0 + spread * 8.0);
                 particle.colour = colour.unwrap_or([230, 245, 255]);
             }
+            // (Cinders: about the body, rising a little and dying; sharp
+            // pixels, no glow.)
+            ParticleKind::Cinders => {
+                particle.at += Vec2::new(((way - 0.5) * 28.0).round(), ((far - 0.5) * 18.0).round());
+                particle.speed = Vec2::new((spread - 0.5) * 0.2, -0.25 - far * 0.2);
+                (particle.life, particle.sharp) = (30.0 + life * 30.0, true);
+                particle.colour = colour.unwrap_or(if spread < 0.5 { [255, 120, 32] } else { [255, 208, 64] });
+            }
+            // (A zap: a spark flung off fast, gone at once; sharp pixels.)
+            ParticleKind::Zap => {
+                particle.at += Vec2::new(((way - 0.5) * 12.0).round(), ((far - 0.5) * 10.0).round());
+                particle.speed = Vec2::from_angle(spread * std::f32::consts::TAU) * (1.2 + far);
+                (particle.life, particle.sharp) = (8.0 + life * 8.0, true);
+                particle.colour = colour.unwrap_or(if life < 0.5 { [255, 240, 96] } else { [255, 255, 255] });
+            }
+            // (A drip: off the side of the head, sliding down; sharp pixels.)
+            ParticleKind::Drip => {
+                particle.at += Vec2::new(if way < 0.5 { -8.0 } else { 8.0 }, 0.0);
+                particle.speed = Vec2::new(0.0, 0.15);
+                (particle.fall, particle.life, particle.sharp) = (0.02, 34.0 + life * 10.0, true);
+                particle.colour = colour.unwrap_or([104, 184, 255]);
+            }
+            // (Leaves: from about the head, falling slowly aside; sharp pixels.)
+            ParticleKind::Leaves => {
+                particle.at += Vec2::new(((way - 0.5) * 30.0).round(), (-far * 6.0).round());
+                particle.speed = Vec2::new((spread - 0.5) * 0.6, 0.3 + far * 0.2);
+                (particle.life, particle.sharp) = (50.0 + life * 30.0, true);
+                particle.colour = colour.unwrap_or(if spread < 0.5 { [96, 200, 72] } else { [56, 152, 56] });
+            }
             // (Embers: rising slowly, swaying.)
             ParticleKind::Embers => {
                 particle.at += Vec2::new((way - 0.5) * 20.0, 0.0);
@@ -117,10 +146,13 @@ impl Stage {
     }
 
     /// Where particles of a kind come off someone: over its head, or rings
-    /// at its feet, on the ground.
+    /// at its feet, on the ground; cinders and zaps about its middle, leaves
+    /// just over its head.
     pub(super) fn source(kind: ParticleKind, actor: &Actor) -> Vec2 {
         match kind {
             ParticleKind::Rings => actor.position,
+            ParticleKind::Cinders | ParticleKind::Zap => actor.over_head(12.0),
+            ParticleKind::Leaves | ParticleKind::Drip => actor.over_head(30.0),
             _ => actor.over_head(16.0),
         }
     }

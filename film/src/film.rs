@@ -128,6 +128,8 @@ pub struct Staging {
     /// Who hides (`hide`), and who is under the ground (`burrow`).
     pub hidden: BTreeSet<String>,
     pub buried: BTreeSet<String>,
+    /// Who shows an aura of his type (`aura on`): the game's type.
+    pub auras: BTreeMap<String, u8>,
 }
 
 impl Staging {

@@ -26,6 +26,12 @@ pub const WORDS: &[Word] = &[
         .does(shaking)
         .instant(),
     Word::new("tremble", &["screen strength:number d:duration [weak|strong]", "thing... strength:number [d:duration]"], "tremble screen: quake").maybe(shaken),
+    Word::new(
+        "aura",
+        &["on who:pokemon", "off who:pokemon"],
+        "an ambience of his kind's type, never by itself, in sharp pixels: a fire kind's cinders about him (emitter), a spark off an electric kind angry, a drop off a water kind scared, leaves off a grass kind dancing (particles); off: none",
+    )
+    .does(super::aura::aura),
 ];
 
 /// The word that is no move: it has its own bolt.

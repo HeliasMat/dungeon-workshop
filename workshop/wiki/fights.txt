@@ -13,13 +13,15 @@ piplup join team
 pikachu: Welcome aboard!
 
 == evolve
-> Someone evolves into another species: the white light, the pulsing silhouette, the new form and its sentence. Their lines then show the new name and portrait.
-scene: beach eevee piplup
+> Someone evolves into another species: the white light, the pulsing silhouette, the new form and its sentence. Their lines then show the new name and portrait. With no species, the next of their family, as the game's tables say; one not of their family is remarked.
+scene: beach eevee pichu
 eevee evolve umbreon
-piplup (surprised): Wow!
+pichu: Wow!
+pichu evolve
+pikachu: Me too!
 
 == transform
-> Someone transforms into another, of the scene or a species not there: the evolution's light, without its sentence, and they look like the other while staying themselves: their name, portrait and lines are their own. transform back: themselves again.
+> Someone transforms into another, of the scene or a species not there: the evolution's light, without its sentence, and they look like the other while staying themselves: their name, portrait and lines are their own. transform into its next form: the next of their family. transform back: themselves again.
 scene: beach ditto pikachu
 ditto put center
 pikachu put left

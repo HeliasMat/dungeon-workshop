@@ -180,6 +180,7 @@ pub const WORDS: &[Planned] = &[
     word("Effects", "weather", "weather rain|snow|sand|fog|hail|sun [heavy] / weather off"),
     word("Effects", "daytime", "daytime morning|day|evening|night [stars]"),
     word("Effects", "status", "who status state|stat up|down / who status off"),
+    word("Effects", "aura", "aura on|off who"),
     // Objects
     word("Objects", "hold", "who hold item"),
     word("Objects", "drop", "who drop [where]"),
@@ -191,8 +192,8 @@ pub const WORDS: &[Planned] = &[
     word("Fights", "fight", "fight who... vs who... [duel|double|relay] [boss] [level n]"),
     word("Fights", "attack", "who attack Move [at target]"),
     word("Fights", "use", "who use [Move|its move] [on target|at x y]"),
-    word("Fights", "evolve", "who evolve species"),
-    word("Fights", "transform", "who transform into other / who transform back"),
+    word("Fights", "evolve", "who evolve [species]"),
+    word("Fights", "transform", "who transform into other|its next form / who transform back"),
     word("Fights", "join", "who join [team]"),
     word("Fights", "roar", "who roar [hard]"),
     word("Fights", "charge", "who charge [Move]"),

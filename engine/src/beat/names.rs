@@ -219,8 +219,9 @@ pub fn note_named(name: &str) -> Option<i32> {
 /// The particles a scene shows, by their name (see `ScreenBeat::Particles`):
 /// fireworks bursting and falling, sparks thrown up, fireflies drifting
 /// and blinking, embers rising, smoke, bubbles, dust coming down, drops
-/// flung about, a healing glow, rings widening on water.
-pub(crate) const PARTICLES: [(&str, ParticleKind); 10] = [
+/// flung about, a healing glow, rings widening on water; in sharp pixels,
+/// cinders rising about a body, a zap of a spark, a drip, leaves falling.
+pub(crate) const PARTICLES: [(&str, ParticleKind); 14] = [
     ("firework", ParticleKind::Fireworks),
     ("sparks", ParticleKind::Sparks),
     ("fireflies", ParticleKind::Fireflies),
@@ -231,6 +232,10 @@ pub(crate) const PARTICLES: [(&str, ParticleKind); 10] = [
     ("drops", ParticleKind::Drops),
     ("healing", ParticleKind::Healing),
     ("rings", ParticleKind::Rings),
+    ("cinders", ParticleKind::Cinders),
+    ("zap", ParticleKind::Zap),
+    ("drip", ParticleKind::Drip),
+    ("leaves", ParticleKind::Leaves),
 ];
 
 /// A kind of particles by its name (`dust`, `sparks`, `bubbles`…).

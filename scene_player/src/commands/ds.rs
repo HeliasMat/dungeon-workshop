@@ -1950,6 +1950,14 @@ impl<'a> Writer<'a> {
             // particles of their own (R-DS-LOSS).
             Beat::Screen(ScreenBeat::Particles { .. } | ScreenBeat::Emitter { .. } | ScreenBeat::EmitterOff(_))
                 if matches!(word, Some("swim" | "dive" | "plunge" | "surface" | "get_out" | "burrow" | "pop_out")) => {}
+            // An aura of a type (`aura on`): cinders, a zap, a drip, leaves; Sky's
+            // scripts have no particles of their own (R-DS-LOSS).
+            Beat::Screen(ScreenBeat::Particles {
+                kind: engine::ParticleKind::Cinders | engine::ParticleKind::Zap | engine::ParticleKind::Drip | engine::ParticleKind::Leaves,
+                ..
+            })
+            | Beat::Screen(ScreenBeat::Emitter { kind: engine::ParticleKind::Cinders, .. }) => {}
+            Beat::Screen(ScreenBeat::EmitterOff(_)) if word == Some("aura") => {}
             // A mount sunk under a heavy rider, and back up: Sky's actors carry no one (R-DS-LOSS).
             Beat::Node(engine::NodeBeat::Set { prop: engine::props::PropId::Height, .. })
                 if matches!(word, Some("ride" | "get_off" | "dismount" | "carry" | "put_down")) => {}

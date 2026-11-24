@@ -318,7 +318,7 @@ end
 | `lightning <who\|@ x y>` | the engine's command behind `bolt` |
 | `textspeed <times>` / `textspeed normal` | see Speech (9) |
 | `boxside top\|bottom\|auto` | the dialogue box kept at the top of the screen, its portrait below, or at the bottom; auto: where it hides no speaker, as the game has it (at the foot, at the top for a line of one standing low) |
-| `particles <kind> <who\|@ x y> [number] [colour]` | `firework` (bursts into colours and falls back), `sparks` (spurt out), `fireflies` (float and blink around), `embers` (rise), `smoke`, `bubbles`, `dust` (falls), `drops` (thrown out), `healing` (a glow that rises); 40 by default |
+| `particles <kind> <who\|@ x y> [number] [colour]` | `firework` (bursts into colours and falls back), `sparks` (spurt out), `fireflies` (float and blink around), `embers` (rise), `smoke`, `bubbles`, `dust` (falls), `drops` (thrown out), `healing` (a glow that rises); in sharp pixels, `cinders` (about the body), `zap` (a spark, gone at once), `drip` (a drop off the head), `leaves` (falling from over the head); 40 by default |
 | `t <duration>` / `wait <duration>` | waits (`t 30`: 30 frames; `t 1.5s`); `t 1s~3s`: a time drawn at random between the two (a crowd that does not move in step) |
 | `tempo <speed>` | the scene's time slower or faster (`0.4` slowed; `1` normal) |
 | `wipe out\|in <left\|right\|up\|down> [time]` | the black comes in from one side and covers the screen (`out`), or withdraws (`in`) (`wipe close` / `open` in a film): to go from one place to another |

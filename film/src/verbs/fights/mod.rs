@@ -55,11 +55,16 @@ pub const WORDS: &[Word] = &[
         "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one); no knock back, no hurt; no move, or `its move`: one his kind learns by his level, of his type if it can",
     )
     .does(used),
-    Word::new("evolve", &["who:pokemon into:pokemon"], "do evolution, the game's sentence").maybe(fought_word),
+    Word::new(
+        "evolve",
+        &["who:pokemon into:pokemon", "who:pokemon"],
+        "do evolution, the game's sentence; no form: the next of his family (the game's evolutions); one not of his family, remarked",
+    )
+    .maybe(fought_word),
     Word::new(
         "transform",
-        &["who:pokemon back", "who:pokemon into form:pokemon"],
-        "_change, mimic, _changed (the evolution's light, no sentence): he looks like the other, his name and his lines his own; back: as he was",
+        &["who:pokemon back", "who:pokemon into its next form", "who:pokemon into form:pokemon"],
+        "_change, mimic, _changed (the evolution's light, no sentence): he looks like the other, his name and his lines his own; its next form: the next of his family; back: as he was",
     )
     .does(transformed),
     Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise")
@@ -279,8 +284,15 @@ fn winner_of(line: &Line) -> Option<String> {
 /// `ditto transform back`: the same, back to himself.
 fn transformed(film: &mut Film, line: &Line) {
     let who = plain(line.args.word("who").unwrap_or_default());
-    let like = match line.args.word("form") {
-        Some(form) => match film.coded(&plain(form)) {
+    let form = match line.args.has("next") {
+        true => match next_form_of(film, &who, line.number) {
+            Some(next) => Some(next),
+            None => return,
+        },
+        false => line.args.word("form").map(plain),
+    };
+    let like = match form {
+        Some(form) => match film.coded(&form) {
             Some(like) => Some(like),
             None => return,
         },
@@ -289,6 +301,20 @@ fn transformed(film: &mut Film, line: &Line) {
     film.call(line.number, "_change", &[&who]);
     film.on(&who, |one| emit::mimic(one, like));
     film.call(line.number, "_changed", &[&who]);
+}
+
+/// The word of the next form of someone's kind (`evolve`, `transform into
+/// its next form`); none, told.
+fn next_form_of(film: &mut Film, who: &str, number: usize) -> Option<String> {
+    let code = lines::code_now(film, who);
+    let next = film.next_form(&code);
+    if next.is_none() {
+        film.wrong(
+            number,
+            format!("{who} has no next form: the last of his family, or one the game's tables do not know (name it: {who} evolve into <species>)"),
+        );
+    }
+    next
 }
 
 /// A line of the fights: one reader for all their words, a fight being one
@@ -356,8 +382,21 @@ fn fought(film: &mut Film, line: &Line) -> bool {
         "end_fight" => closed(film),
         "evolve" => {
             // (Slowed, white, growing and shrinking, then what it has become.)
-            let into = plain(args.word("into").unwrap_or_default());
+            let into = match args.word("into") {
+                Some(into) => plain(into),
+                None => match next_form_of(film, &who, number) {
+                    Some(next) => next,
+                    None => return true,
+                },
+            };
             let code = film.code(&into);
+            let mine = lines::code_now(film, &who);
+            let family = |film: &Film, code: &str| film.kind_of(code).map(|kind| kind.family).filter(|family| *family > 0);
+            if let (Some(from), Some(to)) = (family(film, &mine), family(film, &code))
+                && from != to
+            {
+                film.remark(number, format!("{who} evolves into {into}: not of his family (played all the same)"));
+            }
             film.call(number, "_evolution", &[&who, &code]);
             film.staging.evolved.insert(into.clone(), who.clone());
             let text = format!("{} evolved into {}!", named(film, &who), named(film, &into));

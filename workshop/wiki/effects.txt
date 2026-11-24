@@ -28,3 +28,11 @@ weather rain heavy
 pikachu (worried): A storm is coming.
 weather off
 
+== aura
+> An ambience of someone's type, only when asked, in sharp pixels: a few cinders about a fire kind, a spark off an electric kind when angry, a drop off a water kind when scared, leaves off a grass kind when it dances. aura off: none.
+scene: beach charmander pikachu
+aura on charmander
+aura on pikachu
+pikachu (angry): Who took my berry?
+charmander (worried): Not me!
+aura off charmander

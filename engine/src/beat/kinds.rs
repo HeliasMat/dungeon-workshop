@@ -24,6 +24,13 @@ pub enum ParticleKind {
     Drops,
     Healing,
     Rings,
+    /// Sharp: a fire kind's few embers about its body, a spark off an
+    /// electric kind, a drop off a water kind, leaves falling about a
+    /// grass kind.
+    Cinders,
+    Zap,
+    Drip,
+    Leaves,
 }
 
 /// What is in the air over a scene (see `ScreenBeat::Weather`).

@@ -217,6 +217,13 @@ impl Film {
             .collect();
         for item in &scene.lines {
             let words: Vec<String> = item.text.split_whitespace().map(plain).collect();
+            // (`evolve pikachu`: what he becomes, the next of his family.)
+            if let [first, second] = words.as_slice()
+                && (first == "evolve" || second == "evolve")
+                && let Some(next) = self.actor(if first == "evolve" { second } else { first }).and_then(|code| self.next_form(&code))
+            {
+                forms.insert(next);
+            }
             // (`transform ditto into charizard`, or who first.)
             if let [first, second, into, form] = words.as_slice()
                 && (first == "transform" || second == "transform")
