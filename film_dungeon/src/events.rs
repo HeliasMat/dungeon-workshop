@@ -8,7 +8,7 @@ use super::*;
 /// above, as wild Pokémon ambush a team in the game: the alarm, the ground
 /// shaking, each falling in turn in its dust, then face to face.
 pub(super) fn ambush(film: &mut Film, line: &Line) {
-    let who = crate::verbs::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let enemies: Vec<String> = line.args.words("foes").to_vec();
     logged(film, "Wild Pokémon ambushed the team!");
     drop_around(film, &who, &enemies);

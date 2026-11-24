@@ -3,19 +3,19 @@
 //! training. (The reward, the night, the chores, a drink, signing up, an
 //! announcement, a diploma: recipes, `film/recipes/guild.film`.)
 
-use super::dungeon::DungeonState;
-use super::{Line, Word};
-use crate::emit;
-use crate::film::Film;
-use crate::screen::on_screen;
+use crate::DungeonState;
+use film_core::emit;
+use film_core::film::Film;
+use film_core::screen::on_screen;
+use film_core::verbs::{Line, Word};
 
 pub const WORDS: &[Word] =
     &[Word::new("job", &["take|done|fail name:text..."], "take: cutaway job_board, narrate, jingle; done: music mission_accomplished, narrate; fail: narrate")
-        .names(super::Names::NoOne)
+        .names(film_core::verbs::Names::NoOne)
         .does(job)];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("guild", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("guild", WORDS);
 
 /// `job take Find Bellsprout`: a job taken from the guild's board: the
 /// board, the words, the tune; `job done Find Bellsprout`: the job done, the
@@ -24,12 +24,12 @@ fn job(film: &mut Film, line: &Line) {
     let name = line.args.words("name").join(" ");
     if line.args.has("take") {
         let shown = film.picture("job_board");
-        super::pictures::cut_to(film, &shown);
+        film_core::verbs::pictures::cut_to(film, &shown);
         film.sound("click");
         film.narrate(&on_screen(&format!("Job accepted: {name}")));
         film.kept::<DungeonState>().mission = Some(name);
         film.beat(emit::jingle(7));
-        super::pictures::cut_back(film);
+        film_core::verbs::pictures::cut_back(film);
     } else if line.args.has("done") {
         film.beat(emit::music(scenes::vocabulary::POKEMON.song("mission_accomplished").map(engine::SongId)));
         film.narrate(&on_screen(&format!("Job complete: {name}!")));

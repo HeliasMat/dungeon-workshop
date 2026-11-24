@@ -1,0 +1,15 @@
+[package]
+name = "film_dungeon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The films' dungeons: a floor played as the game plays it, its log, stairs, traps, shops; the guild's jobs"
+readme = "../README.md"
+publish.workspace = true
+
+[dependencies]
+engine = { path = "../engine" }
+film_core = { path = "../film_core" }
+scenes = { path = "../scenes" }

@@ -1120,6 +1120,7 @@ dependencies = [
  "assets",
  "engine",
  "film_core",
+ "film_dungeon",
  "film_fights",
  "film_fishing",
  "glam",
@@ -1143,12 +1144,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "film_dungeon"
+version = "0.2.0"
+dependencies = [
+ "engine",
+ "film_core",
+ "scenes",
+]
+
+[[package]]
 name = "film_fights"
 version = "0.2.0"
 dependencies = [
  "assets",
  "engine",
  "film_core",
+ "film_dungeon",
  "rules",
  "scenes",
 ]

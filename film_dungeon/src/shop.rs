@@ -15,9 +15,9 @@ pub(super) fn shop(film: &mut Film, line: &Line) {
         buys(film, line);
         return;
     }
-    let keeper = crate::verbs::who_said(line);
+    let keeper = film_core::verbs::who_said(line);
     let keeper = keeper.as_str();
-    let mut goods: Vec<(crate::names::things::Thing, i32)> = Vec::new();
+    let mut goods: Vec<(film_core::names::things::Thing, i32)> = Vec::new();
     let mut words: Vec<String> = Vec::new();
     for word in line.args.words("goods") {
         match word.parse::<i32>() {
@@ -65,7 +65,7 @@ pub(super) fn on_sale(film: &mut Film, line: &Line) -> Option<(String, String, i
 
 /// `buy a Apple`: he goes to it, pays, picks it up; the keeper is glad.
 pub(super) fn buys(film: &mut Film, line: &Line) {
-    let who = crate::verbs::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let who = who.as_str();
     let Some((key, code, price)) = on_sale(film, line) else {
         return;
@@ -89,7 +89,7 @@ pub(super) fn buys(film: &mut Film, line: &Line) {
 /// `steal a Apple`: he takes it without paying: the keeper, furious, cries
 /// thief; the ground shakes.
 pub(super) fn steals(film: &mut Film, line: &Line) {
-    let who = crate::verbs::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let who = who.as_str();
     let Some((_, code, _)) = on_sale(film, line) else {
         return;

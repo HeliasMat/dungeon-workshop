@@ -109,7 +109,7 @@ fn bar_opens(film: &mut Film, line: &Line) {
     said.extend(group_members(film));
     if let Some(floor) = args.word("floor") {
         said.extend(fields!["floor", floor]);
-    } else if let Some(floor) = film_core::verbs::dungeon::floor_for_a_fight(film) {
+    } else if let Some(floor) = film_dungeon::floor_for_a_fight(film) {
         // (On a dungeon's floor: that floor, untold.)
         said.extend(fields!["floor", floor]);
     }
@@ -360,12 +360,12 @@ pub(crate) fn fought_word(film: &mut Film, line: &Line) -> bool {
     let whole = verb == "fight" && line.args.has("side_team");
     let opens = verb == "fight" && film.kept::<Combat>().lead.is_none();
     if whole || opens {
-        film_core::verbs::dungeon::fight_begins(film);
+        film_dungeon::fight_begins(film);
     }
-    let lost = film_core::verbs::dungeon::lost_in_a_fight(film, &line.block);
+    let lost = film_dungeon::lost_in_a_fight(film, &line.block);
     let done = fought(film, line);
     if done && (whole || verb == "end_fight") {
-        film_core::verbs::dungeon::fight_ends(film, lost);
+        film_dungeon::fight_ends(film, lost);
     }
     done
 }

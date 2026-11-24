@@ -64,7 +64,7 @@ pub(super) fn takes_stairs(film: &mut Film, line: &Line) {
         let name = film.kept::<DungeonState>().dungeon.clone().unwrap_or("Dungeon".to_string());
         film.kept::<DungeonState>().floor = floor;
         let under = floor_said(film, floor);
-        let shown = format!("{}{}{under}", crate::screen::on_screen(&name), crate::screen::BREAK);
+        let shown = format!("{}{}{under}", film_core::screen::on_screen(&name), film_core::screen::BREAK);
         film.caption(120.0, &shown, true);
         film.wait(120);
     }
@@ -110,7 +110,7 @@ pub(super) fn trapped(film: &mut Film, line: &Line) {
         film.wait(20);
         return;
     }
-    let who = crate::verbs::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let who = who.as_str();
     let kind = line.args.word("kind").map(|word| plain(word).trim_start_matches("trap_").to_string()).unwrap_or_default();
     let Some((_, called_trap)) = TRAPS.iter().find(|(word, _)| *word == kind) else {

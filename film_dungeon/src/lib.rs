@@ -2,25 +2,28 @@
 //! the stairs onto the floor, its log at the bottom, the stairs found and
 //! taken, a trap stepped on, an item found on the ground. The rooms are laid
 //! by the `decor` builder with the floor's own tiles; the stairs and the traps
-//! are the game's pictures (`scene_player dungeons`).
+//! are the game's pictures (`scene_player dungeons`). The guild's jobs, taken
+//! from its board and done or failed, are its words too (`guild`).
 
-use super::items::take_up;
-use super::things::{arrives, thing_apart, thing_out};
-use super::{Line, Word};
-use crate::emit;
-use crate::film::Film;
-use crate::names::things::{known_thing, thing_named};
-use crate::spots::routes::{found, go};
-use crate::spots::somewhere;
-use crate::words::plain;
+#![forbid(unsafe_code)]
+
 use engine::{Cam, Pose, Spot};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::names::things::{known_thing, thing_named};
+use film_core::spots::routes::{found, go};
+use film_core::spots::somewhere;
+use film_core::verbs::items::take_up;
+use film_core::verbs::things::{arrives, thing_apart, thing_out};
+use film_core::verbs::{Line, Word};
+use film_core::words::plain;
 
+pub mod guild;
 mod state;
 pub use state::DungeonState;
 mod events;
 mod floor;
 mod hud;
-pub(super) use hud::floor_said;
 mod shop;
 
 use events::*;
@@ -51,7 +54,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("dungeon", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("dungeon", WORDS);
 
 /// The stairs' and the traps' pictures (data/hand/, `scene_player dungeons`).
 const STAIRS: &str = "stairs";
@@ -81,5 +84,5 @@ pub fn floor_left(film: &mut Film) {
 }
 
 fn logged(film: &mut Film, text: &str) {
-    film.beat(emit::battle_log(LOGGED as f32, crate::screen::glued(text)));
+    film.beat(emit::battle_log(LOGGED as f32, film_core::screen::glued(text)));
 }

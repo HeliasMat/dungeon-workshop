@@ -8,7 +8,7 @@ use engine::GaugeOf;
 const LEFT: usize = 0;
 
 /// A floor as told on the black: `B3F`, or `3F` going up.
-pub(in crate::verbs) fn floor_said(film: &Film, floor: i32) -> String {
+pub(super) fn floor_said(film: &Film, floor: i32) -> String {
     match film.kept_now::<DungeonState>().is_some_and(|dungeon| dungeon.going_up) {
         false => format!("B{floor}F"),
         true => format!("{floor}F"),
@@ -81,7 +81,7 @@ pub fn fight_ends(film: &mut Film, lost: i32) {
 
 /// What the one the top line follows loses in a directed fight: each blow
 /// at him that says so (`krabby Crabhammer pikachu -6`).
-pub fn lost_in_a_fight(film: &Film, blows: &[crate::ir::Instr]) -> i32 {
+pub fn lost_in_a_fight(film: &Film, blows: &[film_core::ir::Instr]) -> i32 {
     let Some((who, ..)) = film.kept_now::<DungeonState>().and_then(|dungeon| dungeon.dungeon_hud.as_ref()) else {
         return 0;
     };

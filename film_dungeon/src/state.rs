@@ -2,7 +2,7 @@
 //! mission (the whole film); what lies on the floor at hand (gone at the
 //! next scene).
 
-use crate::film::Kept;
+use film_core::film::Kept;
 
 /// A shop: its keeper, and each thing laid out (its word, its code, its price).
 pub type Shop = (String, Vec<(String, String, i32)>);
@@ -66,7 +66,7 @@ impl Kept for DungeonState {
             map_team: self.map_team.take(),
             ..DungeonState::default()
         };
-        dark.then(crate::emit::spotlight_off)
+        dark.then(film_core::emit::spotlight_off)
     }
 
     /// The top line of a dungeon's floor shows its log.
