@@ -79,7 +79,10 @@ impl Play {
                 here
             });
             if let Some(frame) = frame {
-                let (x, y) = art.point(self.sim.cast.who(*who).0, shown.point);
+                // (Its head, a hand, its middle on the step it shows: a move
+                // leaves from its mouth as it opens it.)
+                let now = actor.body.and_then(|body| body.now.get(shown.point as usize).copied()).map(|at| (at.x as i32, at.y as i32));
+                let (x, y) = now.unwrap_or_else(|| art.point(self.sim.cast.who(*who).0, shown.point));
                 let on = view.on_screen(actor.shown_at() + Vec2::new(x as f32, y as f32 - actor.shown_height()));
                 world.sprite(frame, (on.x as i32, on.y as i32), view.close, [255.0; 3], 1.0);
             }

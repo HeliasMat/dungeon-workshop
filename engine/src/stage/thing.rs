@@ -11,6 +11,11 @@ const OVER_HEAD: f32 = 22.0;
 const IN_HANDS: f32 = 9.0;
 const BEFORE: f32 = 11.0;
 const APART: f32 = 7.0;
+/// How far below its hands what it holds is drawn from: held by its middle.
+const HELD_BELOW: f32 = 6.0;
+
+/// How far over its head one sits on someone's head, as a film seats him.
+const ON_HEAD: f32 = 4.0;
 /// Seen from above at a slant, how much of a step back along a back shows
 /// up or down the screen.
 const DEPTH_ON_BACK: f32 = 0.6;
@@ -199,6 +204,9 @@ impl Stage {
             // (A mount that goes, or flies, turns its rider with it.)
             let turns = owner.way.left > 0.0 || owner.air.height > 0.0;
             let (hidden, opacity) = (owner.attributes & attribute::HIDDEN, owner.looks.opacity);
+            // (Its points as it is drawn: turned round with it, grown with it.)
+            let (flip, scale) = (if owner.flipped { -1.0 } else { 1.0 }, owner.looks.scale);
+            let body = owner.body.map(|body| Body { now: body.now.map(|at| at * Vec2::new(flip, 1.0) * scale), standing: body.standing.map(|at| at * scale) });
             let slot = in_hands.entry(by).or_insert(0);
             let held = self.cast.get(&what).is_some_and(|actor| actor.habits.held);
             let beside = if held { *slot as f32 } else { 0.0 };
@@ -219,13 +227,31 @@ impl Stage {
                         }
                         actor.habits.mount_faced = Some(direction);
                         let away = -facing * behind;
+                        // (Its seat, its head or its back, whichever is the nearer to
+                        // how high he sits, rises and sinks as it moves.)
+                        let seat = body.map_or(Vec2::ZERO, |body| {
+                            let off = |point: usize, over: f32| (back - (over - body.standing[point].y)).abs();
+                            body.moved(if off(Body::HEAD, ON_HEAD) < off(Body::MIDDLE, 0.0) { Body::HEAD } else { Body::MIDDLE })
+                        });
                         match facing.y > 0.3 {
-                            true => (at + Vec2::new(away.x, -1.0), back + BEHIND_THE_NECK),
-                            false => (at + Vec2::new(away.x, 1.0 + away.y.max(0.0) * DEPTH_ON_BACK), back),
+                            true => (at + Vec2::new(away.x + seat.x, -1.0), back + BEHIND_THE_NECK - seat.y),
+                            false => (at + Vec2::new(away.x + seat.x, 1.0 + away.y.max(0.0) * DEPTH_ON_BACK), back - seat.y),
                         }
                     }
-                    (None, true) => (at + facing * BEFORE + facing.perp() * beside * APART, IN_HANDS),
-                    (None, false) => (at + Vec2::new(0.0, 1.0), OVER_HEAD),
+                    // (Its middle between its hands as they go, a little before
+                    // or behind it.)
+                    (None, true) => match body {
+                        Some(body) => {
+                            let hands = body.hands() + Vec2::new(0.0, HELD_BELOW);
+                            let before = (facing.y * BEFORE).max(hands.y);
+                            (at + Vec2::new(hands.x, before) + facing.perp() * beside * APART, before - hands.y)
+                        }
+                        None => (at + facing * BEFORE + facing.perp() * beside * APART, IN_HANDS),
+                    },
+                    (None, false) => {
+                        let head = body.map_or(Vec2::ZERO, |body| body.moved(Body::HEAD));
+                        (at + Vec2::new(head.x, 1.0), OVER_HEAD - head.y)
+                    }
                 };
                 (actor.position, actor.way.to, actor.way.left, actor.air.height) = (there, there, 0.0, high + lift);
                 actor.attributes = (actor.attributes & !attribute::HIDDEN) | hidden;

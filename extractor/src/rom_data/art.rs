@@ -18,7 +18,16 @@ pub(crate) struct SpriteArt {
     /// For a monster: where its head, its two hands and its centre are,
     /// from its sprite's centre (y downwards), standing facing down.
     pub points: [(i32, i32); 4],
+    /// For a monster, beside each of its pictures (`[animation][way][step]`):
+    /// its markers (`wan::HIT_FLAG`, `wan::RETURN_FLAG`) and where its head,
+    /// hands and centre are then, from its sprite's centre (none: the
+    /// sprite does not say).
+    pub steps: Vec<Vec<Vec<Step>>>,
 }
+
+/// A step of a monster's animation, beside its picture: its markers, its
+/// head, hands and centre.
+pub(crate) type Step = (u8, Option<[(i32, i32); 4]>);
 
 /// An effect of moves and scenes.
 #[derive(Clone)]
@@ -97,6 +106,8 @@ impl RomData {
                         origin: picture.origin,
                         shadow: (0, 0),
                         rgba: picture.rgba,
+                        points: None,
+                        mark: 0,
                     })
                 };
                 // Whatever way it is turned, a thing with one sequence
@@ -169,7 +180,7 @@ impl RomData {
                         pixel[3] = SEEN_THROUGH;
                     }
                 }
-                Frame { ticks: TICKS as u32, wide, high, origin: (wide as i32 / 2, high as i32 / 2), shadow: (0, 0), rgba }
+                Frame { ticks: TICKS as u32, wide, high, origin: (wide as i32 / 2, high as i32 / 2), shadow: (0, 0), rgba, points: None, mark: 0 }
             })
             .collect();
         let ticks = frames.len() as f32 * TICKS as f32;
@@ -191,7 +202,8 @@ impl RomData {
         sprites
             .entry((sprite_index, scenes))
             .or_insert_with(|| {
-                let frames = |wan: &Wan, group: usize| -> Vec<Vec<Frame>> {
+                type Ways = (Vec<Vec<Frame>>, Vec<Vec<Step>>);
+                let frames = |wan: &Wan, group: usize| -> Ways {
                     (0..8)
                         .map(|direction| {
                             wan.animation(group, direction)
@@ -199,26 +211,32 @@ impl RomData {
                                 .filter_map(|frame| {
                                     let picture = wan.render(frame.meta_frame)?;
                                     // (A frame's offset moves the whole picture: an
-                                    // attack's lunge towards its target.)
-                                    let origin = (picture.origin.0 - frame.offset.0 as i32, picture.origin.1 - frame.offset.1 as i32);
-                                    Some(Frame {
+                                    // attack's lunge towards its target. Its points
+                                    // go with it.)
+                                    let (x, y) = (frame.offset.0 as i32, frame.offset.1 as i32);
+                                    let origin = (picture.origin.0 - x, picture.origin.1 - y);
+                                    let points = wan.offsets(frame.meta_frame).map(|points| points.map(|(px, py)| (px as i32 + x, py as i32 + y)));
+                                    let shown = Frame {
                                         ticks: frame.duration as u32,
                                         wide: picture.width,
                                         high: picture.height,
                                         origin,
                                         shadow: (frame.shadow.0 as i32, frame.shadow.1 as i32),
                                         rgba: picture.rgba,
-                                    })
+                                        points: None,
+                                        mark: 0,
+                                    };
+                                    Some((shown, (frame.flag, points)))
                                 })
-                                .collect()
+                                .unzip::<_, _, Vec<_>, Vec<_>>()
                         })
-                        .collect()
+                        .unzip()
                 };
                 let wan = Wan::from_pack(self.rom.file("MONSTER/monster.bin")?, sprite_index).ok()?;
                 // In the order of `shell::images::Anim`: walk, idle, hurt, sleep, attack.
-                let mut animations: Vec<_> = [0, 7, 6, 5].iter().map(|&g| frames(&wan, g)).collect();
+                let mut every: Vec<Ways> = [0, 7, 6, 5].iter().map(|&g| frames(&wan, g)).collect();
                 let attack = self.rom.file("MONSTER/m_attack.bin").and_then(|pack| Wan::from_pack(pack, sprite_index).ok());
-                animations.push(attack.as_ref().map_or(Vec::new(), |attack| frames(attack, 1)));
+                every.push(attack.as_ref().map_or_else(Default::default, |attack| frames(attack, 1)));
                 // Then, by group: a scene's own (`m_ground`, for who stands
                 // in scenes), else a move's (`m_attack`), else the plain
                 // sprite's (for scenes again).
@@ -226,15 +244,16 @@ impl RomData {
                 let sizes = |wan: Option<&Wan>| wan.map_or(0, |wan| wan.group_sizes().len());
                 let groups = sizes(ground.as_ref()).max(sizes(attack.as_ref())).max(if scenes { sizes(Some(&wan)) } else { 0 });
                 for group in 0..groups {
-                    let pick = |from: Option<&Wan>| from.map(|from| frames(from, group)).filter(|own| own.iter().any(|frames| !frames.is_empty()));
+                    let pick = |from: Option<&Wan>| from.map(|from| frames(from, group)).filter(|own| own.0.iter().any(|frames| !frames.is_empty()));
                     let plain = scenes.then_some(&wan);
-                    animations.push(pick(ground.as_ref()).or_else(|| pick(attack.as_ref())).or_else(|| pick(plain)).unwrap_or_default());
+                    every.push(pick(ground.as_ref()).or_else(|| pick(attack.as_ref())).or_else(|| pick(plain)).unwrap_or_default());
                 }
+                let (animations, steps) = every.into_iter().unzip();
                 // Its head, hands and centre, standing facing down.
                 const IDLE_GROUP: usize = 7;
                 let first = wan.animation(IDLE_GROUP, 0).first().or_else(|| wan.animation(0, 0).first());
                 let points = first.and_then(|frame| wan.offsets(frame.meta_frame)).map_or([(0, 0); 4], |points| points.map(|(x, y)| (x as i32, y as i32)));
-                Some(Arc::new(SpriteArt { animations, points }))
+                Some(Arc::new(SpriteArt { animations, points, steps }))
             })
             .clone()
     }
@@ -291,6 +310,8 @@ impl RomData {
                                 origin: picture.origin,
                                 shadow: (0, 0),
                                 rgba: picture.rgba,
+                                points: None,
+                                mark: 0,
                             })
                         })
                         .collect()

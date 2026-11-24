@@ -44,6 +44,10 @@ pub struct Actor {
     pub bar: Option<f32>,
     /// How many blows it has taken.
     pub hits: u32,
+    /// Where its head, hands and middle are on the step it shows, as the
+    /// one showing it says (none: its sprite does not say): what it holds
+    /// and who rides it go with them.
+    pub body: Option<Body>,
     pub(crate) way: Way,
     pub(crate) air: Air,
     pub(crate) habits: Habits,
@@ -65,6 +69,7 @@ impl Actor {
             in_sand: false,
             bar: None,
             hits: 0,
+            body: None,
             way: Way { to: position, left: 0.0, slide: false, pace: WALK, route: VecDeque::new(), running: false, then_face: None, halted: None },
             air: Air {
                 height: 0.0,

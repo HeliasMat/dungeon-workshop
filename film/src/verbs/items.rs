@@ -13,7 +13,7 @@ use crate::words::plain;
 
 pub const WORDS: &[Word] = &[
     Word::new("give", &["from:pokemon thing... to other:pokemon", "thing... from:pokemon to:pokemon"], "give").names(Names::NoOne).does(given),
-    Word::new("hold", &["who:pokemon thing..."], "putnear, thing, hold (or approach and hold if it lies on the ground)").does(held),
+    Word::new("hold", &["who:pokemon thing..."], "putnear, thing, hold (or approach and hold if it lies on the ground): between his hands, as the game's points have them on each frame").does(held),
     Word::new("drop", &["who:pokemon at what:place", "who:pokemon [thing...]"], "hold off, fall (at a place: set there, a little hop)").does(let_go),
     Word::new("eat", &["who:pokemon [thing...]"], "anim Eat, scale, gone, emote").does(eaten),
     Word::new("throw", &["who:pokemon line [to|on] [target:place]", "who:pokemon water [to] target:place", "who:pokemon thing... at target:place [straight]", "who:pokemon thing... [to] target:pokemon [straight]"], "throw a Apple to b: face, hold off, throw, then catch or miss; `straight`: tight and fast, at the height of the hands (a shot); throw a line to x y (or on b), the fisher; throw a water to b, a swimmer: jump, particles drops").does(thrown_said),

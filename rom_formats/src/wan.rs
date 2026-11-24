@@ -31,10 +31,17 @@ pub(crate) struct Piece {
     pub palette: usize,
 }
 
+/// The markers of a step (`AnimFrame::flag`).
+pub const HIT_FLAG: u8 = 2;
+pub const RETURN_FLAG: u8 = 1;
+
 #[derive(Clone, Copy, Debug)]
 pub struct AnimFrame {
     /// In 1/60 s.
     pub duration: u8,
+    /// Its markers: 2, the step a blow lands on; 1, the one it is back in
+    /// place from (as SkyTemple reads them).
+    pub flag: u8,
     pub meta_frame: usize,
     pub offset: (i16, i16),
     /// Where the character's shadow lies, from the sprite's centre.
@@ -411,6 +418,7 @@ fn parse_sequence(data: &[u8], mut off: usize) -> Result<Vec<AnimFrame>, RomErro
         }
         frames.push(AnimFrame {
             duration,
+            flag: data.get(off + 1).copied().unwrap_or(0),
             meta_frame: u16_le(data, off + 2)? as usize,
             offset: (u16_le(data, off + 4)? as i16, u16_le(data, off + 6)? as i16),
             shadow: (u16_le(data, off + 8)? as i16, u16_le(data, off + 10)? as i16),

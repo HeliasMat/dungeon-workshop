@@ -42,12 +42,17 @@ pub struct Frame {
     /// there.
     pub origin: (i32, i32),
     pub shadow: (i32, i32),
+    /// Of a monster's: where its head, hands and middle are then, from its
+    /// centre (y downwards), and its marker (`assets::tables::HIT_MARK`...),
+    /// as its sprite says (`sprites/<monster>.txt`).
+    pub points: Option<[(i32, i32); 4]>,
+    pub mark: u8,
 }
 
 impl Frame {
     /// A picture that stays.
     pub fn still(wide: usize, high: usize, origin: (i32, i32), rgba: Vec<u8>) -> Self {
-        Frame { wide, high, rgba, ticks: 60, origin, shadow: (0, 0) }
+        Frame { wide, high, rgba, ticks: 60, origin, shadow: (0, 0), points: None, mark: 0 }
     }
 
     /// How far above its place it is drawn.
@@ -65,6 +70,8 @@ impl From<Cell> for Frame {
             rgba: cell.rgba,
             ticks: cell.ticks as u32,
             shadow: cell.shadow,
+            points: None,
+            mark: 0,
         }
     }
 }
@@ -85,6 +92,9 @@ struct Source {
     kind: &'static str,
     sheets: Arc<Sheets>,
     number: u16,
+    /// A monster's steps (`sprites/<monster>.txt`), read with its first
+    /// animation.
+    steps: Arc<std::sync::OnceLock<assets::tables::Steps>>,
 }
 
 impl Source {
@@ -93,14 +103,30 @@ impl Source {
     }
 
     /// (One who has no walk stands instead, one who has no way of standing
-    /// walks.)
+    /// walks.) Each step with its points and marker, those it has.
     fn read(&self, at: usize) -> Ways {
-        let read = |at: usize| animation(&self.folder, self.kind, &self.sheets, self.number, at as u8);
+        let read = |at: usize| Some((at, animation(&self.folder, self.kind, &self.sheets, self.number, at as u8)?));
         let found = match at {
             0 | 1 => read(at).or_else(|| read(1 - at)),
             _ => read(at),
         };
-        found.map_or_else(Vec::new, ways_of)
+        let Some((at, cells)) = found else {
+            return Vec::new();
+        };
+        let mut ways = ways_of(cells);
+        if self.kind == "sprites" {
+            let steps = self.steps.get_or_init(|| assets::tables::steps(&self.folder, self.number));
+            for (way, frames) in ways.iter_mut().enumerate() {
+                let Some(own) = steps.get(&(at as u8, way as u8)).filter(|own| !own.is_empty()) else {
+                    continue;
+                };
+                // (A way with fewer steps than the sheet stays on its last.)
+                for (step, frame) in frames.iter_mut().enumerate() {
+                    (frame.mark, frame.points) = own.get(step).copied().map_or((0, own[own.len() - 1].1), |(mark, points)| (mark, points));
+                }
+            }
+        }
+        ways
     }
 }
 
@@ -132,7 +158,7 @@ impl Sprite {
     /// One of those of the sheets, none yet read. (One with neither a walk
     /// nor a way of standing is no sprite.)
     pub fn of_sheets(folder: &str, kind: &'static str, sheets: Arc<Sheets>, number: u16, count: usize) -> Option<Self> {
-        let source = Source { folder: Arc::from(folder), kind, sheets, number };
+        let source = Source { folder: Arc::from(folder), kind, sheets, number, steps: Arc::default() };
         (source.has(0) || source.has(1)).then(|| Sprite { source: Some(source), animations: (0..count.max(5)).map(|_| OnceCell::new()).collect() })
     }
 
@@ -414,7 +440,7 @@ mod tests {
 
     #[test]
     fn a_picture_raised_says_how_far() {
-        let frame = Frame { wide: 16, high: 16, rgba: Vec::new(), ticks: 60, origin: (8, 14), shadow: (0, 0) };
+        let frame = Frame { wide: 16, high: 16, rgba: Vec::new(), ticks: 60, origin: (8, 14), shadow: (0, 0), points: None, mark: 0 };
         assert_eq!(frame.lift(), 6);
     }
 }

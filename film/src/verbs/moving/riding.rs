@@ -20,7 +20,7 @@ pub const WORDS: &[Word] = &[
             "who:pokemon on mount:pokemon [back|head] [high h:number] [behind b:number]",
             "who:pokemon mount:pokemon [h:number] [b:number]",
         ],
-        "face, throw onto it, ride: on its back (as high as its middle, by the game's points) or its head; he follows his mount, turns with it as it goes, rises and sinks with it; high, behind: so many pixels up, behind its middle; a heavy rider sinks his mount 1 to 3 pixels (the game's weights), one much heavier is remarked",
+        "face, throw onto it, ride: on its back (as high as its middle, by the game's points) or its head; he follows his mount, turns with it as it goes, rises and sinks with it (its back or head on each frame, by the game's points); high, behind: so many pixels up, behind its middle; a heavy rider sinks his mount 1 to 3 pixels (the game's weights), one much heavier is remarked",
     )
     .maybe(rode),
     Word::new(

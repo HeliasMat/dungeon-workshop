@@ -19,6 +19,8 @@ pub(super) type Sheet = ((u32, u32), u32, Vec<u8>, Vec<u8>);
 ///   counter-clockwise), a cell per frame with the monster's centre in the
 ///   middle; `sprites.txt` gives each file's cell size, its frames'
 ///   60ths of a second and where the shadow lies from the middle;
+///   `sprites/<monster>.txt` each step's markers and points (see
+///   `step_lines`);
 /// - `portraits/<monster>_<face>.png`: 40x40 faces;
 /// - `monsters.txt`, `entities.txt`, `dungeons.txt`, `items.txt`,
 ///   `moves.txt`: names and numbers, tab-separated.
@@ -56,15 +58,7 @@ pub fn pictures(data: &RomData, folder: &str) -> std::io::Result<(usize, usize, 
     let (mut monsters, mut sheets, mut drawn, mut faces) = (Vec::new(), Vec::new(), 0, 0);
     // Where each one's head, hands and centre are (`points.txt`).
     let mut points = Vec::new();
-    // The monsters that can stand in a scene: the scripts' characters,
-    // whoever the team can be, the special episodes' own.
-    let forms = super::rom_data::MONSTER_FORMS;
-    let mut staged: Vec<usize> = data.entities.iter().map(|entity| entity.monster as usize % forms).collect();
-    if let Some(quiz) = data.quiz() {
-        staged.extend(quiz.heroes.iter().flatten().chain(&quiz.partners).map(|&monster| monster as usize % forms));
-    }
-    staged.extend(episode_characters(data).iter().map(|character| character.0 as usize % forms));
-    staged.extend([super::rom_data::PLAYER_MD_INDEX, super::rom_data::PARTNER_MD_INDEX]);
+    let staged = staged(data);
     for monster in 1..data.monsters.species_count() {
         let name = data.monster_name(monster);
         monsters.push(format!("{monster}\t{name}"));
@@ -73,6 +67,7 @@ pub fn pictures(data: &RomData, folder: &str) -> std::io::Result<(usize, usize, 
             drawn += 1;
             let at: Vec<String> = art.points.iter().map(|(x, y)| format!("{x},{y}")).collect();
             points.push(format!("{monster}\t{}", at.join("\t")));
+            std::fs::write(format!("{folder}/sprites/{monster}.txt"), step_lines(&art))?;
             // In the order of `shell::images::Anim`: walk, idle, hurt, sleep, attack;
             // then those of scenes, by their group.
             for animation in 0..art.animations.len() {
@@ -123,6 +118,54 @@ pub fn pictures(data: &RomData, folder: &str) -> std::io::Result<(usize, usize, 
     std::fs::write(format!("{folder}/items.txt"), numbered(&names.items))?;
     std::fs::write(format!("{folder}/moves.txt"), numbered(&names.moves))?;
     Ok((backdrops.len(), drawn, faces))
+}
+
+/// The monsters that can stand in a scene: the scripts' characters,
+/// whoever the team can be, the special episodes' own.
+fn staged(data: &RomData) -> Vec<usize> {
+    let forms = super::rom_data::MONSTER_FORMS;
+    let mut staged: Vec<usize> = data.entities.iter().map(|entity| entity.monster as usize % forms).collect();
+    if let Some(quiz) = data.quiz() {
+        staged.extend(quiz.heroes.iter().flatten().chain(&quiz.partners).map(|&monster| monster as usize % forms));
+    }
+    staged.extend(episode_characters(data).iter().map(|character| character.0 as usize % forms));
+    staged.extend([super::rom_data::PLAYER_MD_INDEX, super::rom_data::PARTNER_MD_INDEX]);
+    staged
+}
+
+/// A monster's `sprites/<monster>.txt`: a line per animation and way,
+/// `<animation> <way> <markers> <points>`, tab-separated: a marker a step
+/// (2, the blow lands; 1, back in place; 0, neither), comma-separated; and
+/// each step's head, hands and centre from its cell's middle
+/// (`x,y;x,y;x,y;x,y`, or `-`), space-separated.
+fn step_lines(art: &SpriteArt) -> String {
+    let point = |points: &Option<[(i32, i32); 4]>| match points {
+        Some(points) => points.iter().map(|(x, y)| format!("{x},{y}")).collect::<Vec<_>>().join(";"),
+        None => "-".to_string(),
+    };
+    let mut lines = String::new();
+    for (animation, ways) in art.steps.iter().enumerate() {
+        for (way, steps) in ways.iter().enumerate().filter(|(_, steps)| !steps.is_empty()) {
+            let marks: Vec<String> = steps.iter().map(|(flag, _)| flag.to_string()).collect();
+            let points: Vec<String> = steps.iter().map(|(_, points)| point(points)).collect();
+            lines += &format!("{animation}\t{way}\t{}\t{}\n", marks.join(","), points.join(" "));
+        }
+    }
+    lines
+}
+
+/// Only each monster's `sprites/<monster>.txt` (see `step_lines`), its
+/// pictures left as they are: how many were written.
+pub fn steps_only(data: &RomData, folder: &str) -> std::io::Result<usize> {
+    std::fs::create_dir_all(format!("{folder}/sprites"))?;
+    let (staged, mut written) = (staged(data), 0);
+    for monster in 1..data.monsters.species_count() {
+        if let Some(art) = data.sprite_with(monster, staged.contains(&(monster % super::rom_data::MONSTER_FORMS))) {
+            std::fs::write(format!("{folder}/sprites/{monster}.txt"), step_lines(&art))?;
+            written += 1;
+        }
+    }
+    Ok(written)
 }
 
 /// What fills the row of a direction with fewer frames than the longest:

@@ -256,6 +256,46 @@ pub fn variants(folder: &str) -> Vec<Variant> {
     rows_of(folder, "variants.txt").into_iter().filter_map(variant).collect()
 }
 
+/// A step of a monster's animation: its marker ([`HIT_MARK`],
+/// [`RETURN_MARK`], or 0), and where its head, hands and middle are then,
+/// from its cell's middle (y downwards), if its sprite says.
+pub type Step = (u8, Option<[(i32, i32); 4]>);
+/// A monster's steps, by animation and way (`sprites/<monster>.txt`).
+pub type Steps = HashMap<(u8, u8), Vec<Step>>;
+/// The step a blow lands on; the one it is back in place from.
+pub const HIT_MARK: u8 = 2;
+pub const RETURN_MARK: u8 = 1;
+
+/// `sprites/<monster>.txt`: `<animation> <way> <markers> <points>`, a
+/// marker each step (comma-separated) and each step's points
+/// (`x,y;x,y;x,y;x,y` or `-`, space-separated). Only from the layer its
+/// sprite's walk or way of standing is drawn in: one drawn over by hand
+/// has other steps. None: empty.
+pub fn steps(folder: &str, monster: u16) -> Steps {
+    let file = format!("sprites/{monster}.txt");
+    let layer = |path: String| std::path::Path::new(&path).parent().and_then(|sprites| sprites.parent()).map(std::path::Path::to_path_buf);
+    let drawn = [0, 1].iter().map(|at| format!("sprites/{monster}_{at}.png")).find(|png| data::has(folder, png));
+    if drawn.is_none_or(|png| layer(data::path(folder, &png)) != layer(data::path(folder, &file))) {
+        return Steps::new();
+    }
+    let point = |field: &str| field.split_once(',').and_then(|(x, y)| Some((x.parse().ok()?, y.parse().ok()?)));
+    let points = |field: &str| -> Option<[(i32, i32); 4]> {
+        let mut found = [(0, 0); 4];
+        let mut each = field.split(';');
+        for at in &mut found {
+            *at = point(each.next()?)?;
+        }
+        Some(found)
+    };
+    let line = |row: Vec<String>| {
+        let key = (row.first()?.parse().ok()?, row.get(1)?.parse().ok()?);
+        let marks = row.get(2)?.split(',').map(|mark| mark.parse().unwrap_or(0));
+        let at = row.get(3).map_or("", String::as_str).split(' ').map(points).chain(std::iter::repeat(None));
+        Some((key, marks.zip(at).collect()))
+    };
+    rows(&data::text(folder, &file)).into_iter().filter_map(line).collect()
+}
+
 /// Where a held thing's tip is, by monster, animation and way: a point each
 /// step (none: not seen then).
 pub type Tips = HashMap<(u16, usize, usize), Vec<Option<(i32, i32)>>>;

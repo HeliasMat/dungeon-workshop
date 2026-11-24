@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
-use engine::{Beat, BodyBeat, Call, Cue, Director, Frames, Play, ScreenBeat, Stage, StoryEvent, Who};
+use engine::{Beat, Body, BodyBeat, Call, Cue, Director, Frames, Play, ScreenBeat, Stage, StoryEvent, Who};
 use glam::Vec2;
 use rules::tables::Tables;
 use scenes::fight::host::called;
@@ -350,6 +350,17 @@ impl Sim {
                     shown.advance(frames * actor.picture_speed(), way_of(actor.direction));
                 }
             }
+        }
+        // (Where each one's head, hands and middle are on the step it shows,
+        // for what it holds and who rides it.)
+        for (who, shown) in &self.shown {
+            let Some(actor) = self.stage.cast.get_mut(who) else {
+                continue;
+            };
+            let monster = facts.art.kin(self.cast.who(*who).0);
+            let point = |at: (i32, i32)| Vec2::new(at.0 as f32, at.1 as f32);
+            let now = shown.picture(way_of(actor.direction)).and_then(|frame| frame.points);
+            actor.body = now.map(|now| Body { now: now.map(point), standing: [0, 1, 2, 3].map(|at| point(facts.art.point(monster, at))) });
         }
         self.effects_pass(frames, facts);
     }

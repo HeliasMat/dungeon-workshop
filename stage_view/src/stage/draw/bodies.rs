@@ -343,7 +343,7 @@ mod tests {
         for (column, row) in [(2, 1), (4, 3), (3, 2)] {
             rgba[(row * wide + column) * 4 + 3] = 255;
         }
-        let frame = shell::images::Frame { wide, high, rgba, ticks: 1, origin: (3, 2), shadow: (0, 0) };
+        let frame = shell::images::Frame { wide, high, rgba, ticks: 1, origin: (3, 2), shadow: (0, 0), points: None, mark: 0 };
         assert_eq!(drawn_part(&frame), Some([2, 1, 5, 4]));
         let empty = shell::images::Frame { rgba: vec![0; wide * high * 4], ..frame };
         assert_eq!(drawn_part(&empty), None);

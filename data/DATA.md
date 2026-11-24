@@ -42,6 +42,7 @@ All the lists are UTF-8 text, one line per entry, fields separated by tabs;
 | `sprites.txt` (list, key 2) | `pictures.rs` | Pokémon, animation (0 walk, 1 idle, 2 hurt, 3 sleep, 4 attack, then those of the scenes), width and height of a cell, frame durations (in 60ths, `,`), shadow x, y | `assets::tables::sheets` (`shell`, `film`, `studio`), `export` |
 | `sprites/<pokémon>_<animation>.png` | `pictures.rs` | the sheet: one row per direction (facing down, then anticlockwise), one cell per frame | `shell`, `export` |
 | `points.txt` | `pictures.rs` | Pokémon, then `x,y` of the head, the hands, the middle | `assets::tables::points` (`shell`) |
+| `sprites/<pokémon>.txt` | `pictures.rs` (`extractor <rom> --steps-only` alone) | animation, direction, a marker each frame (2 the blow lands, 1 back in place), each frame's head, hands and middle `x,y;x,y;x,y;x,y` | `assets::tables::steps` (`media`: `Frame::points`, `Frame::mark`) |
 | `portraits/<pokémon>_<face>.png` | `pictures.rs` | the faces, 40x40 | `shell/src/art.rs`, `export` |
 | `props.txt` | `pictures.rs` | object, animation, width, height, durations, 0, 0, lying flat (1: you walk over it) | `assets::tables::sheets` (`shell`, `film`, `preview`), `decor` |
 | `props/<object>_<animation>.png` | `pictures.rs` | like the sprites | same |

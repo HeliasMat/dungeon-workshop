@@ -88,6 +88,15 @@ pub fn run(arguments: &[String]) {
         }
     };
     std::fs::create_dir_all(folder).expect("the folder to extract into");
+    // (Only each monster's steps, markers and points, beside pictures
+    // extracted before.)
+    if arguments.iter().any(|argument| argument == "--steps-only") {
+        match pictures::steps_only(&data, folder) {
+            Ok(written) => println!("{folder}/sprites/<monster>.txt: {written} monsters' steps"),
+            Err(error) => eprintln!("--extract: {error}"),
+        }
+        return;
+    }
     // (Only what the game counts with, to try a change of its tables.)
     if arguments.iter().any(|argument| argument == "--tables-only") {
         match dungeons(&data, &Interface::of(&data), folder) {

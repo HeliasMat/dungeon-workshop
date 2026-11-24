@@ -65,6 +65,30 @@ impl Cue {
     }
 }
 
+/// Where someone's head, hands and middle are, from where it is drawn (y
+/// downwards): on the step it shows, and standing facing us (the points
+/// a film reckons seats with).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Body {
+    pub now: [Vec2; 4],
+    pub standing: [Vec2; 4],
+}
+
+impl Body {
+    pub const HEAD: usize = 0;
+    pub const MIDDLE: usize = 3;
+
+    /// Between its two hands.
+    pub fn hands(&self) -> Vec2 {
+        (self.now[1] + self.now[2]) / 2.0
+    }
+
+    /// How far a point has gone from where it is standing.
+    pub fn moved(&self, point: usize) -> Vec2 {
+        self.now[point] - self.standing[point]
+    }
+}
+
 /// Where it goes, and how.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Way {

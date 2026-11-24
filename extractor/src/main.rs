@@ -6,7 +6,7 @@
 fn main() {
     let arguments: Vec<String> = std::env::args().skip(1).collect();
     if arguments.first().is_none_or(|word| matches!(word.as_str(), "--help" | "-h")) {
-        println!("extractor <rom> [folder] [--tables-only] [--no-pictures]   writes data/rom from your own copy of the game");
+        println!("extractor <rom> [folder] [--tables-only] [--no-pictures] [--steps-only]   writes data/rom from your own copy of the game");
         println!("{}", extractor::dump::HELP);
         std::process::exit(if arguments.is_empty() { 2 } else { 0 });
     }
