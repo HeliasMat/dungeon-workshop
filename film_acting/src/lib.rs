@@ -4,14 +4,16 @@
 //! emote balloons and their sounds, the effects (`data/rom/effects`). Their
 //! other forms, older, stay in the families they come from.
 
+#![forbid(unsafe_code)]
+
 use engine::{AnimId, Beat, BodyBeat, EmoteId, MotionBeat, Pose, Spot};
 
-use super::{Line, Names, Word};
-use crate::emit;
-use crate::film::Film;
-use crate::spots::routes::found;
-use crate::spots::{Goal, goal_of};
-use crate::words::{WAYS, plain};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::spots::routes::found;
+use film_core::spots::{Goal, goal_of};
+use film_core::verbs::{Line, Names, Word};
+use film_core::words::{WAYS, plain};
 
 pub const WORDS: &[Word] = &[
     // Speech.
@@ -87,7 +89,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("acting", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("acting", WORDS);
 
 /// The game's emote balloons by their v2.1 names: the effect, its sound
 /// (as the game's scripts play them beside it most), if any.
@@ -169,7 +171,7 @@ pub enum Manner {
 }
 
 /// The manner a line says, smoke if none.
-pub fn manner(args: &crate::grammar::Bound) -> Manner {
+pub fn manner(args: &film_core::grammar::Bound) -> Manner {
     match () {
         _ if args.has("fade") => Manner::Fade,
         _ if args.has("flash") => Manner::Flash,
@@ -237,7 +239,7 @@ fn thought(film: &mut Film, line: &Line) -> bool {
     if !line.args.has("who") {
         return false;
     }
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     // (`think a - Hi`, `think a 3 Hi`: the engine's bubble.)
     let first = line.args.words("text").first().cloned().unwrap_or_default();
     if first == "-" || first.parse::<u16>().is_ok() {
@@ -276,11 +278,11 @@ fn narrated(film: &mut Film, line: &Line) -> bool {
     match how.as_str() {
         "screen" => {
             let frames = 90 + said.chars().count() * 3;
-            film.caption(frames as f32, &crate::screen::on_screen(said), false);
+            film.caption(frames as f32, &film_core::screen::on_screen(said), false);
             film.wait(frames as i64);
         }
-        "sign" => film.narrate(&crate::screen::on_screen(said)),
-        _ => super::said::told_or_logged(film, said),
+        "sign" => film.narrate(&film_core::screen::on_screen(said)),
+        _ => film_core::verbs::said::told_or_logged(film, said),
     }
     true
 }
@@ -294,7 +296,7 @@ fn box_auto(film: &mut Film, _: &Line) {
 
 /// `pikachu vanish [smoke|fade|flash|vision]`: gone, a fade by default.
 fn vanished(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let how = if line.args.has("smoke") || line.args.has("flash") || line.args.has("vision") { manner(&line.args) } else { Manner::Fade };
     shows(film, &who, how, false);
     film.on(&who, emit::gone);
@@ -303,7 +305,7 @@ fn vanished(film: &mut Film, line: &Line) {
 /// `pikachu shift by 12 0`, `pikachu shift to rock`: slides there, still
 /// looking the same way (in so long, a third of a second otherwise).
 fn shifted(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let frames = line.args.frames("d").unwrap_or(20) as f32;
     let spot = if line.args.has("by") {
         let (dx, dy) = (line.args.number("dx").unwrap_or_default(), line.args.number("dy").unwrap_or_default());
@@ -341,7 +343,7 @@ fn hop_anim(film: &mut Film, who: &str, times: u16) {
 /// `pikachu jump`, `pikachu jump to rock height 20`: a leap of his body,
 /// higher than a hop (no animation of his, the game's own jump).
 fn jumped(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let height = line.args.number("h").unwrap_or(16.0);
     if line.args.has("where") {
         let Some(spot) = spot_of(film, line) else { return };
@@ -361,7 +363,7 @@ fn hopped(film: &mut Film, line: &Line) -> bool {
     if !line.args.has("who") {
         return false;
     }
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let Some(times) = line.args.number("n").map_or(Some(1), |times| (times >= 1.0).then_some(times as u32)) else {
         film.not_a(line.args.word("n").unwrap_or_default(), "a number of hops");
         return true;
@@ -386,27 +388,27 @@ fn hopped(film: &mut Film, line: &Line) -> bool {
 
 /// `pikachu follow off`.
 fn stops_following(film: &mut Film, line: &Line) {
-    film.on(&super::who_said(line), |who| emit::follow(who, None, None));
+    film.on(&film_core::verbs::who_said(line), |who| emit::follow(who, None, None));
 }
 
 /// `pikachu chase off`: no longer chasing; he stops where he is.
 fn stops(film: &mut Film, line: &Line) {
-    film.on(&super::who_said(line), emit::stop);
+    film.on(&film_core::verbs::who_said(line), emit::stop);
 }
 
 /// `pikachu wander off`: no longer wandering.
 fn stops_wandering(film: &mut Film, line: &Line) {
-    film.on(&super::who_said(line), |who| emit::roams(who, 0.0));
+    film.on(&film_core::verbs::who_said(line), |who| emit::roams(who, 0.0));
 }
 
 /// `pikachu flee from gengar [to left]`: he runs off, to a place or a
 /// little way from the other.
 fn fled(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let other = plain(line.args.word("other").unwrap_or_default());
     if line.args.has("where") {
         let Some(spot) = spot_of(film, line) else { return };
-        crate::spots::routes::go(film, &who, spot, "run", line.wait, crate::spots::routes::USUAL, true);
+        film_core::spots::routes::go(film, &who, spot, "run", line.wait, film_core::spots::routes::USUAL, true);
         return;
     }
     if let Some(from) = film.other(&other) {
@@ -420,7 +422,7 @@ fn turned(film: &mut Film, line: &Line) -> bool {
     if !line.args.has("who") {
         return false;
     }
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let to = plain(line.args.word("to").unwrap_or("away"));
     if !line.args.has("away") && !WAYS.contains(&to.as_str()) && film.actor(&to).is_none() {
         return false;
@@ -433,7 +435,7 @@ fn turned(film: &mut Film, line: &Line) -> bool {
     if line.args.has("away") {
         film.on(&who, |one| Beat::Body(BodyBeat::TurnAround(one)));
     } else {
-        crate::spots::faced(film, &who, &to);
+        film_core::spots::faced(film, &who, &to);
     }
     if line.args.has("slow") {
         film.wait_for(&who, line.wait);
@@ -457,7 +459,7 @@ fn turn_by(film: &mut Film, who: &str, eighths: f32) {
 /// `pikachu look around`: as the game's routine, a glance one way, a
 /// longer one the other, and back.
 fn looked_around(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     for (eighths, wait) in [(2.0, 15), (-4.0, 18), (2.0, 10)] {
         turn_by(film, &who, eighths);
         film.wait(wait);
@@ -468,7 +470,7 @@ fn looked_around(film: &mut Film, line: &Line) {
 /// `pikachu shake_head`: the game's head shake, quick turns of an eighth
 /// and back (no sprite has an animation of it).
 fn shook_head(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     for eighths in [1.0, -2.0, 2.0, -1.0] {
         turn_by(film, &who, eighths);
         film.wait(5);
@@ -481,7 +483,7 @@ const NOD: i64 = 24;
 
 /// `pikachu nod [times 2]`: his Nod animation.
 fn nodded(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let times = line.args.number("n").unwrap_or(1.0).clamp(1.0, 9.0) as u16;
     match emit::anim_of("Nod") {
         Some(group) => film.on(&who, |one| emit::anim_times(one, group, times)),
@@ -501,14 +503,14 @@ fn posed(film: &mut Film, line: &Line) -> bool {
     if !line.args.has("who") {
         return false;
     }
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if line.args.has("off") {
         film.on(&who, |one| emit::pose(one, Pose::Idle));
         return true;
     }
     let name = plain(line.args.word("name").unwrap_or_default());
     if matches!(name.as_str(), "spin" | "dance") {
-        super::aura::moved(film, &who, super::aura::Mood::Dancing);
+        film_core::verbs::aura::moved(film, &who, film_core::verbs::aura::Mood::Dancing);
     }
     // (`pose a sleep`, said with no way of playing it: the engine's own pose, lying asleep.)
     let said_how = line.args.has("once") || line.args.has("loop") || line.args.has("hold");
@@ -591,7 +593,7 @@ pub fn animation_had(film: &mut Film, who: &str, group: AnimId, number: usize) -
 
 /// `pikachu sleep off`: awake, his Wake animation.
 fn woke(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     film.on(&who, |one| emit::status(one, None));
     match emit::anim_of("Wake") {
         Some(group) => film.on(&who, |one| emit::anim_times(one, group, 1)),
@@ -603,7 +605,7 @@ fn woke(film: &mut Film, line: &Line) {
 /// `pikachu hurt [hard] [back 12]`: his Pain animation, knocked back the
 /// way he looks; hard: further, the view shaking.
 fn hurt(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let hard = line.args.has("hard");
     let back = line.args.number("n").unwrap_or(if hard { 20.0 } else { 8.0 });
     film.on(&who, |one| emit::recoil(one, one, back));
@@ -625,12 +627,12 @@ const LASTING: f32 = 1_000_000.0;
 /// `pikachu tremble`, `pikachu tremble off`.
 fn trembled(film: &mut Film, line: &Line) {
     let frames = if line.args.has("off") { 0.0 } else { LASTING };
-    film.on(&super::who_said(line), |one| emit::tremble(one, frames, 1.0));
+    film.on(&film_core::verbs::who_said(line), |one| emit::tremble(one, frames, 1.0));
 }
 
 /// `pikachu fall [over|back|trip]`: down and staying down.
 fn fell(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let anim = match () {
         _ if line.args.has("back") => "TumbleBack",
         _ if line.args.has("trip") => "Trip",
@@ -647,7 +649,7 @@ fn fell(film: &mut Film, line: &Line) {
 
 /// `pikachu faint`: his Faint animation, held; `faint off`: up again.
 fn fainted(film: &mut Film, line: &Line) {
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let (anim, group_held) = if line.args.has("off") { ("Wake", false) } else { ("Faint", true) };
     match emit::anim_of(anim) {
         Some(group) if group_held => film.on(&who, |one| emit::anim(one, group, false, false)),
@@ -667,8 +669,8 @@ fn balloon(film: &mut Film, who: &str, kind: &str, sound: bool) -> bool {
     };
     film.on(who, |one| emit::emote(one, EmoteId(*id), Some(60.0)));
     match kind {
-        "anger" => super::aura::moved(film, who, super::aura::Mood::Angry),
-        "sweat" | "shock" => super::aura::moved(film, who, super::aura::Mood::Scared),
+        "anger" => film_core::verbs::aura::moved(film, who, film_core::verbs::aura::Mood::Angry),
+        "sweat" | "shock" => film_core::verbs::aura::moved(film, who, film_core::verbs::aura::Mood::Scared),
         _ => {}
     }
     if let Some(heard) = heard.filter(|_| sound) {
@@ -683,7 +685,7 @@ fn emoted(film: &mut Film, line: &Line) -> bool {
     if !line.args.has("who") {
         return false;
     }
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if line.args.has("off") {
         film.on(&who, |one| emit::emote(one, EmoteId(0), None));
         return true;

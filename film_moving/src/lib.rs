@@ -138,7 +138,7 @@ fn appears(film: &mut Film, line: &Line, who: &str) {
     let spot = somewhere(film, line.args.words("where"), line.number);
     let at = found(film, who, spot, &["apart"]);
     film.put_point_at(who, at);
-    film_core::verbs::acting::shows(film, who, film_core::verbs::acting::manner(&line.args), true);
+    film_acting::shows(film, who, film_acting::manner(&line.args), true);
 }
 
 /// Out of the place by that way, in file, and gone; the film waits for the
@@ -172,7 +172,7 @@ fn walks(film: &mut Film, line: &Line, who: &str) {
             Goal::Told => None,
         };
         if let Some(spot) = spot {
-            film_core::verbs::acting::backward(film, line, who, spot);
+            film_acting::backward(film, line, who, spot);
         }
         return;
     }

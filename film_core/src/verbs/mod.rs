@@ -23,7 +23,6 @@ use crate::film::Film;
 use crate::ir::{Instr, Shape};
 use crate::words::{engine_word, plain};
 
-pub mod acting;
 pub mod aura;
 mod commands;
 pub mod crowds;

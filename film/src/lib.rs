@@ -28,7 +28,7 @@ pub use film_core::{
 /// the first whose form of its word fits.
 const FAMILIES: [film_core::verbs::Family; 26] = [
     film_core::plot::FAMILY,
-    film_core::verbs::acting::FAMILY,
+    film_acting::FAMILY,
     film_core::verbs::game::FAMILY,
     film_fishing::FAMILY,
     film_dungeon::FAMILY,

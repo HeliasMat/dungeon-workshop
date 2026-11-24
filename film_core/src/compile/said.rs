@@ -128,7 +128,7 @@ impl Film {
     }
 
     /// A line said, its brackets read.
-    pub(crate) fn said(&mut self, name: &str, brackets: Option<&str>, text: &str, number: usize) {
+    pub fn said(&mut self, name: &str, brackets: Option<&str>, text: &str, number: usize) {
         let Manner { face, speed, over, bubble } = manner_said(self, brackets, number);
         let told = told(name);
         let text = text.trim();

@@ -1119,6 +1119,7 @@ version = "0.2.0"
 dependencies = [
  "assets",
  "engine",
+ "film_acting",
  "film_core",
  "film_dungeon",
  "film_fights",
@@ -1128,6 +1129,15 @@ dependencies = [
  "language",
  "scenes",
  "story",
+]
+
+[[package]]
+name = "film_acting"
+version = "0.2.0"
+dependencies = [
+ "engine",
+ "film_core",
+ "scenes",
 ]
 
 [[package]]
@@ -1181,6 +1191,7 @@ name = "film_moving"
 version = "0.2.0"
 dependencies = [
  "engine",
+ "film_acting",
  "film_core",
 ]
 

@@ -1,0 +1,15 @@
+[package]
+name = "film_acting"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The films' acting: what someone says and does where they stand, the poses, emotions and gestures played with the game's own sprites"
+readme = "../README.md"
+publish.workspace = true
+
+[dependencies]
+engine = { path = "../engine" }
+film_core = { path = "../film_core" }
+scenes = { path = "../scenes" }

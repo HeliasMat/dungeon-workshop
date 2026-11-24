@@ -56,8 +56,8 @@ fn height_of(film: &mut Film, who: &str) -> f32 {
 
 /// He crouches, as low as his sprite goes (its Cringe, else the nearest it has).
 fn crouches(film: &mut Film, who: &str, number: usize) {
-    let Some((group, _)) = film_core::verbs::acting::pose_named("cringe") else { return };
-    if let Some(group) = film_core::verbs::acting::animation_had(film, who, group, number) {
+    let Some((group, _)) = film_acting::pose_named("cringe") else { return };
+    if let Some(group) = film_acting::animation_had(film, who, group, number) {
         film.on(who, |one| emit::anim(one, group, false, false));
     }
 }
