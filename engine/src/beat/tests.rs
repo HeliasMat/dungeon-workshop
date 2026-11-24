@@ -190,7 +190,7 @@ fn a_beat_names_each_one_once_with_what_it_does() {
     // (`target` replaced wherever it is named, in a beat played later too.)
     for line in ["height target 3", "after 10 height target 3", "face 1 target"] {
         let mut beat = beat(line);
-        for who in beat.whos_mut().into_iter().filter(|who| **who == Who::Target) {
+        for who in beat.each_who_mut().into_iter().filter(|who| **who == Who::Target) {
             *who = b;
         }
         assert!(beat.naming(Role::Acts).contains(&b), "{line}");

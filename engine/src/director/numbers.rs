@@ -74,7 +74,7 @@ impl Director {
             beat => beat,
         };
         let target = self.target();
-        for who in beat.whos_mut().into_iter().filter(|who| **who == Who::Target) {
+        for who in beat.each_who_mut().into_iter().filter(|who| **who == Who::Target) {
             *who = target.unwrap_or(Who::Target);
         }
         // (Each number found as the scene plays, as a line's `{name}` is

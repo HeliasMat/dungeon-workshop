@@ -176,15 +176,15 @@ impl Film {
             _ => None,
         };
         let crowd = &args[..args.len() - usize::from(shown.is_some())];
-        let whos: Option<Vec<Who>> = crowd.iter().map(|arg| if let Arg::Who(who) = arg { Some(*who) } else { None }).collect();
-        let Some(whos) = whos.filter(|whos| !whos.is_empty()) else {
+        let cheering: Option<Vec<Who>> = crowd.iter().map(|arg| if let Arg::Who(who) = arg { Some(*who) } else { None }).collect();
+        let Some(cheering) = cheering.filter(|cheering| !cheering.is_empty()) else {
             self.wrong(self.number, "“cheer” takes who (a group, or names), then maybe an emote".to_string());
             return;
         };
         let Some(id) = POKEMON.emote(shown.unwrap_or("joy")) else {
             return;
         };
-        for who in whos {
+        for who in cheering {
             self.beat(super::after(0.0, 20.0, super::emote(who, EmoteId(id), Some(40.0))));
             self.beat(super::after(0.0, 20.0, super::jump(who, 8.0, 12.0)));
         }

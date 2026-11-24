@@ -172,7 +172,7 @@ impl Beat {
     }
 
     /// Everyone the beat names, to be changed (see `Who::Target`).
-    pub(crate) fn whos_mut(&mut self) -> Vec<&mut Who> {
+    pub(crate) fn each_who_mut(&mut self) -> Vec<&mut Who> {
         self.named().into_iter().map(|(_, who)| who).collect()
     }
 
