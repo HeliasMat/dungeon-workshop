@@ -8,7 +8,7 @@ use crate::LEXICON;
 
 /// Every declaration of a word written for films: the text's and the groups'.
 fn declared() -> impl Iterator<Item = (&'static str, &'static film_core::Word)> {
-    let text = film_core::text::WORDS.iter().map(|word| ("text", word));
+    let text = film_core::verbs::TEXT_WORDS.iter().map(|word| ("text", word));
     text.chain(LEXICON.groups().iter().flat_map(|group| group.words.iter().map(move |word| (group.name, word))))
 }
 

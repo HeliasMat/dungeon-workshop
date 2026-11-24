@@ -6,8 +6,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use super::files::{game_file, number, table};
 use super::{Level, Tables};
-use crate::screen::without_marks;
 use crate::words::plain;
+use crate::words::without_marks;
 
 /// How things and items are numbered among those of the stage.
 const THINGS: u32 = 0x4000;

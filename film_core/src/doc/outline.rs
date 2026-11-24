@@ -5,8 +5,8 @@
 //! scene, an `end` with nothing open is a line of its own.
 
 use super::Doc;
-use crate::text::{first_word, head, in_seconds, spoken};
 use crate::words::plain;
+use crate::words::{first_word, head, in_seconds, spoken};
 
 /// What a line is.
 #[derive(Clone, Debug, PartialEq)]

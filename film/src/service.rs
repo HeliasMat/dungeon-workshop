@@ -8,7 +8,8 @@
 use language::ast::{Arg, ArgKind, Block, Call, Expr, ExprKind, File, Kind, Opening, PartKind, Piece, Stmt};
 use language::{Source, Span};
 
-use film_core::text::front::{holds, internal};
+use film_core::lines::holds;
+use film_core::text::front::internal;
 
 /// A place in the text (lines and columns from 1).
 pub use language::Position as Spot;

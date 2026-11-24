@@ -18,7 +18,7 @@
 //! the quality gate (`workshop_wiki/src/tests.rs`) asks the others a page
 //! and an example that plays with nothing to say.
 
-use crate::ds::OnDs;
+use crate::ds::{Export, OnDs};
 use crate::verbs::Lexicon;
 
 /// Every family in the order shown: the core's ([`CORE`] of them), the
@@ -569,5 +569,50 @@ mod tests {
         assert_eq!(literal_head("who face side|other|away"), (true, vec!["face"]));
         assert_eq!(literal_head("wait all"), (false, vec!["wait", "all"]));
         assert_eq!(library_of("Fishing"), Some("fishing"));
+    }
+}
+
+/// The DS of the words of a lexicon, as each declares it (`ds`).
+impl Lexicon {
+    /// How that word stands on the DS, if it is a word of the vocabulary
+    /// (another name of one, `take_off`, as that one).
+    pub fn on_ds(&'static self, word: &str) -> Option<OnDs> {
+        self.planned(same_as(word)).map(|planned| planned.ds)
+    }
+
+    /// How that word exports, if it is a word of the vocabulary.
+    pub fn export_of(&'static self, word: &str) -> Option<Export> {
+        self.on_ds(word).map(|ds| ds.export)
+    }
+
+    /// How any word stands on the DS: none for an engine's command that is
+    /// no word of the vocabulary.
+    pub fn ds_status(&'static self, word: &str) -> Export {
+        self.export_of(word).unwrap_or(Export::None)
+    }
+
+    /// What a film `for ds` is told of a word that doesn't export: why, and
+    /// how to write it another way.
+    pub fn ds_refused(&'static self, word: &str) -> String {
+        let ds = self.on_ds(word);
+        let why = match ds.map(|ds| ds.export) {
+            Some(Export::Work) => "the export doesn't write it yet",
+            Some(Export::None) => ds.map_or("Sky has nothing for it", |ds| ds.how),
+            _ => "not a word the export knows",
+        };
+        match ds.and_then(|ds| ds.fix) {
+            Some(fix) => format!("“{word}” doesn't export to DS ({why}): {fix}"),
+            None => format!("“{word}” doesn't export to DS ({why})"),
+        }
+    }
+}
+
+/// The word of the vocabulary another name of it is (`take_off`: `fly`).
+fn same_as(word: &str) -> &str {
+    match word {
+        "take_off" => "fly",
+        "plunge" => "dive",
+        "dismount" => "get_off",
+        word => word,
     }
 }

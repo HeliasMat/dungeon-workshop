@@ -1,8 +1,8 @@
 //! Words as the screen shows them: cut to the box, a bubble or the screen,
 //! their marks, and the game's colours on names.
 
-use crate::film::Film;
-use crate::words::plain;
+use crate::tables::Tables;
+use crate::words::{plain, without_marks};
 
 /// A line of a box, in letters; the most lines a box holds.
 pub const WIDE: usize = 34;
@@ -52,20 +52,6 @@ pub fn in_a_bubble(text: &str) -> String {
     cut(text, BUBBLE_WIDE).join(BREAK)
 }
 
-/// What is left of a line once its marks (`[W:90]`) are out.
-pub fn without_marks(text: &str) -> String {
-    let (mut out, mut inside) = (String::new(), false);
-    for letter in text.chars() {
-        match letter {
-            '[' => inside = true,
-            ']' if inside => inside = false,
-            _ if !inside => out.push(letter),
-            _ => {}
-        }
-    }
-    out
-}
-
 /// A line cut to the box: its marks count for nothing.
 pub fn wrap(text: &str) -> Vec<String> {
     let (mut lines, mut line) = (Vec::new(), String::new());
@@ -86,7 +72,7 @@ pub fn wrap(text: &str) -> Vec<String> {
 /// A line of the film said in the box, as the box shows it: its lines, its
 /// marks and stars out (`[1s]`, `*word*`); none if it is not a line said.
 pub fn boxed(line: &str) -> Option<Vec<String>> {
-    let (_, _, said) = crate::text::spoken(line.trim())?;
+    let (_, _, said) = crate::words::spoken(line.trim())?;
     Some(wrap(&without_marks(said).replace('*', "")))
 }
 
@@ -98,10 +84,10 @@ pub fn capitalized(word: &str) -> String {
 
 /// A line with the game's colours: places, Pokémon, and items but at the start
 /// of a sentence (`Rock, come!`).
-pub fn coloured(film: &Film, line: &str) -> String {
+pub fn coloured(tables: &Tables, line: &str) -> String {
     let (mut out, mut at) = (String::new(), 0);
     while at < line.len() {
-        if let Some(found) = place_at(&line[at..], &film.tables.place_names) {
+        if let Some(found) = place_at(&line[at..], &tables.place_names) {
             let name = &line[at..at + found];
             out.push_str("[CS:P]");
             out.push_str(&name.replace(BREAK, &format!("[CR]{BREAK}[CS:P]")));
@@ -123,9 +109,9 @@ pub fn coloured(film: &Film, line: &str) -> String {
             let upper = letter.is_uppercase();
             let before = line[..at].trim_end().chars().last();
             let begins = at == 0 || matches!(before, Some('.' | '!' | '?'));
-            if film.tables.monsters.contains_key(&plain(word)) && upper {
+            if tables.monsters.contains_key(&plain(word)) && upper {
                 out.push_str(&format!("[CS:N]{word}[CR]"));
-            } else if film.tables.items.contains_key(&plain(word)) && upper && !begins {
+            } else if tables.items.contains_key(&plain(word)) && upper && !begins {
                 out.push_str(&format!("[CS:I]{word}[CR]"));
             } else {
                 out.push_str(word);

@@ -108,51 +108,6 @@ pub fn scenes_moved(film: &str, from: &str, to: &str) -> Option<String> {
     changed.then(|| lines.join("\n"))
 }
 
-/// A line anchored to what happens: its head (before the colon, if any), what
-/// follows the colon.
-pub(crate) fn anchor_parts(text: &str) -> (&str, &str) {
-    match text.split_once(':') {
-        Some((head, tail)) => (head.trim(), tail.trim()),
-        None => (text.trim(), ""),
-    }
-}
-
-/// `when a [b] arrives`: who.
-pub(crate) fn arrivals(head: &str) -> Option<Vec<&str>> {
-    let words: Vec<&str> = head.split_whitespace().collect();
-    match words.as_slice() {
-        ["when", who @ .., "arrives" | "arrive"] if !who.is_empty() => Some(who.to_vec()),
-        _ => None,
-    }
-}
-
-/// `at name [+ 2s]`: the mark, and so many frames after it.
-pub(crate) fn at_mark(head: &str) -> Option<(String, i32)> {
-    let rest = head.strip_prefix("at ")?.replace('+', " + ");
-    let words: Vec<&str> = rest.split_whitespace().collect();
-    let (name, after) = match words.as_slice() {
-        [name] => (name, 0),
-        [name, "+", time] => (name, crate::words::frames_of(time)?),
-        _ => return None,
-    };
-    (!crate::text::in_seconds(name) && !crate::words::digits(name)).then(|| (crate::words::plain(name), after))
-}
-
-/// `at 12s`, `at music 12s` (head of an anchored line): the clock it counts
-/// by (`ir::SCENE_CLOCK`, `ir::MUSIC_CLOCK`) and the frames.
-pub(crate) fn at_clock(head: &str) -> Option<(String, i32)> {
-    let words: Vec<&str> = head.strip_prefix("at ")?.split_whitespace().collect();
-    let (clock, time) = match words.as_slice() {
-        ["music", time] => (crate::ir::MUSIC_CLOCK, time),
-        [time] => (crate::ir::SCENE_CLOCK, time),
-        _ => return None,
-    };
-    (crate::text::in_seconds(time) || time.strip_suffix('f').is_some_and(crate::words::digits))
-        .then(|| crate::words::frames_of(time))
-        .flatten()
-        .map(|frames| (clock.to_string(), frames))
-}
-
 /// Seconds as a film writes them: `2s`, `1.5s`.
 pub fn seconds_said(seconds: f32) -> String {
     let tenths = (seconds * 10.0).round() / 10.0;
@@ -253,7 +208,7 @@ pub fn renamed(text: &str, old: &str, new: &str) -> String {
 /// the one that opens it, its `end` back with it; a scene's line at the
 /// margin; one blank line at most; the words of each line as they were.
 pub fn formatted(text: &str) -> String {
-    crate::text::front::formatted(text)
+    language::formatted_with(text, &holds)
 }
 
 /// The lines of a text, and whether it ended its last one.
@@ -330,4 +285,20 @@ pub fn extracted(text: &str, from: usize, to: usize, name: &str) -> String {
         lines.insert(first_scene + n, line);
     }
     joined(lines, ended)
+}
+
+/// Whether a word's line holds the lines up to its `end`: a memory, a
+/// cry through time, a picture shown with no time, a fight the player plays;
+/// who first too (`pikachu dimensional_scream tower`, `pikachu keys angle`).
+pub fn holds(call: &language::ast::Call) -> bool {
+    if call.args.first().is_some_and(|second| matches!(second.text.as_str(), "dimensional_scream" | "keys")) {
+        return true;
+    }
+    match call.word.text.as_str() {
+        "memory" | "dimensional_scream" | "keys" | "dialogue" => true,
+        "shot" => call.args.len() == 1 && !matches!(call.args[0].text.as_str(), "wide" | "medium" | "close" | "together"),
+        // (`fight a vs b`: a fight played whole, no block.)
+        "fight" => !call.args.is_empty() && !call.args.iter().any(|arg| arg.text == "vs"),
+        _ => false,
+    }
 }

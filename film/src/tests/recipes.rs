@@ -74,7 +74,7 @@ fn every_shared_recipe_is_checked_alone() {
     for recipe in &all {
         let mut alone = crate::tests::film();
         for (line, message) in film_core::text::checked::wrong_in(&mut alone, recipe, &known) {
-            wrong.push(format!("{}: {message}", film_core::text::recipes::told_at(&recipe.file, line)));
+            wrong.push(format!("{}: {message}", film_core::ir::told_at(&recipe.file, line)));
         }
     }
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));

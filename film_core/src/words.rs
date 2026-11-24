@@ -190,3 +190,60 @@ pub fn in_seconds_said(frames: &str) -> String {
     let seconds = (frames as f32 / 60.0 * 100.0).round() / 100.0;
     if ((seconds * 60.0).round() as i32) == frames && frames >= 6 { format!("{}s", seconds) } else { format!("{frames}f") }
 }
+
+/// A line's first word, and what follows it trimmed.
+pub fn head(line: &str) -> (&str, &str) {
+    let line = line.trim_start();
+    let end = line.find(char::is_whitespace).unwrap_or(line.len());
+    (&line[..end], line[end..].trim_start())
+}
+
+/// The first word of a line, as compared.
+pub fn first_word(line: &str) -> String {
+    plain(head(line).0)
+}
+
+/// Whether a word is a time in seconds: `3s`, `0.5s`.
+pub fn in_seconds(word: &str) -> bool {
+    word.strip_suffix('s').is_some_and(|number| !number.is_empty() && number.chars().all(|letter| letter.is_ascii_digit() || letter == '.'))
+}
+
+/// `who (face): words` at the start of a line: who, the brackets, the words.
+pub fn spoken(line: &str) -> Option<(&str, Option<&str>, &str)> {
+    let end = line.find(|letter: char| !(letter.is_alphanumeric() || letter == '_' || letter == '-'))?;
+    let (name, rest) = line.split_at(end);
+    if name.is_empty() {
+        return None;
+    }
+    let rest = rest.trim_start();
+    let (brackets, rest) = match rest.strip_prefix('(') {
+        Some(inner) => {
+            let (brackets, after) = inner.split_once(')')?;
+            (Some(brackets), after.trim_start())
+        }
+        None => (None, rest),
+    };
+    Some((name, brackets, rest.strip_prefix(':')?.trim_start()))
+}
+
+/// Who says the lines without being on the stage.
+pub const TELLERS: [&str; 2] = ["narrator", "voice"];
+
+/// Whether a name is the narrator's.
+pub fn told(name: &str) -> bool {
+    TELLERS.contains(&plain(name).as_str())
+}
+
+/// What is left of a line once its marks (`[W:90]`) are out.
+pub fn without_marks(text: &str) -> String {
+    let (mut out, mut inside) = (String::new(), false);
+    for letter in text.chars() {
+        match letter {
+            '[' => inside = true,
+            ']' if inside => inside = false,
+            _ if !inside => out.push(letter),
+            _ => {}
+        }
+    }
+    out
+}

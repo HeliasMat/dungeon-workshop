@@ -43,7 +43,7 @@ pub mod things;
 pub mod timing;
 pub mod view;
 
-pub use lexicon::Lexicon;
+pub use lexicon::{Lexicon, TEXT_WORDS};
 
 /// A word of the language: its forms, what it writes for the engine, who it
 /// names (those who are on the stage by being named in the scene), and how

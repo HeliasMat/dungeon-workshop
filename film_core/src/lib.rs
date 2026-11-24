@@ -49,9 +49,9 @@ use engine::{Diagnostic, Script, StoryEvent};
 pub use compile::{ReadAs, Written};
 pub use context::Context;
 pub use film::Film;
+pub use lines::formatted;
 pub use order::{performer_first, shown_form};
 pub use screen::coloured;
-pub use text::front::formatted;
 pub use text::recipes::{Told, shared_files, shared_path};
 pub use verbs::{Group, Lexicon, Word, internal, scene_line};
 

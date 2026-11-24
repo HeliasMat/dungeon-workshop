@@ -2,27 +2,6 @@
 
 use super::*;
 
-/// Whether a word's line holds the lines up to its `end`: a memory, a
-/// cry through time, a picture shown with no time, a fight the player plays;
-/// who first too (`pikachu dimensional_scream tower`, `pikachu keys angle`).
-pub fn holds(call: &language::ast::Call) -> bool {
-    if call.args.first().is_some_and(|second| matches!(second.text.as_str(), "dimensional_scream" | "keys")) {
-        return true;
-    }
-    match call.word.text.as_str() {
-        "memory" | "dimensional_scream" | "keys" | "dialogue" => true,
-        "shot" => call.args.len() == 1 && !matches!(call.args[0].text.as_str(), "wide" | "medium" | "close" | "together"),
-        // (`fight a vs b`: a fight played whole, no block.)
-        "fight" => !call.args.is_empty() && !call.args.iter().any(|arg| arg.text == "vs"),
-        _ => false,
-    }
-}
-
-/// The text put in order, as the films' words are written.
-pub fn formatted(text: &str) -> String {
-    language::formatted_with(text, &holds)
-}
-
 /// The names given a recipe: whether each may be left out, is a team.
 pub(super) fn gather(elements: &[Element], optional: bool, into: &mut HashMap<String, (bool, bool, String)>) {
     for element in elements {

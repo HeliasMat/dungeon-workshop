@@ -11,11 +11,12 @@ use engine::{Beat, FlowBeat, Scene, Script, StoryEvent, ViewBeat, Who};
 
 use crate::film::{Film, Sortie};
 use crate::ir::{Instr, Shape};
-use crate::text::told;
 use crate::verbs::command;
+use crate::words::told;
 use crate::{emit, fields};
 use scenes::read;
 
+mod for_ds;
 mod said;
 pub use said::Speaking;
 pub(crate) mod scene;
@@ -257,7 +258,7 @@ fn compile_as(lexicon: &'static crate::verbs::Lexicon, text: &str, tables: std::
     let events = vec![StoryEvent { number: 0, name: EVENT.to_string(), moment: (1, 1), scenes: scenes_of(&played), film: true }];
     // (Written for the DS: what it can't play, told.)
     if let Some(mode) = film.for_ds {
-        crate::ds::tell(&mut film, mode, &events[0].scenes);
+        for_ds::tell(&mut film, mode, &events[0].scenes);
     }
     // (As lines, for a file the engine reads and for those who look at them.)
     let lines: engine::Lines = played.iter().filter(|(_, made)| !matches!(made, Sortie::Champs(_))).map(|(number, made)| (*number, made.fields())).collect();

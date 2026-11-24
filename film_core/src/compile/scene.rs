@@ -15,9 +15,9 @@ use crate::names::species;
 use crate::tables::MAP_LEVEL;
 use crate::tables::Movement;
 use crate::text::cast::{placed_by_a_line, puts_someone, who_acts};
-use crate::text::first_word;
 use crate::verbs::command;
 use crate::verbs::timing::wait_meanwhile;
+use crate::words::first_word;
 use crate::words::{SETTING, plain, spot};
 
 /// The frames between a scene's last line and its fade out.

@@ -5,9 +5,12 @@
 //! has another line played makes it here too (`Instr::word`,
 //! `Instr::engine`).
 
-use crate::lines::{anchor_parts, arrivals, at_clock, at_mark};
-use crate::text::spoken;
-use crate::words::plain;
+use std::sync::Arc;
+
+use language::Span;
+use language::ast::Stmt;
+
+use crate::words::{plain, spoken};
 
 /// A line of a scene, and the lines up to its `end` when it holds a block.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -37,7 +40,7 @@ pub struct RecipeLine {
 impl RecipeLine {
     /// Where it is, to say so: `in recipe `bow` (gestures.film:12)`.
     pub fn told(&self) -> String {
-        format!("in recipe `{}` ({})", self.recipe, crate::text::recipes::told_at(&self.file, self.line))
+        format!("in recipe `{}` ({})", self.recipe, told_at(&self.file, self.line))
     }
 }
 
@@ -51,14 +54,6 @@ impl PartialEq for From {
         true
     }
 }
-
-/// The marks `at 12s` and `at music 12s` count from (see `Shape::AtMark`):
-/// the scene's start, the music playing now. No mark is so named
-/// (`mark name` takes a word).
-pub const SCENE_CLOCK: &str = "@scene";
-pub const MUSIC_CLOCK: &str = "@music";
-/// What `at +2s` counts from: here, where the film is.
-pub const HERE_CLOCK: &str = "@here";
 
 /// What a line is.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -92,7 +87,7 @@ pub enum Shape {
     Opens { place: String, listed: Vec<String> },
     /// `definis …`: a recipe, as the language wrote it, written again at
     /// each call with what it is given (`front::called`).
-    Recipe(std::sync::Arc<crate::text::front::RecipeText>),
+    Recipe(std::sync::Arc<RecipeText>),
     /// `choice A | B`: the player's choice, its answers.
     Choice { options: Vec<String> },
     /// A word and the words after it; `wait`: the film waits for it (not
@@ -188,4 +183,84 @@ impl Shape {
         let words: Vec<String> = text.trim_end_matches([' ', '&']).split_whitespace().map(str::to_string).collect();
         Shape::Word { verb: plain(&words[0]), words: words[1..].to_vec(), wait }
     }
+}
+
+/// A recipe as the language wrote it (`define`): its form, its lines, the
+/// text they are written in and where; what it does (the comment above
+/// it), its line.
+#[derive(Debug)]
+pub struct RecipeText {
+    pub form: language::ast::Form,
+    pub body: Vec<Stmt>,
+    pub text: Arc<str>,
+    pub span: Span,
+    pub doc: String,
+    pub number: usize,
+}
+
+impl PartialEq for RecipeText {
+    fn eq(&self, other: &Self) -> bool {
+        self.form == other.form && self.span == other.span && Arc::ptr_eq(&self.text, &other.text)
+    }
+}
+
+/// Where a recipe's line is, to say so: `gestures.film:12`, or `line 12`
+/// of the film's own.
+pub fn told_at(file: &str, line: usize) -> String {
+    if file.is_empty() { format!("line {line}") } else { format!("{file}:{line}") }
+}
+
+/// The marks `at 12s` and `at music 12s` count from (see `Shape::AtMark`):
+/// the scene's start, the music playing now. No mark is so named
+/// (`mark name` takes a word).
+pub const SCENE_CLOCK: &str = "@scene";
+
+pub const MUSIC_CLOCK: &str = "@music";
+
+/// What `at +2s` counts from: here, where the film is.
+pub const HERE_CLOCK: &str = "@here";
+
+/// A line anchored to what happens: its head (before the colon, if any), what
+/// follows the colon.
+pub(crate) fn anchor_parts(text: &str) -> (&str, &str) {
+    match text.split_once(':') {
+        Some((head, tail)) => (head.trim(), tail.trim()),
+        None => (text.trim(), ""),
+    }
+}
+
+/// `when a [b] arrives`: who.
+pub(crate) fn arrivals(head: &str) -> Option<Vec<&str>> {
+    let words: Vec<&str> = head.split_whitespace().collect();
+    match words.as_slice() {
+        ["when", who @ .., "arrives" | "arrive"] if !who.is_empty() => Some(who.to_vec()),
+        _ => None,
+    }
+}
+
+/// `at name [+ 2s]`: the mark, and so many frames after it.
+pub(crate) fn at_mark(head: &str) -> Option<(String, i32)> {
+    let rest = head.strip_prefix("at ")?.replace('+', " + ");
+    let words: Vec<&str> = rest.split_whitespace().collect();
+    let (name, after) = match words.as_slice() {
+        [name] => (name, 0),
+        [name, "+", time] => (name, crate::words::frames_of(time)?),
+        _ => return None,
+    };
+    (!crate::words::in_seconds(name) && !crate::words::digits(name)).then(|| (crate::words::plain(name), after))
+}
+
+/// `at 12s`, `at music 12s` (head of an anchored line): the clock it counts
+/// by (`SCENE_CLOCK`, `MUSIC_CLOCK`) and the frames.
+pub(crate) fn at_clock(head: &str) -> Option<(String, i32)> {
+    let words: Vec<&str> = head.strip_prefix("at ")?.split_whitespace().collect();
+    let (clock, time) = match words.as_slice() {
+        ["music", time] => (MUSIC_CLOCK, time),
+        [time] => (SCENE_CLOCK, time),
+        _ => return None,
+    };
+    (crate::words::in_seconds(time) || time.strip_suffix('f').is_some_and(crate::words::digits))
+        .then(|| crate::words::frames_of(time))
+        .flatten()
+        .map(|frames| (clock.to_string(), frames))
 }

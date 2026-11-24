@@ -142,7 +142,7 @@ impl Lower<'_> {
                     None => format!("at {}", mark.text),
                 };
                 // (A time is no mark: the language says `at 3s:` is gone.)
-                if crate::text::in_seconds(&mark.text) || crate::words::digits(&mark.text) {
+                if crate::words::in_seconds(&mark.text) || crate::words::digits(&mark.text) {
                     return;
                 }
                 if mark.text.contains(':') {

@@ -3,10 +3,8 @@
 //! shows, not written yet, or none. Declared with each word (`OnDs`), read
 //! by the export, the language's DS mode (`for ds`) and the Workshop's Wiki
 //! and completion.
-//! A film `for ds` is told what the DS can't play of it (`told`).
-
-mod told;
-pub(crate) use told::tell;
+//! A film `for ds` is told what the DS can't play of it as it is compiled
+//! (`compile/for_ds.rs`).
 
 /// A film written `for ds`: `boot`, played as a new game starts (`for
 /// ds`), else in place of a scene of a game going on (`for ds scene`).
@@ -113,7 +111,7 @@ impl OnDs {
 }
 
 /// What a scene whose place is a decor of the Workshop's loses on the DS
-/// (`told::place`).
+/// (`compile::for_ds`).
 pub const DECOR_LOSS: &str = "a map of its own, still: its animated tiles and changing colours as they first are, a tile of too many colours brought to its palette's nearest; the top screen black";
 
 impl Export {
@@ -140,51 +138,6 @@ impl Export {
             Export::Work => "work",
             Export::None => "none",
         }
-    }
-}
-
-/// The DS of the words of a lexicon, as each declares it.
-impl crate::Lexicon {
-    /// How that word stands on the DS, if it is a word of the vocabulary
-    /// (another name of one, `take_off`, as that one).
-    pub fn on_ds(&'static self, word: &str) -> Option<OnDs> {
-        self.planned(same_as(word)).map(|planned| planned.ds)
-    }
-
-    /// How that word exports, if it is a word of the vocabulary.
-    pub fn export_of(&'static self, word: &str) -> Option<Export> {
-        self.on_ds(word).map(|ds| ds.export)
-    }
-
-    /// How any word stands on the DS: none for an engine's command that is
-    /// no word of the vocabulary.
-    pub fn ds_status(&'static self, word: &str) -> Export {
-        self.export_of(word).unwrap_or(Export::None)
-    }
-
-    /// What a film `for ds` is told of a word that doesn't export: why, and
-    /// how to write it another way.
-    pub fn ds_refused(&'static self, word: &str) -> String {
-        let ds = self.on_ds(word);
-        let why = match ds.map(|ds| ds.export) {
-            Some(Export::Work) => "the export doesn't write it yet",
-            Some(Export::None) => ds.map_or("Sky has nothing for it", |ds| ds.how),
-            _ => "not a word the export knows",
-        };
-        match ds.and_then(|ds| ds.fix) {
-            Some(fix) => format!("“{word}” doesn't export to DS ({why}): {fix}"),
-            None => format!("“{word}” doesn't export to DS ({why})"),
-        }
-    }
-}
-
-/// The word of the vocabulary another name of it is (`take_off`: `fly`).
-fn same_as(word: &str) -> &str {
-    match word {
-        "take_off" => "fly",
-        "plunge" => "dive",
-        "dismount" => "get_off",
-        word => word,
     }
 }
 

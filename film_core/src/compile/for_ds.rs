@@ -7,8 +7,8 @@ use std::collections::{BTreeMap, HashMap};
 
 use engine::{Beat, BodyBeat, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Point, Scene, ScreenBeat, Spot, ViewBeat, Who};
 
-use super::{AT_ONCE, DECOR_LOSS, Export, Mode};
 use crate::codes;
+use crate::ds::{AT_ONCE, DECOR_LOSS, Export, Mode};
 use crate::film::Film;
 
 /// What the DS can't play of the film, added to its problems.
@@ -340,7 +340,7 @@ fn view(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
             Beat::View(ViewBeat::Frame { who, at: points, .. }) if number > 0 => {
                 let mut shown: Vec<(f32, f32)> = who.iter().filter_map(|one| at.get(one).copied()).collect();
                 shown.extend(points.iter().map(|point| (point.x, point.y)));
-                if super::wider_than_the_screen(&shown) {
+                if crate::ds::wider_than_the_screen(&shown) {
                     let message = "“frame”: they don't fit the DS's screen and Sky has no zoom to step back: the export pans across them";
                     film.problems.push(Diagnostic::at(number, message).as_remark().on(word_at(lines, number, "frame")).coded(codes::DS_ZOOM));
                 }

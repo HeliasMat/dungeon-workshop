@@ -7,7 +7,7 @@ use engine::{LETTERS_A_FRAME, SHORTEST_LINE, Voice, line_frames};
 use crate::emit;
 use crate::film::Film;
 use crate::screen::{BOX_LINES, BREAK, WIDE, coloured, in_a_bubble, wrap};
-use crate::text::told;
+use crate::words::told;
 use crate::words::{ACTING, FACES, of, plain};
 
 /// How much faster than usual a line says it is written out and read.
@@ -123,7 +123,7 @@ impl Film {
     pub(super) fn said_unknown(&mut self, name: &str, text: &str) {
         let name = plain(name);
         let text = text.trim();
-        let said = coloured(self, &wrap(text).join(BREAK));
+        let said = coloured(&self.tables, &wrap(text).join(BREAK));
         self.line_said(&format!("{}:???", if name.is_empty() { "-" } else { &name }), "-", &format!(" {said}"), line_frames("???", text, false) as i32);
     }
 
@@ -174,7 +174,7 @@ impl Film {
         let shown_name = if told { "" } else { who.as_str() };
         let frames =
             self.timing.line_time.unwrap_or(((line_frames(shown_name, &bare, face == "shouting") as f32 / speed).floor().max(SHORTEST_LINE)) as i32 + rests);
-        let said = coloured(self, &lines.join(BREAK));
+        let said = coloured(&self.tables, &lines.join(BREAK));
         self.line_said(&who, if told { "-" } else { &face }, &format!(" {said}"), frames);
         if speed != 1.0 {
             self.beat(emit::text_speed(None));

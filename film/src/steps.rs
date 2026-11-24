@@ -10,7 +10,8 @@ use language::ast::{Kind, Opening, Stmt};
 use film_core::compile::scenes::read;
 use film_core::film::Film;
 use film_core::ir::{Instr, Shape};
-use film_core::text::front::{holds, internal};
+use film_core::lines::holds;
+use film_core::text::front::internal;
 use film_core::text::recipes::unfold;
 
 /// Every step of a film, told.

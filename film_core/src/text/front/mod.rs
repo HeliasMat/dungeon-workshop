@@ -33,7 +33,8 @@ use language::{Diagnostic, Source, Span};
 
 use engine::{Beat, Compare, Condition, DataBeat, FlowBeat, Frames, Num, Test, Value};
 
-use crate::ir::{From, Instr, RecipeLine, Shape};
+use crate::ir::{From, Instr, RecipeLine, RecipeText, Shape};
+use crate::lines::holds;
 use crate::verbs::Lexicon;
 
 mod blocks;
@@ -41,32 +42,13 @@ mod helpers;
 mod said;
 mod values;
 
-pub use helpers::*;
+use helpers::*;
 
 /// A text read: its lines as the words play them (each block holding its
 /// own), what is wrong.
 pub struct Internal {
     pub lines: Vec<Instr>,
     pub diagnostics: Vec<(usize, Diagnostic)>,
-}
-
-/// A recipe as the language wrote it (`define`): its form, its lines, the
-/// text they are written in and where; what it does (the comment above
-/// it), its line.
-#[derive(Debug)]
-pub struct RecipeText {
-    pub form: language::ast::Form,
-    pub body: Vec<Stmt>,
-    pub text: Arc<str>,
-    pub span: Span,
-    pub doc: String,
-    pub number: usize,
-}
-
-impl PartialEq for RecipeText {
-    fn eq(&self, other: &Self) -> bool {
-        self.form == other.form && self.span == other.span && Arc::ptr_eq(&self.text, &other.text)
-    }
 }
 
 /// One call of a recipe: its number for the names of the event it makes,

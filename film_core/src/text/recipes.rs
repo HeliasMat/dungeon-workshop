@@ -40,10 +40,11 @@ use std::sync::Arc;
 
 use assets::project::Project;
 
-use super::front::{CallOf, CallValue, RecipeText};
+use super::front::{CallOf, CallValue};
 use crate::film::Film;
 use crate::grammar::{self, Kind, Piece, Value as Given};
 use crate::ir::{Instr, Shape};
+use crate::ir::{RecipeText, told_at};
 use crate::verbs::Lexicon;
 use crate::words::{frames_of, plain};
 
@@ -224,12 +225,6 @@ fn recipe(written: &Arc<RecipeText>, from: &str) -> Recipe {
     let mut recipe = Recipe { form, text: written.clone(), name, from: from.to_string(), file, doc, told_and_doc: String::new() };
     recipe.told_and_doc = format!("`{}`: {}", recipe.shape().trim_end(), recipe.doc);
     recipe
-}
-
-/// Where a recipe's line is, to say so: `gestures.film:12`, or `line 12`
-/// of the film's own.
-pub fn told_at(file: &str, line: usize) -> String {
-    if file.is_empty() { format!("line {line}") } else { format!("{file}:{line}") }
 }
 
 /// A recipe a film can call, as told: its name, how it is called, what it

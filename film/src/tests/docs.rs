@@ -52,7 +52,7 @@ fn the_times_of_the_engine_s_commands_are_in_films_md_as_the_registry_has_them()
 #[test]
 fn every_word_has_its_forms() {
     let families = crate::LEXICON.groups().iter().flat_map(|family| family.words.iter().map(move |word| (family.name, word)));
-    let text = film_core::text::WORDS.iter().map(|word| ("text", word));
+    let text = film_core::verbs::TEXT_WORDS.iter().map(|word| ("text", word));
     let missing: Vec<String> =
         families.chain(text).filter(|(_, word)| word.forms.is_empty()).map(|(family, word)| format!("{} ({family})", word.word)).collect();
     assert!(missing.is_empty(), "these words have no form: {missing:?}");
