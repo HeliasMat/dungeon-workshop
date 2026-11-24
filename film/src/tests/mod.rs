@@ -9,7 +9,7 @@ use crate::Written;
 use film_core::compile::with_lines;
 use film_core::emit;
 use film_core::film::Sortie;
-use film_core::verbs::fights::Combat;
+use film_fights::Combat;
 
 /// The repository's root, where the tests read the library and `data/` from.
 pub(crate) fn root() -> std::path::PathBuf {

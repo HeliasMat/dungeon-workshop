@@ -4,14 +4,16 @@
 //! - `directed`: a fight stated in advance, its block read;
 //! - here: the words of a fight and the line each writes.
 
+#![forbid(unsafe_code)]
+
 use engine::Cam;
 use scenes::vocabulary::POKEMON;
 
-use super::said::told_or_logged;
-use super::{Line, Word};
-use crate::film::Film;
-use crate::words::{digits, plain};
-use crate::{emit, fields};
+use film_core::film::Film;
+use film_core::verbs::said::told_or_logged;
+use film_core::verbs::{Line, Word};
+use film_core::words::{digits, plain};
+use film_core::{emit, fields};
 
 mod state;
 pub use state::Combat;
@@ -84,7 +86,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("fights", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("fights", WORDS);
 
 fn bar_opens(film: &mut Film, line: &Line) {
     // (`fight pikachu 12 30 [floor]`: the top line of a dungeon, or its name
@@ -107,7 +109,7 @@ fn bar_opens(film: &mut Film, line: &Line) {
     said.extend(group_members(film));
     if let Some(floor) = args.word("floor") {
         said.extend(fields!["floor", floor]);
-    } else if let Some(floor) = super::dungeon::floor_for_a_fight(film) {
+    } else if let Some(floor) = film_core::verbs::dungeon::floor_for_a_fight(film) {
         // (On a dungeon's floor: that floor, untold.)
         said.extend(fields!["floor", floor]);
     }
@@ -130,20 +132,20 @@ fn level_of(line: &Line, usual: i32) -> i32 {
 
 /// The frames from a move's start to its blow landing (when its user's
 /// sprite marks no step for it), and after.
-pub(super) const STRIKE_FRAMES: f32 = 24.0;
+pub(crate) const STRIKE_FRAMES: f32 = 24.0;
 const STRUCK_FRAMES: i64 = 40;
 
 /// The frames from a move's start to its blow landing, for that user: to
 /// the step his sprite marks for the blow in the motion the move plays (its
 /// own group, else his attack), as the game has it; else `STRIKE_FRAMES`.
-pub(super) fn strike_frames(film: &mut Film, who: &str, id: u16) -> f32 {
+pub(crate) fn strike_frames(film: &mut Film, who: &str, id: u16) -> f32 {
     /// The animations every monster has before its own groups; its attack.
     const OWN: u8 = 5;
     const ATTACK: u8 = 4;
     type Known = std::sync::Mutex<std::collections::HashMap<(String, u16, u8), Option<f32>>>;
     static KNOWN: std::sync::OnceLock<Known> = std::sync::OnceLock::new();
     let code = film.actor(who).unwrap_or_default();
-    let Some(number) = crate::names::species(&code).and_then(|number| number.parse::<u16>().ok()) else {
+    let Some(number) = film_core::names::species(&code).and_then(|number| number.parse::<u16>().ok()) else {
         return STRIKE_FRAMES;
     };
     let tables = film.tables.clone();
@@ -251,7 +253,7 @@ fn used(film: &mut Film, line: &Line) {
         }
         // (A point: an unseen mark there, faced, the move aimed at it.)
         (None, Some((x, y))) => {
-            let mark = format!("p{}", super::effects::FIRST_MARK + film.timing.marks);
+            let mark = format!("p{}", film_core::verbs::effects::FIRST_MARK + film.timing.marks);
             film.timing.marks += 1;
             film.on(&mark, |mark| emit::put(mark, x, y, engine::Direction::Down));
             film.face(&who, &mark);
@@ -281,7 +283,7 @@ fn own_move(film: &mut Film, who: &str, number: usize) -> Option<u16> {
 
 /// A move someone's kind never learns (by level nor by a machine): told as
 /// a remark, the scene played all the same.
-pub(super) fn never_learnt(film: &mut Film, who: &str, id: u16, number: usize) {
+pub(crate) fn never_learnt(film: &mut Film, who: &str, id: u16, number: usize) {
     let code = lines::code_now(film, who);
     if film.learns(&code, id) == Some(false) {
         let named = film.tables.moves.values().find(|row| row.0 == id.to_string()).map_or(id.to_string(), |row| row.1.clone());
@@ -358,12 +360,12 @@ pub(crate) fn fought_word(film: &mut Film, line: &Line) -> bool {
     let whole = verb == "fight" && line.args.has("side_team");
     let opens = verb == "fight" && film.kept::<Combat>().lead.is_none();
     if whole || opens {
-        super::dungeon::fight_begins(film);
+        film_core::verbs::dungeon::fight_begins(film);
     }
-    let lost = super::dungeon::lost_in_a_fight(film, &line.block);
+    let lost = film_core::verbs::dungeon::lost_in_a_fight(film, &line.block);
     let done = fought(film, line);
     if done && (whole || verb == "end_fight") {
-        super::dungeon::fight_ends(film, lost);
+        film_core::verbs::dungeon::fight_ends(film, lost);
     }
     done
 }

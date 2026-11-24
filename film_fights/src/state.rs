@@ -10,9 +10,9 @@ pub struct Combat {
     pub lead: Option<String>,
     /// (The most of each bar, in order.)
     pub bars: Vec<(String, i32)>,
-    pub moments: Vec<(String, i32, Vec<crate::ir::Instr>)>,
+    pub moments: Vec<(String, i32, Vec<film_core::ir::Instr>)>,
     /// (The lines a directed fight has between two blows.)
-    pub asides: Vec<(String, usize, crate::ir::Instr)>,
+    pub asides: Vec<(String, usize, film_core::ir::Instr)>,
     /// (What each is worth, whatever fight it is in; it lasts, as `written`.)
     pub levels: BTreeMap<String, i32>,
     /// (How many fights wrote passages, to name them.)
@@ -28,7 +28,7 @@ pub struct Combat {
     pub dodging: Option<(String, usize, String)>,
 }
 
-impl crate::film::Kept for Combat {
+impl film_core::film::Kept for Combat {
     /// A fight shows its log.
     fn logs(&self) -> bool {
         self.lead.is_some()

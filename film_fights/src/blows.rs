@@ -3,12 +3,12 @@
 
 use engine::{Beat, Direction, FlowBeat, MoveId, SoundId, Spot, Who};
 
-use super::super::Line;
 use super::Combat;
-use crate::emit;
-use crate::film::{Film, Sortie};
-use crate::spots::routes::found;
-use crate::words::plain;
+use film_core::emit;
+use film_core::film::{Film, Sortie};
+use film_core::spots::routes::found;
+use film_core::verbs::Line;
+use film_core::words::plain;
 
 /// The game's own roar, as Sky's scripts play it for Groudon, Dialga and
 /// Palkia (the game has no cry of each species).
@@ -51,7 +51,7 @@ pub struct Blow {
 /// once they have stepped aside: its code.
 fn where_stood(film: &mut Film, who: &str, me: Who) -> String {
     let at = found(film, who, Spot::Of(me), &["exact"]);
-    let mark = format!("p{}", crate::verbs::effects::FIRST_MARK + film.timing.marks);
+    let mark = format!("p{}", film_core::verbs::effects::FIRST_MARK + film.timing.marks);
     film.timing.marks += 1;
     film.on(&mark, |mark| emit::put_point(mark, at.clone(), Direction::Down));
     mark
@@ -68,7 +68,7 @@ pub fn straight_after(film: &Film, written: usize) -> bool {
 pub fn roared(film: &mut Film, line: &Line) {
     let who = plain(line.args.word("who").unwrap_or_default());
     let (strength, frames) = if line.args.has("hard") { ROARING_HARD } else { ROARING };
-    let roar = film.actor(&who).and_then(|code| crate::names::species(&code).and_then(|species| film.tables.roars.get(species)).copied());
+    let roar = film.actor(&who).and_then(|code| film_core::names::species(&code).and_then(|species| film.tables.roars.get(species)).copied());
     match roar {
         Some(group) => film.on(&who, |one| emit::anim_times(one, engine::AnimId(group), 1)),
         None => {

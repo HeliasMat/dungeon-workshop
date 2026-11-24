@@ -40,7 +40,7 @@ pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("effects", WO
 /// The word that is no move: it has its own bolt.
 const BOLT: &str = "bolt";
 /// The first of the unseen points effects are put on.
-pub(crate) const FIRST_MARK: usize = 900;
+pub const FIRST_MARK: usize = 900;
 /// How much of a shake each word leaves.
 const SHAKES: [(&str, f32); 2] = [("weak", 0.5), ("strong", 2.0)];
 

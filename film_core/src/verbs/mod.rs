@@ -30,7 +30,6 @@ pub mod crowds;
 pub mod dungeon;
 pub mod effects;
 pub mod engine;
-pub mod fights;
 pub mod game;
 pub mod guild;
 pub mod heard;

@@ -67,6 +67,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `stage_view` | everything that is drawn |
 | `film_core` | the films' language by the words it is given: the text read, the scenes compiled, what is written for the engine; the families it leans on |
 | `film_fishing` | the films' fishing: the line cast, what bites and comes out, what was caught and measured, those watching |
+| `film_fights` | the films' fights: the lines a fight is written in, a directed fight's block, the blows, dodges and evolutions |
 | `film` | the films' language whole: every family of its words gathered (`LEXICON`), a `.film` turned into what the engine plays, the language's service for editors |
 | `rom_formats` | the original game's formats, for `extractor` alone |
 | `decor` | places made for films; the `decor` program |
@@ -108,7 +109,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `decor` | `assets`, `diagnostics`, `media` |
 | `film_core` | `assets`, `engine`, `language`, `rules`, `scenes`, `story` |
 | `film_fishing` | `engine`, `film_core`, `rules`, `scenes` |
-| `film` | `assets`, `engine`, `film_core`, `film_fishing`, `language`, `scenes`, `story` |
+| `film_fights` | `assets`, `engine`, `film_core`, `rules`, `scenes` |
+| `film` | `assets`, `engine`, `film_core`, `film_fights`, `film_fishing`, `language`, `scenes`, `story` |
 | `stage_view` | `assets`, `engine`, `media`, `rules`, `scenes`, `shell` |
 | `preview` | `assets`, `engine`, `film`, `media`, `rules`, `scenes`, `shell`, `stage_view` |
 | `dive` | `rules`, `scenes`, `shell`, `stage_view` |
@@ -265,7 +267,7 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | The game's pictures, their categories, their animations | `library/tables/images.txt` |
 | An object on stage: a game item, a decor piece, a picture of our own | `engine/src/stage/thing.rs` (`Thing`); its words: `film_core/src/verbs/things.rs`, `items.rs`; the word for each decor piece: `library/tables/objects.txt`; our pictures: `library/images/` |
 | A Pokémon variant | painted by hand in `data/hand/`, its line in `data/extra/variants.txt` (none is provided) |
-| What a Pokémon wears | painted into a variant; where its rod's line starts: `pointe` in its table, written by hand in `data/extra/rod_tips.txt`, read by `Art::rod_tip` (`shell/src/art.rs`); its words: `film_core/src/verbs/fishing/` and the recipes in `film/recipes/fishing/`; the small things the words use (bobber, crosshair, footprints): `library/images/` |
+| What a Pokémon wears | painted into a variant; where its rod's line starts: `pointe` in its table, written by hand in `data/extra/rod_tips.txt`, read by `Art::rod_tip` (`shell/src/art.rs`); its words: `film_fishing/src/` and the recipes in `film/recipes/fishing/`; the small things the words use (bobber, crosshair, footprints): `library/images/` |
 | What replaces the scene on screen | `engine/src/stage/light.rs` (`Cutaway`) |
 | Where a game file is, the merged lists, the tables read | `assets/src/data.rs` (where, merged) and `assets/src/tables.rs` (read: backgrounds, grounds, built places, names, walls); the keys of the lists: `assets/src/indexes.txt`; each file: `data/DATA.md` |
 | Where you can walk in each place | `data/extra/ground.txt`, made by `decor game_grounds`; places traced by hand: `library/tables/grounds.txt` |

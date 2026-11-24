@@ -1,0 +1,17 @@
+[package]
+name = "film_fights"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The films' fights: the lines a fight is written in, a directed fight's block, blows, dodges, evolutions"
+readme = "../README.md"
+publish.workspace = true
+
+[dependencies]
+assets = { path = "../assets" }
+engine = { path = "../engine" }
+film_core = { path = "../film_core" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }

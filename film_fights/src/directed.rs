@@ -4,12 +4,12 @@
 use std::collections::BTreeSet;
 
 use super::*;
-use crate::check::nearby;
-use crate::ir::{Instr, Shape};
-use crate::names::things::thing_said;
-use crate::text::told;
-use crate::verbs::things::thing_apart;
-use crate::words::frames_of;
+use film_core::check::nearby;
+use film_core::ir::{Instr, Shape};
+use film_core::names::things::thing_said;
+use film_core::text::told;
+use film_core::verbs::things::thing_apart;
+use film_core::words::frames_of;
 
 /// A directed line's end, read from the last word: its words without it, how
 /// it went, and the rest of what it says (as the fight's line has them).
@@ -46,7 +46,7 @@ fn options_read(words: &[String]) -> (Vec<String>, Vec<String>, Vec<String>) {
 }
 
 /// A line of a directed fight: who, its move, on whom, how it went.
-fn act_read(film: &mut Film, sides: &Sides, args: &crate::grammar::Bound, line: &str, number: usize, down: &mut BTreeSet<String>) -> Option<Vec<String>> {
+fn act_read(film: &mut Film, sides: &Sides, args: &film_core::grammar::Bound, line: &str, number: usize, down: &mut BTreeSet<String>) -> Option<Vec<String>> {
     let said = args.word("who").unwrap_or_default();
     let who = plain(said);
     let fighters: Vec<String> = sides.iter().flatten().cloned().collect();
@@ -101,7 +101,7 @@ fn act_read(film: &mut Film, sides: &Sides, args: &crate::grammar::Bound, line: 
 
 /// The moves of a line, in several words each or not: the longest first, or
 /// between `|`.
-fn moves_said(film: &mut Film, args: &crate::grammar::Bound, number: usize) -> Vec<String> {
+fn moves_said(film: &mut Film, args: &film_core::grammar::Bound, number: usize) -> Vec<String> {
     let words = args.words("moves");
     let names: Vec<Vec<String>> = if words.iter().any(|word| word == "|") {
         args.parts("moves", '|')
@@ -118,7 +118,7 @@ fn moves_said(film: &mut Film, args: &crate::grammar::Bound, number: usize) -> V
 
 /// `a uses Oran Berry [+30]`, `a eats Oran Berry`, `a throws Apple c [-20]`:
 /// a thing used in a directed fight, by the fields of its line.
-fn thing_act(film: &mut Film, args: &crate::grammar::Bound, number: usize) -> Option<Vec<String>> {
+fn thing_act(film: &mut Film, args: &film_core::grammar::Bound, number: usize) -> Option<Vec<String>> {
     let who = plain(args.word("who")?);
     let worth = args.word("value").map(|word| word.trim_start_matches(['+', '-']).to_string());
     if args.word("value").is_some_and(|word| !word.strip_prefix(['+', '-']).is_some_and(digits)) {
@@ -135,11 +135,11 @@ fn thing_act(film: &mut Film, args: &crate::grammar::Bound, number: usize) -> Op
 
 /// The first form of a block's line that fits it: its values; none, the
 /// reasons told.
-fn block_line(film: &mut Film, head: &str, words: &[String], number: usize, line: &str) -> Option<crate::grammar::Bound> {
+fn block_line(film: &mut Film, head: &str, words: &[String], number: usize, line: &str) -> Option<film_core::grammar::Bound> {
     let forms = FIGHT_LINES.iter().find(|(word, _)| *word == head).map(|(_, forms)| *forms)?;
     let mut why = Vec::new();
     for form in forms {
-        match crate::grammar::bind(film, &crate::grammar::read(form), words) {
+        match film_core::grammar::bind(film, &film_core::grammar::read(form), words) {
             Ok(bound) => return Some(bound),
             Err(reason) => why.push(format!("“{form}”: {reason}")),
         }

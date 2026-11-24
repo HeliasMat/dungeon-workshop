@@ -38,7 +38,7 @@ const FAMILIES: [film_core::verbs::Family; 26] = [
     film_core::verbs::view::FAMILY,
     film_core::verbs::sky::FAMILY,
     film_core::verbs::effects::FAMILY,
-    film_core::verbs::fights::FAMILY,
+    film_fights::FAMILY,
     film_core::verbs::items::FAMILY,
     film_core::verbs::moving::swimming::FAMILY,
     film_core::verbs::moving::flying::FAMILY,

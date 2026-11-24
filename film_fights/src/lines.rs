@@ -5,12 +5,12 @@
 use std::collections::BTreeSet;
 
 use super::Combat;
-use crate::film::Film;
-use crate::ir::Instr;
-use crate::names::species;
-use crate::screen::capitalized;
-use crate::words::plain;
-use crate::{emit, fields};
+use film_core::film::Film;
+use film_core::ir::Instr;
+use film_core::names::species;
+use film_core::screen::capitalized;
+use film_core::words::plain;
+use film_core::{emit, fields};
 
 /// The level of who no line gives one.
 const USUAL_LEVEL: i32 = 10;
