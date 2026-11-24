@@ -651,7 +651,7 @@ fn starred(favourites: &mut Vec<String>, name: String) {
 /// A piece laid in the middle of what the scene shows (on the grid if snapping), chosen there.
 fn lay(decors: &mut Decors, name: &str) {
     let Some(open) = &decors.open else { return };
-    let step = crate::scene::grid_step(&open.text);
+    let step = crate::placing::grid_step(&open.text);
     let corner = crate::placing::landing(open.middle, decors.size_of(name), step, decors.snap);
     let line = decors.pose_line(name, &format!("{} {}", corner[0], corner[1]));
     note_laid(decors, name);

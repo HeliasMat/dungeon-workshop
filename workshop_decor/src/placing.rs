@@ -110,3 +110,14 @@ mod tests {
         assert_eq!(stamp_clicked(Some(&twice), "e2_1").map(|stamp| stamp.name), Some("e2_1".to_string()));
     }
 }
+
+/// The step of the decor's grid (`grid n`, else 8).
+pub fn grid_step(text: &str) -> f32 {
+    text.lines()
+        .find_map(|line| match line.split_whitespace().collect::<Vec<_>>().as_slice() {
+            ["grid", step] => step.parse::<f32>().ok(),
+            _ => None,
+        })
+        .unwrap_or(8.0)
+        .max(1.0)
+}

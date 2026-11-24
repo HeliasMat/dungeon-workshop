@@ -15,8 +15,9 @@
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Vec2, vec2};
 
 use crate::edit::{self, Item};
+use crate::placing::grid_step;
 use crate::terrains::Tool;
-use crate::{Carry, Decors, PieceArt};
+use crate::{Carry, Decors, Drawn};
 use workshop_base::theme;
 
 mod choosing;
@@ -26,16 +27,6 @@ mod marks;
 mod moving;
 #[cfg(test)]
 mod tests;
-
-/// One thing to draw: a piece somewhere, which of its layers.
-pub struct Drawn {
-    pub art: PieceArt,
-    pub rect: Rect,
-    pub layers: (bool, bool),
-    pub turned: bool,
-    /// How much it is seen (its layer's opacity).
-    pub tint: Color32,
-}
 
 /// A thing of the decor: its line, its place on the line.
 type Element = (usize, usize);
@@ -117,17 +108,6 @@ impl Read {
     fn box_of(&self, chosen: &[Element]) -> Option<Rect> {
         chosen.iter().filter_map(|key| self.items.iter().position(|one| (one.line, one.at) == *key)).map(|at| self.boxes[at]).reduce(|a, b| a.union(b))
     }
-}
-
-/// The step of the decor's grid (`grid n`, else 8).
-pub fn grid_step(text: &str) -> f32 {
-    text.lines()
-        .find_map(|line| match line.split_whitespace().collect::<Vec<_>>().as_slice() {
-            ["grid", step] => step.parse::<f32>().ok(),
-            _ => None,
-        })
-        .unwrap_or(8.0)
-        .max(1.0)
 }
 
 /// The things of the decor as the Scene draws them: those chosen where they are carried to.

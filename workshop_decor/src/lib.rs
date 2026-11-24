@@ -258,6 +258,16 @@ pub(crate) fn merges(last: &str, said: &str) -> bool {
     last == said && (said.starts_with("moved:") || said.starts_with("changed:"))
 }
 
+/// One thing to draw: a piece somewhere, which of its layers.
+pub struct Drawn {
+    pub art: PieceArt,
+    pub rect: Rect,
+    pub layers: (bool, bool),
+    pub turned: bool,
+    /// How much it is seen (its layer's opacity).
+    pub tint: Color32,
+}
+
 /// A piece as the editor draws it: its pictures on the lower layer and on
 /// the upper one, frame by frame, how long a frame lasts.
 #[derive(Clone)]

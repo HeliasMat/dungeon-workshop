@@ -19,7 +19,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use decor::terrain::{NONE, Painted};
 use eframe::egui::{self, Color32, Pos2, Rect, RichText, Sense, Stroke, StrokeKind, pos2, vec2};
 
-use crate::scene::Drawn;
+use crate::Drawn;
 use crate::workshop::{Ask, Solved, TerrainInfo};
 use crate::{Decors, PieceArt, made_art, section, texture};
 use workshop_base::theme;
