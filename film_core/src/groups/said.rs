@@ -4,10 +4,10 @@
 use engine::Voice;
 use scenes::fight::said;
 
-use super::{Line, Names, Word};
 use crate::emit;
 use crate::film::Film;
 use crate::screen::in_a_bubble;
+use crate::verbs::{Line, Names, Word};
 use crate::words::{EMOTION_SOUNDS, EMOTIONS, of, plain};
 
 pub const WORDS: &[Word] = &[
@@ -78,7 +78,7 @@ fn bubble_said(film: &mut Film, line: &Line) -> bool {
         Some("think") => Voice::Thought,
         _ => Voice::Said,
     };
-    film.bubble(&super::who_said(line), &in_a_bubble(&said), voice);
+    film.bubble(&crate::verbs::who_said(line), &in_a_bubble(&said), voice);
     true
 }
 
@@ -133,7 +133,7 @@ fn emotion_said(film: &mut Film, line: &Line) -> bool {
     if line.args.has("d") {
         return false;
     }
-    let (who, kind) = (super::who_said(line), plain(line.args.word("kind").unwrap_or_default()));
+    let (who, kind) = (crate::verbs::who_said(line), plain(line.args.word("kind").unwrap_or_default()));
     match of(&EMOTIONS, &kind) {
         Some(shown) => emote(film, &who, &kind, shown),
         None => {

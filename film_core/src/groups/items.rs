@@ -3,12 +3,12 @@
 use engine::Pose;
 
 use super::things::{arrives, thing_out};
-use super::{Line, Names, Word};
 use crate::emit;
 use crate::film::{Film, Flying};
 use crate::names::things::{Thing, thing_said};
 use crate::spots::ending_point;
 use crate::spots::routes::found;
+use crate::verbs::{Line, Names, Word};
 use crate::words::plain;
 
 pub const WORDS: &[Word] = &[
@@ -297,6 +297,6 @@ fn let_go(film: &mut Film, line: &Line) {
 /// `hold a letter`: in his hands.
 fn held(film: &mut Film, line: &Line) {
     if let Some(thing) = thing_said(film, line.args.words("thing"), line.number) {
-        in_hands(film, &super::who_said(line), &thing);
+        in_hands(film, &crate::verbs::who_said(line), &thing);
     }
 }

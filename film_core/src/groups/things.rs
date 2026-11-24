@@ -4,12 +4,12 @@
 
 use engine::{Num, Pose, Spot};
 
-use super::{Line, Word};
 use crate::emit;
 use crate::film::{Film, Kind, Stuff};
 use crate::names::things::{Thing, leading_thing, thing_said};
 use crate::spots::routes::found;
 use crate::spots::somewhere;
+use crate::verbs::{Line, Word};
 use crate::words::{plain, spot};
 
 pub const WORDS: &[Word] = &[

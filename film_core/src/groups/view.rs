@@ -6,10 +6,10 @@
 
 use engine::{Cam, Ease, LIFT};
 
-use super::{Line, Names, Word};
 use crate::film::Film;
 use crate::spots::routes::found;
 use crate::spots::{Aim, nowhere, point_said};
+use crate::verbs::{Line, Names, Word};
 use crate::words::{SHOTS, plain, spot};
 use crate::{emit, fields};
 

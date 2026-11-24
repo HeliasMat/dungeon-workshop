@@ -20,6 +20,7 @@
 
 use crate::ds::{Export, OnDs};
 use crate::verbs::Lexicon;
+pub use crate::verbs::{Made, Planned};
 
 /// Every family in the order shown: the core's ([`CORE`] of them), the
 /// optional ones, the advanced words last.
@@ -60,31 +61,6 @@ pub const OPTIONAL: [(&str, &str); 3] = [("Dungeon", "dungeon"), ("Guild", "guil
 
 /// The words for those who want to control everything: folded by default.
 pub const ADVANCED: &str = "Advanced";
-
-/// What a word of the vocabulary is.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Made {
-    /// A `Word` of a group (`film_core/src/verbs/`, a family crate).
-    Word,
-    /// A recipe written in the language, provided (`film/recipes/`).
-    Recipe,
-    /// A way of writing of the language itself, no word to look up (a
-    /// line said, `{value}` in it): it has no page of its own.
-    Syntax,
-    /// One of the engine's own commands.
-    Command,
-}
-
-/// A word of the vocabulary: its family, itself, what it is, whether it is
-/// written who first, how it stands on the DS.
-#[derive(Clone, Copy, Debug)]
-pub struct Planned {
-    pub family: &'static str,
-    pub word: &'static str,
-    pub made: Made,
-    pub who_first: bool,
-    pub ds: OnDs,
-}
 
 /// A word of the vocabulary with no `Word` of its own: its family, itself,
 /// its form as an author writes it, what it is, its DS status.
@@ -459,7 +435,7 @@ impl Lexicon {
 /// The words a form of the vocabulary starts with before its first value:
 /// `transition fade in [d]` gives `transition fade in`, `who walk to where`
 /// `walk to` (who first: told apart).
-fn literal_head(form: &str) -> (bool, Vec<&str>) {
+pub(crate) fn literal_head(form: &str) -> (bool, Vec<&str>) {
     let mut words = form.split_whitespace().peekable();
     let who_first = words.peek() == Some(&"who");
     if who_first {
@@ -471,81 +447,6 @@ fn literal_head(form: &str) -> (bool, Vec<&str>) {
     ];
     let head = words.take_while(|word| !VALUES.contains(word) && !word.contains(['|', '[', ':', '.'])).collect();
     (who_first, head)
-}
-
-/// A line of a word of the old vocabulary (`fadein 30`, `turn pikachu
-/// left`): refused, with the form of the vocabulary that replaces it, and a fix
-/// when the line can be written so word for word (its first words put for
-/// the new ones, who first when the new form is).
-pub(crate) fn told_replaced(film: &mut crate::film::Film, number: usize, written: &[(String, language::Span)], verb: &str) -> bool {
-    let Some(now) = film.lexicon.replaced(verb) else { return false };
-    let Some((first, first_at)) = written.first() else { return false };
-    if crate::words::plain(first) != verb {
-        // (Who first, `pikachu turn left`: the word is second.)
-        if written.get(1).is_none_or(|(second, _)| crate::words::plain(second) != verb) {
-            return false;
-        }
-    }
-    let before = written.iter().map(|(said, _)| said.as_str()).collect::<Vec<_>>().join(" ");
-    if now.is_empty() {
-        let message = format!("“{verb}” is no word of the language any more: write the line another way (film/FILMS.md)");
-        film.problems.push(engine::Diagnostic::at(number, message).on(Some((first_at.start, first_at.end))).coded(crate::codes::OLD_WORD));
-        return true;
-    }
-    let (who_first, head) = literal_head(now);
-    let word_first = crate::words::plain(first) == verb;
-    let rest: Vec<&str> = written.iter().skip(1).map(|(said, _)| said.as_str()).collect();
-    // (The one who acts: second when the old line was written word first.)
-    let (who, after): (Option<&str>, &[&str]) = match (who_first, word_first, rest.split_first()) {
-        (true, true, Some((who, after))) if film.actor(who).is_some() => (Some(who), after),
-        (true, false, _) => (Some(first.as_str()), &rest[1..]),
-        (false, true, _) => (None, &rest[..]),
-        _ => (None, &[]),
-    };
-    // (Word for word only: no line said, `who think: text`; the form's values given, if it has any.)
-    // (Its other values as many as the old line's other words, at most; those not optional, at least.)
-    let tail: Vec<&str> = now.split_whitespace().skip(head.len() + usize::from(who_first)).collect();
-    let (mut required, mut inside) = (0, 0);
-    for value in &tail {
-        if inside == 0 && !value.starts_with('[') {
-            required += 1;
-        }
-        inside += value.matches('[').count();
-        inside -= value.matches(']').count().min(inside);
-    }
-    let fits = after.len() <= tail.len() && after.len() >= required;
-    let fixed = (!head.is_empty() && (!who_first || who.is_some()) && !now.contains(':') && fits)
-        .then(|| who.into_iter().chain(head.iter().copied()).chain(after.iter().copied()).collect::<Vec<_>>().join(" "));
-    let span = written.last().map_or(*first_at, |(_, last)| language::Span::new(first_at.start, last.end));
-    let fixed = fixed.filter(|fixed| *fixed != before);
-    let message = match &fixed {
-        Some(fixed) => format!("“{verb}” is no word of the language any more: “{now}” says it now; write “{fixed}”"),
-        None => format!("“{verb}” is no word of the language any more: “{now}” says it now"),
-    };
-    let mut problem = engine::Diagnostic::at(number, message).on(Some((span.start, span.end))).coded(crate::codes::OLD_WORD);
-    if let Some(fixed) = fixed {
-        problem = problem.fix(format!("write “{fixed}”"), span, fixed);
-    }
-    film.problems.push(problem);
-    true
-}
-
-/// A word of an optional family said in a film that does not take its
-/// library in (`bite` with no `uses fishing`): told, with the line that
-/// takes it in as its fix (written first in the film).
-pub(crate) fn asks_its_library(film: &mut crate::film::Film, number: usize, verb: &str) {
-    let Some(library) = film.lexicon.planned(verb).and_then(|planned| library_of(planned.family)) else { return };
-    if film.uses.iter().any(|used| used == library) {
-        return;
-    }
-    let family = film.lexicon.planned(verb).map_or("", |planned| planned.family);
-    let message = format!("“{verb}” is a word of the {family} family: “uses {library}” before the first scene");
-    let problem = engine::Diagnostic::at(number, message).as_remark().coded(crate::codes::USES).fix(
-        format!("write “uses {library}”"),
-        language::Span::new(0, 0),
-        format!("uses {library}\n"),
-    );
-    film.problems.push(problem);
 }
 
 #[cfg(test)]

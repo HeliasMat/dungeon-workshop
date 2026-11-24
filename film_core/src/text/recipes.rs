@@ -52,14 +52,6 @@ use crate::words::{frames_of, plain};
 /// How deep a recipe may call others.
 const DEEPEST: usize = 8;
 
-/// The library's recipes, a file a theme.
-const LIBRARY: [(&str, &str); 4] = [
-    ("gestures", include_str!("../../../film/recipes/gestures.film")),
-    ("contact", include_str!("../../../film/recipes/contact.film")),
-    ("fights", include_str!("../../../film/recipes/fights.film")),
-    ("fishing/line", include_str!("../../../film/recipes/fishing/line.film")),
-];
-
 /// The words that are words said, or that carry them: no `there` nor `team`
 /// is read in them.
 const SAID: [&str; 23] = [
@@ -95,7 +87,7 @@ type Recipes = HashMap<String, Vec<Recipe>>;
 
 /// The library's recipes, read with that lexicon (kept by it: `Lexicon::library`).
 pub(crate) fn read_library(lexicon: &'static Lexicon) -> Vec<Recipe> {
-    LIBRARY.iter().flat_map(|(from, text)| recipes_of(lexicon, text, from)).collect()
+    lexicon.recipe_files().flat_map(|(from, text)| recipes_of(lexicon, text, from)).collect()
 }
 
 /// The recipes of a text (its `define` … `end`), each with the comment
@@ -105,7 +97,7 @@ pub fn recipes_of(lexicon: &'static Lexicon, text: &str, from: &str) -> Vec<Reci
     lines
         .iter()
         .filter_map(|item| match &item.shape {
-            Shape::Recipe(written) => Some(recipe(written, from)),
+            Shape::Recipe(written) => Some(recipe(lexicon, written, from)),
             _ => None,
         })
         .collect()
@@ -137,8 +129,8 @@ fn shared_folders(project: &Project) -> Vec<std::path::PathBuf> {
 
 /// The files a film may use or take in (`uses`, `include`), by the names
 /// it gives them: the library's recipes, then the project's.
-pub fn shared_files(project: &Project) -> Vec<String> {
-    let mut known: Vec<String> = LIBRARY.iter().map(|(from, _)| from.to_string()).collect();
+pub fn shared_files(lexicon: &'static Lexicon, project: &Project) -> Vec<String> {
+    let mut known: Vec<String> = lexicon.recipe_files().map(|(from, _)| from.to_string()).collect();
     for folder in shared_folders(project) {
         let Ok(files) = std::fs::read_dir(folder) else { continue };
         let mut found: Vec<String> = files.flatten().filter_map(|file| file.file_name().to_str()?.strip_suffix(".film").map(str::to_string)).collect();
@@ -159,9 +151,9 @@ pub fn shared_path(project: &Project, name: &str) -> Option<std::path::PathBuf> 
 /// The text of a file a film uses (`uses fishing`, `include intro`): a
 /// recipe of the library by its name, or a `.film` of the project's; what
 /// to say if there is none.
-pub fn shared_text(project: &Project, name: &str) -> Result<String, String> {
+pub fn shared_text(lexicon: &'static Lexicon, project: &Project, name: &str) -> Result<String, String> {
     let name = name.trim_end_matches(".film");
-    if let Some((_, text)) = LIBRARY.iter().find(|(from, _)| *from == name) {
+    if let Some((_, text)) = lexicon.recipe_files().find(|(from, _)| *from == name) {
         return Ok(text.to_string());
     }
     if let Some(text) = shared_path(project, name).and_then(|path| std::fs::read_to_string(path).ok()) {
@@ -169,7 +161,7 @@ pub fn shared_text(project: &Project, name: &str) -> Result<String, String> {
     }
     // (An optional family's library, `uses fishing`: all its files of film/recipes/fishing/.)
     let parts: Vec<&str> =
-        LIBRARY.iter().filter(|(from, _)| from.strip_prefix(name).is_some_and(|rest| rest.starts_with('/'))).map(|(_, text)| *text).collect();
+        lexicon.recipe_files().filter(|(from, _)| from.strip_prefix(name).is_some_and(|rest| rest.starts_with('/'))).map(|(_, text)| text).collect();
     if !parts.is_empty() {
         return Ok(parts.join("\n"));
     }
@@ -177,18 +169,18 @@ pub fn shared_text(project: &Project, name: &str) -> Result<String, String> {
     if crate::vocabulary::OPTIONAL.iter().any(|(_, library)| *library == name) {
         return Ok(String::new());
     }
-    let known = shared_files(project);
+    let known = shared_files(lexicon, project);
     let near = crate::check::closest(name, known.iter().map(String::as_str), 3, 0.4);
     let near = if near.is_empty() { String::new() } else { format!("; near: {}", near.join(", ")) };
     Err(format!("no file “{name}” (neither in film/recipes, nor in library/films){near}"))
 }
 
-fn recipe(written: &Arc<RecipeText>, from: &str) -> Recipe {
+fn recipe(lexicon: &'static Lexicon, written: &Arc<RecipeText>, from: &str) -> Recipe {
     let form = grammar::read_recipe(&language::format::elements_text(&written.form.elements));
     let (name, doc) = (plain(&written.form.word.text), written.doc.clone());
     let file = match from {
         "film" => String::new(),
-        library if LIBRARY.iter().any(|(known, _)| *known == library) => format!("film/recipes/{library}.film"),
+        library if lexicon.recipe_files().any(|(known, _)| known == library) => format!("film/recipes/{library}.film"),
         shared => format!("{shared}.film"),
     };
     let mut recipe = Recipe { form, text: written.clone(), name, from: from.to_string(), file, doc, told_and_doc: String::new() };
@@ -220,7 +212,7 @@ pub fn recipes_for(lexicon: &'static Lexicon, project: &Project, text: &str) -> 
     let mut all: Vec<Told> = recipes_of(lexicon, text, "film").iter().map(|recipe| told(recipe, "")).collect();
     for line in text.lines() {
         if let ["uses" | "include", name] = line.split_whitespace().collect::<Vec<_>>().as_slice()
-            && let Ok(shared) = shared_text(project, name)
+            && let Ok(shared) = shared_text(lexicon, project, name)
         {
             all.extend(recipes_of(lexicon, &shared, name).iter().map(|recipe| told(recipe, name)));
         }
@@ -416,7 +408,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
         // (`define …`: the film's own recipe, from here on, checked once
         // with the others; one of a file taken in, told of that file.)
         if let Shape::Recipe(written) = &instr.shape {
-            let mut recipe = recipe(written, "film");
+            let mut recipe = recipe(film.lexicon, written, "film");
             if let (_, Some((name, _))) = told_line(&film.included, written.number) {
                 recipe.file = format!("{name}.film");
             }
@@ -486,7 +478,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
         // (`uses fishing`: the recipes of a file; `include intro`: all its
         // lines, here, as if written on this one.)
         if let ("uses" | "include", [name]) = (verb.as_str(), words.as_slice()) {
-            match shared_text(&film.tables.project.clone(), name) {
+            match shared_text(film.lexicon, &film.tables.project.clone(), name) {
                 Err(told) => film.wrong(number, told),
                 Ok(_) if depth > 8 => film.wrong(number, format!("“{}”: files that include each other without end", instr.text)),
                 Ok(text) if verb == "uses" => {
@@ -547,11 +539,11 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                             _ => recipe.said_of_someone(),
                         };
                         if as_in_the_text && instr.from.0.is_none() {
-                            crate::vocabulary::asks_its_library(film, number, verb);
+                            crate::text::written::asks_its_library(film, number, verb);
                         }
                         if as_in_the_text && instr.from.0.is_none() && one_first {
                             let words = film.written_words(instr);
-                            crate::order::told_who_first(film, number, &words, verb);
+                            crate::text::written::told_who_first(film, number, &words, verb);
                         }
                         if let Some(bound) = as_in_the_text.then(|| grammar::bind(film, &recipe.form, &written[1..]).ok()).flatten() {
                             let read = crate::film::ReadAs { word: verb.clone(), group: "recipe", values: bound.values };
@@ -583,7 +575,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                         }
                     }
                     // (No recipe of that name fits, but a word of the language does: the word's.)
-                    None if film.lexicon.is_word(verb, "") && crate::verbs::wrong_form(film, verb, verb, &written[1..], &instr.text).is_none() => {
+                    None if film.lexicon.is_word(verb, "") && crate::text::checked::wrong_form(film, verb, verb, &written[1..], &instr.text).is_none() => {
                         out.push(if written == line { instr.clone() } else { as_word(instr, written) });
                     }
                     None => {

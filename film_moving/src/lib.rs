@@ -365,7 +365,7 @@ fn appeared(film: &mut Film, line: &Line) {
 /// `walk a to b`, `run a via x y, z`.
 fn walked(film: &mut Film, line: &Line) {
     // (A crowd's name: all of it, keeping its form.)
-    if line.args.has("rest") && film_core::verbs::crowds::crowd_goes(film, line, line.args.words("rest")) {
+    if line.args.has("rest") && film_core::groups::crowds::crowd_goes(film, line, line.args.words("rest")) {
         return;
     }
     if shaped_or_wrong(film, line) {

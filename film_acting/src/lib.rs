@@ -281,7 +281,7 @@ fn narrated(film: &mut Film, line: &Line) -> bool {
             film.wait(frames as i64);
         }
         "sign" => film.narrate(&film_core::screen::on_screen(said)),
-        _ => film_core::verbs::said::told_or_logged(film, said),
+        _ => film_core::groups::said::told_or_logged(film, said),
     }
     true
 }
@@ -509,7 +509,7 @@ fn posed(film: &mut Film, line: &Line) -> bool {
     }
     let name = plain(line.args.word("name").unwrap_or_default());
     if matches!(name.as_str(), "spin" | "dance") {
-        film_core::verbs::aura::moved(film, &who, film_core::verbs::aura::Mood::Dancing);
+        film_core::groups::aura::moved(film, &who, film_core::groups::aura::Mood::Dancing);
     }
     // (`pose a sleep`, said with no way of playing it: the engine's own pose, lying asleep.)
     let said_how = line.args.has("once") || line.args.has("loop") || line.args.has("hold");
@@ -668,8 +668,8 @@ fn balloon(film: &mut Film, who: &str, kind: &str, sound: bool) -> bool {
     };
     film.on(who, |one| emit::emote(one, EmoteId(*id), Some(60.0)));
     match kind {
-        "anger" => film_core::verbs::aura::moved(film, who, film_core::verbs::aura::Mood::Angry),
-        "sweat" | "shock" => film_core::verbs::aura::moved(film, who, film_core::verbs::aura::Mood::Scared),
+        "anger" => film_core::groups::aura::moved(film, who, film_core::groups::aura::Mood::Angry),
+        "sweat" | "shock" => film_core::groups::aura::moved(film, who, film_core::groups::aura::Mood::Scared),
         _ => {}
     }
     if let Some(heard) = heard.filter(|_| sound) {

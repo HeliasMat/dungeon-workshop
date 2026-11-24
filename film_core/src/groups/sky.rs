@@ -1,9 +1,9 @@
 //! The sky and the light: the weather, the hour. Nothing lays a light on a
 //! scene but what is written here.
 
-use super::{Line, Word};
 use crate::emit;
 use crate::film::Film;
+use crate::verbs::{Line, Word};
 use crate::words::{DAY, of, plain};
 
 pub const WORDS: &[Word] = &[
@@ -76,7 +76,7 @@ fn stat_sights(stat: &str, up: bool) -> Option<&'static [u16]> {
 /// game's own arrows, a stat rising (or falling).
 fn status_said(film: &mut Film, line: &Line) {
     let args = &line.args;
-    let who = super::who_said(line);
+    let who = crate::verbs::who_said(line);
     if args.has("up") || args.has("down") {
         let stat = args.word("stat").map(plain).unwrap_or_default();
         match stat_sights(&stat, args.has("up")) {

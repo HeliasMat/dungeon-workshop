@@ -1,10 +1,10 @@
 //! The game's pictures: looks at them, visions, what is made of them.
 
-use super::{Line, Names, Word};
 use crate::emit;
 use crate::film::Film;
 use crate::screen::{BREAK, on_screen};
 use crate::tables::Picture;
+use crate::verbs::{Line, Names, Word};
 use crate::words::plain;
 
 pub const WORDS: &[Word] = &[
@@ -72,7 +72,7 @@ fn screen_goes(film: &mut Film, line: &Line) {
     let frames = args.frames("d").unwrap_or(30) as f32;
     match plain(args.word("kind").unwrap_or_default()).as_str() {
         "white" => film.beat(emit::fade(out, true, frames)),
-        "boss" if out => crate::compile::scene::boss_flashes(film),
+        "boss" if out => crate::emit::boss_flashes(film),
         "boss" => film.beat(emit::fade(false, true, frames)),
         "iris" => {
             let on = film.speaking.last_speaker.clone().and_then(|last| film.other(&last));

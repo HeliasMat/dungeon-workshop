@@ -11,7 +11,7 @@ use engine::{Beat, FlowBeat, Scene, Script, StoryEvent, ViewBeat, Who};
 
 use crate::film::{Film, ReadAs, Sortie};
 use crate::ir::{Instr, Shape};
-use crate::verbs::command;
+use crate::play::command;
 use crate::words::told;
 use crate::{emit, fields};
 use scenes::read;
@@ -85,7 +85,7 @@ impl Film {
         }
         match &item.shape {
             // (`who: words &`: said beside the film, which goes on.)
-            Shape::Said { who, beside: true, .. } if told(who) || self.actor(who).is_some() => _ = crate::verbs::timing::said_meanwhile(self, item),
+            Shape::Said { who, beside: true, .. } if told(who) || self.actor(who).is_some() => _ = crate::groups::timing::said_meanwhile(self, item),
             Shape::Said { who, brackets, words, .. } if told(who) || self.actor(who).is_some() => self.said(who, brackets.as_deref(), words, number),
             Shape::Said { who, .. } if who != "walk" => self.unknown_someone(number, who),
             _ => command(self, item),

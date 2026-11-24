@@ -27,10 +27,12 @@ pub mod ds;
 pub mod emit;
 pub mod film;
 pub mod grammar;
+pub mod groups;
 pub mod ir;
 pub mod lines;
 pub mod names;
-pub mod order;
+
+pub mod play;
 pub mod plot;
 pub mod screen;
 pub mod spots;

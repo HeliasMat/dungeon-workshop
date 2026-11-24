@@ -109,7 +109,7 @@ pub fn read(text: &str, film: &mut Film) -> Vec<SceneOf> {
                 }
                 None => match (spot_given(&instr), picture_given(&instr)) {
                     (Some(spot), _) => film.lasting_spots.push(spot),
-                    (_, Some(words)) => crate::verbs::things::own_picture(film, &words, number),
+                    (_, Some(words)) => crate::groups::things::own_picture(film, &words, number),
                     _ => film.wrong(number, "before the first \"scene: <place>\"".to_string()),
                 },
             },

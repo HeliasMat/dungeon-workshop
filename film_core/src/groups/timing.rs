@@ -11,9 +11,9 @@
 //! playing now has played so long. Each on one line, or as a block up to
 //! its `end`.
 
-use super::{Line, Word};
 use crate::emit;
 use crate::film::Film;
+use crate::verbs::{Line, Word};
 use engine::{Beat, Compare, Condition, FlowBeat, Frames, Test, Value};
 
 use crate::ir::{Instr, Shape};

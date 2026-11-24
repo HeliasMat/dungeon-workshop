@@ -64,7 +64,7 @@ fn every_shared_recipe_is_checked_alone() {
     let mut known: std::collections::HashMap<String, Vec<film_core::verbs::Recipe>> = Default::default();
     let mut all = crate::LEXICON.library().to_vec();
     for name in crate::shared_files(&crate::tests::project()).iter().filter(|name| name.as_str() == "welcome") {
-        let text = film_core::text::recipes::shared_text(&crate::tests::project(), name).expect("read");
+        let text = film_core::text::recipes::shared_text(&crate::LEXICON, &crate::tests::project(), name).expect("read");
         all.extend(film_core::text::recipes::recipes_of(&crate::LEXICON, &text, name));
     }
     for recipe in &all {

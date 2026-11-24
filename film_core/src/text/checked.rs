@@ -24,7 +24,8 @@ use crate::film::Film;
 use crate::grammar::{self, Kind, Piece, any};
 use crate::ir::{Instr, Shape};
 use crate::verbs::Lexicon;
-use crate::verbs::{Defined, Recipe};
+use crate::verbs::{Defined, Line, Recipe, fitting_forms};
+use crate::words::engine_word;
 use crate::words::{frames_of, plain};
 
 /// The recipes a recipe's lines may call, by name.
@@ -286,7 +287,7 @@ fn wrong_line(alone: &mut Film, line: &Instr, verb: &str, words: &[String], know
             let mut wrong = None;
             for words in &tries {
                 // (One way that fits: nothing wrong.)
-                let said = crate::verbs::wrong_form(alone, verb, &first, words, &text)?;
+                let said = crate::text::checked::wrong_form(alone, verb, &first, words, &text)?;
                 wrong.get_or_insert(said);
             }
             wrong
@@ -348,4 +349,34 @@ fn told(film: &mut Film, one: &Defined, line: usize, message: String) {
             }
         }
     }
+}
+
+/// What is wrong with a word's line read alone, as a recipe writes it
+/// (`text::checked`): its word not known, or none of its forms fitting, and
+/// why each does not. None when a form fits; what only the scene knows (who
+/// stands where, the things put down) is not asked.
+pub(crate) fn wrong_form(film: &mut Film, verb: &str, first: &str, rest: &[String], text: &str) -> Option<String> {
+    let line = Line {
+        verb: verb.to_string(),
+        rest: rest.to_vec(),
+        text: text.to_string(),
+        number: 0,
+        wait: true,
+        block: Vec::new(),
+        args: Default::default(),
+        shape: Shape::Blank,
+    };
+    let (fitting, why) = fitting_forms(film, &line);
+    if !fitting.is_empty() {
+        return None;
+    }
+    if !why.is_empty() {
+        return Some(format!("“{text}”: {}", why.join("; ")));
+    }
+    if !engine_word(first) && !engine_word(verb) {
+        let close = crate::check::closest_of(first, film.lexicon.every_word().map(|(_, word, ..)| word));
+        return Some(crate::check::unknown("unknown word", first, &close, "film/FILMS.md"));
+    }
+    (verb != "else" || !rest.is_empty())
+        .then(|| format!("“{text}”: a command of the engine the language does not know (its form in film_core/src/verbs/engine.rs, or `>` to debug)"))
 }

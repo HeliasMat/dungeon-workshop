@@ -8,9 +8,9 @@ use engine::codes;
 use engine::props::{self, NodeKind};
 use engine::{NodeRef, Point, Sort};
 
-use super::{Line, Names, Word};
 use crate::emit;
 use crate::film::Film;
+use crate::verbs::{Line, Names, Word};
 use crate::words::plain;
 
 pub const WORDS: &[Word] = &[

@@ -2,10 +2,10 @@
 
 use engine::{CrowdForm, CrowdShape, Direction};
 
-use super::{Line, Names, Word};
 use crate::emit;
 use crate::film::Film;
 use crate::spots::{Goal, goal_of};
+use crate::verbs::{Line, Names, Word};
 use crate::words::{engine_word, plain};
 
 pub const WORDS: &[Word] = &[

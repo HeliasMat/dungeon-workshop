@@ -18,8 +18,8 @@ use std::path::Path;
 use engine::{Diagnostic, Lines, StoryEvent};
 
 pub use film_core::{
-    Context, Film, Lexicon, ReadAs, Told, Written, check, codes, coloured, context, doc, emit, formatted, grammar, internal, ir, lines, locate, order,
-    performer_first, plot, scene_line, screen, shared_files, shared_path, tables, time, words,
+    Context, Film, Lexicon, ReadAs, Told, Written, check, codes, coloured, context, doc, emit, formatted, grammar, internal, ir, lines, locate,
+    performer_first, plot, scene_line, screen, shared_path, tables, time, words,
 };
 
 /// The vocabulary of the language's words (`film_core::vocabulary`), each
@@ -101,19 +101,19 @@ pub fn shown_form(word: &str, form: &str) -> String {
 /// The groups of the language's words, the narrower first: a line goes to
 /// the first whose form of its word fits.
 const GROUPS: [film_core::verbs::Group; 26] = [
-    film_core::verbs::story::GROUP,
+    film_core::groups::story::GROUP,
     film_acting::GROUP,
-    film_core::verbs::game::GROUP,
+    film_core::groups::game::GROUP,
     film_fishing::GROUP,
     film_dungeon::GROUP,
     film_dungeon::guild::GROUP,
-    film_core::verbs::things::GROUP,
-    film_core::verbs::heard::GROUP,
-    film_core::verbs::view::GROUP,
-    film_core::verbs::sky::GROUP,
-    film_core::verbs::effects::GROUP,
+    film_core::groups::things::GROUP,
+    film_core::groups::heard::GROUP,
+    film_core::groups::view::GROUP,
+    film_core::groups::sky::GROUP,
+    film_core::groups::effects::GROUP,
     film_fights::GROUP,
-    film_core::verbs::items::GROUP,
+    film_core::groups::items::GROUP,
     film_moving::swimming::GROUP,
     film_moving::flying::GROUP,
     film_moving::riding::GROUP,
@@ -121,16 +121,31 @@ const GROUPS: [film_core::verbs::Group; 26] = [
     film_moving::hiding::GROUP,
     film_moving::GROUP,
     film_moving::body::GROUP,
-    film_core::verbs::pictures::GROUP,
-    film_core::verbs::rituals::GROUP,
-    film_core::verbs::crowds::GROUP,
-    film_core::verbs::said::GROUP,
-    film_core::verbs::timing::GROUP,
-    film_core::verbs::nodes::GROUP,
+    film_core::groups::pictures::GROUP,
+    film_core::groups::rituals::GROUP,
+    film_core::groups::crowds::GROUP,
+    film_core::groups::said::GROUP,
+    film_core::groups::timing::GROUP,
+    film_core::groups::nodes::GROUP,
 ];
 
-/// The language: every group of its words, in their order.
-pub static LEXICON: Lexicon = Lexicon::new(&GROUPS);
+/// The library's recipes, a file a theme: what the groups' words lean on
+/// (`film/recipes/`), each by the name a film gives it.
+const LIBRARY: [(&str, &str); 4] = [
+    ("gestures", include_str!("../recipes/gestures.film")),
+    ("contact", include_str!("../recipes/contact.film")),
+    ("fights", include_str!("../recipes/fights.film")),
+    ("fishing/line", include_str!("../recipes/fishing/line.film")),
+];
+
+/// The language: every group of its words, in their order, and the library's recipes.
+pub static LEXICON: Lexicon = Lexicon::with_library(&GROUPS, &LIBRARY);
+
+/// The files a film may use or take in (`uses`, `include`), by the names
+/// it gives them: the library's recipes (its groups'), then the project's.
+pub fn shared_files(project: &assets::project::Project) -> Vec<String> {
+    film_core::shared_files(&LEXICON, project)
+}
 
 /// A film's text turned into lines, with these tables (its project's, its
 /// data's, its language).

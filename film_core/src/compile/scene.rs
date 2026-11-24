@@ -10,13 +10,13 @@ use glam::Vec2;
 use super::scenes::SceneOf;
 use crate::emit;
 use crate::film::{Film, Sortie};
+use crate::groups::timing::wait_meanwhile;
 use crate::ir::{Instr, Shape};
 use crate::names::species;
+use crate::play::command;
 use crate::tables::MAP_LEVEL;
 use crate::tables::Movement;
 use crate::text::cast::{placed_by_a_line, puts_someone, who_acts};
-use crate::verbs::command;
-use crate::verbs::timing::wait_meanwhile;
 use crate::words::first_word;
 use crate::words::{SETTING, plain, spot};
 
@@ -401,7 +401,7 @@ impl Film {
                 None => self.not_a(listening.join(" "), "Pokémon of the scene"),
             }
         }
-        crate::verbs::story::scene_shows(self, at);
+        crate::groups::story::scene_shows(self, at);
         self.lines_of(number, &scene.lines[setting..]);
         self.scene_ends(scenes.get(at + 1), song);
     }
@@ -430,7 +430,7 @@ impl Film {
         }
         match next.map_or("fade", |next| next.transition.as_str()) {
             "white" => self.beat(emit::fade(true, true, FADE as f32)),
-            "boss" => boss_flashes(self),
+            "boss" => emit::boss_flashes(self),
             "iris" => {
                 let last = self.speaking.last_speaker.clone();
                 match last.as_deref().map(|last| self.other(last)) {
@@ -445,16 +445,4 @@ impl Film {
         }
         self.beat(emit::wait_fade());
     }
-}
-
-/// Before a boss, as the game does: the screen flashes white three times
-/// with the shock's sound, then all goes white.
-pub(crate) fn boss_flashes(film: &mut Film) {
-    film.sound("boss");
-    for _ in 0..3 {
-        film.beat(emit::flash(emit::light(engine::Colour::White), 8.0));
-        film.wait(12);
-    }
-    film.beat(emit::quake(1.0, 20.0));
-    film.beat(emit::fade(true, true, 20.0));
 }

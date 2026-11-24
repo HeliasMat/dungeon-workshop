@@ -5,9 +5,9 @@ use std::collections::BTreeSet;
 
 use super::*;
 use film_core::check::nearby;
+use film_core::groups::things::thing_apart;
 use film_core::ir::{Instr, Shape};
 use film_core::names::things::thing_said;
-use film_core::verbs::things::thing_apart;
 use film_core::words::frames_of;
 use film_core::words::told;
 

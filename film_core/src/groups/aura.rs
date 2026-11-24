@@ -6,9 +6,9 @@
 
 use engine::{Cam, ParticleKind};
 
-use super::Line;
 use crate::emit;
 use crate::film::Film;
+use crate::verbs::Line;
 use crate::words::plain;
 
 /// The game's types an aura shows.

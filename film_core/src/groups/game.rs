@@ -17,9 +17,9 @@
 use engine::{Beat, Cam, Course, FlowBeat, GameAsk, PlayBeat, Who};
 use glam::Vec2;
 
-use super::{Line, Word};
 use crate::emit;
 use crate::film::Film;
+use crate::verbs::{Line, Word};
 use crate::words::plain;
 
 pub const WORDS: &[Word] = &[

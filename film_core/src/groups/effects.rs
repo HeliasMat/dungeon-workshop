@@ -2,8 +2,8 @@
 //! flash, the screen trembling.
 
 use super::view::aim;
-use super::{Line, Names, Word};
 use crate::film::Film;
+use crate::verbs::{Line, Names, Word};
 use crate::words::{frames_of, of, plain};
 use crate::{emit, fields};
 

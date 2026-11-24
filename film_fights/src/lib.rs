@@ -8,7 +8,7 @@ use engine::Cam;
 use scenes::vocabulary::POKEMON;
 
 use film_core::film::Film;
-use film_core::verbs::said::told_or_logged;
+use film_core::groups::said::told_or_logged;
 use film_core::verbs::{Line, Word};
 use film_core::words::{digits, plain};
 use film_core::{emit, fields};
@@ -251,7 +251,7 @@ fn used(film: &mut Film, line: &Line) {
         }
         // (A point: an unseen mark there, faced, the move aimed at it.)
         (None, Some((x, y))) => {
-            let mark = format!("p{}", film_core::verbs::effects::FIRST_MARK + film.timing.marks);
+            let mark = format!("p{}", film_core::groups::effects::FIRST_MARK + film.timing.marks);
             film.timing.marks += 1;
             film.on(&mark, |mark| emit::put(mark, x, y, engine::Direction::Down));
             film.face(&who, &mark);

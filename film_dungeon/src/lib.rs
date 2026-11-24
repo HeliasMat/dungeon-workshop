@@ -8,11 +8,11 @@
 use engine::{Cam, Pose, Spot};
 use film_core::emit;
 use film_core::film::Film;
+use film_core::groups::items::take_up;
+use film_core::groups::things::{arrives, thing_apart, thing_out};
 use film_core::names::things::{known_thing, thing_named};
 use film_core::spots::routes::{found, go};
 use film_core::spots::somewhere;
-use film_core::verbs::items::take_up;
-use film_core::verbs::things::{arrives, thing_apart, thing_out};
 use film_core::verbs::{Line, Word};
 use film_core::words::plain;
 

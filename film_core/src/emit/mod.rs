@@ -311,3 +311,15 @@ impl Film {
         }
     }
 }
+
+/// Before a boss, as the game does: the screen flashes white three times
+/// with the shock's sound, then all goes white.
+pub(crate) fn boss_flashes(film: &mut Film) {
+    film.sound("boss");
+    for _ in 0..3 {
+        film.beat(flash(light(engine::Colour::White), 8.0));
+        film.wait(12);
+    }
+    film.beat(quake(1.0, 20.0));
+    film.beat(fade(true, true, 20.0));
+}

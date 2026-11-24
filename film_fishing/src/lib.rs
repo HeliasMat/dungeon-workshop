@@ -23,11 +23,11 @@ use glam::Vec2;
 
 use film_core::emit;
 use film_core::film::Film;
+use film_core::groups::items::set_owner;
+use film_core::groups::things::{arrives, thing_apart, thing_out};
 use film_core::names::species;
 use film_core::names::things::{known_thing, thing_named};
 use film_core::spots::routes::found;
-use film_core::verbs::items::set_owner;
-use film_core::verbs::things::{arrives, thing_apart, thing_out};
 use film_core::verbs::{Line, Word};
 use film_core::words::{digits, plain};
 

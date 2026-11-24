@@ -28,14 +28,14 @@ fn waited(film: &mut Film, line: &Line) {
     let args = &line.args;
     let those: Vec<String> = args.words("who").iter().map(|one| plain(one)).collect();
     if args.has("sound") {
-        film_core::verbs::heard::waited_sound(film, line);
+        film_core::groups::heard::waited_sound(film, line);
     } else if args.has("music") {
-        if film_core::verbs::timing::music_known(film, line.number, "wait music") {
+        if film_core::groups::timing::music_known(film, line.number, "wait music") {
             film.beat(emit::wait_reached(engine::MUSIC_CLOCK, f64::from(args.frames("d").unwrap_or_default())));
         }
     } else if args.has("all") {
         film.beat(emit::wait_all());
-        film_core::verbs::timing::wait_meanwhile(film);
+        film_core::groups::timing::wait_meanwhile(film);
     } else if args.has("d") {
         let said = args.word("d").unwrap_or_default();
         if film_core::words::digits(said) {

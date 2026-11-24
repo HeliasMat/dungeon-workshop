@@ -4,10 +4,10 @@ use engine::{Pose, Who};
 use glam::Vec2;
 
 use super::said::told_or_logged;
-use super::{Line, Word};
 use crate::emit;
 use crate::film::Film;
 use crate::spots::formations::on_rang;
+use crate::verbs::{Line, Word};
 use crate::words::plain;
 
 pub const WORDS: &[Word] = &[

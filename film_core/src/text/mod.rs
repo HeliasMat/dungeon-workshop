@@ -11,4 +11,6 @@
 pub mod cast;
 pub mod checked;
 pub mod front;
+mod lexicon;
 pub mod recipes;
+pub mod written;
