@@ -145,26 +145,26 @@ fn played(session: &Session, example: &str, art: preview::art::Art) -> (Vec<Stri
     (told, Some(pass.film.parts().0))
 }
 
-/// The quality gate of the vocabulary (`film::plan`): every word of the
-/// catalogue is a word of the plan or an advanced one (an engine's command),
+/// The quality gate of the vocabulary (`film::vocabulary`): every word of the
+/// catalogue is a word of the vocabulary or an advanced one (an engine's command),
 /// none of the old vocabulary nor of the library's own; each has its page in
 /// the Wiki, with an example that reads with no problem and no remark
 /// and, where the game's files are there, plays with nothing to say (as
 /// `scene_player check` tells it). The core's words and the optional families'
-/// have a page written by hand. The words of the plan the language does not
-/// have yet are pending: listed, not asked. The pages, family by family:
+/// have a page written by hand. The recipes and commands of `OTHERS` the
+/// language does not have yet are pending: listed, not asked. The pages, family by family:
 /// `gate`, one test each (`gates!`). (What is left to a person: see
 /// CONTRIBUTING.md, "The quality gate".)
 #[test]
-fn every_word_of_the_v2_families_passes_the_gate() {
+fn every_word_passes_the_gate() {
     let session = Session::for_tests();
     let pages = pages(&session);
     let catalogue = crate::catalogue::catalogue(&session);
     let known = |word: &str| catalogue.iter().any(|entry| entry.word == word);
-    let pending = film::plan::pending(&known);
-    println!("{} words of the plan to build:", pending.len());
+    let pending = film::vocabulary::pending(&known);
+    println!("{} words of the vocabulary to build:", pending.len());
     for planned in &pending {
-        println!("  {} ({}): {}", planned.word, planned.family, planned.form);
+        println!("  {} ({})", planned.word, planned.family);
     }
     for (family, name) in crate::catalogue::FAMILIES.iter().enumerate() {
         println!("{name}: {} words", catalogue.iter().filter(|entry| entry.family == family).count());
@@ -172,9 +172,9 @@ fn every_word_of_the_v2_families_passes_the_gate() {
     let strays: Vec<&str> = catalogue
         .iter()
         .filter(|entry| {
-            let planned = film::plan::planned(&entry.word).is_some_and(|planned| crate::catalogue::FAMILIES[entry.family] == planned.family);
-            let advanced = entry.family == crate::catalogue::ADVANCED && film::plan::planned(&entry.word).is_none();
-            !(planned || advanced) || film::plan::replaced(&entry.word).is_some() || film::internal(&entry.word)
+            let planned = film::vocabulary::planned(&entry.word).is_some_and(|planned| crate::catalogue::FAMILIES[entry.family] == planned.family);
+            let advanced = entry.family == crate::catalogue::ADVANCED && film::vocabulary::planned(&entry.word).is_none();
+            !(planned || advanced) || film::vocabulary::replaced(&entry.word).is_some() || film::internal(&entry.word)
         })
         .map(|entry| entry.word.as_str())
         .collect();
@@ -191,7 +191,7 @@ fn gate(family: usize, part: usize, parts: usize) {
     let mut art = preview::art::Art::open_in(session.data(), session.library().clone()).ok().filter(|_| !session.tables().monsters.is_empty());
     let mut wrong = Vec::new();
     for page in pages.iter().filter(|page| !page.retired && page.family == family).skip(part).step_by(parts) {
-        let planned = film::plan::planned(&page.word).filter(|planned| planned.family != film::plan::ADVANCED);
+        let planned = film::vocabulary::planned(&page.word).filter(|planned| planned.family != film::vocabulary::ADVANCED);
         if planned.is_some() && !page.written {
             wrong.push(format!("{}: no page written by hand in workshop_wiki/wiki/", page.word));
         }

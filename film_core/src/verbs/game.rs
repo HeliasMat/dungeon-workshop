@@ -23,28 +23,28 @@ use crate::film::Film;
 use crate::words::plain;
 
 pub const WORDS: &[Word] = &[
-    Word::new("set", &["flag:word off", "flag:word value:number", "flag:word"], "the game's flag is up (1): the game keeps it once the film ends; in a choice's option, the choice told to the game: set").does(flag_up),
+    Word::new("set", &["flag:word off", "flag:word value:number", "flag:word"], "the game's flag is up (1): the game keeps it once the film ends; in a choice's option, the choice told to the game: set").family("Structure").ds_direct("$LOCALn = value (the scene's own; lost once it ends)").does(flag_up),
     Word::new(
         "player",
         &["who:pokemon [followed by friend:pokemon]"],
         "only in a place's scene the game makes: the player steers him with the arrows (Enter: talk, Shift: run), the camera follows him, the friend follows him; M or X: the game's menu: control, collisions, camera, follow",
-    )
+    ).family("Advanced").ds_none("a cutscene has no one the player walks").word_first()
     .maybe(player)
     .instant(),
     Word::new(
         "dialogue",
         &["who:pokemon"],
         "only in a place's scene the game makes: dialogue who … end, what plays when the player talks to him (Enter in front of him), then exploring goes on: ontalk, label, return",
-    )
+    ).family("Advanced").ds_none("a cutscene has no one the player talks to").word_first()
     .maybe(talk)
     .instant(),
-    Word::new("explore", &[""], "only in a place's scene the game makes: the player explores, the scene waits until he talks to someone or takes a way: roam").does(roam),
-    Word::new("game", &["words..."], "only in a place's scene the game makes: the scene holds and the game is told (game talk kecleon, game menu)").maybe(told_to_the_game),
+    Word::new("explore", &[""], "only in a place's scene the game makes: the player explores, the scene waits until he talks to someone or takes a way: roam").family("Advanced").ds_none("a cutscene has no exploring").does(roam),
+    Word::new("game", &["words..."], "only in a place's scene the game makes: the scene holds and the game is told (game talk kecleon, game menu)").family("Advanced").ds_none("the game's own ground play: a cutscene has none").maybe(told_to_the_game),
     Word::new(
         "way",
         &["x:number y:number width:number height:number words..."],
         "only in a place's scene the game makes: walking into that rectangle (its corner x y, its width and height, as a decor's exit or zone) tells the game (way 600 240 32 16 go port east): door",
-    )
+    ).family("Advanced").ds_none("the game's own ground play: a cutscene has none")
     .maybe(way_of_the_game)
     .instant(),
 ];

@@ -43,7 +43,7 @@ pub const WORDS: &[Word] = &[
             "rest...",
         ],
         "find, goes; approach (to someone); leaves (to offleft); slow, brisk: its pace; backward: its back to where it goes, stepping; via a b: by those places first; alone (`lapras walk`): on its feet whatever its kind, no floating, swimming nor going through walls (lands)",
-    )
+    ).family("Movement").ds_direct("MovePositionMark<actor>(1, Position) (slow 0.5, brisk faster), WaitExecuteLives; via: a wait at each point; backward: SlidePositionMark")
     .does(walked),
     Word::new(
         "run",
@@ -53,7 +53,7 @@ pub const WORDS: &[Word] = &[
             "rest...",
         ],
         "find, goes; chase (to someone)",
-    )
+    ).family("Movement").ds_direct("MovePositionMark<actor>(2, Position), WaitExecuteLives")
     .does(walked),
     Word::new(
         "enter",
@@ -65,10 +65,10 @@ pub const WORDS: &[Word] = &[
             "rest...",
         ],
         "find, arrives enter [via:<entrance>]",
-    )
+    ).family("Presence").ds_direct("SetPositionMark off screen, ResetOutputAttribute(128) (hidden until then), MovePositionMark")
     .does(came_in)
     .arrives(&["who"]),
-    Word::new("exit", &["*who [via side:word]"], "leaves, waitfor, gone").does(goes_out),
+    Word::new("exit", &["*who [via side:word]"], "leaves, waitfor, gone").family("Presence").ds_direct("MovePositionMark off screen, SetOutputAttribute(128) (hidden)").does(goes_out),
     Word::new(
         "appear",
         &[
@@ -79,7 +79,7 @@ pub const WORDS: &[Word] = &[
             "rest...",
         ],
         "find, put; in the game's smoke (by default), a fade, a flash, a vision, or the light that gathers into a ring (light)",
-    )
+    ).family("Presence").ds_close("smoke: SetEffect(99); light: 2 blinks, se_Play(6920), SetEffect(638) on it hidden; then ResetOutputAttribute(128), no fade", "no fading in: shown at once")
     .does(appeared)
     .arrives(&["who"]),
     Word::new(
@@ -94,10 +94,10 @@ pub const WORDS: &[Word] = &[
         "form",
         &["row|column|ring|lineup *who [to] [where:place] [walk|run] [look looks:word] [slowly|fast] [in time:duration] [arrives arrival:duration]"],
         "find, put or arrives, turn: side by side (row), one behind the other (column), round the place facing it (ring), side by side facing us (lineup); put there before the scene shows, walked to after; walk, run: walked or run to it, even before",
-    )
+    ).family("Formations").ds_direct("one MovePositionMark each, then their waits")
     .maybe(shaped)
     .puts(&["who"]),
-    Word::new("spot", &["name:word where:place"], "spot throne 400 200: setspot, a spot of the film's, by its name").maybe(spot_said),
+    Word::new("spot", &["name:word where:place"], "spot throne 400 200: setspot, a spot of the film's, by its name").family("Presence").ds_direct("nothing: a named point, read into positions").maybe(spot_said),
 ];
 
 /// Its words, a group of the language (`Lexicon`).

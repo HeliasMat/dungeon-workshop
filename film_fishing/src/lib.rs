@@ -32,14 +32,14 @@ use film_core::verbs::{Line, Word};
 use film_core::words::{digits, plain};
 
 pub const WORDS: &[Word] = &[
-    Word::new("bite", &["[strong|nibble]"], "a fish takes the bait of the line in the water (the last cast): the recipe bite <who> (strong: yanked under; nibble: it only touches)").maybe(bitten),
-    Word::new("cast", &["who:pokemon at target:place", "who:pokemon"], "his cast (Swing, on a fisher's variant), the line flies out, the bobber lands on the water there (or before him)")
+    Word::new("bite", &["[strong|nibble]"], "a fish takes the bait of the line in the water (the last cast): the recipe bite <who> (strong: yanked under; nibble: it only touches)").family("Fishing").ds_none("Sky has no fishing").maybe(bitten),
+    Word::new("cast", &["who:pokemon at target:place", "who:pokemon"], "his cast (Swing, on a fisher's variant), the line flies out, the bobber lands on the water there (or before him)").family("Fishing").ds_none("Sky has no fishing: no rod, line nor bobber").ds_fix("“pose” and “effect” say it")
         .does(cast),
     Word::new("_bobber", &["who:pokemon [x:number y:number]"], "his bobber is called \"bobber\" in the lines after (jump bobber, {bobber.x}), holdgaze; x y: it is there now").does(names_bobber).instant(),
     Word::new("_reel_in", &["who:pokemon [broken]"], "fishline off, the shadow dives, the gauge goes, the bobber taken away (broken: the gauge full first, the bobber stays on the water)").does(line_in),
     Word::new("_haul", &["who:pokemon [heavy] [unhooks]", "who:pokemon catch:word [x:number y:number] [heavy] [unhooks]"], "anim Pull, tremble (him, the bobber, the catch), particles drops, rings and bubbles, put on the bobber, fishline holds, hop of what comes out of the water (up to x y if told), emit drops, pose idle").does(pulled).brings(&["catch"]),
     Word::new("_shadow", &["giant x:number y:number to x2:number y2:number [in d:duration]", "who:pokemon flees|dives", "who:pokemon [big] [x:number y:number]"], "shadow giant x y to x y: the shadow of a very big fish under the sea; the shadow of a fish (a picture): put, layer under, anim, go up to the bobber, circles round; big; flees: go, gone; dives: opacity 0").does(shadow_said),
-    Word::new("throw", &["who:pokemon line [to|on] [target:place]", "who:pokemon water [to] target:place"], "throw a line to x y (or on b), the fisher; throw a water to b, a swimmer: jump, particles drops")
+    Word::new("throw", &["who:pokemon line [to|on] [target:place]", "who:pokemon water [to] target:place"], "throw a line to x y (or on b), the fisher; throw a water to b, a swimmer: jump, particles drops").family("Objects").ds_none("no thrown item in scripts").ds_fix("write it with “attack” or “effect … from a to b”")
         .does(thrown),
     Word::new(
         "jump",
@@ -49,7 +49,7 @@ pub const WORDS: &[Word] = &[
     .does(leap)
     .brings(&["who"])
     .when("water"),
-    Word::new("release", &["who:pokemon [catch:word] [x:number y:number]"], "popup, hop of the catch to the water, particles drops and rings, gone, emote").does(released),
+    Word::new("release", &["who:pokemon [catch:word] [x:number y:number]"], "popup, hop of the catch to the water, particles drops and rings, gone, emote").family("Fishing").ds_none("Sky has no fishing").does(released),
     Word::new("_spectators", &["off", "joy|sorrow", "*who"], "then, at each catch: emote joy, jump; at each loss: emote sweat; joy, sorrow: they react at once; off").does(watched),
 ];
 

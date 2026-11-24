@@ -20,18 +20,18 @@ use crate::ir::{Instr, Shape};
 use crate::time::{Clock, Placement};
 
 pub const WORDS: &[Word] = &[
-    Word::new("at", &["text..."], "at name [+ 2s]: …: the line (or the block up to end) played beside, so long after the mark (calc, waituntil clock); at 12s: …: so long after the scene's start (waituntil clock); at music 12s: …: once the music has played so long (waituntil music_clock)").maybe(gone_word).instant(),
-    Word::new("when", &["*who arrives|arrive [text...]"], "when a arrives: …: the line (or the block up to end) played beside the film as soon as a has got where it was going (parallel, waitfor)").maybe(when_arrives).instant(),
-    Word::new("mark", &["name:word"], "mark name: a mark at that instant of the scene (set _mark_name clock), for “at name + 2s:”").maybe(marked).instant(),
-    Word::new("beside", &["[name:word]"], "beside [name] … end: its lines played beside the film, one after the other (parallel); “wait name” waits for it; a line ended by “& as name” plays in it").maybe(beside).instant(),
+    Word::new("at", &["text..."], "at name [+ 2s]: …: the line (or the block up to end) played beside, so long after the mark (calc, waituntil clock); at 12s: …: so long after the scene's start (waituntil clock); at music 12s: …: once the music has played so long (waituntil music_clock)").family("Time").ds_close("its line in a routine of its own (def n for actor, as beside), a Wait first", "it waits from where the line is written, not from the mark").maybe(gone_word).instant(),
+    Word::new("when", &["*who arrives|arrive [text...]"], "when a arrives: …: the line (or the block up to end) played beside the film as soon as a has got where it was going (parallel, waitfor)").family("Advanced").ds_close("its lines in a routine of their own (def n for actor, as beside)", "its lines start at once, not when the other arrives").word_first().maybe(when_arrives).instant(),
+    Word::new("mark", &["name:word"], "mark name: a mark at that instant of the scene (set _mark_name clock), for “at name + 2s:”").family("Time").ds_direct("a @label; what is timed from it is already written as waits").maybe(marked).instant(),
+    Word::new("beside", &["[name:word]"], "beside [name] … end: its lines played beside the film, one after the other (parallel); “wait name” waits for it; a line ended by “& as name” plays in it").family("Advanced").ds_close("each actor's lines in a routine of its own (def n for actor), started with Unlock and joined with WaitLockLives, as Sky's scenes do", "one told something by the script before its lines plays them in the script, at once").maybe(beside).instant(),
     Word::new(
         "pace",
         &["lines d:duration", "lines off", "slow|brisk|normal", "n:number"],
         "pace slow|brisk|normal or a number: the waits said that follow (wait 2s), longer or shorter, a word's own time its own; pace lines 2s: each line said stays that long, then goes on alone; pace lines off: each as long as it is read",
-    )
+    ).family("Time").ds_direct("nothing: the waits are written already paced")
     .maybe(paced)
     .instant(),
-    Word::new("together", &[""], "together … end: each line starts at the same time (parallel), and the film waits for the longest (waituntil)").maybe(together_said).until(),
+    Word::new("together", &[""], "together … end: each line starts at the same time (parallel), and the film waits for the longest (waituntil)").family("Time").ds_direct("each one's moves told at once (actors move on their own), then their WaitExecuteLives; its waits are lost").maybe(together_said).until(),
 ];
 
 /// Its words, a group of the language (`Lexicon`).

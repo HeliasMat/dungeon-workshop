@@ -17,11 +17,11 @@ pub const WORDS: &[Word] = &[
             "who:pokemon [n:number]",
         ],
         "moveeffect, bolt (on a); moveshot (from a to b)",
-    )
+    ).family("Effects").ds_close("SetEffect<actor>(n), WaitEffect: a script effect of the move's type (fire, water, lightning…), not the move's own", "a script effect of the move's type, not the move's own").word_first()
     .maybe(effect_line),
-    Word::new("flash", &["colour:word at after:duration", "colour:word [d:duration]", ""], "flash; after (at 12); alone, white with the game's shock")
+    Word::new("flash", &["colour:word at after:duration", "colour:word [d:duration]", ""], "flash; after (at 12); alone, white with the game's shock").family("Screen").ds_direct("white: screen_WhiteOut(1, 2), screen_FadeIn; a colour: screen_FlushOut / FlushIn(1, n, 2, r, g, b)")
         .maybe(flash_said),
-    Word::new("shake", &["off", "[soft|hard] [d:duration]"], "shake: the view shakes up and down until shake off (or for so long)")
+    Word::new("shake", &["off", "[soft|hard] [d:duration]"], "shake: the view shakes up and down until shake off (or for so long)").family("Camera").ds_direct("camera_SetEffect(2, 1, 1.0) soft, (2, 2, 3.0) hard, (0, 0, 0) off, as Sky's")
         .names(Names::NoOne)
         .does(shaking)
         .instant(),
@@ -30,7 +30,7 @@ pub const WORDS: &[Word] = &[
         "aura",
         &["on who:pokemon", "off who:pokemon"],
         "an ambience of his kind's type, never by itself, in sharp pixels: a fire kind's cinders about him (emitter), a spark off an electric kind angry, a drop off a water kind scared, leaves off a grass kind dancing (particles); off: none",
-    )
+    ).family("Effects").ds_close("nothing shown: the cinders, sparks, drops and leaves of a type are the engine's own particles", "no aura: Sky's scripts have no particles of their own")
     .does(super::aura::aura),
 ];
 

@@ -60,7 +60,7 @@ In the window: `P` pauses, then `.` steps one frame; `Page Up` and `Page Down` g
 
 ## A film
 
-**The rules of the language** (the v2.1 vocabulary it is being rebuilt to, family by family: `film_core/src/plan.rs`):
+**The rules of the language** (its vocabulary, family by family: `film_core/src/vocabulary.rs`):
 
 1. **Who acts comes first**, like a line said (`pikachu (happy): Hi!`): `pikachu walk to piplup`, `eevee jump`, `piplup emote joy`, `pikachu exit via left`. When nobody acts, the line starts with what happens: `music beach`, `wait 2s`, `frame pikachu piplup`, `transition fade`. One order only: a line written the word first (`walk pikachu to piplup`) is wrong (`E-ORDER`), its fix writing it who first (the Workshop and the language server apply it); the turns of a directed fight (`pikachu Thunder Shock krabby`) stay as they are. Which words are said of someone is read from their forms (a first part `who:pokemon`, `who:code`, a team of one) and from the plan, which writes some word first (`fight a vs b`, `wait`, `open`). The Workshop suggests and writes who first; typed `pikachu `, it offers what Pikachu can do.
 2. **One word per idea**: its variants are options of the word.
@@ -72,7 +72,7 @@ In the window: `P` pauses, then `.` steps one frame; `Page Up` and `Page Down` g
 
 The words come in families: Structure, Speech, Presence, Formations, Movement, Turning, Body, Emotions, Camera, Screen, Sound, Effects, Objects, Fights, Time, Story; Dungeon, Guild and Fishing come with `uses dungeon`, `uses guild`, `uses fishing` (their words without it: a remark `R-USES`, its fix the `uses` line); the Advanced words (the engine's commands) are folded. A word of the old vocabulary is refused (`E-OLD-WORD`), with the form that says it now.
 
-**Written for the DS**: a line `for ds` before the first scene says the film is to play in Explorers of Sky (`scene_player export-ds`, docs/DS.md), as a new game starts; `for ds scene`, in place of a scene of a game going on. Then what the DS can't play is told, by the table of `film_core/src/ds.rs` (`export-ds --table`): a word it has nothing for (`E-DS-WORD`, with how to write it another way: `fight` as blows of `attack`), a word that exports with a loss (`R-DS-LOSS`, what is lost, once a word), more than 21 Pokémon at once in a scene (`E-DS-ACTORS`, who the export leaves out), a place that is neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor exports as a map of its own, with a loss), the hero or the partner before the player chose them (`E-DS-HERO`, as a new game starts), a zoom or a frame wider than the screen (`R-DS-ZOOM`: Sky has no zoom). Without the line, nothing of it is said.
+**Written for the DS**: a line `for ds` before the first scene says the film is to play in Explorers of Sky (`scene_player export-ds`, docs/DS.md), as a new game starts; `for ds scene`, in place of a scene of a game going on. Then what the DS can't play is told, by each word's DS status (`export-ds --table`): a word it has nothing for (`E-DS-WORD`, with how to write it another way: `fight` as blows of `attack`), a word that exports with a loss (`R-DS-LOSS`, what is lost, once a word), more than 21 Pokémon at once in a scene (`E-DS-ACTORS`, who the export leaves out), a place that is neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor exports as a map of its own, with a loss), the hero or the partner before the player chose them (`E-DS-HERO`, as a new game starts), a zoom or a frame wider than the screen (`R-DS-ZOOM`: Sky has no zoom). Without the line, nothing of it is said.
 
 **The Story family**, the logic of a story told:
 
@@ -164,7 +164,7 @@ Listeners do not copy the speaker's emotion: `react on` does that, if you want i
 
 ## What you can write
 
-The words of a film, family by family (`film_core/src/plan.rs`); each has its page in the Workshop's Wiki, with an example that plays, and its forms in the table "All the words" below.
+The words of a film, family by family (`film_core/src/vocabulary.rs`); each has its page in the Workshop's Wiki, with an example that plays, and its forms in the table "All the words" below.
 
 | Family | Words |
 |---|---|
@@ -338,7 +338,7 @@ The **advanced words**, folded in the Workshop, are the engine's own commands (`
 | `runto` | until |
 <!-- end of engine times -->
 
-**A word of the old vocabulary** (`fadein`, `turn`, `camera`, `gathering`...) is wrong (`E-OLD-WORD`): `check` says the form that replaces it, and writes the line again when it can (`fadein 30`: `transition fade in 30`; `turn pikachu left`: `pikachu face left`). The table of them is `REPLACED` in `film_core/src/plan.rs`.
+**A word of the old vocabulary** (`fadein`, `turn`, `camera`, `gathering`...) is wrong (`E-OLD-WORD`): `check` says the form that replaces it, and writes the line again when it can (`fadein 30`: `transition fade in 30`; `turn pikachu left`: `pikachu face left`). The table of them is `REPLACED` in `film_core/src/vocabulary.rs`.
 
 ## A game: chapters, places, cutscenes
 
@@ -654,7 +654,7 @@ Every problem has its code, a stable one: `E-…` an error (the film does not pl
 | `E-READ` | what reading finds wrong, with no code of its own yet |
 | `R-READ` | what reading notes, with no code of its own yet |
 | `E-ORDER` | a line written the word first, said of someone: who acts comes first |
-| `E-OLD-WORD` | a word of the old vocabulary: the form of the plan that says it now |
+| `E-OLD-WORD` | a word of the old vocabulary: the form that says it now |
 | `R-USES` | a word of an optional family in a film that does not take its library in (uses dungeon, guild, fishing) |
 | `E-DS-WORD` | in a film for ds: a word the DS has nothing for, with how to write it another way |
 | `R-DS-LOSS` | in a film for ds: a word that exports with less than the film shows, what it loses |
@@ -876,7 +876,7 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `emit/` | the `Beat`s the words make, one file per kind (as in the engine); points found while playing (`Point`, `film.on_point`); what the film says is wrong (`film.not_a`, `film.unread`); `adapter.rs`: engine commands written in a film, read as beats |
 | `compile/` | the film's scenes (`scenes.rs`), a scene from its opening to its fade (`scene.rs`), a line (`said.rs`), the whole film and its events (`mod.rs`) |
 | `tables/` | the game's files, read once: Pokémon and variants, places and grounds, pictures, objects, what the story's scenes say |
-| `ds.rs` | what each word becomes on the DS: the table `scene_player export-ds` writes by, and `--table` prints |
+| `ds.rs` | what each word becomes on the DS (`OnDs`, declared with each word): what `scene_player export-ds` writes by, and `--table` prints |
 | `words.rs`, `screen.rs`, `check.rs` | the little words (faces, emotions, spots), the words on screen (box, bubble, colours), what is wrong, with the film's line and the closest names |
 | `film/src/tests/` | what each word gives, where it leaves everyone on the real scene |
 

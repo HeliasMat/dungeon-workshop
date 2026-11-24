@@ -12,8 +12,8 @@ pub const READ_REMARK: &str = "R-READ";
 /// (`walk pikachu to b`): who acts comes first (`pikachu walk to b`). (It
 /// was a remark, `R-ORDER`, while the films were written again.)
 pub const OLD_ORDER: &str = "E-ORDER";
-/// A word of the old vocabulary (`fadein`, `turn`): the plan's form that
-/// says it now (`film::plan::REPLACED`).
+/// A word of the old vocabulary (`fadein`, `turn`): the form that
+/// says it now (`film::vocabulary::REPLACED`).
 pub const OLD_WORD: &str = "E-OLD-WORD";
 
 /// A word of an optional family (`bite`, `stairs`, `job`) in a film that
@@ -53,7 +53,7 @@ pub const ALL: &[(&str, &str)] = &[
     (READ_WRONG, "what reading finds wrong, with no code of its own yet"),
     (READ_REMARK, "what reading notes, with no code of its own yet"),
     (OLD_ORDER, "a line written the word first, said of someone: who acts comes first"),
-    (OLD_WORD, "a word of the old vocabulary: the form of the plan that says it now"),
+    (OLD_WORD, "a word of the old vocabulary: the form that says it now"),
     (USES, "a word of an optional family in a film that does not take its library in (uses dungeon, guild, fishing)"),
     (DS_WORD, "in a film for ds: a word the DS has nothing for, with how to write it another way"),
     (DS_LOSS, "in a film for ds: a word that exports with less than the film shows, what it loses"),

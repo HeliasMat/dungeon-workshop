@@ -13,10 +13,16 @@ use crate::spots::somewhere;
 use crate::words::{plain, spot};
 
 pub const WORDS: &[Word] = &[
-    Word::new("put", &["object what:thing..."], "put object: find, put, thing").does(put_on_stage),
+    Word::new("put", &["object what:thing..."], "put object: find, put, thing")
+        .family("Presence")
+        .ds_direct("the actor's place and direction in the .ssa; later: SetPositionMark, SetDirection")
+        .does(put_on_stage),
     Word::new("shift", &["thing:word [to] where:place [in d:duration]"], "find, go").does(slid),
-    Word::new("open", &["thing:word"], "anim, sound").maybe(worked),
-    Word::new("close", &["thing:word"], "pose image 1, sound").maybe(worked),
+    Word::new("open", &["thing:word"], "anim, sound")
+        .family("Objects")
+        .ds_direct("the thing put in the scene's layout (an object of the game); SetAnimation<object>(17): its animation once")
+        .maybe(worked),
+    Word::new("close", &["thing:word"], "pose image 1, sound").family("Objects").ds_direct("SetAnimation<object>(9): its first picture, held").maybe(worked),
 ];
 
 /// Its words, a group of the language (`Lexicon`).

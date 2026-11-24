@@ -19,20 +19,20 @@ pub const WORDS: &[Word] = &[
         "hide",
         &["who:pokemon off", "who:pokemon behind x:number y:number", "who:pokemon behind what:word"],
         "walks behind it (just over it on the screen, drawn under it; a place's upper layer covers him there), turns to us, crouches (Cringe, held); off: up again",
-    )
+    ).family("Movement").ds_direct("a walk there, Turn2Direction, its Cringe animation held: Sky draws who stands lower over him too")
     .does(hid),
-    Word::new("peek", &["who:pokemon"], "up from where he hides, a look one way and the other, crouched again").does(peeked),
+    Word::new("peek", &["who:pokemon"], "up from where he hides, a look one way and the other, crouched again").family("Movement").ds_direct("its standing animation, turns one way and the other, its Cringe again").does(peeked),
     Word::new(
         "burrow",
         &["who:pokemon [at] where:place", "who:pokemon"],
         "digs in where he stands (there, walking first): trembles, clods of earth flung, sink of sand step by step, gone under the ground",
-    )
+    ).family("Movement").ds_close("it trembles, effects, then hidden at once: Sky cuts no body by the ground", "not into the ground step by step: hidden at once")
     .does(burrowed),
     Word::new(
         "pop_out",
         &["who:pokemon [at] where:place", "who:pokemon"],
         "out of the ground (there, if told): clods of earth, up through it step by step, a hop",
-    )
+    ).family("Movement").ds_close("shown at once where he comes out, effects, a hop", "not out of the ground step by step: shown at once")
     .does(popped_out),
 ];
 

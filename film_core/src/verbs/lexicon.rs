@@ -27,18 +27,26 @@ pub struct Lexicon {
     recipes: OnceLock<Vec<Recipe>>,
     commands: OnceLock<Group>,
     known: OnceLock<HashSet<String>>,
+    /// The vocabulary, derived from the words (`vocabulary.rs`).
+    pub(crate) vocabulary: OnceLock<Vec<crate::vocabulary::Planned>>,
 }
 
 impl Lexicon {
     /// The language of those groups, the narrower first (the text's words
     /// and the engine's around them).
     pub const fn new(groups: &'static [Group]) -> Lexicon {
-        Lexicon { groups, recipes: OnceLock::new(), commands: OnceLock::new(), known: OnceLock::new() }
+        Lexicon { groups, recipes: OnceLock::new(), commands: OnceLock::new(), known: OnceLock::new(), vocabulary: OnceLock::new() }
     }
 
     /// The groups of the words written for films, the narrower first.
     pub fn groups(&self) -> &'static [Group] {
         self.groups
+    }
+
+    /// The groups of the words written for films, the text's first: those
+    /// that declare the vocabulary's words (not the engine's commands).
+    pub(crate) fn groups_of_words(&'static self) -> impl Iterator<Item = &'static Group> {
+        std::iter::once(&TEXT).chain(self.groups.iter())
     }
 
     /// Every group, the text's and the engine's too: those whose forms a line is read by.
@@ -153,10 +161,10 @@ impl Lexicon {
         self.all_words().filter(|(_, word, ..)| !super::internal(word))
     }
 
-    /// The engine's commands a film may write: not those the plan replaced
+    /// The engine's commands a film may write: not those the vocabulary replaced
     /// (`fadein`: `transition fade in`).
     pub fn shown_commands(&'static self) -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)> {
-        self.command_words().filter(|(word, ..)| crate::plan::replaced(word).is_none())
+        self.command_words().filter(|(word, ..)| self.replaced(word).is_none())
     }
 
     /// The same, the library's own words with them, as the language reads them.

@@ -122,8 +122,8 @@ make contact sheets and videos.
 ## The quality gate
 
 `python tools/ds/gate.py <rom> [family...]` checks every word of the
-language on the real game at once. For each family of the plan
-(`film_core/src/plan.rs`: the core ones, the optional ones, the advanced
+language on the real game at once. For each family of the vocabulary
+(`export-ds --table`: the core ones, the optional ones, the advanced
 words), it takes each word's example from the Wiki (`workshop_wiki/wiki/*.txt`;
 a line said, `option`, `{if}`, `{value}`, `seen()`, `#id` and `keep`, which
 have no page, get a short one of the script's own), exports it with

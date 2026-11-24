@@ -11,12 +11,23 @@ use crate::screen::in_a_bubble;
 use crate::words::{EMOTION_SOUNDS, EMOTIONS, of, plain};
 
 pub const WORDS: &[Word] = &[
-    Word::new("bubble", &["who:pokemon text..."], "bubble").names(Names::NoOne).maybe(bubble_said),
-    Word::new("choice", &["text..."], "ask").maybe(choice_said),
+    Word::new("bubble", &["who:pokemon text..."], "bubble")
+        .family("Advanced")
+        .ds_none("Sky has no speech bubbles: its words are in the box")
+        .ds_fix("a line said in the box: “who: text”")
+        .names(Names::NoOne)
+        .maybe(bubble_said),
+    Word::new("choice", &["text..."], "ask")
+        .family("Structure")
+        .ds_direct("switch ( message_SwitchMenu(0, 1) ) { case menu(\"…\"): … }, in the box of the line before")
+        .maybe(choice_said),
     Word::new("box", &["top|bottom"], "boxside").does(box_said),
     Word::new("_answer", &["n:number"], "answer").does(answer_said),
     Word::new("emote", &["who:pokemon kind:word", "who:word kind:word d:duration"], "emote, sound").maybe(emotion_said),
     Word::new("chatter", &["*who [n:number]"], "short bubbles here and there among them, by chance (!, ..., a word): 6 if not told, one every few frames")
+        .family("Speech")
+        .ds_close("nothing shown: Sky has no speech bubbles; the film waits as long", "no bubbles: nothing is shown")
+        .word_first()
         .does(chattered),
 ];
 

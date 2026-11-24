@@ -31,6 +31,9 @@ pub const WORDS: &[Word] = &[Word::new(
     &["moment name:text...", "scene name:word"],
     "on to another moment of the film (its label; in another scene, that scene, then the moment), or another scene from its start (gotoscene)",
 )
+.family("Story")
+.ds_close("go moment: jump @label; go scene: one scene a film on DS", "a film is one scene after another on DS: “go scene” is not written")
+.word_first()
 .maybe(went)];
 
 /// Its words, a group of the language (`Lexicon`).

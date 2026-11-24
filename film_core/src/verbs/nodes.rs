@@ -18,22 +18,22 @@ pub const WORDS: &[Word] = &[
         "prop",
         &["who:word rest:text..."],
         "prop: prop <who> <property> <value>…, a property of the registry or several on the line (prop a angle 45 scale 1.5 opacity 50%)",
-    )
+    ).family("Advanced").ds_none("the engine's own nodes: Sky has none").word_first()
     .does(set_said),
     Word::new(
         "node",
         &["name:word kind:word [file:word] [x:coordinate y:coordinate]"],
         "node: node <name> group [x y], node <name> image <file> [x y], node <name> off; a node of one's own, set afterwards by prop",
-    )
+    ).family("Advanced").ds_none("the engine's own nodes: Sky has none")
     .names(Names::NoOne)
     .does(node_said),
     Word::new(
         "attach",
         &["who:word parent:word [dx:number dy:number] [inherit flags...]"],
         "attach: attach <who> <parent> [dx dy] [inherit pos angle scale opacity colour]; it follows its parent (turned, grown, faded with it), at dx dy from its position (else where it is)",
-    )
+    ).family("Advanced").ds_none("the engine's own nodes: Sky has none")
     .does(attach_said),
-    Word::new("detach", &["who:word"], "detach: detach <who>; it stays where it is").does(detach_said),
+    Word::new("detach", &["who:word"], "detach: detach <who>; it stays where it is").family("Advanced").ds_none("the engine's own nodes: Sky has none").does(detach_said),
 ];
 
 /// Its words, a group of the language (`Lexicon`).

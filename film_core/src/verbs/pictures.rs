@@ -8,7 +8,10 @@ use crate::tables::Picture;
 use crate::words::plain;
 
 pub const WORDS: &[Word] = &[
-    Word::new("memory", &[""], "whiteout, a sepia tint, whitein; at its end, the same back").does(souvenir),
+    Word::new("memory", &[""], "whiteout, a sepia tint, whitein; at its end, the same back")
+        .family("Screen")
+        .ds_direct("screen_FlushOut(1, 0, 8, 0, 0, 0): Sky's own sepia of memories; screen_FlushIn(1, 0, 1, …) after")
+        .does(souvenir),
     Word::new(
         "transition",
         &["kind:fade|white|boss|wipe|iris|cut in|out [d:duration]"],
@@ -17,6 +20,11 @@ pub const WORDS: &[Word] = &[
     .names(Names::NoOne)
     .does(screen_goes),
     Word::new("banner", &["kind:chapter|place|dungeon text..."], "typecaption on the dark (chapter, dungeon), caption over the scene (place)")
+        .family("Structure")
+        .ds_close(
+            "message_Narration on the black screen (Sky's chapter banners need a picture of their own and say “Chapter n”)",
+            "a narration on black, not Sky's chapter picture",
+        )
         .names(Names::NoOne)
         .does(bannered),
 ];

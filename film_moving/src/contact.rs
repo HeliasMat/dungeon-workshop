@@ -11,6 +11,8 @@ pub const WORDS: &[Word] = &[Word::new(
     &["who:pokemon other:pokemon [wins winner:pokemon]"],
     "the recipe _sumo, the winner first: the heavier by the game's tables (none known: who pushes), or who wins says",
 )
+.family("Body")
+.ds_close("its words: both pull and tremble, the loser hurt (no knock back) and tumbling", "no knock back: the loser tumbles where he stands")
 .does(pushed)];
 
 /// Its words, a group of the language (`Lexicon`).

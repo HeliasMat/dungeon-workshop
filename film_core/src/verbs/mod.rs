@@ -60,6 +60,14 @@ pub struct Word {
     /// Who its line brings onto the stage, by the values of its form (none:
     /// no one comes by it). `text::cast` reads it.
     pub brings: Option<Brings>,
+    /// The family an author finds it in (`vocabulary::FAMILIES`) and how it
+    /// stands on the DS: said on one declaration of the word only (`.family`,
+    /// `.ds_direct`...); none on the others, which only add their forms.
+    pub family: Option<&'static str>,
+    pub ds: Option<crate::ds::OnDs>,
+    /// Written word first though its form starts with who acts (`fight a vs
+    /// b`, `wait pikachu`).
+    pub word_first: bool,
 }
 
 /// Who a line of a word brings onto the stage, in the middle of a scene: they
@@ -140,7 +148,18 @@ pub enum Names {
 
 impl Word {
     pub const fn new(word: &'static str, forms: &'static [&'static str], writes: &'static str) -> Word {
-        Word { word, forms, writes, names: Names::ByForm, play: None, time: crate::time::WordTime::ByLine, brings: None }
+        Word {
+            word,
+            forms,
+            writes,
+            names: Names::ByForm,
+            play: None,
+            time: crate::time::WordTime::ByLine,
+            brings: None,
+            family: None,
+            ds: None,
+            word_first: false,
+        }
     }
 
     /// Its line brings those given these names of its form, new unless
@@ -196,6 +215,45 @@ impl Word {
         match self.time {
             crate::time::WordTime::ByLine if self.play.is_none() => crate::time::WordTime::Instant,
             time => time,
+        }
+    }
+
+    /// The family an author finds it in (one of `vocabulary::FAMILIES`):
+    /// said once, on one declaration of the word.
+    pub const fn family(self, family: &'static str) -> Word {
+        Word { family: Some(family), ..self }
+    }
+
+    /// Written word first, though its form starts with who acts.
+    pub const fn word_first(self) -> Word {
+        Word { word_first: true, ..self }
+    }
+
+    /// On the DS: written as the game's own operations (`how`).
+    pub const fn ds_direct(self, how: &'static str) -> Word {
+        Word { ds: Some(crate::ds::OnDs::direct(how)), ..self }
+    }
+
+    /// On the DS: written, with less than the film shows (`lost`).
+    pub const fn ds_close(self, how: &'static str, lost: &'static str) -> Word {
+        Word { ds: Some(crate::ds::OnDs::close(how, lost)), ..self }
+    }
+
+    /// On the DS: the game can, the export does not write it yet.
+    pub const fn ds_work(self, how: &'static str) -> Word {
+        Word { ds: Some(crate::ds::OnDs::work(how)), ..self }
+    }
+
+    /// On the DS: nothing (`how`: why).
+    pub const fn ds_none(self, how: &'static str) -> Word {
+        Word { ds: Some(crate::ds::OnDs::none(how)), ..self }
+    }
+
+    /// On the DS, how to write it another way (a word not exported).
+    pub const fn ds_fix(self, fix: &'static str) -> Word {
+        match self.ds {
+            Some(ds) => Word { ds: Some(ds.instead(fix)), ..self },
+            None => self,
         }
     }
 
@@ -469,13 +527,13 @@ fn command_here(film: &mut Film, item: &Instr) {
         return;
     }
     // (A word of the old vocabulary, or the library's own, in the film's own
-    // text: refused, the plan's form its fix.)
+    // text: refused, the form now its fix.)
     if item.from.0.is_none() && item.span.is_some() {
         let written = film.here.1.clone();
         // (Who first, `pikachu nap`: the old word second.)
         let second = written.get(1).map(|(said, _)| plain(said)).filter(|_| !film.lexicon.is_word(&line.verb, &film.source));
-        let old = std::iter::once(line.verb.clone()).chain(second).find(|word| crate::plan::replaced(word).is_some()).unwrap_or_default();
-        if crate::plan::told_replaced(film, line.number, &written, &old) {
+        let old = std::iter::once(line.verb.clone()).chain(second).find(|word| film.lexicon.replaced(word).is_some()).unwrap_or_default();
+        if crate::vocabulary::told_replaced(film, line.number, &written, &old) {
             return;
         }
         if internal(&line.verb) && written.first().is_some_and(|(said, _)| plain(said) == line.verb) {
@@ -489,7 +547,7 @@ fn command_here(film: &mut Film, item: &Instr) {
     let (fitting, why) = fitting_forms(film, &line);
     // (A word of an optional family: its library taken in, `uses fishing`.)
     if item.from.0.is_none() && item.span.is_some() && !fitting.is_empty() {
-        crate::plan::asks_its_library(film, line.number, &line.verb);
+        crate::vocabulary::asks_its_library(film, line.number, &line.verb);
     }
     // (Written the word first, said of someone: who first now, `pikachu walk to b`.)
     if item.from.0.is_none()

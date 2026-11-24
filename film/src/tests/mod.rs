@@ -280,6 +280,7 @@ mod scenes;
 mod stage;
 mod things;
 mod time;
+mod vocabulary;
 mod words;
 
 #[test]

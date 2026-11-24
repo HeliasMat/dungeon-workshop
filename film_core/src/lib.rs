@@ -1,12 +1,12 @@
 //! The language of the films, whatever its words: a film written in plain
-//! English turned into what the engine plays, by the families of words it is
+//! English turned into what the engine plays, by the groups of words it is
 //! given (`Lexicon`; `film` gathers them all).
 //!
 //! - `text`: the text read by the language, its recipes played out, who each
 //!   scene names;
 //! - `compile`: a film's scenes, and what is said in them;
 //! - `verbs`: what a word is (`Word`, `Group`, `Lexicon`), a line played
-//!   by the family whose form fits; the families the language leans on, a
+//!   by the group whose form fits; the groups the language leans on, a
 //!   file by theme;
 //! - `names`: what a film calls those it shows, things, places, ways;
 //! - `spots`: where a line says, routes, formations;
@@ -31,7 +31,6 @@ pub mod ir;
 pub mod lines;
 pub mod names;
 pub mod order;
-pub mod plan;
 pub mod plot;
 pub mod screen;
 pub mod spots;
@@ -40,6 +39,7 @@ pub mod temps;
 pub mod text;
 pub mod time;
 pub mod verbs;
+pub mod vocabulary;
 pub mod words;
 
 use std::path::{Path, PathBuf};

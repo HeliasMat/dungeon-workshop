@@ -17,6 +17,11 @@ pub const WORDS: &[Word] = &[
         &["name:word off", "name:thing... at d:duration", "name:thing... on who:pokemon", "name:thing..."],
         "sound, movesound, playsound; after (at 12), onhit (on a); [left|right|pan n] [from who] [volume n] [pitch n] [loop] [as name] [in d]",
     )
+    .family("Sound")
+    .ds_close(
+        "se_Play(n): the engine's numbers are the game's; on someone: not placed; a move's own sound: none",
+        "not placed on someone; a move's own sound is none",
+    )
     .names(Names::NoOne)
     .maybe(sound_said),
     Word::new(
@@ -30,9 +35,13 @@ pub const WORDS: &[Word] = &[
         ],
         "music, musicfrom (from 12s), fademusic (off fade 2s), a song coming in (fade 2s), its volume; a sound of ours: music own:",
     )
+    .family("Sound")
+    .ds_direct("bgm_Play(n) / bgm_PlayFadeIn(n, d, 256) / bgm_FadeOut(d): the engine's song numbers are the game's")
     .names(Names::NoOne)
     .maybe(music_from),
     Word::new("jingle", &["name:word"], "jingle: a little tune of the game by its name (item, treasure, reward, place, episode, news) or number")
+        .family("Sound")
+        .ds_direct("me_Play(n)")
         .names(Names::NoOne)
         .maybe(jingled),
 ];

@@ -12,9 +12,21 @@ use crate::words::plain;
 
 pub const WORDS: &[Word] = &[
     Word::new("sleep", &["who:pokemon"], "pose sleep, status sleep").does(dort),
-    Word::new("morning_call", &["leader:pokemon *who"], "shout, quake, status off, jump; then rank").does(appel_du_matin),
-    Word::new("dinner", &["*who"], "seats, lookat, anim Eat, emote").does(dinner),
-    Word::new("rank", &["*who", "team:word rank:thing..."], "find, goes, turn down (they line up); a team and a rank: jingle, the game's sentence").maybe(rank),
+    Word::new("morning_call", &["leader:pokemon *who"], "shout, quake, status off, jump; then rank")
+        .family("Guild")
+        .ds_work("Sky's own morning at the guild, its routine called")
+        .word_first()
+        .does(appel_du_matin),
+    Word::new("dinner", &["*who"], "seats, lookat, anim Eat, emote")
+        .family("Guild")
+        .ds_work("Sky's own dinner at the guild, its routine called")
+        .word_first()
+        .does(dinner),
+    Word::new("rank", &["*who", "team:word rank:thing..."], "find, goes, turn down (they line up); a team and a rank: jingle, the game's sentence")
+        .family("Guild")
+        .ds_work("the team's rank, a game variable")
+        .word_first()
+        .maybe(rank),
 ];
 
 /// Its words, a group of the language (`Lexicon`).

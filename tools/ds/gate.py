@@ -1,11 +1,11 @@
-"""The DS quality gate: every word of the plan, as its Wiki page shows it,
+"""The DS quality gate: every word of the vocabulary, as its Wiki page shows it,
 exported, patched into a copy of the user's own ROM and played in the
 real game, one contact sheet per family.
 
     python tools/ds/gate.py <rom> [family...] [--every N] [--no-play]
 
-For each family of `film_core/src/plan.rs` (the core ones, the optional ones,
-the advanced words), each word's example in the Wiki (`workshop_wiki/wiki/*.txt`,
+For each family of the vocabulary (`scene_player export-ds --table`: the core
+ones, the optional ones, the advanced words), each word's example in the Wiki (`workshop_wiki/wiki/*.txt`,
 under `== word`) is exported with `scene_player export-ds --partial`; the
 examples that export become the scenes of one film (its name shown on black
 before each, `message_Narration`), patched with `patch_rom.py --boot
@@ -59,12 +59,14 @@ SYNTAX = {
 
 
 def families():
-    """The plan's families in its order, each with its words (`plan.rs`)."""
-    text = open(os.path.join(ROOT, 'film', 'src', 'plan.rs'), encoding='utf-8').read()
+    """The vocabulary's families in its order, each with its words, as
+    `scene_player export-ds --table` lists them (family, word, status...)."""
+    table = subprocess.run([PLAYER, 'export-ds', '--table'], capture_output=True, text=True, encoding='utf-8', check=True).stdout
     found = {}
-    for family, word in re.findall(r'(?:word|recipe|syntax)\((ADVANCED|"[^"]+"), "([^"]+)"', text):
-        family = 'Advanced' if family == 'ADVANCED' else family.strip('"')
-        found.setdefault(family, []).append(word)
+    for line in table.splitlines():
+        fields = line.split()
+        if len(fields) >= 3 and fields[2] in ('direct', 'close', 'work', 'none'):
+            found.setdefault(fields[0], []).append(fields[1])
     return found
 
 

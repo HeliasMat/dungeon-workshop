@@ -204,7 +204,7 @@ pub fn shared_text(project: &Project, name: &str) -> Result<String, String> {
         return Ok(parts.join("\n"));
     }
     // (An optional family whose words are all the language's, `uses guild`: nothing more to take in.)
-    if crate::plan::OPTIONAL.iter().any(|(_, library)| *library == name) {
+    if crate::vocabulary::OPTIONAL.iter().any(|(_, library)| *library == name) {
         return Ok(String::new());
     }
     let known = shared_files(project);
@@ -583,7 +583,7 @@ fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, o
                             _ => recipe.said_of_someone(),
                         };
                         if as_in_the_text && instr.from.0.is_none() {
-                            crate::plan::asks_its_library(film, number, verb);
+                            crate::vocabulary::asks_its_library(film, number, verb);
                         }
                         if as_in_the_text && instr.from.0.is_none() && one_first {
                             let words = film.written_words(instr);

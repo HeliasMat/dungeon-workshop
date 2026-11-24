@@ -23,20 +23,20 @@ pub const WORDS: &[Word] = &[
             "who:pokemon [here]",
         ],
         "in the water: sink (a good part of him under it, its line waving), float (a little bob), flies (straight across the water); to a place: turned to it, goes there, rings in his wake and where he stops; from x y: he comes in from there",
-    )
+    ).family("Movement").ds_close("a walk across the water, its float routine: Sky cuts no body at the water's line", "drawn whole on the water: Sky sinks no body in it")
     .does(swims)
     .puts(&["who"])
     .when("x0"),
-    Word::new("dive", &["who:pokemon [at] where:place", "who:pokemon"], "jump, a splash (drops, rings), sinks under the water, opacity 0, bubbles; at: swims there first")
+    Word::new("dive", &["who:pokemon [at] where:place", "who:pokemon"], "jump, a splash (drops, rings), sinks under the water, opacity 0, bubbles; at: swims there first").family("Movement").ds_close("its little jump, hidden at once", "no going down: hidden at once")
         .does(dives),
     Word::new("plunge", &["who:pokemon [at] where:place", "who:pokemon"], "dive, the same").does(dives),
-    Word::new("surface", &["who:pokemon [at] where:place", "who:pokemon"], "up again from under the water (there, if told): rises through it, a splash (drops, rings)")
+    Word::new("surface", &["who:pokemon [at] where:place", "who:pokemon"], "up again from under the water (there, if told): rises through it, a splash (drops, rings)").family("Movement").ds_close("shown again at once, its little jump", "no coming up: shown at once")
         .does(surfaces),
     Word::new(
         "get_out",
         &["who:pokemon [to] where:place", "who:pokemon"],
         "out of the water: a splash, hop onto the shore there (the nearest free ground; beside, if not told), walking again (lands)",
-    )
+    ).family("Movement").ds_close("a run to the shore (no arc)", "no arc: a run to the shore")
     .does(gets_out),
 ];
 

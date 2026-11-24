@@ -36,19 +36,32 @@ pub const WORDS: &[Word] = &[
         &["take *who [floor n:number [up]]", "[where:place]"],
         "the game's stairs laid there (on the right if not said): put, under the bodies; take: the team goes up them, the floor ends",
     )
+    .family("Dungeon")
+    .ds_none("the game's stairs are a dungeon's: main_EnterDungeon")
     .does(lay_stairs),
     Word::new(
         "trap",
         &["off", "kind:word on who:pokemon", "who:pokemon kind:word"],
         "the game's trap under him: put, appear, sound, battlelog, and what it does",
     )
+    .family("Dungeon")
+    .ds_none("traps are a dungeon's")
+    .word_first()
     .does(trapped),
     Word::new("ambush", &["*foes on who:pokemon"], "battlelog, sound, quake; each: put around him, falls from above in its dust, emote")
+        .family("Dungeon")
+        .ds_none("an ambush is a dungeon's fight")
+        .word_first()
         .does(ambush)
         .brings(&["foes"]),
     Word::new("shop", &["who:pokemon buy thing...", "who:pokemon goods..."], "the items laid out in rows before the shopkeeper: put, thing; battlelog")
+        .family("Dungeon")
+        .ds_work("Kecleon's shop menu (ProcessSpecial)")
         .does(shop),
-    Word::new("steal", &["who:pokemon thing..."], "picks up without paying; the shopkeeper: emote, tremble, quake, popup, sound, battlelog").does(steals),
+    Word::new("steal", &["who:pokemon thing..."], "picks up without paying; the shopkeeper: emote, tremble, quake, popup, sound, battlelog")
+        .family("Dungeon")
+        .ds_none("stealing is a dungeon's")
+        .does(steals),
 ];
 
 /// Its words, a group of the language (`Lexicon`).

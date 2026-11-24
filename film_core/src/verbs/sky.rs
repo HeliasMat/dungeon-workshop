@@ -7,18 +7,18 @@ use crate::film::Film;
 use crate::words::{DAY, of, plain};
 
 pub const WORDS: &[Word] = &[
-    Word::new("daytime", &["moment:word [stars] [d:duration]"], "light (morning, day, evening, night; dawn); tint (18h30); stars: the stars twinkling (weather sparkles)").maybe(hour_said),
+    Word::new("daytime", &["moment:word [stars] [d:duration]"], "light (morning, day, evening, night; dawn); tint (18h30); stars: the stars twinkling (weather sparkles)").family("Effects").ds_close("screen_FlushOut(1, d, 4, 224, 176, 136) evening, (…, 4, 80, 112, 144) night (the light of Sky's own evening and night guild crossroads); day: screen_FlushIn; the light's own colour is lost; as a scene opens, the place's own level gives it", "the light's own colour").maybe(hour_said),
     Word::new(
         "status",
         &["who:pokemon off", "who:pokemon stat:word up|down", "who:pokemon kind:word"],
         "status: the game's status icon over him (sleep, burn, poison, frozen, confused, cringe…), off: none; a stat up or down: the game's own arrows (effect)",
-    )
+    ).family("Effects").ds_close("an effect on the actor: confusion's stars (17), poison bubbles (1), Zs (51), ice (23), stats up (691) / down (685); others none", "only confusion, poison, sleep, ice and stats show")
     .does(status_said),
     Word::new(
         "weather",
         &["off", "kind:rain|snow|sand|fog|hail|sun [heavy]"],
         "weather: the game's weather over the scene (heavy: under a storm's light), off: fair again",
-    )
+    ).family("Effects").ds_close("SetEffect<performer 3>(rain 698, Sky's very heavy rain of its scenes / hail 20; snow as hail); sand, fog, sun…: none in scripts", "sand, fog and sun show nothing; snow is hail")
     .maybe(weather_said),
 ];
 

@@ -33,14 +33,14 @@ pub const WORDS: &[Word] = &[
             "who:pokemon lv:number hp:number [floor:word]",
         ],
         "fight open (bars, log); fight directed: fight directed",
-    )
+    ).family("Fights").ds_close("staged as Sky's scenes stage fights: each blow the rules played (a directed fight's as written) as attack, the one struck stepping back (SlidePositionMark) in pain, a knock out its faint; the lines said in it kept", "no bars and no log: its blows as attacks, its lines said").word_first()
     .maybe(fought_word),
-    Word::new("join", &["who:pokemon [team]"], "emote, jump, the game's sentence").maybe(fought_word),
+    Word::new("join", &["who:pokemon [team]"], "emote, jump, the game's sentence").family("Fights").ds_direct("its emote and hop, then as Sky: me_Play(5), message_Mail(\"[CN]… joined the team!\"), WaitMe(5)").maybe(fought_word),
     Word::new(
         "attack",
         &["who:pokemon move:thing... at target:pokemon", "who:pokemon move:thing..."],
         "face, move (the move's own animation and effects, its sound), recoil and the Hurt pose of the target on the frame his sprite marks for the blow (else after 24 frames)",
-    )
+    ).family("Fights").ds_close("its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target, a small shake: not the move's own animation (dungeons only)", "a crouch, the attack and an effect of its type: not the move's own animation")
     .does(attacked),
     Word::new(
         "use",
@@ -53,33 +53,33 @@ pub const WORDS: &[Word] = &[
             "who:pokemon",
         ],
         "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one; they leave on the frame his sprite marks for the blow); no knock back, no hurt; no move, or `its move`: one his kind learns by his level, of his type if it can",
-    )
+    ).family("Fights").ds_close("as attack (a move chosen by the kind's learnset the same), the one it is used on neither knocked back nor hurt: its pain once (a crouch), its own attack (group 1), a script effect of the move's type on the target (or on itself), a small shake", "a crouch, the attack and an effect of its type: not the move's own animation")
     .does(used),
     Word::new(
         "evolve",
         &["who:pokemon into:pokemon", "who:pokemon"],
         "do evolution, the game's sentence; no form: the next of his family (the game's evolutions); one not of his family, remarked",
-    )
+    ).family("Fights").ds_close("a stats-up shine, the screen white, the evolved one (an actor of its own) put where it stood and shown, the other hidden; no change of species (Sky's scripts have none)", "no change of species: the evolved one is another actor")
     .maybe(fought_word),
     Word::new(
         "transform",
         &["who:pokemon back", "who:pokemon into its next form", "who:pokemon into form:pokemon"],
         "_change, mimic, _changed (the evolution's light, no sentence): he looks like the other, his name and his lines his own; its next form: the next of his family; back: as he was",
-    )
+    ).family("Fights").ds_close("a stats-up shine, the screen white and back; he keeps his look (Sky's actors change no sprite)", "he keeps his look: only the shine and the white screen")
     .does(transformed),
-    Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise")
+    Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise").family("Fights").ds_direct("as Sky's bosses: se_Play(6930), camera_SetEffect(2, 1, 1.0) (hard: 2, 2, 3.0) a while, then 0, 0, 0; SetAnimation of the sprite's own Roar group once, else its Charge looped (9), as Groudon's")
         .does(blows::roared),
     Word::new(
         "charge",
         &["who:pokemon move:thing...", "who:pokemon"],
         "his Charge animation, the game's stats-up shine and its sound, held a beat; a move told: his next attack with it lands with a flash and a hard shake",
-    )
+    ).family("Fights").ds_direct("SetAnimation (its Charge, looped: 9), SetEffect(691, 3) (Sky's stats-up shine), se_Play(4881), a beat, standing; the charged attack's flash and shake as written (screen_WhiteOut, camera_SetEffect)")
     .does(blows::charged),
     Word::new(
         "dodge",
         &["who:pokemon [left|right|back]"],
         "a quick hop aside (back by default) with his Hop animation; right after an attack at him, or right before one, it misses: no knock back, \"Missed!\"",
-    )
+    ).family("Fights").ds_close("Sky's hop (CORO_JUMP_HAPPY_FUNC_SERIES) and a quick MovePositionMark aside, the miss's sound (se_Play); no \"Missed!\" (Sky's scenes have no floating words)", "the “Missed!” won't show")
     .does(blows::dodged),
 ];
 

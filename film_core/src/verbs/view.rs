@@ -15,9 +15,16 @@ use crate::{emit, fields};
 
 pub const WORDS: &[Word] = &[
     Word::new("frame", &["free", "members... snap", "members... [follows]"], "frame, waitcam; keepframe (follows); camera (snap: at once); a place: pan")
+        .family("Camera")
+        .ds_direct("MovePositionMark<performer 0> (the camera, camera_SetMyself) to between them; snap: SetPositionMark")
         .maybe(viewed),
-    Word::new("glide", &["to where:place [in d:duration]", "where:word [d:duration]"], "pan to someone or a place, slowly at its ends").maybe(viewed),
+    Word::new("glide", &["to where:place [in d:duration]", "where:word [d:duration]"], "pan to someone or a place, slowly at its ends")
+        .family("Camera")
+        .ds_direct("MovePositionMark<performer 0>(speed, Position), WaitExecutePerformer(0)")
+        .maybe(viewed),
     Word::new("moment", &["title:text..."], "nothing for the engine: a moment of the scene (moment: title), and one framing alone in it")
+        .family("Structure")
+        .ds_direct("a @label")
         .names(Names::NoOne)
         .maybe(viewed),
 ];

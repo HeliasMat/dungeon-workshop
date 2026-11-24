@@ -6,7 +6,7 @@
 //! It reads what the film has the engine play, its typed beats
 //! (`Written::events`: places, Pokémon, emotes and sounds are already the
 //! game's numbers), and writes each beat as the game's operations. First,
-//! each line's word is looked up in `film::ds::WORDS`: a word that has no Sky
+//! each line's word is looked up in its DS status (`film::ds::export_of`): a word that has no Sky
 //! operation yet is an error, never dropped in silence. A few beats only our
 //! engine needs (the ground grid, its light, the title) are left out, and told.
 //!
@@ -17,8 +17,8 @@ use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 
 use ::film::ds::{Export, export_of};
-use ::film::plan;
 use ::film::tables::game_file;
+use ::film::vocabulary;
 
 use engine::{
     Beat, BodyBeat, Cam, Compare, Course, CrowdShape, DataBeat, Direction, Exit, FlowBeat, Formation, MotionBeat, Num, Pace, PlaceBeat, Play, Point, Pose,
@@ -66,7 +66,7 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
         match export_of(&read.word) {
             Some(Export::Direct | Export::Close) => {}
             Some(_) => writer.problems.push(format!("line {number}: “{}” doesn't export to DS yet", read.word)),
-            None => writer.problems.push(format!("line {number}: “{}” (not a word of the plan) doesn't export to DS yet", read.word)),
+            None => writer.problems.push(format!("line {number}: “{}” (not a word of the vocabulary) doesn't export to DS yet", read.word)),
         }
     }
     for (number, read) in &written.read_as {
@@ -245,20 +245,20 @@ fn fights_played(written: &::film::Written, art: &preview::art::Art, game: &Game
     played
 }
 
-/// The table (`film::ds`), every word of the plan, and how many of the
-/// core's and of the others' map directly, closely, need work, or can't.
+/// The table (`film::ds`), every word of the vocabulary, and how many of
+/// the core's and of the others' map directly, closely, need work, or can't.
 fn told_table() -> String {
     let mut out = String::new();
     let mut counts: BTreeMap<(bool, &str), (usize, usize)> = BTreeMap::new();
-    for word in plan::WORDS {
+    for word in vocabulary::words() {
         let kind = export_of(word.word).map_or("missing", Export::kind);
         let how = ::film::ds::how(word.word).unwrap_or("");
         let lost = ::film::ds::lost(word.word).map_or(String::new(), |lost| format!(" (lost: {lost})"));
         let _ = writeln!(out, "{:<11} {:<12} {:<7} {how}{lost}", word.family, word.word, kind);
-        let core = plan::FAMILIES.contains(&word.family);
+        let core = vocabulary::is_core(word.family);
         let count = counts.entry((!core, kind)).or_default();
         count.0 += 1;
-        if word.made == plan::Made::Word {
+        if matches!(word.made, vocabulary::Made::Word | vocabulary::Made::Command) {
             count.1 += 1;
         }
     }

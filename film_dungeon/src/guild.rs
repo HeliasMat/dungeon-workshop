@@ -10,6 +10,8 @@ use film_core::verbs::{Line, Word};
 
 pub const WORDS: &[Word] =
     &[Word::new("job", &["take|done|fail name:text..."], "take: cutaway job_board, narrate, jingle; done: music mission_accomplished, narrate; fail: narrate")
+        .family("Guild")
+        .ds_work("the guild's job lists (ProcessSpecial)")
         .names(film_core::verbs::Names::NoOne)
         .does(job)];
 

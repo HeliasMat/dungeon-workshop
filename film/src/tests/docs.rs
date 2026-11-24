@@ -1,7 +1,9 @@
-//! The docs say the words as the code has them: the table of every word in
-//! `film/FILMS.md` is `every_word()` (`GOLDEN=write` writes it anew),
-//! each word is in the film skill, and each command a film writes is in
-//! `engine/docs/COMMANDS.md`.
+//! The docs say the words as the code has them: the tables of
+//! `film/FILMS.md` between their marks are the code's (every word,
+//! `every_word()`; the engine's times, the properties, the z ranks:
+//! `GOLDEN=write` writes them anew), every word has its forms and plays,
+//! no new word hides an engine command, and each command a film writes is
+//! in `engine/docs/COMMANDS.md`.
 
 use std::collections::BTreeSet;
 

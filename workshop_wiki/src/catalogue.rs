@@ -7,10 +7,10 @@ use std::sync::Arc;
 
 use workshop_base::session::Session;
 
-/// The families as they are shown, in that order: the v2.1 core's
-/// (`film::plan`), the optional ones (`uses dungeon`), the advanced words
-/// last (folded).
-pub const FAMILIES: [&str; 20] = film::plan::SHOWN;
+/// The families as they are shown, in that order: the core's
+/// (`film::vocabulary`), the optional ones (`uses dungeon`), the advanced
+/// words last (folded).
+pub const FAMILIES: [&str; 20] = film::vocabulary::FAMILIES;
 
 /// The family of the advanced words, folded by default.
 pub const ADVANCED: usize = FAMILIES.len() - 1;
@@ -54,10 +54,10 @@ impl Entry {
     }
 }
 
-/// The family a word goes in: the plan's (`film::plan`), else the advanced
+/// The family a word goes in: its own (`film::vocabulary`), else the advanced
 /// words (an engine's command).
 fn family_of(word: &str) -> usize {
-    let family = film::plan::family_of(word);
+    let family = film::vocabulary::family_of(word);
     FAMILIES.iter().position(|known| *known == family).unwrap_or(ADVANCED)
 }
 
@@ -263,7 +263,7 @@ mod tests {
         let walk = entry(&session, "walk").expect("walk");
         assert_eq!(FAMILIES[walk.family], "Movement");
         assert!(example(&walk).starts_with("pikachu walk"), "{}", example(&walk));
-        // (The families are v2.1's: an engine's command the plan does not name, advanced; an old word, none.)
+        // (An engine's command the vocabulary does not name: advanced; an old word: none.)
         assert_eq!(FAMILIES[0], "Structure");
         assert_eq!(family_shown(ADVANCED), "Advanced");
         assert_eq!(entry(&session, "musicspeed").map(|musicspeed| musicspeed.family), Some(ADVANCED));

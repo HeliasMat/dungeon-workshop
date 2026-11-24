@@ -13,7 +13,7 @@ pub const WORDS: &[Word] = &[
         "wait",
         &["sound name:thing...", "music d:duration", "d:duration", "all", "*who", "name:word", "[text...]"],
         "wait 2s: t (at the film's pace); wait a b: waitfor each; wait all: waitall, and what plays beside; wait sound name: sound, waitsound (as long as it lasts); wait music 12s: waituntil music_clock",
-    )
+    ).family("Time").ds_direct("Wait(frames) / WaitExecuteLives / all: each one moving, WaitExecutePerformer(0)").word_first()
     .does(waited)
     .until(),
     Word::new("wander", &["who:pokemon [n:number]"], "roams").does(roamed),

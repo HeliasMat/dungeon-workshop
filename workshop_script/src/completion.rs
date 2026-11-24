@@ -151,7 +151,7 @@ pub(super) fn offered(session: &Session, text: &str, cursor: usize, asked: bool)
 /// exports (marked when with a loss), a model only if its words do; the
 /// rest (names, species, things, lines said) as they are.
 pub(super) fn for_ds(choices: Vec<(String, String)>) -> Vec<(String, String)> {
-    let planned = |word: &str| film::plan::WORDS.iter().any(|planned| planned.word == word);
+    let planned = |word: &str| film::vocabulary::planned(word).is_some();
     choices
         .into_iter()
         .filter_map(|(word, about)| {

@@ -13,7 +13,7 @@ pub const WORDS: &[Word] = &[
         "crowd",
         &["species:word n:number [rest...]"],
         "crowd, fidget: crowd <species> <n> [where: a spot, x y] then, in any order, [radius 40] [tight|dense] [shape ring|flock|line|heap] [from east|west|north|south] [fast]",
-    )
+    ).family("Presence").ds_close("a free actor each (45 a film, 24 a scene), round the place facing it; no fidgeting", "no fidgeting, and 24 at most a scene")
     .names(Names::NoOne)
     .does(crowd_said),
 ];

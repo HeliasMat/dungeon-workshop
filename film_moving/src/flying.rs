@@ -17,6 +17,8 @@ pub const WORDS: &[Word] = &[
         &["who:pokemon [to] where:place [height h:number] [slow|slowly|fast] [in time:duration]", "who:pokemon [height h:number]"],
         "flies (straight, over the walls), rise so high (24 pixels; height h), float (a bob), wings; to a place: turned to it, goes there in the air",
     )
+    .family("Movement")
+    .ds_direct("MoveHeight up, its float routine, a walk there in the air")
     .does(flown),
     Word::new("take_off", &["who:pokemon [height h:number]"], "fly, the same").does(flown),
     Word::new(
@@ -24,6 +26,8 @@ pub const WORDS: &[Word] = &[
         &["who:pokemon [at|to] where:place", "who:pokemon"],
         "flies there first, if told; float off, rise 0 (down), its landing (HitGround); on the ground again (lands)",
     )
+    .family("Movement")
+    .ds_direct("MoveHeight down to 0, its landing animation")
     .does(landed),
 ];
 

@@ -1,8 +1,9 @@
-//! The v2.1 words of what someone says and does where they stand (Speech,
+//! The words of what someone says and does where they stand (Speech,
 //! Presence, Movement, Turning, Body, Emotions): each written who first,
 //! each played with the game's own assets, the sprites' animations, the
-//! emote balloons and their sounds, the effects (`data/rom/effects`). Their
-//! other forms, older, stay in the families they come from.
+//! emote balloons and their sounds, the effects (`data/rom/effects`). A word
+//! also read by other groups (`jump`, `face`) has its family and DS status
+//! on one declaration only; the others add their forms.
 
 use engine::{AnimId, Beat, BodyBeat, EmoteId, MotionBeat, Pose, Spot};
 
@@ -15,81 +16,81 @@ use film_core::words::{WAYS, plain};
 
 pub const WORDS: &[Word] = &[
     // Speech.
-    Word::new("think", &["who:pokemon text..."], "a line thought, in the box, its portrait (face), its words in brackets").maybe(thought),
+    Word::new("think", &["who:pokemon text..."], "a line thought, in the box, its portrait (face), its words in brackets").family("Speech").ds_direct("message_SetFace, message_Monologue").maybe(thought),
     Word::new(
         "narrate",
         &["text..."],
         "narrate: words of no one's in the box; narrate screen: words on the screen, centred; narrate sign: a sign read, centred in the box",
-    )
+    ).family("Speech").ds_direct("box: message_ResetActor, message_Talk; screen: message_Narration; sign: message_Explanation")
     .names(Names::NoOne)
     .maybe(narrated),
     Word::new(
         "box",
         &["auto"],
         "boxside auto: where it hides no speaker, as the game does: at the foot of the screen, at the top for a line of one standing low",
-    )
+    ).family("Speech").ds_close("top: the portrait on top (FACE_POS_TOP_L_FACEINW); Sky keeps the box at the bottom", "the box stays at the bottom: only the portrait goes on top")
     .maybe(read_box_auto),
     // Presence.
-    Word::new("vanish", &["who:pokemon [smoke|fade|flash|vision]"], "gone in the game's smoke, a fade (by default), a flash or a vision").maybe(read_vanished),
+    Word::new("vanish", &["who:pokemon [smoke|fade|flash|vision]"], "gone in the game's smoke, a fade (by default), a flash or a vision").family("Presence").ds_close("smoke: SetEffect(99); hidden with SetOutputAttribute(128): at once, no fading out", "no fading out: hidden at once").maybe(read_vanished),
     // Movement.
     Word::new(
         "shift",
         &["who:pokemon by dx:number dy:number [in d:duration]", "who:pokemon [to] where:place [in d:duration]"],
         "slides there, still looking the same way: go, sliding",
-    )
+    ).family("Movement").ds_direct("SlidePositionMark<actor>(speed, Position)")
     .maybe(read_shifted),
     Word::new(
         "jump",
         &["who:pokemon [to] where:place [height h:number]", "who:pokemon height h:number", "who:pokemon"],
         "a leap of his body, higher than a hop: on the spot, or to a place, so high",
-    )
+    ).family("Movement").ds_close("MoveHeight up and down; to a place: a run there (no arc)", "no arc to a place: a run there")
     .maybe(read_jumped),
     Word::new(
         "hop",
         &["who:pokemon [happy|surprised|angry] [times n:number]"],
         "the game's hop: his Hop animation; happy, surprised, angry: its emote and its sound (angry: two)",
-    )
+    ).family("Movement").ds_direct("ExecuteCommon<actor>(CORO_JUMP_HAPPY|SURPRISE|ANGRY_FUNC_SERIES, 0), WaitExecuteLives")
     .maybe(hopped),
-    Word::new("follow", &["who:pokemon off"], "follow -: stops following").maybe(read_stops_following),
-    Word::new("chase", &["who:pokemon off"], "stop: stops chasing").maybe(read_stops),
-    Word::new("flee", &["who:pokemon from other:pokemon [to where:place]"], "runs away from the other: to a place, or a little way").maybe(read_fled),
-    Word::new("wander", &["who:pokemon off"], "roams 0: stops wandering").maybe(read_stops_wandering),
+    Word::new("follow", &["who:pokemon off"], "follow -: stops following").family("Movement").ds_close("after each move of the leader: Wait(16), MovePositionLives<follower>(speed, LEADER) (tools/ds/LIMITS.md)", "the follower catches up after each move, not step by step").maybe(read_stops_following),
+    Word::new("chase", &["who:pokemon off"], "stop: stops chasing").family("Movement").ds_close("MovePositionLives<actor>(3, OTHER): runs to where the other is, once", "it runs to where the other was, once").maybe(read_stops),
+    Word::new("flee", &["who:pokemon from other:pokemon [to where:place]"], "runs away from the other: to a place, or a little way").family("Movement").ds_direct("MovePositionMark away, at a run").maybe(read_fled),
+    Word::new("wander", &["who:pokemon off"], "roams 0: stops wandering").family("Movement").ds_direct("ExecuteCommon<actor>(CORO_MOVE_RANDOM, 0), Sky's own stroll; off: back to its place").maybe(read_stops_wandering),
     // Turning.
     Word::new(
         "face",
         &["who:pokemon away [fast|slow]", "who:pokemon to:word [fast|slow]"],
         "turns that way, to someone, or round (away); fast: at once; slow: through each way in between, a step every few frames (turnslow)",
-    )
+    ).family("Turning").ds_direct("Turn2DirectionLives<actor>(4, 10, OTHER) / Turn2Direction(4, 10, DIR_…)")
     .maybe(turned),
-    Word::new("look", &["who:pokemon around"], "the game's look around: a glance one way, the other, back").maybe(read_looked_around),
-    Word::new("nod", &["who:pokemon [times n:number]"], "his Nod animation, so many times").maybe(read_nodded),
-    Word::new("shake_head", &["who:pokemon"], "the game's head shake: quick turns of the head, one way, the other, back").maybe(read_shook_head),
+    Word::new("look", &["who:pokemon around"], "the game's look around: a glance one way, the other, back").family("Turning").ds_direct("ExecuteCommon(CORO_LOOK_AROUND[_LEFT|_RIGHT|_DOWN]_FUNC_SERIES), Sky's own; up: Turn2Direction").maybe(read_looked_around),
+    Word::new("nod", &["who:pokemon [times n:number]"], "his Nod animation, so many times").family("Turning").ds_direct("SetAnimation (its nod, once), then 2").maybe(read_nodded),
+    Word::new("shake_head", &["who:pokemon"], "the game's head shake: quick turns of the head, one way, the other, back").family("Turning").ds_direct("ExecuteCommon(CORO_HEAD_SHAKE_FUNC_SERIES), Sky's own").maybe(read_shook_head),
     // Body.
     Word::new(
         "pose",
         &["who:pokemon off", "who:pokemon name:word [once|loop|hold]"],
         "one of his sprite's animations by a clear name: once, again and again, or held at its end; off: standing",
-    )
+    ).family("Body").ds_direct("SetAnimation<actor>(n): the group of that species' own sprite showing it (ds_animations.txt: Dusknoir lies with its 27), through Sky's table (once or looped); off: 2")
     .maybe(posed),
-    Word::new("sleep", &["who:pokemon off"], "awake: his Wake animation, the sleep's mark gone").maybe(read_woke),
-    Word::new("hurt", &["who:pokemon [hard] [back n:number]"], "his Pain animation, knocked back the way he looks; hard: further, the view shaking")
+    Word::new("sleep", &["who:pokemon off"], "awake: his Wake animation, the sleep's mark gone").family("Body").ds_direct("SetAnimation(62), as Sky's INIT_SLEEP; off: its waking, once (63)").maybe(read_woke),
+    Word::new("hurt", &["who:pokemon [hard] [back n:number]"], "his Pain animation, knocked back the way he looks; hard: further, the view shaking").family("Body").ds_close("its pain animation, once; no knock back", "no knock back")
         .maybe(read_hurt),
-    Word::new("tremble", &["who:pokemon off", "who:pokemon"], "trembles until told off").maybe(read_trembled),
-    Word::new("fall", &["who:pokemon [over|back|trip]"], "falls and stays down: his Tumble (over), TumbleBack (back) or Trip animation").maybe(read_fell),
-    Word::new("faint", &["who:pokemon off", "who:pokemon"], "his Faint animation, held, until he gets up (off: his Wake animation)").maybe(read_fainted),
+    Word::new("tremble", &["who:pokemon off", "who:pokemon"], "trembles until told off").family("Body").ds_close("its pain animation, looped: Sky has no shiver", "no shiver: its pain animation looped").maybe(read_trembled),
+    Word::new("fall", &["who:pokemon [over|back|trip]"], "falls and stays down: his Tumble (over), TumbleBack (back) or Trip animation").family("Body").ds_direct("SetAnimation (tumble), once").maybe(read_fell),
+    Word::new("faint", &["who:pokemon off", "who:pokemon"], "his Faint animation, held, until he gets up (off: his Wake animation)").family("Body").ds_direct("SetAnimation (faint), once; off: waking").maybe(read_fainted),
     // Emotions.
     Word::new(
         "emote",
         &["who:pokemon off", "who:pokemon kind:word [silent]"],
         "an emote balloon of the game over him, with its sound (silent: none); off: none",
-    )
+    ).family("Emotions").ds_direct("SetEffect<actor>(EFFECT_…, 3): the engine's emote numbers are the game's; EFFECT_NONE once the line is said")
     .maybe(emoted),
 ];
 
 /// Its words, a group of the language (`Lexicon`).
 pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("acting", WORDS);
 
-/// The game's emote balloons by their v2.1 names: the effect, its sound
+/// The game's emote balloons by their names in the films: the effect, its sound
 /// (as the game's scripts play them beside it most), if any.
 pub const EMOTES: [(&str, u16, Option<&str>); 9] = [
     ("exclaim", 88, Some("startle")),

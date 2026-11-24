@@ -26,10 +26,11 @@ pub fn performer_first(pieces: &[Piece]) -> bool {
 
 /// A form as an author writes it: who first if its first part is who acts
 /// (`walk who:pokemon to where:place` shows `who:pokemon walk to where:place`),
-/// else the word first (`music name:word`).
-pub fn shown_form(word: &str, form: &str) -> String {
+/// else the word first (`music name:word`), as always when `who_may_lead` is
+/// false (a word written word first, `fight a vs b`: `Lexicon::shown_form`).
+pub fn shown_form(word: &str, form: &str, who_may_lead: bool) -> String {
     let form = form.trim();
-    let who_first = performer_first(&crate::grammar::read(form)) && crate::plan::who_first(word) != Some(false);
+    let who_first = who_may_lead && performer_first(&crate::grammar::read(form));
     match (who_first, form.split_once(' ')) {
         (true, Some((who, rest))) => format!("{who} {word} {rest}"),
         (true, None) => format!("{form} {word}"),
@@ -44,8 +45,8 @@ pub fn shown_form(word: &str, form: &str) -> String {
 /// someone of the film and no word of the language.
 pub(crate) fn told_who_first(film: &mut Film, number: usize, written: &[(String, language::Span)], verb: &str) {
     let [(word, word_at), (who, who_at), ..] = written else { return };
-    // (A word the plan writes word first, nobody acting in it, `fight a vs b`: as it is.)
-    if crate::plan::who_first(verb) == Some(false) || plain(word) != verb || film.actor(who).is_none() || film.lexicon.is_word(who, &film.source) {
+    // (A word the vocabulary writes word first, nobody acting in it, `fight a vs b`: as it is.)
+    if film.lexicon.who_first(verb) == Some(false) || plain(word) != verb || film.actor(who).is_none() || film.lexicon.is_word(who, &film.source) {
         return;
     }
     let rest: Vec<&str> = written[2..].iter().map(|(said, _)| said.as_str()).collect();
@@ -83,11 +84,11 @@ mod tests {
 
     #[test]
     fn a_form_is_shown_who_first_when_who_acts() {
-        assert_eq!(shown_form("walk", "who:pokemon to where:place"), "who:pokemon walk to where:place");
-        assert_eq!(shown_form("exit", "*who [via side:word]"), "*who exit [via side:word]");
-        assert_eq!(shown_form("jump", "who:pokemon"), "who:pokemon jump");
-        assert_eq!(shown_form("music", "name:word"), "music name:word");
-        assert_eq!(shown_form("frame", "members... [follows]"), "frame members... [follows]");
-        assert_eq!(shown_form("train", "[gap:number] *who"), "train [gap:number] *who");
+        assert_eq!(shown_form("walk", "who:pokemon to where:place", true), "who:pokemon walk to where:place");
+        assert_eq!(shown_form("exit", "*who [via side:word]", true), "*who exit [via side:word]");
+        assert_eq!(shown_form("jump", "who:pokemon", true), "who:pokemon jump");
+        assert_eq!(shown_form("music", "name:word", true), "music name:word");
+        assert_eq!(shown_form("frame", "members... [follows]", true), "frame members... [follows]");
+        assert_eq!(shown_form("train", "[gap:number] *who", true), "train [gap:number] *who");
     }
 }

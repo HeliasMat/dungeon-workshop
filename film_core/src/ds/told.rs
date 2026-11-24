@@ -1,13 +1,13 @@
 //! A film written `for ds`: what the DS can't play of it, told as it is
 //! read (`E-DS-…` wrong, `R-DS-…` to look at). The words by the table
-//! (`super::WORDS`), the rest by the scenes the film made: who is there at
+//! (their `OnDs`), the rest by the scenes the film made: who is there at
 //! once, the places, the hero and partner, the view.
 
 use std::collections::{BTreeMap, HashMap};
 
 use engine::{Beat, BodyBeat, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Point, Scene, ScreenBeat, Spot, ViewBeat, Who};
 
-use super::{AT_ONCE, Export, Mode, export_of, lost, refused};
+use super::{AT_ONCE, DECOR_LOSS, Export, Mode};
 use crate::codes;
 use crate::film::Film;
 
@@ -57,7 +57,7 @@ fn word_of(film: &Film, number: usize, line: &str) -> Option<String> {
         return Some(read.word.clone());
     }
     let first = line.split_whitespace().next()?;
-    crate::plan::WORDS.iter().any(|planned| planned.word == first).then(|| first.to_string())
+    film.lexicon.planned(first).is_some().then(|| first.to_string())
 }
 
 /// `E-DS-WORD` for a word the DS lacks, `R-DS-LOSS` once for each word that
@@ -72,16 +72,16 @@ fn words(film: &mut Film, lines: &[(usize, &str)]) {
         }
         let Some(word) = word_of(film, number, trimmed) else { continue };
         let bytes = word_at(lines, number, &word);
-        match export_of(&word) {
+        match film.lexicon.export_of(&word) {
             _ if word == "zoom" => {
                 let message = "“zoom”: Sky's camera has no zoom, the view keeps its size on DS (left out of the export)";
                 film.problems.push(Diagnostic::at(number, message).as_remark().on(bytes).coded(codes::DS_ZOOM));
             }
             Some(Export::Direct) => {}
             Some(Export::Close) => losses.entry(word).or_default().push(number),
-            // (Not a word of the plan: an engine's command, or a recipe of the film's own, checked by its words.)
-            None if !crate::plan::WORDS.iter().any(|planned| planned.word == word) => {}
-            _ => film.problems.push(Diagnostic::at(number, refused(&word)).on(bytes).coded(codes::DS_WORD)),
+            // (Not a word of the vocabulary: an engine's command, or a recipe of the film's own, checked by its words.)
+            None => {}
+            _ => film.problems.push(Diagnostic::at(number, film.lexicon.ds_refused(&word)).on(bytes).coded(codes::DS_WORD)),
         }
     }
     for (word, numbers) in losses {
@@ -90,7 +90,8 @@ fn words(film: &mut Film, lines: &[(usize, &str)]) {
             1 => " (and on 1 more line)".to_string(),
             many => format!(" (and on {many} more lines)"),
         };
-        let message = format!("“{word}” exports to DS with a loss: {}{more}", lost(&word).unwrap_or("less than the film shows"));
+        let message =
+            format!("“{word}” exports to DS with a loss: {}{more}", film.lexicon.on_ds(&word).and_then(|ds| ds.lost).unwrap_or("less than the film shows"));
         let bytes = word_at(lines, numbers[0], &word);
         film.problems.push(Diagnostic::at(numbers[0], message).as_remark().on(bytes).coded(codes::DS_LOSS));
     }
@@ -162,7 +163,7 @@ fn place(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
     }
     // (A decor of the Workshop's exports as a map of its own, with less.)
     if let Some(name) = film.tables.decors.iter().find(|(_, (own, ..))| *own == level).map(|(name, _)| name.clone()) {
-        let message = format!("“{name}”, a place of your own, exports to DS with a loss: {}", lost("decor").unwrap_or("less than the film shows"));
+        let message = format!("“{name}”, a place of your own, exports to DS with a loss: {}", DECOR_LOSS);
         film.problems.push(Diagnostic::at(header_line(scene, lines), message).as_remark().coded(codes::DS_LOSS));
         return;
     }

@@ -18,9 +18,85 @@ use std::path::Path;
 use engine::{Diagnostic, Lines, StoryEvent};
 
 pub use film_core::{
-    Context, Film, Lexicon, ReadAs, Told, Written, check, codes, coloured, context, doc, ds, emit, formatted, grammar, internal, ir, lines, locate, order,
-    performer_first, plan, plot, scene_line, screen, shared_files, shared_path, shown_form, tables, time, words,
+    Context, Film, Lexicon, ReadAs, Told, Written, check, codes, coloured, context, doc, emit, formatted, grammar, internal, ir, lines, locate, order,
+    performer_first, plot, scene_line, screen, shared_files, shared_path, tables, time, words,
 };
+
+/// The vocabulary of the language's words (`film_core::vocabulary`), each
+/// in its family, as `LEXICON` declares them.
+pub mod vocabulary {
+    pub use film_core::vocabulary::*;
+
+    use super::LEXICON;
+
+    /// Every word of the vocabulary, in the order of the families.
+    pub fn words() -> &'static [Planned] {
+        LEXICON.vocabulary()
+    }
+
+    /// The word of the vocabulary of that name, if one.
+    pub fn planned(word: &str) -> Option<&'static Planned> {
+        LEXICON.planned(word)
+    }
+
+    /// The family a word is shown in (`Lexicon::family_of`).
+    pub fn family_of(word: &str) -> &'static str {
+        LEXICON.family_of(word)
+    }
+
+    /// The form a word of the old vocabulary is written in now (`Lexicon::replaced`).
+    pub fn replaced(word: &str) -> Option<&'static str> {
+        LEXICON.replaced(word)
+    }
+
+    /// The recipes and commands of `OTHERS` the language does not have.
+    pub fn pending(known: &dyn Fn(&str) -> bool) -> Vec<&'static Planned> {
+        LEXICON.pending(known)
+    }
+}
+
+/// What each word becomes on the DS (`film_core::ds`), as `LEXICON`'s
+/// words declare it.
+pub mod ds {
+    pub use film_core::ds::*;
+
+    use super::LEXICON;
+
+    /// How that word stands on the DS, if it is a word of the vocabulary.
+    pub fn on_ds(word: &str) -> Option<OnDs> {
+        LEXICON.on_ds(word)
+    }
+
+    /// How that word exports, if it is a word of the vocabulary.
+    pub fn export_of(word: &str) -> Option<Export> {
+        LEXICON.export_of(word)
+    }
+
+    /// How any word stands on the DS (none: an engine's command).
+    pub fn status(word: &str) -> Export {
+        LEXICON.ds_status(word)
+    }
+
+    /// What it is written as on the DS: the game's operations.
+    pub fn how(word: &str) -> Option<&'static str> {
+        on_ds(word).map(|ds| ds.how)
+    }
+
+    /// What a word written with less loses on the DS.
+    pub fn lost(word: &str) -> Option<&'static str> {
+        on_ds(word).and_then(|ds| ds.lost)
+    }
+
+    /// What a film `for ds` is told of a word that doesn't export.
+    pub fn refused(word: &str) -> String {
+        LEXICON.ds_refused(word)
+    }
+}
+
+/// A form as an author writes it, who first if who acts (`Lexicon::shown_form`).
+pub fn shown_form(word: &str, form: &str) -> String {
+    LEXICON.shown_form(word, form)
+}
 
 /// The groups of the language's words, the narrower first: a line goes to
 /// the first whose form of its word fits.
