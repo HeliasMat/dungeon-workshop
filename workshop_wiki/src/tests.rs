@@ -152,7 +152,8 @@ fn played(session: &Session, example: &str, art: preview::art::Art) -> (Vec<Stri
 /// and, where the game's files are there, plays with nothing to say (as
 /// `scene_player check` tells it). The core's words and the optional families'
 /// have a page written by hand. The words of the plan the language does not
-/// have yet are pending: listed, not asked. (What is left to a person: see
+/// have yet are pending: listed, not asked. The pages, family by family:
+/// `gate`, one test each (`gates!`). (What is left to a person: see
 /// CONTRIBUTING.md, "The quality gate".)
 #[test]
 fn every_word_of_the_v2_families_passes_the_gate() {
@@ -178,9 +179,18 @@ fn every_word_of_the_v2_families_passes_the_gate() {
         .map(|entry| entry.word.as_str())
         .collect();
     assert!(strays.is_empty(), "words of the catalogue neither of the plan nor advanced: {strays:?}");
+    assert!(pages.iter().all(|page| page.family < crate::catalogue::FAMILIES.len()), "a page of no family the gate goes through");
+}
+
+/// The gate's pages of one family (of `catalogue::FAMILIES`), the `part`th
+/// of `parts` (one in `parts` of them): each a test of its own, so that they
+/// run side by side.
+fn gate(family: usize, part: usize, parts: usize) {
+    let session = Session::for_tests();
+    let pages = pages(&session);
     let mut art = preview::art::Art::open_in(session.data(), session.library().clone()).ok().filter(|_| !session.tables().monsters.is_empty());
     let mut wrong = Vec::new();
-    for page in pages.iter().filter(|page| !page.retired) {
+    for page in pages.iter().filter(|page| !page.retired && page.family == family).skip(part).step_by(parts) {
         let planned = film::plan::planned(&page.word).filter(|planned| planned.family != film::plan::ADVANCED);
         if planned.is_some() && !page.written {
             wrong.push(format!("{}: no page written by hand in workshop_wiki/wiki/", page.word));
@@ -199,4 +209,74 @@ fn every_word_of_the_v2_families_passes_the_gate() {
         }
     }
     assert!(wrong.is_empty(), "{} words do not pass the gate:\n\n{}", wrong.len(), wrong.join("\n\n"));
+}
+
+/// One test of the gate per family, in the order of `catalogue::FAMILIES`.
+macro_rules! gates {
+    ($($name:ident),* $(,)?) => {
+        const GATED: &[&str] = &[$(stringify!($name)),*];
+        gates!(@each 0usize; $($name),*);
+    };
+    (@each $at:expr; $name:ident $(, $rest:ident)*) => {
+        #[test]
+        fn $name() {
+            gate($at, 0, 1);
+        }
+        gates!(@each $at + 1; $($rest),*);
+    };
+    (@each $at:expr;) => {};
+}
+
+gates!(
+    gate_structure,
+    gate_speech,
+    gate_presence,
+    gate_formations,
+    gate_movement,
+    gate_turning,
+    gate_body,
+    gate_emotions,
+    gate_camera,
+    gate_screen,
+    gate_sound,
+    gate_effects,
+    gate_objects,
+    gate_fights,
+    gate_time,
+    gate_story,
+    gate_dungeon,
+    gate_guild,
+    gate_fishing,
+);
+
+/// The advanced words, the most by far: in parts of their own.
+macro_rules! advanced {
+    ($($name:ident = $part:expr),* $(,)?) => {
+        const ADVANCED_PARTS: usize = [$($part),*].len();
+        $(
+            #[test]
+            fn $name() {
+                gate(crate::catalogue::ADVANCED, $part, ADVANCED_PARTS);
+            }
+        )*
+    };
+}
+
+advanced!(
+    gate_advanced_0 = 0,
+    gate_advanced_1 = 1,
+    gate_advanced_2 = 2,
+    gate_advanced_3 = 3,
+    gate_advanced_4 = 4,
+    gate_advanced_5 = 5,
+    gate_advanced_6 = 6,
+    gate_advanced_7 = 7,
+);
+
+/// The gate's tests are the families', one each, named after them (the
+/// advanced words' apart, `advanced!`).
+#[test]
+fn the_gate_has_a_test_per_family() {
+    let names: Vec<String> = crate::catalogue::FAMILIES[..crate::catalogue::ADVANCED].iter().map(|family| format!("gate_{}", family.to_lowercase())).collect();
+    assert_eq!(GATED, names.iter().map(String::as_str).collect::<Vec<_>>());
 }
