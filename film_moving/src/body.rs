@@ -1,10 +1,10 @@
 //! What one does where it stands, or round it: looks, jumps, flies, waits,
 //! walks a path of points, rounds a point, wanders; several in file.
 
-use crate::emit;
-use crate::film::Film;
-use crate::verbs::{Line, Word};
-use crate::words::{WAYS, plain};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::verbs::{Line, Word};
+use film_core::words::{WAYS, plain};
 
 pub const WORDS: &[Word] = &[
     Word::new("look", &["who:pokemon to:word"], "turn (a direction) or face (someone)").does(looked),
@@ -20,7 +20,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("body", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("body", WORDS);
 
 /// `wait 2s`, `wait all`, `wait a b`; `wait wind`: what is
 /// played beside the film under that name.
@@ -28,18 +28,18 @@ fn waited(film: &mut Film, line: &Line) {
     let args = &line.args;
     let those: Vec<String> = args.words("who").iter().map(|one| plain(one)).collect();
     if args.has("sound") {
-        crate::verbs::heard::waited_sound(film, line);
+        film_core::verbs::heard::waited_sound(film, line);
     } else if args.has("music") {
-        if crate::verbs::timing::music_known(film, line.number, "wait music") {
+        if film_core::verbs::timing::music_known(film, line.number, "wait music") {
             film.beat(emit::wait_reached(engine::MUSIC_CLOCK, f64::from(args.frames("d").unwrap_or_default())));
         }
     } else if args.has("all") {
         film.beat(emit::wait_all());
-        crate::verbs::timing::wait_meanwhile(film);
+        film_core::verbs::timing::wait_meanwhile(film);
     } else if args.has("d") {
         let said = args.word("d").unwrap_or_default();
-        if crate::words::digits(said) {
-            film.remark(line.number, format!("“wait {said}”: a duration without its unit, in frames; write {}", crate::words::in_seconds_said(said)));
+        if film_core::words::digits(said) {
+            film.remark(line.number, format!("“wait {said}”: a duration without its unit, in frames; write {}", film_core::words::in_seconds_said(said)));
         }
         film.wait_paced(i64::from(args.frames("d").unwrap_or_default()));
     } else if !those.is_empty() {
@@ -58,7 +58,7 @@ fn waited(film: &mut Film, line: &Line) {
 
 /// `wander a [radius]`: its round kept on the ground, as wide as the ground leaves it.
 fn roamed(film: &mut Film, line: &Line) {
-    let (who, wide) = (super::super::who_said(line), line.args.word("n").unwrap_or("24"));
+    let (who, wide) = (film_core::verbs::who_said(line), line.args.word("n").unwrap_or("24"));
     match wide.parse::<f32>() {
         Ok(wide) => film.on(&who, |who| emit::roams(who, wide)),
         Err(_) => film.not_a(wide, "a width"),
@@ -68,7 +68,7 @@ fn roamed(film: &mut Film, line: &Line) {
 /// `look a b`, `look a right`: at someone, or that way.
 fn looked(film: &mut Film, line: &Line) {
     let towards = plain(line.args.word("to").unwrap_or_default());
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     match (WAYS.contains(&towards.as_str()), engine::Direction::of(&towards)) {
         (true, Some(way)) => film.on(&who, |who| emit::turn(who, way)),
         (true, None) => film.not_a(&towards, "a direction"),
@@ -78,5 +78,5 @@ fn looked(film: &mut Film, line: &Line) {
 
 /// `jump a` (in the water, `jump a water x y`: fishing's).
 fn jumped(film: &mut Film, line: &Line) {
-    film.jump(&super::super::who_said(line), 8.0, 10.0);
+    film.jump(&film_core::verbs::who_said(line), 8.0, 10.0);
 }

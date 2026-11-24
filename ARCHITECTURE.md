@@ -69,6 +69,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `film_fishing` | the films' fishing: the line cast, what bites and comes out, what was caught and measured, those watching |
 | `film_fights` | the films' fights: the lines a fight is written in, a directed fight's block, the blows, dodges and evolutions |
 | `film_dungeon` | the films' dungeons: a floor played as the game plays it, its log, stairs, traps and shops; the guild's jobs |
+| `film_moving` | the films' moving: being put, walking, coming in and going out, swimming, flying, riding, hiding, contact, the body's gestures |
 | `film` | the films' language whole: every family of its words gathered (`LEXICON`), a `.film` turned into what the engine plays, the language's service for editors |
 | `rom_formats` | the original game's formats, for `extractor` alone |
 | `decor` | places made for films; the `decor` program |
@@ -112,7 +113,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `film_fishing` | `engine`, `film_core`, `rules`, `scenes` |
 | `film_fights` | `assets`, `engine`, `film_core`, `film_dungeon`, `rules`, `scenes` |
 | `film_dungeon` | `engine`, `film_core`, `scenes` |
-| `film` | `assets`, `engine`, `film_core`, `film_dungeon`, `film_fights`, `film_fishing`, `language`, `scenes`, `story` |
+| `film_moving` | `engine`, `film_core` |
+| `film` | `assets`, `engine`, `film_core`, `film_dungeon`, `film_fights`, `film_fishing`, `film_moving`, `language`, `scenes`, `story` |
 | `stage_view` | `assets`, `engine`, `media`, `rules`, `scenes`, `shell` |
 | `preview` | `assets`, `engine`, `film`, `media`, `rules`, `scenes`, `shell`, `stage_view` |
 | `dive` | `rules`, `scenes`, `shell`, `stage_view` |

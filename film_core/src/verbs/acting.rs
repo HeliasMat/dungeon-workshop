@@ -585,7 +585,7 @@ const NEAREST: [(&str, &[&str]); 18] = [
 /// The animation someone plays for that one: itself if his sprite has it
 /// (or his sheets are not known), else the nearest he has; none, told: he
 /// stands.
-pub(crate) fn animation_had(film: &mut Film, who: &str, group: AnimId, number: usize) -> Option<AnimId> {
+pub fn animation_had(film: &mut Film, who: &str, group: AnimId, number: usize) -> Option<AnimId> {
     let Some(code) = film.actor(who) else {
         return Some(group);
     };

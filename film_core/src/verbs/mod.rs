@@ -33,7 +33,6 @@ pub mod game;
 pub mod heard;
 pub mod items;
 mod lexicon;
-pub mod moving;
 pub mod nodes;
 pub mod pictures;
 pub mod rituals;
@@ -696,7 +695,7 @@ fn placed(film: &Film, line: &Line, bound: &mut crate::grammar::Bound) {
 }
 
 /// A spot of the place at hand, or of the film's, by its name: its point.
-fn spot_named(film: &Film, word: &str) -> Option<(i32, i32)> {
+pub fn spot_named(film: &Film, word: &str) -> Option<(i32, i32)> {
     let word = plain(word);
     let place = film.tables.entrances.get(&film.level).into_iter().flatten();
     place.chain(film.lasting_spots.iter()).find(|(name, ..)| plain(name) == word).map(|(_, x, y)| (*x, *y))

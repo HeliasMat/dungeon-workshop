@@ -5,11 +5,11 @@
 //! stands in his way (`flies`). Who rides him goes up with him. No dust:
 //! its particles glow, and the films keep to sharp pixels.
 
-use crate::emit;
-use crate::film::Film;
-use crate::spots::routes::{found, pace_of};
-use crate::spots::somewhere;
-use crate::verbs::{Line, Word};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::spots::routes::{found, pace_of};
+use film_core::spots::somewhere;
+use film_core::verbs::{Line, Word};
 
 pub const WORDS: &[Word] = &[
     Word::new(
@@ -28,7 +28,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("flying", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("flying", WORDS);
 
 /// How high one flies, when the line does not say; how long the way up
 /// takes, and down.
@@ -58,7 +58,7 @@ pub(crate) fn up(film: &mut Film, who: &str, height: f32) {
 
 /// `a fly [height h]`, `a fly to x y`: up in the air, and there.
 fn flown(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let height = line.args.number("h").or_else(|| film.staging.flying.get(&who).copied()).unwrap_or(HEIGHT);
     up(film, &who, height);
     fly_to(film, line, &who, line.wait);
@@ -83,7 +83,7 @@ fn fly_to(film: &mut Film, line: &Line, who: &str, wait: bool) {
 /// `a land [at x y]`: there first, if told; down to the ground, its landing
 /// and a little dust; walking again.
 fn landed(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if line.args.has("where") {
         let height = film.staging.flying.get(&who).copied().unwrap_or(HEIGHT);
         up(film, &who, height);

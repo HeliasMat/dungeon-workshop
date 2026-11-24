@@ -6,12 +6,12 @@
 //! for a back, its head for a head), so a rider sits on a Lapras as on a
 //! Pikachu.
 
-use crate::emit;
-use crate::film::Film;
-use crate::spots::routes::found;
-use crate::spots::{Goal, goal_of};
-use crate::verbs::{Line, Word};
-use crate::words::plain;
+use film_core::emit;
+use film_core::film::Film;
+use film_core::spots::routes::found;
+use film_core::spots::{Goal, goal_of};
+use film_core::verbs::{Line, Word};
+use film_core::words::plain;
 
 pub const WORDS: &[Word] = &[
     Word::new(
@@ -50,7 +50,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("riding", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("riding", WORDS);
 
 /// A hop on or off: how high, how many frames.
 const HOP_HEIGHT: f32 = 28.0;
@@ -86,7 +86,7 @@ fn rode(film: &mut Film, line: &Line) -> bool {
     let Some(mount) = line.args.word("mount").map(plain) else {
         return false;
     };
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let (high, behind) = seat(film, &mount, line.args.has("head"));
     let high = line.args.number("h").unwrap_or(high);
     let behind = line.args.number("b").unwrap_or(behind);
@@ -178,7 +178,7 @@ fn hops_down(film: &mut Film, line: &Line, who: &str, beside: Option<String>) {
 
 /// `a get_off [to x y]`: off his mount's back, he hops there (beside it).
 fn got_off(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let mount = film.staging.mounts.remove(&who);
     if let Some(mount) = &mount {
         eased(film, &who, mount);
@@ -192,7 +192,7 @@ fn got_off(film: &mut Film, line: &Line) {
 
 /// `a carry b`: b hops onto a's head and is carried there.
 fn carried(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let what = plain(line.args.word("what").unwrap_or_default());
     let high = match film.actor(&who).and_then(|code| film.points_of(&code)) {
         Some(points) => (-points[HEAD].1) as f32 + OVER_HEAD,
@@ -204,7 +204,7 @@ fn carried(film: &mut Film, line: &Line) {
 
 /// `a put_down b [x y]`: b hops down off a's head, before him or there.
 fn put_down(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let what = plain(line.args.word("what").unwrap_or_default());
     if film.staging.mounts.get(&what) != Some(&who) {
         film.remark(line.number, format!("{who} put_down {what}: he is not carrying him ({who} carry {what})"));

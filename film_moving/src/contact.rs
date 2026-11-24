@@ -2,9 +2,9 @@
 //! wins; the rest is the library's recipes (`film/recipes/contact.film`:
 //! `_sumo`, `tug`, `tickle`, `chomp`, `high_five`, `boost`, `lift`).
 
-use crate::film::Film;
-use crate::verbs::{Line, Word};
-use crate::words::plain;
+use film_core::film::Film;
+use film_core::verbs::{Line, Word};
+use film_core::words::plain;
 
 pub const WORDS: &[Word] = &[Word::new(
     "push",
@@ -14,12 +14,12 @@ pub const WORDS: &[Word] = &[Word::new(
 .does(pushed)];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("contact", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("contact", WORDS);
 
 /// `a push b [wins b]`: they lock and strain, and one throws the other
 /// back: who the line says, else the heavier, else a.
 fn pushed(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let other = plain(line.args.word("other").unwrap_or_default());
     let winner = match line.args.word("winner").map(plain) {
         Some(winner) if winner == who || winner == other => winner,

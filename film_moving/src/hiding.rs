@@ -7,12 +7,12 @@
 
 use engine::{Colour, Direction, ParticleKind, Spot};
 
-use crate::emit;
-use crate::film::Film;
-use crate::spots::routes::{USUAL, found};
-use crate::spots::somewhere;
-use crate::verbs::{Line, Word};
-use crate::words::plain;
+use film_core::emit;
+use film_core::film::Film;
+use film_core::spots::routes::{USUAL, found};
+use film_core::spots::somewhere;
+use film_core::verbs::{Line, Word};
+use film_core::words::plain;
 
 pub const WORDS: &[Word] = &[
     Word::new(
@@ -37,7 +37,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("hiding", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("hiding", WORDS);
 
 /// How far over the obstacle's feet one hides, on the screen.
 const BEHIND: f32 = 6.0;
@@ -56,8 +56,8 @@ fn height_of(film: &mut Film, who: &str) -> f32 {
 
 /// He crouches, as low as his sprite goes (its Cringe, else the nearest it has).
 fn crouches(film: &mut Film, who: &str, number: usize) {
-    let Some((group, _)) = super::super::acting::pose_named("cringe") else { return };
-    if let Some(group) = super::super::acting::animation_had(film, who, group, number) {
+    let Some((group, _)) = film_core::verbs::acting::pose_named("cringe") else { return };
+    if let Some(group) = film_core::verbs::acting::animation_had(film, who, group, number) {
         film.on(who, |one| emit::anim(one, group, false, false));
     }
 }
@@ -65,7 +65,7 @@ fn crouches(film: &mut Film, who: &str, number: usize) {
 /// `a hide behind b`, `a hide behind chest`, `a hide behind 300 140`:
 /// there, turned to us, crouched; `a hide off`: up again.
 fn hid(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if line.args.has("off") {
         if !film.staging.hidden.remove(&who) {
             film.remark(line.number, format!("{who} hide off: he is not hiding ({who} hide behind <what>)"));
@@ -93,7 +93,7 @@ fn hid(film: &mut Film, line: &Line) {
 
 /// `a peek`: up from his hiding place, a look one way and the other, down again.
 fn peeked(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if !film.staging.hidden.contains(&who) {
         film.remark(line.number, format!("{who} peek: he is not hiding ({who} hide behind <what>)"));
     }
@@ -116,7 +116,7 @@ fn clods(film: &mut Film, who: &str, count: u16) {
 /// `a burrow [at x y]`: (walking there first) he digs in, down through the
 /// ground step by step, earth flung, gone under it.
 fn burrowed(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if line.args.has("where") {
         let spot = somewhere(film, line.args.words("where"), line.number);
         let at = found(film, &who, spot, &[]);
@@ -142,7 +142,7 @@ fn burrowed(film: &mut Film, line: &Line) {
 /// `a pop_out [at x y]`: from under the ground (there, if told), up
 /// through it step by step, earth flung, a hop.
 fn popped_out(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     film.staging.buried.remove(&who);
     let from = height_of(film, &who);
     film.on(&who, |one| emit::shadow(one, false));

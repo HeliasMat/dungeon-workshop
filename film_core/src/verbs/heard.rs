@@ -255,7 +255,7 @@ fn sound_said(film: &mut Film, line: &Line) -> bool {
 /// `wait sound flash`, `wait sound Bite`, `wait sound my_noise
 /// pitch 3`: the sound, and the film waits as long as it lasts. A loop
 /// has no end: refused.
-pub(crate) fn waited_sound(film: &mut Film, line: &Line) {
+pub fn waited_sound(film: &mut Film, line: &Line) {
     let (name, mut how) = name_and_how(film, line.args.words("name"));
     if how.looped {
         let said = line.args.words("name").join(" ");

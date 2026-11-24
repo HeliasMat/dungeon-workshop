@@ -1,0 +1,14 @@
+[package]
+name = "film_moving"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The films' moving: walking, running, swimming, flying, riding, hiding, contact, the body's gestures"
+readme = "../README.md"
+publish.workspace = true
+
+[dependencies]
+engine = { path = "../engine" }
+film_core = { path = "../film_core" }

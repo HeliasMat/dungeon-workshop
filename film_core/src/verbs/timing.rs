@@ -114,7 +114,7 @@ fn together(film: &mut Film, number: usize, lines: &[Instr]) {
 }
 
 /// Waits for what goes on beside the film to be over.
-pub(crate) fn wait_meanwhile(film: &mut Film) {
+pub fn wait_meanwhile(film: &mut Film) {
     for name in std::mem::take(&mut film.timing.awaited) {
         film.beat(emit::wait_until(format!("{name}_done"), emit::number(1)));
     }
@@ -259,7 +259,7 @@ fn from_here(film: &mut Film, line: &Line, after: i32, then: Option<&Instr>) -> 
 
 /// Whether a music was given before this line in the film (`music …`):
 /// else what counts by its clock would wait for ever, told.
-pub(crate) fn music_known(film: &mut Film, number: usize, said: &str) -> bool {
+pub fn music_known(film: &mut Film, number: usize, said: &str) -> bool {
     if !film.timing.music {
         film.wrong(number, format!("“{said}”: no music above in the film (“music name” first)"));
     }

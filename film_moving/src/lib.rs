@@ -4,14 +4,16 @@
 //!
 //! - `body`: what one does where it stands (looks, jumps, flies, rounds).
 
-use super::{Line, Word};
-use crate::emit;
-use crate::film::Film;
-use crate::names::places::SIDES;
-use crate::spots::formations::{formation, shape_of};
-use crate::spots::routes::{USUAL, arrived, found, gait, go, pace_of};
-use crate::spots::{Aim, Goal, goal_of, point_said, somewhere, xy};
-use crate::words::{SPOTS, plain};
+#![forbid(unsafe_code)]
+
+use film_core::emit;
+use film_core::film::Film;
+use film_core::names::places::SIDES;
+use film_core::spots::formations::{formation, shape_of};
+use film_core::spots::routes::{USUAL, arrived, found, gait, go, pace_of};
+use film_core::spots::{Aim, Goal, goal_of, point_said, somewhere, xy};
+use film_core::verbs::{Line, Word};
+use film_core::words::{SPOTS, plain};
 
 pub mod body;
 pub mod contact;
@@ -101,7 +103,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("moving", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("moving", WORDS);
 
 /// The frames someone walks up to another in, when no pace is said.
 const APPROACH: i32 = 40;
@@ -136,7 +138,7 @@ fn appears(film: &mut Film, line: &Line, who: &str) {
     let spot = somewhere(film, line.args.words("where"), line.number);
     let at = found(film, who, spot, &["apart"]);
     film.put_point_at(who, at);
-    super::acting::shows(film, who, super::acting::manner(&line.args), true);
+    film_core::verbs::acting::shows(film, who, film_core::verbs::acting::manner(&line.args), true);
 }
 
 /// Out of the place by that way, in file, and gone; the film waits for the
@@ -170,7 +172,7 @@ fn walks(film: &mut Film, line: &Line, who: &str) {
             Goal::Told => None,
         };
         if let Some(spot) = spot {
-            super::acting::backward(film, line, who, spot);
+            film_core::verbs::acting::backward(film, line, who, spot);
         }
         return;
     }
@@ -206,7 +208,9 @@ fn go_by(film: &mut Film, line: &Line, who: &str) {
     let mut ways: Vec<Vec<String>> = Vec::new();
     for said in line.args.list("path") {
         // (`via rock tree`: each a place of its own, said by its name.)
-        let named = |word: &String| film.actor(word).is_some() || super::spot_named(film, word).is_some() || SPOTS.iter().any(|(name, _)| *name == plain(word));
+        let named = |word: &String| {
+            film.actor(word).is_some() || film_core::verbs::spot_named(film, word).is_some() || SPOTS.iter().any(|(name, _)| *name == plain(word))
+        };
         if said.len() > 1 && said.iter().all(named) {
             ways.extend(said.into_iter().map(|one| vec![one]));
         } else {
@@ -337,7 +341,7 @@ fn shaped_or_wrong(film: &mut Film, line: &Line) -> bool {
 
 fn placed(film: &mut Film, line: &Line) {
     if !shaped_or_wrong(film, line) {
-        let who = super::who_said(line);
+        let who = film_core::verbs::who_said(line);
         place(film, line, &who);
         if let Some(way) = line.args.word("way").map(plain) {
             // (Walked in mid-scene: turned once there.)
@@ -349,27 +353,27 @@ fn placed(film: &mut Film, line: &Line) {
                 film.staging.facing_later.push((who, way));
                 return;
             }
-            super::acting::faced(film, &who, &way);
+            film_core::verbs::acting::faced(film, &who, &way);
         }
     }
 }
 
 fn appeared(film: &mut Film, line: &Line) {
     if !shaped_or_wrong(film, line) {
-        appears(film, line, &super::who_said(line));
+        appears(film, line, &film_core::verbs::who_said(line));
     }
 }
 
 /// `walk a to b`, `run a via x y, z`.
 fn walked(film: &mut Film, line: &Line) {
     // (A crowd's name: all of it, keeping its form.)
-    if line.args.has("rest") && super::crowds::crowd_goes(film, line, line.args.words("rest")) {
+    if line.args.has("rest") && film_core::verbs::crowds::crowd_goes(film, line, line.args.words("rest")) {
         return;
     }
     if shaped_or_wrong(film, line) {
         return;
     }
-    let who = super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if !line.args.has("where") && !line.args.has("via") {
         on_its_feet(film, &who);
         return;

@@ -8,11 +8,11 @@
 
 use engine::{Colour, ParticleKind};
 
-use crate::emit;
-use crate::film::Film;
-use crate::spots::routes::{USUAL, found, pace_of};
-use crate::spots::somewhere;
-use crate::verbs::{Line, Word};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::spots::routes::{USUAL, found, pace_of};
+use film_core::spots::somewhere;
+use film_core::verbs::{Line, Word};
 
 pub const WORDS: &[Word] = &[
     Word::new(
@@ -41,7 +41,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("swimming", WORDS);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("swimming", WORDS);
 
 /// His bob on the water: how high, how long.
 const BOB: f32 = 2.0;
@@ -66,7 +66,7 @@ fn depth_of(film: &mut Film, who: &str) -> f32 {
 
 /// How tall someone is: all of him under the water.
 fn height_of(film: &mut Film, who: &str) -> f32 {
-    film.actor(who).and_then(|code| film.body_of(&code)).map_or(crate::names::DEPTH / crate::names::UNDER, |(_, high)| high as f32 + 4.0)
+    film.actor(who).and_then(|code| film.body_of(&code)).map_or(film_core::names::DEPTH / film_core::names::UNDER, |(_, high)| high as f32 + 4.0)
 }
 
 /// Water thrown up about someone: so many drops, so many rings.
@@ -93,7 +93,7 @@ pub(crate) fn in_the_water(film: &mut Film, who: &str) {
 
 /// `a swim [here]`, `a swim to x y [in 2s]`, `a swim from x y to x y`.
 fn swims(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     let args = &line.args;
     if let (Some(x), Some(y)) = (args.number("x0"), args.number("y0")) {
         film.put_at(&who, x, y);
@@ -138,7 +138,7 @@ fn swim_to(film: &mut Film, line: &Line, who: &str, wait: bool) {
 /// `a dive [at x y]`: a little jump, a splash, down through the water step
 /// by step, gone under it; bubbles where he was.
 fn dives(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     in_the_water(film, &who);
     if line.args.has("where") {
         swim_to(film, line, &who, true);
@@ -163,7 +163,7 @@ fn dives(film: &mut Film, line: &Line) {
 /// `a surface [at x y]`: from under the water (there, if told), up through
 /// it step by step, a splash.
 fn surfaces(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if !film.staging.under.remove(&who) {
         film.remark(line.number, format!("{who} surface: he is not under the water ({who} dive)"));
     }
@@ -191,7 +191,7 @@ fn surfaces(film: &mut Film, line: &Line) {
 /// `a get_out [to x y]`: out of the water with a splash, a hop onto the
 /// shore there, walking again.
 fn gets_out(film: &mut Film, line: &Line) {
-    let who = super::super::who_said(line);
+    let who = film_core::verbs::who_said(line);
     if !film.staging.swimming.remove(&who) {
         film.remark(line.number, format!("{who} get_out: he is not in the water ({who} swim)"));
     }

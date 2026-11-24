@@ -134,7 +134,7 @@ fn crowd_form(film: &mut Film, number: usize, words: &[String]) -> Option<CrowdF
 /// `run spearows to 300 200`, `walk spearows to clearing`: all of
 /// a crowd goes there together, each keeping its place in it; the film
 /// waits for them unless told. False: not a crowd.
-pub(super) fn crowd_goes(film: &mut Film, line: &Line, words: &[String]) -> bool {
+pub fn crowd_goes(film: &mut Film, line: &Line, words: &[String]) -> bool {
     let Some(names) = words.first().and_then(|first| film.groups.get(&plain(first)).cloned()) else {
         return false;
     };
