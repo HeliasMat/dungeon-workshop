@@ -83,3 +83,20 @@ scene: beach pikachu piplup
 piplup: We won!
 pikachu cheer
 pikachu (joyous): Hooray!
+
+== carry
+> Someone lifts another over their head: the other hops up and is carried there, wherever they go, turned with them.
+scene: beach machamp pikachu
+machamp put center
+pikachu put left
+machamp carry pikachu
+machamp walk to right
+pikachu (happy): I can see the sea!
+
+== put_down
+> Someone puts down the one they carry: a hop down, before them, or to the place told.
+scene: beach machamp pikachu
+machamp put center
+pikachu put left
+machamp carry pikachu
+machamp put_down pikachu to left

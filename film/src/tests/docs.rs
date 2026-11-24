@@ -117,6 +117,7 @@ const SHARED_WITH_THE_ENGINE: &[&str] = &[
     "banner",
     "bubble",
     "camera",
+    "carry",
     "cast",
     "chase",
     "cheer",

@@ -115,6 +115,8 @@ pub const WORDS: &[Planned] = &[
     word("Movement", "chase", "who chase other / who chase off"),
     word("Movement", "flee", "who flee from other [to where]"),
     word("Movement", "wander", "who wander [area] / who wander off"),
+    word("Movement", "ride", "who ride on other [back|head] [high h] [behind b]"),
+    word("Movement", "get_off", "who get_off [to where]"),
     // Turning
     word("Turning", "face", "who face side|other|away [fast|slow]"),
     word("Turning", "look", "who look around|left|right|up|down"),
@@ -128,6 +130,8 @@ pub const WORDS: &[Planned] = &[
     word("Body", "tremble", "who tremble / who tremble off"),
     word("Body", "fall", "who fall [over|back|trip]"),
     word("Body", "faint", "who faint / who faint off"),
+    word("Body", "carry", "who carry other"),
+    word("Body", "put_down", "who put_down other [to where]"),
     recipe("Body", "cower", "who cower [from other]"),
     recipe("Body", "hug", "who hug other"),
     recipe("Body", "comfort", "who comfort other"),

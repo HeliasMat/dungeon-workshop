@@ -27,12 +27,25 @@ fn bodies(sheets: &[SheetRow]) -> HashMap<String, (i32, i32)> {
     found
 }
 
+/// The animations each sprite has: its sheets past the five every monster
+/// has, as groups.
+fn sprite_groups(sheets: &[SheetRow]) -> HashMap<String, HashSet<u16>> {
+    const SHARED: u16 = 5;
+    let mut found: HashMap<String, HashSet<u16>> = HashMap::new();
+    for row in sheets.iter().filter(|row| u16::from(row.animation) >= SHARED) {
+        found.entry(row.number.to_string()).or_default().insert(u16::from(row.animation) - SHARED);
+    }
+    found
+}
+
 /// The monsters, those drawn, those with a portrait alone, the variants and
 /// the generations.
 pub(super) fn read_monsters(tables: &mut Tables) {
     let folder = tables.data.clone();
     let sheets = assets::tables::sheets(&folder, "sprites.txt");
     tables.bodies = bodies(&sheets);
+    tables.sprite_groups = sprite_groups(&sheets);
+    tables.points = assets::tables::points(&folder).into_iter().map(|(number, points)| (number.to_string(), points)).collect();
     for (id, name) in numbered(&folder, "monsters.txt") {
         let suffix = if id == 32 { "_m" } else { "" };
         tables.monsters.entry(plain(&name) + suffix).or_insert((id.to_string(), name));
@@ -108,6 +121,9 @@ fn read_variants(tables: &mut Tables, sheets: &[SheetRow]) {
         let (number, of) = (variant.number.to_string(), variant.of.to_string());
         if let Some(body) = tables.bodies.get(&of).copied() {
             tables.bodies.insert(number.clone(), body);
+        }
+        if let Some(points) = tables.points.get(&of).copied() {
+            tables.points.entry(number.clone()).or_insert(points);
         }
         let name = tables.monsters.values().find(|named| named.0 == of).map_or(String::new(), |named| named.1.clone());
         tables.monsters.insert(plain(&variant.word), (number.clone(), name));

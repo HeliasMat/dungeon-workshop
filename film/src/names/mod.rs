@@ -92,4 +92,16 @@ impl Film {
     pub fn body_of(&self, code: &str) -> Option<(i32, i32)> {
         self.tables.bodies.get(species(code)?).copied()
     }
+
+    /// Where someone's head, hands and middle are, from where it stands
+    /// (y downwards, facing us): the game's own points.
+    pub fn points_of(&self, code: &str) -> Option<[(i32, i32); 4]> {
+        self.tables.points.get(species(code)?).copied()
+    }
+
+    /// Whether someone's sprite has that animation (none: its sheets are
+    /// not known, a variant painted by hand, no data).
+    pub fn has_animation(&self, code: &str, group: u16) -> Option<bool> {
+        self.tables.sprite_groups.get(species(code)?).map(|groups| groups.contains(&group))
+    }
 }

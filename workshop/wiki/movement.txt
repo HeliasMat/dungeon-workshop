@@ -74,3 +74,21 @@ piplup: Nice day for a walk.
 wait 2s
 pikachu wander off
 pikachu: It is!
+
+== ride
+> Someone hops onto another's back (or head, with head) and rides there: they go where it goes, turn with it as it walks, rise and sink with it. How high they sit is the mount's own, from the game's points of its body; high and behind set it by hand.
+scene: beach pikachu lapras
+pikachu put left
+lapras put center
+pikachu ride on lapras
+lapras walk to right
+pikachu (happy): Faster!
+
+== get_off
+> Someone gets off the back they ride: a hop down, beside the mount, or to the place told.
+scene: beach pikachu lapras
+pikachu put left
+lapras put center
+pikachu ride on lapras
+lapras walk to right
+pikachu get_off to center

@@ -2468,6 +2468,20 @@ impl<'a> Writer<'a> {
                 self.go(*who, &actor, to, "2", false);
                 self.wait_for(&actor);
             }
+            // Onto someone (`ride`, `carry`): a run to where it stands (no arc).
+            Beat::Body(BodyBeat::Throw { who, at, .. }) => {
+                let (Some(actor), Some(&to)) = (self.who(number, *who), self.at.get(at)) else { return };
+                self.go(*who, &actor, to, "2", false);
+                self.wait_for(&actor);
+            }
+            // On its back, up there; Sky's actors carry no one: he stays where he got on.
+            Beat::Body(BodyBeat::Ride { who, on, high, .. }) => {
+                let Some(actor) = self.who(number, *who) else { return };
+                let up = if on.is_some() { high.round().max(0.0) as i32 } else { 0 };
+                let pace = speed(high.max(8.0), 8.0);
+                self.line(&format!("MoveHeight<actor {actor}>({pace}, {up});"));
+                self.wait_for(&actor);
+            }
             // What Sky shows otherwise: a knock back, a sleeper's icon.
             // A state, as an effect on someone (LIMITS: confusion's stars, bubbles, Zs, ice).
             Beat::Body(BodyBeat::Status { who, icon, .. }) => {

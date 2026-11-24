@@ -105,6 +105,12 @@ pub struct Tables {
     pub items: BTreeMap<String, Named>,
     /// How big each monster shows, by its number.
     pub bodies: HashMap<String, (i32, i32)>,
+    /// The animations each monster's sprite has, by its number: their
+    /// groups (`Sit` is 23), as `sprites.txt` lists its sheets.
+    pub sprite_groups: HashMap<String, HashSet<u16>>,
+    /// Where each monster's head, hands and middle are (`points.txt`), by
+    /// its number: from where it stands, y downwards, facing us.
+    pub points: HashMap<String, [(i32, i32); 4]>,
     /// Those with a sprite, in the order of their numbers.
     pub with_sprites: Vec<String>,
     /// The group of each species' own sprite that shows it roaring, by its

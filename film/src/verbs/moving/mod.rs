@@ -14,6 +14,7 @@ use crate::spots::{Aim, Goal, goal_of, point_said, somewhere, xy};
 use crate::words::{SPOTS, plain};
 
 pub mod body;
+pub mod riding;
 
 pub const WORDS: &[Word] = &[
     Word::new(
