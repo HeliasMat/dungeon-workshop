@@ -167,7 +167,7 @@ pub struct Work {
     pub scripts: workshop_script::Scripts,
     pub films: workshop_film::Films,
     /// The Resources space's own.
-    pub resources: crate::resources::Resources,
+    pub resources: workshop_resources::Resources,
     /// The Dungeon space's own.
     pub dungeons: workshop_dungeon::dungeons::Dungeons,
     /// The Game space's own.
@@ -219,7 +219,7 @@ impl App {
             decors: workshop_decor::Decors::new(&session, context),
             scripts: workshop_script::Scripts::new(&session, context),
             films: workshop_film::Films::new(&session, context),
-            resources: crate::resources::Resources::new(&session, context),
+            resources: workshop_resources::Resources::new(&session, context),
             dungeons: workshop_dungeon::dungeons::Dungeons::new(&session),
             games: crate::games::Games::new(&session),
             emulate: crate::emulate::Emulate::new(&session),
@@ -407,7 +407,7 @@ impl App {
             Space::Dungeon => workshop_dungeon::dungeons::tabs(ui, &mut self.work.dungeons),
             Space::Game => crate::games::tools(ui, &mut self.work.games),
             Space::Emulator => crate::emulate::tools(ui, &mut self.work.emulate, self.work.film.as_deref()),
-            Space::Assets if self.work.resources.creating() => crate::resources::making_tabs(ui, &mut self.work.resources),
+            Space::Assets if self.work.resources.creating() => workshop_resources::making_tabs(ui, &mut self.work.resources),
             space => {
                 let open = match space {
                     Space::Film => self.work.film.as_ref(),
@@ -926,18 +926,18 @@ impl egui_dock::TabViewer for Panels<'_> {
             Panel::Timeline => workshop_film::timeline(ui, &mut self.work.films, &mut self.work.scripts),
             Panel::FilmInspector => workshop_film::inspector(ui, &mut self.work.films, &mut self.work.scripts),
             Panel::FilmState => workshop_film::state(ui, &mut self.work.films, &mut self.work.scripts),
-            Panel::AssetTree => crate::resources::tree(ui, &mut self.work.resources, &mut self.work.decors),
-            Panel::AssetGrid => crate::resources::grid(ui, &mut self.work.resources, &mut self.work.decors),
+            Panel::AssetTree => workshop_resources::tree(ui, &mut self.work.resources, &mut self.work.decors),
+            Panel::AssetGrid => workshop_resources::grid(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetInspector => {
-                crate::resources::inspector(ui, &mut self.work.resources, &mut self.work.decors, &mut self.work.scripts);
+                workshop_resources::inspector(ui, &mut self.work.resources, &mut self.work.decors, &mut self.work.scripts);
                 // (A film or a decor it is used in, opened in its space.)
                 match self.work.resources.asked.take() {
-                    Some(crate::resources::Asked::Film(path)) => (self.work.film, self.work.go) = (Some(path), Some(Space::Film)),
-                    Some(crate::resources::Asked::Decor(path)) => {
+                    Some(workshop_resources::Asked::Film(path)) => (self.work.film, self.work.go) = (Some(path), Some(Space::Film)),
+                    Some(workshop_resources::Asked::Decor(path)) => {
                         self.work.decors.open(&path);
                         (self.work.decor, self.work.go) = (Some(path), Some(Space::Decor));
                     }
-                    Some(crate::resources::Asked::Dungeon(what)) => {
+                    Some(workshop_resources::Asked::Dungeon(what)) => {
                         self.work.dungeons.open(what);
                         self.work.go = Some(Space::Dungeon);
                     }
@@ -1067,7 +1067,7 @@ impl eframe::App for App {
             }
         } else if self.space == Space::Assets && self.work.resources.creating() {
             egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::PANEL).inner_margin(egui::Margin::symmetric(4, 4))).show(context, |ui| {
-                crate::resources::studio(ui, &mut self.work.resources);
+                workshop_resources::studio(ui, &mut self.work.resources);
             });
         } else {
             egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::GAP)).show(context, |ui| {
@@ -1094,7 +1094,9 @@ impl eframe::App for App {
             self.work.resources.forget();
         }
         // (A dungeon or a fight asked from the Resources: opened in the Dungeon space.)
-        if let Some(crate::resources::Asked::Dungeon(what)) = self.work.resources.asked.take_if(|asked| matches!(asked, crate::resources::Asked::Dungeon(_))) {
+        if let Some(workshop_resources::Asked::Dungeon(what)) =
+            self.work.resources.asked.take_if(|asked| matches!(asked, workshop_resources::Asked::Dungeon(_)))
+        {
             self.work.dungeons.open(what);
             self.space = Space::Dungeon;
         }

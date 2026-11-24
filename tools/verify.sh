@@ -68,7 +68,7 @@ else
 fi
 
 # (Formatted as cargo fmt does it: every crate.)
-formatted="workshop workshop_base workshop_picture workshop_sound workshop_music workshop_dungeon workshop_wiki workshop_script workshop_decor workshop_film diagnostics language engine film story dive scene_player preview game decor rom_formats extractor assets media shell spritecollab stage_view dungeon_lsp rules scenes"
+formatted="workshop workshop_base workshop_picture workshop_sound workshop_music workshop_dungeon workshop_wiki workshop_script workshop_decor workshop_film workshop_resources diagnostics language engine film story dive scene_player preview game decor rom_formats extractor assets media shell spritecollab stage_view dungeon_lsp rules scenes"
 
 if [ -n "$1" ]; then
     packages=$(sh tools/parts.sh "$1") || exit 2

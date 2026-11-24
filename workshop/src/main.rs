@@ -29,7 +29,6 @@ mod first;
 mod games;
 mod home;
 mod quant_tool;
-mod resources;
 mod settings;
 mod spritecollab;
 

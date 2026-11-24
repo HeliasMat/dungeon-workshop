@@ -9,6 +9,13 @@
 //! - the Inspector: the one chosen in large, its pictures one by one or
 //!   playing, heard if it is heard, what it is, how a film writes it (written
 //!   in the film open in a click), the films and decors it is in.
+//!
+//! A crate of Dungeon Workshop: the Resources space (`Resources`) and its
+//! makings (`Maker`: a picture of `workshop_picture`, a sound of
+//! `workshop_sound`, a song of `workshop_music`, a dungeon or a fight of
+//! `workshop_dungeon`). It uses `workshop_base` (the session, the look),
+//! `workshop_decor` (the decor open, the pieces' pictures) and
+//! `workshop_script` (a word written in the film open).
 
 use std::sync::Arc;
 

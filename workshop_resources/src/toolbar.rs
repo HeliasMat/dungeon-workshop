@@ -64,7 +64,7 @@ fn create_menu(ui: &mut egui::Ui, resources: &mut Resources) {
     ];
     for (said, hover, kind) in makers {
         if ui.button(said).on_hover_text(hover).clicked() {
-            resources.open_making(crate::resources::Maker::new_of(&resources.session, kind));
+            resources.open_making(crate::Maker::new_of(&resources.session, kind));
             ui.close();
         }
     }

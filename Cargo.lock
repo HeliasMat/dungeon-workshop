@@ -4239,18 +4239,14 @@ dependencies = [
  "game",
  "image",
  "media",
- "rules",
- "scenes",
  "shell",
  "spritecollab",
  "workshop_base",
  "workshop_decor",
  "workshop_dungeon",
  "workshop_film",
- "workshop_music",
- "workshop_picture",
+ "workshop_resources",
  "workshop_script",
- "workshop_sound",
 ]
 
 [[package]]
@@ -4338,6 +4334,28 @@ dependencies = [
  "film",
  "image",
  "workshop_base",
+]
+
+[[package]]
+name = "workshop_resources"
+version = "0.2.0"
+dependencies = [
+ "assets",
+ "eframe",
+ "film",
+ "game",
+ "image",
+ "rules",
+ "scenes",
+ "shell",
+ "spritecollab",
+ "workshop_base",
+ "workshop_decor",
+ "workshop_dungeon",
+ "workshop_music",
+ "workshop_picture",
+ "workshop_script",
+ "workshop_sound",
 ]
 
 [[package]]
