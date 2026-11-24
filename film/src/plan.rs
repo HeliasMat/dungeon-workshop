@@ -95,6 +95,7 @@ pub const WORDS: &[Planned] = &[
     word("Speech", "box", "box top|bottom|auto"),
     recipe("Speech", "explain", "who explain"),
     recipe("Speech", "whisper", "who whisper other"),
+    word("Speech", "chatter", "who... chatter [n]"),
     // Presence
     word("Presence", "put", "who put where [facing side]"),
     word("Presence", "spot", "spot name x y"),

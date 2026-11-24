@@ -585,7 +585,10 @@ fn go(film: &mut Film, form: &[Piece], words: &[String], at: usize, missed: &mut
             default.is_some() && go(film, rest, words, at, missed, bound, given)
         }
         Piece::Team(name) => {
-            let those = words[at.min(words.len())..].iter().take_while(|word| stands_for_any(word) || film.actor(word).is_some()).count();
+            let those = words[at.min(words.len())..]
+                .iter()
+                .take_while(|word| stands_for_any(word) || film.actor(word).is_some() || film.groups.contains_key(&plain(word)))
+                .count();
             if those == 0 {
                 missed.tell(at, format!("{name} is missing (someone of the scene)"));
                 return false;

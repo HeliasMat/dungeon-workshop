@@ -14,6 +14,9 @@ use crate::words::{ACTING, FACES, of, plain};
 const SPEEDS: [(&str, f32); 2] = [("fast", 1.6), ("slow", 0.6)];
 /// The word of a line said over another.
 const OVER: &str = "top";
+/// The word of a line said in a bubble, waited for as a line: the box free
+/// for another skit beside.
+const BUBBLE: &str = "bubble";
 
 /// What someone does before saying a line, as the game's scripts have it: it
 /// takes on a new face first, not each time it speaks.
@@ -59,20 +62,24 @@ struct Manner {
     speed: f32,
     /// (Over the line on screen, in a bubble.)
     over: bool,
+    /// (In a bubble, waited for.)
+    bubble: bool,
 }
 
 /// What the brackets of a line say: its face, how fast, over another line.
 fn manner_said(film: &mut Film, words: Option<&str>, number: usize) -> Manner {
-    let mut manner = Manner { face: "normal".to_string(), speed: 1.0, over: false };
+    let mut manner = Manner { face: "normal".to_string(), speed: 1.0, over: false, bubble: false };
     for word in words.unwrap_or("").split(',').map(plain) {
         if let Some(fast) = of(&SPEEDS, &word) {
             manner.speed = fast;
         } else if word == OVER {
             manner.over = true;
+        } else if word == BUBBLE {
+            manner.bubble = true;
         } else if let Some(found) = of(&FACES, &word) {
             manner.face = found.to_string();
         } else if !word.is_empty() {
-            let known: Vec<&str> = FACES.iter().map(|(name, _)| *name).chain(SPEEDS.iter().map(|(name, _)| *name)).chain([OVER]).collect();
+            let known: Vec<&str> = FACES.iter().map(|(name, _)| *name).chain(SPEEDS.iter().map(|(name, _)| *name)).chain([OVER, BUBBLE]).collect();
             film.unknown(number, "unknown face", &word, known.iter().copied(), &known.join(", "));
         }
     }
@@ -122,13 +129,26 @@ impl Film {
 
     /// A line said, its brackets read.
     pub(crate) fn said(&mut self, name: &str, brackets: Option<&str>, text: &str, number: usize) {
-        let Manner { face, speed, over } = manner_said(self, brackets, number);
+        let Manner { face, speed, over, bubble } = manner_said(self, brackets, number);
         let told = told(name);
         let text = text.trim();
         let (written, rests, bare) = paused(text, speed);
         // (Over the line on screen: a bubble, the box being taken.)
         if over && !told {
             self.bubble(&plain(name), &in_a_bubble(&bare), if face == "shouting" { Voice::Shouted } else { Voice::Said });
+            return;
+        }
+        // (In a bubble, as long as it is read, and waited for: no box.)
+        if bubble && !told {
+            let who = plain(name);
+            let who = self.staging.evolved.get(&who).cloned().unwrap_or(who);
+            if self.acting {
+                act(self, &who, &face, &bare);
+            }
+            self.speaking.faces.insert(who.clone(), face.clone());
+            self.speaking.last_speaker = Some(who.clone());
+            let frames = self.bubble(&who, &in_a_bubble(&bare), if face == "shouting" { Voice::Shouted } else { Voice::Said });
+            self.wait((frames / speed).round() as i64 + rests as i64);
             return;
         }
         let lines = wrap(&written);

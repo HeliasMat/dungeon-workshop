@@ -111,6 +111,7 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("box", Export::Close, "top: the portrait on top (FACE_POS_TOP_L_FACEINW); Sky keeps the box at the bottom"),
     ("explain", Export::Direct, "ExecuteCommon(CORO_EXPLANATION_FUNC_SERIES), Sky's own"),
     ("whisper", Export::Close, "its words: walks over, an emote; no smaller text"),
+    ("chatter", Export::Close, "nothing shown: Sky has no speech bubbles; the film waits as long"),
     // Presence
     ("put", Export::Direct, "the actor's place and direction in the .ssa; later: SetPositionMark, SetDirection"),
     ("spot", Export::Direct, "nothing: a named point, read into positions"),
@@ -331,6 +332,7 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("banner", "a narration on black, not Sky's chapter picture"),
     ("box", "the box stays at the bottom: only the portrait goes on top"),
     ("whisper", "no smaller text"),
+    ("chatter", "no bubbles: nothing is shown"),
     ("appear", "no fading in: shown at once"),
     ("vanish", "no fading out: hidden at once"),
     ("crowd", "no fidgeting, and 24 at most a scene"),

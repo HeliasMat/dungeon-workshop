@@ -16,7 +16,15 @@ pub const WORDS: &[Word] = &[
     Word::new("box", &["top|bottom"], "boxside").does(box_said),
     Word::new("_answer", &["n:number"], "answer").does(answer_said),
     Word::new("emote", &["who:pokemon kind:word", "who:word kind:word d:duration"], "emote, sound").maybe(emotion_said),
+    Word::new("chatter", &["*who [n:number]"], "short bubbles here and there among them, by chance (!, ..., a word): 6 if not told, one every few frames")
+        .does(chattered),
 ];
+
+/// What a crowd says when it chatters: short, of no one's story.
+const CHATTER: [&str; 12] = ["!", "...", "?", "Oh!", "Hm.", "Ha ha!", "Yes!", "No way!", "Wow...", "Look!", "Hey!", "Really?"];
+/// How long each of those bubbles stays, and how far apart they come.
+const CHATTER_FRAMES: f32 = 50.0;
+const CHATTER_GAP: u64 = 14;
 
 /// A bubble by the word that says it.
 const BUBBLES: [(&str, &str); 3] = [("bubble", "bubble"), ("thought", "think"), ("shout", "shout")];
@@ -58,6 +66,29 @@ fn bubble_said(film: &mut Film, line: &Line) -> bool {
     };
     film.bubble(&super::who_said(line), &in_a_bubble(&said), voice);
     true
+}
+
+/// `chatter crowd [n]`, `chatter a b c [n]`: short bubbles by chance among
+/// them, one after another, a few frames apart (never twice the same one
+/// running); the film waits for the last, unless `&`.
+fn chattered(film: &mut Film, line: &Line) {
+    let named: Vec<String> = line.args.words("who").iter().flat_map(|one| film.everyone(&plain(one))).collect();
+    if named.is_empty() {
+        return;
+    }
+    let count = line.args.number("n").map_or(6, |count| count.max(1.0) as u64);
+    let (mut at, mut last) = (0.0, usize::MAX);
+    for _ in 0..count {
+        let mut one = film.draw() as usize % named.len();
+        if one == last && named.len() > 1 {
+            one = (one + 1) % named.len();
+        }
+        last = one;
+        let text = CHATTER[film.draw() as usize % CHATTER.len()];
+        film.on(&named[one], |who| emit::after(at, 0.0, emit::bubble(who, CHATTER_FRAMES, text)));
+        at += (CHATTER_GAP + film.draw() % CHATTER_GAP) as f32;
+    }
+    film.wait_frames((at + CHATTER_FRAMES).round() as i64, line.wait);
 }
 
 /// `box top|bottom`: the dialogue box kept there, for this scene, whoever

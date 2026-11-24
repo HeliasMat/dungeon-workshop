@@ -83,6 +83,13 @@ scene: beach pikachu piplup
 pikachu bubble Look!
 piplup walk to center
 
+== chatter
+> A crowd chatters: short bubbles here and there among them, by chance (!, ..., Really?...), 6 or so many; the film waits for the last, unless the line ends with &. For lines of your own in bubbles, while another skit plays: who (bubble): text.
+scene: town pikachu piplup
+crowd bidoof 4 400 260
+bidoofs chatter 6
+pikachu (bubble): What a crowd!
+
 == box
 > Where the dialogue box stands. auto, as each scene starts: where it hides no one who speaks, as the game has it, at the foot of the screen and at the top for a line of someone standing low. top or bottom: kept there for the rest of the scene, whoever speaks.
 scene: town pikachu piplup

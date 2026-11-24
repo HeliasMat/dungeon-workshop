@@ -169,7 +169,7 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 | Family | Words |
 |---|---|
 | Structure | `title`, `scene:`, `moment:`, `transition fade\|white\|boss\|wipe\|iris [in\|out] [d]`, `banner chapter\|place\|dungeon text`, `define … end`, `repeat n … end`, `if … else … end`, `choice … option … end`, `set flag [value]`, `set flag off` |
-| Speech | `who (face): text`, `who think (face): text`, `narrate [box\|screen\|sign]: text`, `box top\|bottom\|auto`, `who explain`, `who whisper other` |
+| Speech | `who (face): text`, `who think (face): text`, `narrate [box\|screen\|sign]: text`, `box top\|bottom\|auto`, `who explain`, `who whisper other`, `who (bubble): text`, `who... chatter [n]` |
 | Presence | `who put where [facing side]`, `spot name x y`, `who enter [from side] [to where]`, `who exit [via side]`, `who appear [where] smoke\|fade\|flash\|vision`, `who vanish smoke\|fade\|flash`, `crowd species n area` |
 | Formations | `form row\|column\|ring\|lineup who... [to where] [walk\|run]` |
 | Movement | `who walk to where [slow\|brisk] [backward] [via a b...]`, `who run to where`, `who shift to\|by where`, `who jump [to where] [height h]`, `who hop [happy\|surprised\|angry] [times n]`, `who follow other`, `who chase other`, `who flee from other [to where]`, `who wander [area]` (each `off` to stop), `who ride on other [back\|head]`, `who get_off [to where]` |
@@ -201,6 +201,17 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 **Gestures, and what a sprite lacks.** `who pose name` plays the sprite's animations by a clear name (`sit`, `lie`, `look_up`, `proud`, `stagger`, `cringe`, `faint`, `nod`, `breathe`, `spin`…: `POSES` in `film/src/verbs/acting.rs`). The film knows which animations each species' sprite really has (`sprites.txt`): one it lacks plays the nearest it has (`sit`: lying, else asleep; `cringe`: pain, else hurt; `proud`: a hop…), and where none is near, `check` remarks it (“lapras has no Float animation: he stays standing”). The gestures the game has no animation for are recipes (`film/recipes/gestures.film`): `who laugh` (its laugh balloon, little hops), `who cry` (pain, sweat, shaking), `who sulk` (back turned, a sigh), `who shiver`, `who stretch`, `who celebrate` (a spin, happy hops, its proud pose).
 
 **Faces a species lacks.** The film knows which faces each species' portraits really have (`portraits/<species>_<face>.png`). A line asking one it lacks shows the nearest it has (`joyous`: happy; `crying`, `teary_eyed`: each other, else sad; `shouting`: angry; `surprised`: stunned; `dizzy`: pain…), else its normal face, and `check` remarks it (“lapras has no crying portrait: normal instead”).
+
+**Several conversations at once.** `pikachu (bubble, happy): The sea is calm.` says the line in a bubble over him, following him, as long as it takes to read, and the film waits for it as for a line; the box stays free. With `beside … end`, two skits or more play in the same shot, each in its bubbles (they push apart, never over one another):
+```
+beside
+  munchlax (bubble): Did you eat?
+  chimchar (bubble): Not yet!
+end
+pikachu (bubble): The sea is calm.
+piplup (bubble, surprised): Too calm...
+```
+`bidoofs chatter [n]` (a crowd, or several: `a b c chatter`): short bubbles here and there among them by chance (“!”, “...”, “Really?”…), 6 if not told; the film waits for the last, unless `&`. On DS, Sky has no bubbles: nothing is shown, the time is kept (`R-DS-LOSS`). `*who` forms now take a crowd's name too (`bidoofs`).
 
 **Contacts.** Two bodies that meet, each placed as they stand: `pikachu push munchlax` (sumo: they lock, strain and tremble, then one throws the other back and he falls; the heavier wins, by the game's weights, else the one who pushes; `wins pikachu` says who), `who tug other` (pulls him along, walking back), `who tickle other` (he laughs and wriggles), `who chomp other` (a bite: a snap of the head, the other hurt), `who high_five other`, `who boost other [to where]` (a leg up: the other climbs on his head, as `ride`, and springs off there or before him), `who lift other` (over his head with an effort, as `carry`; `put_down` sets him down). Recipes of `film/recipes/contact.film`, but `push`, which picks who wins. `bite` stays the fishing's.
 
@@ -800,6 +811,7 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `choice` | `choice text...` | `said` | by the line | ask |
 | `box` | `box top\|bottom` | `said` | by the line | boxside |
 | `emote` | `who:pokemon emote kind:word`; `who:word emote kind:word d:duration` | `said` | by the line | emote, sound |
+| `chatter` | `chatter *who [n:number]` | `said` | by the line | short bubbles here and there among them, by chance (!, ..., a word): 6 if not told, one every few frames |
 | `at` | `at text...` | `timing` | instant | at name [+ 2s]: …: the line (or the block up to end) played beside, so long after the mark (calc, waituntil clock); at 12s: …: so long after the scene's start (waituntil clock); at music 12s: …: once the music has played so long (waituntil music_clock) |
 | `when` | `when *who arrives\|arrive [text...]` | `timing` | instant | when a arrives: …: the line (or the block up to end) played beside the film as soon as a has got where it was going (parallel, waitfor) |
 | `mark` | `mark name:word` | `timing` | instant | mark name: a mark at that instant of the scene (set _mark_name clock), for “at name + 2s:” |

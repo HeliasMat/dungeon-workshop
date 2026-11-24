@@ -1949,6 +1949,9 @@ impl<'a> Writer<'a> {
             // particles of their own (R-DS-LOSS).
             Beat::Screen(ScreenBeat::Particles { .. } | ScreenBeat::Emitter { .. } | ScreenBeat::EmitterOff(_))
                 if matches!(word, Some("swim" | "dive" | "plunge" | "surface" | "get_out")) => {}
+            // Bubbles (a line said in one, a crowd's chatter): Sky has none; the
+            // time they take is kept (R-DS-LOSS).
+            Beat::Speech(SpeechBeat::Bubble { .. }) if matches!(word, Some("chatter")) || word.is_none() => {}
             // The engine's evolution (slowed, shining, growing): Sky's white flash instead, below.
             Beat::View(ViewBeat::Tempo(_)) | Beat::Body(BodyBeat::Colour { .. } | BodyBeat::Scale { .. }) | Beat::Screen(ScreenBeat::Particles { .. })
                 if word == Some("evolve") => {}

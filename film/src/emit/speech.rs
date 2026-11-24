@@ -57,11 +57,13 @@ pub fn text_speed(times: Option<f32>) -> Beat {
 
 impl Film {
     /// `bubble|think|shout <who> - <words>`: in a bubble long enough to be
-    /// read, as the engine times a `-`; `{name:pikachu}` by its code.
-    pub fn bubble(&mut self, who: &str, text: &str, voice: Voice) {
+    /// read, as the engine times a `-`; `{name:pikachu}` by its code. Its
+    /// frames.
+    pub fn bubble(&mut self, who: &str, text: &str, voice: Voice) -> f32 {
         let text = self.names_in(text);
         let frames = (40.0 + 4.0 * text.chars().count() as f32).min(360.0);
         let text = text.replace(BREAK, "\n");
         self.on(who, |who| Beat::Speech(SpeechBeat::Bubble { who, frames: Frames(frames), text: text.clone(), voice }));
+        frames
     }
 }
