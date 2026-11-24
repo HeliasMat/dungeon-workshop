@@ -349,8 +349,7 @@ fn cooked(film: &mut Film, recipe: &Recipe, given: &[Given], number: usize) -> V
 /// Piplup`), other words as they are.
 fn shown(film: &mut Film, words: &[String]) -> String {
     let named: Vec<bool> = words.iter().map(|word| film.actor(word).is_some()).collect();
-    let names: Vec<String> =
-        words.iter().zip(&named).map(|(word, named)| if *named { crate::verbs::dungeon::called_by(film, word) } else { word.clone() }).collect();
+    let names: Vec<String> = words.iter().zip(&named).map(|(word, named)| if *named { film.called(word) } else { word.clone() }).collect();
     match names.as_slice() {
         [before @ .., last] if named.iter().all(|named| *named) && !before.is_empty() => format!("{} and {last}", before.join(", ")),
         _ => names.join(" "),

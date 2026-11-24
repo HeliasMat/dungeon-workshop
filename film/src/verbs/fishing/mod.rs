@@ -34,11 +34,21 @@ use crate::words::{digits, plain};
 pub const WORDS: &[Word] = &[
     Word::new("bite", &["[strong|nibble]"], "a fish takes the bait of the line in the water (the last cast): the recipe bite <who> (strong: yanked under; nibble: it only touches)").maybe(bitten),
     Word::new("cast", &["who:pokemon at target:place", "who:pokemon"], "his cast (Swing, on a fisher's variant), the line flies out, the bobber lands on the water there (or before him)")
-        .does(cast_line),
+        .does(cast),
     Word::new("_bobber", &["who:pokemon [x:number y:number]"], "his bobber is called \"bobber\" in the lines after (jump bobber, {bobber.x}), holdgaze; x y: it is there now").does(names_bobber).instant(),
     Word::new("_reel_in", &["who:pokemon [broken]"], "fishline off, the shadow dives, the gauge goes, the bobber taken away (broken: the gauge full first, the bobber stays on the water)").does(line_in),
     Word::new("_haul", &["who:pokemon [heavy] [unhooks]", "who:pokemon catch:word [x:number y:number] [heavy] [unhooks]"], "anim Pull, tremble (him, the bobber, the catch), particles drops, rings and bubbles, put on the bobber, fishline holds, hop of what comes out of the water (up to x y if told), emit drops, pose idle").does(pulled).brings(&["catch"]),
     Word::new("_shadow", &["giant x:number y:number to x2:number y2:number [in d:duration]", "who:pokemon flees|dives", "who:pokemon [big] [x:number y:number]"], "shadow giant x y to x y: the shadow of a very big fish under the sea; the shadow of a fish (a picture): put, layer under, anim, go up to the bobber, circles round; big; flees: go, gone; dives: opacity 0").does(shadow_said),
+    Word::new("throw", &["who:pokemon line [to|on] [target:place]", "who:pokemon water [to] target:place"], "throw a line to x y (or on b), the fisher; throw a water to b, a swimmer: jump, particles drops")
+        .does(thrown),
+    Word::new(
+        "jump",
+        &["school x:number y:number [n:number] [left]", "who:pokemon water x:number y:number", "who:pokemon water [rest...]", "who:pokemon wave"],
+        "jump a water x y: a fish leaps out of the water; jump school x y [n] [left]: a school; jump a wave: a swimmer over a wave",
+    )
+    .does(leap)
+    .brings(&["who"])
+    .when("water"),
     Word::new("release", &["who:pokemon [catch:word] [x:number y:number]"], "popup, hop of the catch to the water, particles drops and rings, gone, emote").does(released),
     Word::new("_spectators", &["off", "joy|sorrow", "*who"], "then, at each catch: emote joy, jump; at each loss: emote sweat; joy, sorrow: they react at once; off").does(watched),
 ];
@@ -85,33 +95,18 @@ const CATCH_HEIGHT: i32 = 80;
 const CATCH_FRAMES: i32 = 54;
 const FOUGHT: i32 = 60;
 
-/// Whether that one is a fisher, his rod drawn in his pictures.
-fn fisher(film: &mut Film, who: &str) -> bool {
-    let code = film.code(who);
-    species(&code).is_some_and(|number| film.tables.fishing.contains(number))
-}
-
-/// A fisher turned to us and kept so while he sleeps: his sleep is painted
-/// from the front only (his walk, his cast and his pull all round).
-pub fn faces_us(film: &mut Film, who: &str) {
-    // (The engine turns him to the first way he is painted in by itself.)
-    if fisher(film, who) {
-        film.on(who, |who| emit::views(who, vec![engine::Direction::Down]));
-    }
-}
-
 /// A fisher keeps the way he faces while he fishes, his cast and his pull
 /// painted on every side: the lines said around do not turn him from the
 /// water.
 pub fn keeps_his_way(film: &mut Film, who: &str) {
-    if fisher(film, who) {
+    if crate::names::fisher(film, who) {
         film.on(who, |who| emit::hold_gaze(who, true));
     }
 }
 
 /// Free to turn again, his line in.
 pub fn free_to_turn(film: &mut Film, who: &str) {
-    if fisher(film, who) {
+    if crate::names::fisher(film, who) {
         film.on(who, |who| emit::hold_gaze(who, false));
     }
 }
@@ -242,28 +237,20 @@ fn point_of(line: &Line) -> Option<(i32, i32)> {
     point_named(line, "x", "y")
 }
 
-/// `throw a line [to] x y`, `throw a line on b`: his line cast (the
-/// fisher's own words: see `items::verb`).
-pub(crate) fn cast_line(film: &mut Film, line: &Line) {
-    cast(film, line);
+/// `throw a line [to] x y`, `throw a line on b`: his line cast; `throw a
+/// water to b`: a spout from a swimmer's back, on b.
+fn thrown(film: &mut Film, line: &Line) {
+    if line.args.has("line") { cast(film, line) } else { spouts(film, line) }
 }
 
-/// `throw a water to b`: a spout from a swimmer's back, on b.
-pub(crate) fn spout(film: &mut Film, line: &Line) {
-    spouts(film, line);
-}
-
-/// `jump a water x y`, `jump school x y`, `jump a wave`: leaps in the
-/// water (see `moving::body`); none: not one of them.
-pub(crate) fn leap(film: &mut Film, line: &Line) -> bool {
+/// `jump a water x y`, `jump school x y`, `jump a wave`: leaps in the water.
+fn leap(film: &mut Film, line: &Line) {
     let args = &line.args;
     match () {
         _ if args.has("school") => school_leaps(film, line),
         _ if args.has("water") => leaps(film, line),
-        _ if args.has("wave") => leaps_a_wave(film, line),
-        _ => return false,
+        _ => leaps_a_wave(film, line),
     }
-    true
 }
 
 /// `shadow giant x y to x y`: a shadow under the open sea, no line needed;

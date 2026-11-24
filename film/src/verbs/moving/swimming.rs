@@ -43,10 +43,6 @@ pub const WORDS: &[Word] = &[
 /// Its words, a family of the language (`Lexicon`).
 pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("swimming", WORDS);
 
-/// How much of a swimmer's body is under the water, and how deep, when his
-/// body is not known.
-const UNDER: f32 = 0.33;
-const DEPTH: f32 = 8.0;
 /// His bob on the water: how high, how long.
 const BOB: f32 = 2.0;
 const BOB_FRAMES: f32 = 90.0;
@@ -63,14 +59,14 @@ const STEPS: usize = 3;
 const HOP_HEIGHT: f32 = 24.0;
 const HOP_FRAMES: f32 = 30.0;
 
-/// How deep someone swims: a good part of his body (`UNDER`).
-pub(crate) fn depth_of(film: &mut Film, who: &str) -> f32 {
-    film.actor(who).and_then(|code| film.body_of(&code)).map_or(DEPTH, |(_, high)| (high as f32 * UNDER).round().max(4.0))
+/// How deep someone swims (`Film::depth_in_water`).
+fn depth_of(film: &mut Film, who: &str) -> f32 {
+    film.depth_in_water(who)
 }
 
 /// How tall someone is: all of him under the water.
 fn height_of(film: &mut Film, who: &str) -> f32 {
-    film.actor(who).and_then(|code| film.body_of(&code)).map_or(DEPTH / UNDER, |(_, high)| high as f32 + 4.0)
+    film.actor(who).and_then(|code| film.body_of(&code)).map_or(crate::names::DEPTH / crate::names::UNDER, |(_, high)| high as f32 + 4.0)
 }
 
 /// Water thrown up about someone: so many drops, so many rings.

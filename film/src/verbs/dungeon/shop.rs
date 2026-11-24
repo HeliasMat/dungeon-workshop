@@ -49,7 +49,7 @@ pub(super) fn shop(film: &mut Film, line: &Line) {
         laid.push((thing.key.clone(), code, *price));
     }
     film.kept::<DungeonState>().shop = Some((keeper.to_string(), laid));
-    let name = called(film, keeper);
+    let name = film.called(keeper);
     logged(film, &format!("{name}: Welcome to my shop!"));
 }
 
@@ -78,7 +78,7 @@ pub(super) fn buys(film: &mut Film, line: &Line) {
     film.beat(emit::jingle(7));
     film.emote(&keeper, "joy", Some(40.0));
     let thing = known_thing(film, std::slice::from_ref(&key)).map_or(key, |thing| thing.name);
-    let name = called(film, who);
+    let name = film.called(who);
     logged(film, &format!("{name} bought the {thing} for {price} Poké!"));
     if let Some((_, goods)) = film.kept::<DungeonState>().shop.as_mut() {
         goods.retain(|(_, laid, _)| *laid != code);
@@ -105,7 +105,7 @@ pub(super) fn steals(film: &mut Film, line: &Line) {
     film.beat(emit::quake(3.0, 40.0));
     film.on(&keeper, |who| emit::tremble(who, 40.0, 3.0));
     film.on(&keeper, |who| emit::popup(who, emit::colour(engine::Colour::Red), "Thief!"));
-    let name = called(film, &keeper);
+    let name = film.called(&keeper);
     logged(film, &format!("{name}: Thief! Give that back!"));
     film.wait_frames(60, line.wait);
 }

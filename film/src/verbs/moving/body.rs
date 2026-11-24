@@ -8,20 +8,7 @@ use crate::words::{WAYS, plain};
 
 pub const WORDS: &[Word] = &[
     Word::new("look", &["who:pokemon to:word"], "turn (a direction) or face (someone)").does(looked),
-    Word::new(
-        "jump",
-        &[
-            "school x:number y:number [n:number] [left]",
-            "who:pokemon water x:number y:number",
-            "who:pokemon water [rest...]",
-            "who:pokemon wave",
-            "who:word [rest...]",
-        ],
-        "jump; jump a water x y: a fish leaps out of the water; jump school x y [n] [left]: a school; jump a wave: a swimmer over a wave",
-    )
-    .does(jumped)
-    .brings(&["who"])
-    .when("water"),
+    Word::new("jump", &["who:word [rest...]"], "jump").does(jumped),
     Word::new(
         "wait",
         &["sound name:thing...", "music d:duration", "d:duration", "all", "*who", "name:word", "[text...]"],
@@ -89,9 +76,7 @@ fn looked(film: &mut Film, line: &Line) {
     }
 }
 
-/// `jump a`; in the water, `jump a water x y`, `jump school x y`, `jump a wave`.
+/// `jump a` (in the water, `jump a water x y`: fishing's).
 fn jumped(film: &mut Film, line: &Line) {
-    if !super::super::fishing::leap(film, line) {
-        film.jump(&super::super::who_said(line), 8.0, 10.0);
-    }
+    film.jump(&super::super::who_said(line), 8.0, 10.0);
 }

@@ -80,24 +80,6 @@ pub fn floor_left(film: &mut Film) {
     }
 }
 
-/// Someone's name as the game writes it, for the other words.
-pub fn called_by(film: &Film, who: &str) -> String {
-    called(film, who)
-}
-
-/// Someone's name as the game writes it in its log.
-fn called(film: &Film, who: &str) -> String {
-    let key = plain(who);
-    let base = key.trim_end_matches(|letter: char| letter.is_ascii_digit());
-    match film.tables.monsters.get(base) {
-        Some((_, name)) => name.clone(),
-        None => {
-            let mut letters = key.chars();
-            letters.next().map_or(String::new(), |first| first.to_uppercase().chain(letters).collect())
-        }
-    }
-}
-
 fn logged(film: &mut Film, text: &str) {
     film.beat(emit::battle_log(LOGGED as f32, crate::screen::glued(text)));
 }

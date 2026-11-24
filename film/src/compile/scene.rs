@@ -295,7 +295,7 @@ impl Film {
                 // (On land it walks round the water as anyone; put in it, or
                 // walked into it, it is in it.)
                 Movement::Swims => {
-                    let depth = crate::verbs::moving::swimming::depth_of(self, who);
+                    let depth = self.depth_in_water(who);
                     self.on(who, |one| emit::swims(depth, vec![one]));
                 }
             }

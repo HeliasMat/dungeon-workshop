@@ -8,6 +8,11 @@ pub mod things;
 use crate::film::Film;
 use crate::words::plain;
 
+/// How much of a swimmer's body is under the water, and how deep, when his
+/// body is not known.
+pub const UNDER: f32 = 0.33;
+pub const DEPTH: f32 = 8.0;
+
 /// The species number of someone's code (`m25.1`: `25`).
 pub fn species(code: &str) -> Option<&str> {
     code.strip_prefix('m')?.split('.').next()
@@ -88,6 +93,26 @@ impl Film {
         self.groups.get(word).cloned().unwrap_or_else(|| vec![word.to_string()])
     }
 
+    /// Someone's name as the game writes it (in its log, a recipe's
+    /// words): the game's, else his own capitalized.
+    pub fn called(&self, who: &str) -> String {
+        let key = plain(who);
+        let base = key.trim_end_matches(|letter: char| letter.is_ascii_digit());
+        match self.tables.monsters.get(base) {
+            Some((_, name)) => name.clone(),
+            None => {
+                let mut letters = key.chars();
+                letters.next().map_or(String::new(), |first| first.to_uppercase().chain(letters).collect())
+            }
+        }
+    }
+
+    /// How deep someone swims: a good part of his body (`UNDER`), else
+    /// `DEPTH`.
+    pub fn depth_in_water(&mut self, who: &str) -> f32 {
+        self.actor(who).and_then(|code| self.body_of(&code)).map_or(DEPTH, |(_, high)| (high as f32 * UNDER).round().max(4.0))
+    }
+
     /// How big someone shows: wide, high.
     pub fn body_of(&self, code: &str) -> Option<(i32, i32)> {
         self.tables.bodies.get(species(code)?).copied()
@@ -154,4 +179,11 @@ impl Film {
     pub fn has_animation(&self, code: &str, group: u16) -> Option<bool> {
         self.tables.sprite_groups.get(species(code)?).map(|groups| groups.contains(&group))
     }
+}
+
+/// Whether that one is a fisher, his rod drawn in his pictures (the tables'
+/// fishers).
+pub fn fisher(film: &mut Film, who: &str) -> bool {
+    let code = film.code(who);
+    species(&code).is_some_and(|number| film.tables.fishing.contains(number))
 }

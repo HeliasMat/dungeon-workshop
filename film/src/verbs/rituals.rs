@@ -50,10 +50,19 @@ fn meal(film: &mut Film, who: &[String]) {
     film.wait(40);
 }
 
+/// A fisher turned to us and kept so while he sleeps: his sleep is painted
+/// from the front only (his walk, his cast and his pull all round).
+fn faces_us(film: &mut Film, who: &str) {
+    // (The engine turns him to the first way he is painted in by itself.)
+    if crate::names::fisher(film, who) {
+        film.on(who, |who| emit::views(who, vec![engine::Direction::Down]));
+    }
+}
+
 fn dort(film: &mut Film, line: &Line) {
     let args = &line.args;
     let words: Vec<String> = args.words("who").iter().map(|one| plain(one)).collect();
-    super::fishing::faces_us(film, &words[0]);
+    faces_us(film, &words[0]);
     film.on(&words[0], |who| emit::pose(who, Pose::Sleep));
     film.on(&words[0], |who| emit::status(who, emit::status_icon("sleep")));
 }

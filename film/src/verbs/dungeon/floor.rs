@@ -137,7 +137,7 @@ pub(super) fn trapped(film: &mut Film, line: &Line) {
     film.sound("click");
     film.emote(who, "exclaim", Some(30.0));
     film.jump(who, 4.0, 6.0);
-    let name = called(film, who);
+    let name = film.called(who);
     logged(film, &format!("{name} stepped on a {called_trap}!"));
     film.wait(30);
     match kind.as_str() {
