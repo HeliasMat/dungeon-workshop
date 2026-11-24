@@ -72,12 +72,19 @@ pub(super) fn place_songs(film: &Film, scenes: &mut [SceneOf]) -> Vec<(usize, St
 /// cuts its big bodies off before it lands.
 fn setting_lines(lines: &[Instr]) -> usize {
     let sets = |item: &Instr| {
-        item.verb().is_some_and(|verb| SETTING.contains(&verb)) && !(item.verb() == Some("camera") && item.words().first().is_some_and(|word| word == "from"))
+    // (Who flies there from the start, `pidgey fly [height 30]`; not a
+    // flight to somewhere, which one sees.)
+        item.verb().is_some_and(|verb| SETTING.contains(&verb))
+            && !(item.verb() == Some("camera") && item.words().first().is_some_and(|word| word == "from"))
+            && !(item.verb() == Some("fly") && !matches!(item.words().len(), 1 | 3))
     };
     let as_it_is = |item: &Instr| match item.verb() {
         // (The weather alone; `weather a rain` is someone's move.)
         Some("weather") => item.words().len() == 1,
         Some("look" | "ambient" | "prop" | "anim" | "front_of_leaves" | "under_leaves" | "in_leaves") => true,
+        // (Who is in the water from the start, `lapras swim`; who walks
+        // whatever his kind, `lapras walk`.)
+        Some("swim" | "walk") => item.words().len() == 1,
         _ => false,
     };
     let head = lines.iter().take_while(|item| sets(item) || as_it_is(item)).count();

@@ -484,7 +484,7 @@ pub fn subject_first(first: &str, second: Option<&str>, text: &str) -> bool {
 }
 
 /// The families, the narrower first.
-pub const FAMILIES: [Family; 22] = [
+pub const FAMILIES: [Family; 24] = [
     Family { name: "story", words: crate::plot::WORDS },
     Family { name: "acting", words: acting::WORDS },
     Family { name: "game", words: game::WORDS },
@@ -498,6 +498,8 @@ pub const FAMILIES: [Family; 22] = [
     Family { name: "effects", words: effects::WORDS },
     Family { name: "fights", words: fights::WORDS },
     Family { name: "items", words: items::WORDS },
+    Family { name: "swimming", words: moving::swimming::WORDS },
+    Family { name: "flying", words: moving::flying::WORDS },
     Family { name: "riding", words: moving::riding::WORDS },
     Family { name: "moving", words: moving::WORDS },
     Family { name: "body", words: moving::body::WORDS },

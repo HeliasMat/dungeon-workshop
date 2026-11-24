@@ -137,6 +137,12 @@ pub const WORDS: &[(&str, Export, &str)] = &[
     ("wander", Export::Direct, "ExecuteCommon<actor>(CORO_MOVE_RANDOM, 0), Sky's own stroll; off: back to its place"),
     ("ride", Export::Close, "a run to the mount (no arc), MoveHeight up to its back: Sky's actors carry no one, the rider stays where he got on"),
     ("get_off", Export::Close, "MoveHeight down, a run to where he hops (no arc)"),
+    ("swim", Export::Close, "a walk across the water, its float routine: Sky cuts no body at the water's line"),
+    ("dive", Export::Close, "its little jump, hidden at once"),
+    ("surface", Export::Close, "shown again at once, its little jump"),
+    ("get_out", Export::Close, "a run to the shore (no arc)"),
+    ("fly", Export::Direct, "MoveHeight up, its float routine, a walk there in the air"),
+    ("land", Export::Direct, "MoveHeight down to 0, its landing animation"),
     // Turning
     ("face", Export::Direct, "Turn2DirectionLives<actor>(4, 10, OTHER) / Turn2Direction(4, 10, DIR_…)"),
     ("look", Export::Direct, "ExecuteCommon(CORO_LOOK_AROUND[_LEFT|_RIGHT|_DOWN]_FUNC_SERIES), Sky's own; up: Turn2Direction"),
@@ -324,6 +330,10 @@ pub const LOSSES: &[(&str, &str)] = &[
     ("jump", "no arc to a place: a run there"),
     ("ride", "the rider doesn't follow his mount: he stays up where he got on"),
     ("get_off", "no arc: a run down to the place"),
+    ("swim", "drawn whole on the water: Sky sinks no body in it"),
+    ("dive", "no going down: hidden at once"),
+    ("surface", "no coming up: shown at once"),
+    ("get_out", "no arc: a run to the shore"),
     ("carry", "the one carried doesn't follow: he stays up where he was lifted"),
     ("put_down", "no arc: a run down to the place"),
     ("follow", "the follower catches up after each move, not step by step"),
@@ -447,7 +457,18 @@ pub fn core_words() -> impl Iterator<Item = &'static crate::plan::Planned> {
 
 /// How that word exports, if the table has it.
 pub fn export_of(word: &str) -> Option<Export> {
+    let word = same_as(word);
     WORDS.iter().find(|(name, _, _)| *name == word).map(|(_, export, _)| *export)
+}
+
+/// The word of the plan another name of it is (`take_off`: `fly`).
+fn same_as(word: &str) -> &str {
+    match word {
+        "take_off" => "fly",
+        "plunge" => "dive",
+        "dismount" => "get_off",
+        word => word,
+    }
 }
 
 #[cfg(test)]

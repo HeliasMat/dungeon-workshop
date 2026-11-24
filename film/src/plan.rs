@@ -117,6 +117,12 @@ pub const WORDS: &[Planned] = &[
     word("Movement", "wander", "who wander [area] / who wander off"),
     word("Movement", "ride", "who ride on other [back|head] [high h] [behind b]"),
     word("Movement", "get_off", "who get_off [to where]"),
+    word("Movement", "swim", "who swim [to where] [in d]"),
+    word("Movement", "dive", "who dive [at where]"),
+    word("Movement", "surface", "who surface [at where]"),
+    word("Movement", "get_out", "who get_out [to where]"),
+    word("Movement", "fly", "who fly [to where] [height h]"),
+    word("Movement", "land", "who land [at where]"),
     // Turning
     word("Turning", "face", "who face side|other|away [fast|slow]"),
     word("Turning", "look", "who look around|left|right|up|down"),

@@ -92,3 +92,59 @@ lapras put center
 pikachu ride on lapras
 lapras walk to right
 pikachu get_off to center
+
+== swim
+> Someone is in the water and swims: a third of their body under it, the water's line waving on them, a little bob. Alone, where they are; to a place, straight across the water, rings in their wake; from x y, coming in from there.
+scene: beach lapras pikachu
+lapras put 330 95
+pikachu put 300 175
+lapras swim
+lapras swim to 460 90
+pikachu (happy): Show off!
+
+== dive
+> Someone in the water dives under it: a little jump, a splash, down through the water and gone, bubbles where they were; at a place, they swim there first.
+scene: beach lapras pikachu
+lapras put 330 95
+pikachu put 300 175
+lapras swim
+lapras dive
+pikachu (surprised): Where did it go?
+
+== surface
+> Someone under the water comes up again, where they dived or at the place told, with a splash.
+scene: beach lapras pikachu
+lapras put 330 95
+pikachu put 300 175
+lapras swim
+lapras dive
+wait 1s
+lapras surface at 400 100
+pikachu (happy): There you are!
+
+== get_out
+> Someone in the water hops out onto the shore, the nearest free ground to the place told (beside them, if none is), and walks again.
+scene: beach lapras pikachu
+lapras put 330 95
+pikachu put 300 175
+lapras swim
+lapras get_out to 360 175
+pikachu: Welcome back.
+
+== fly
+> Someone takes off and flies, bobbing in the air, their shadow on the ground under them: so high (24 pixels; height h), or to a place, straight over the walls. At the head of a scene, they are up there before it shows.
+scene: lake pidgey pikachu
+pidgey put 300 330
+pikachu put 260 330
+pidgey fly
+pidgey fly to 90 330
+pikachu (surprised): Over the cliff!
+
+== land
+> Someone flying comes down with their landing and walks again: where they are, or at the place told, flying there first.
+scene: lake pidgey pikachu
+pidgey put 300 330
+pikachu put 260 330
+pidgey fly
+pidgey land at 300 400
+pikachu: Nice landing.

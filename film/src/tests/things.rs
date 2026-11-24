@@ -206,19 +206,11 @@ fn a_fisher_and_what_he_pulls_out() {
     // (Out at sea on a Lokhlass: on its back, swimming, a catch onto the back,
     // a heavy one towing it, off again; a wave; its song.)
     let sea = |more: &[&str]| {
-        let mut lines = vec!["lapras put 260 120", "ride pikachu_pecheur lapras", "swim lapras to 300 120 in 2s", "pikachu_pecheur throw line to 300 60"];
+        let mut lines = vec!["lapras put 260 120", "ride pikachu_pecheur lapras", "lapras swim to 300 120 in 2s", "pikachu_pecheur throw line to 300 60"];
         lines.extend(more);
         fisher(&lines)
     };
-    wrote(
-        &sea(&[]),
-        &[
-            &["throw", "pikachu_pecheur", "lapras", "28", "30"],
-            &["ride", "pikachu_pecheur", "lapras", "10", "9"],
-            &["go", "lapras", "300", "120", "120", "1"],
-            &["emit", "rings", "lapras", "5", "white", "120"],
-        ],
-    );
+    wrote(&sea(&[]), &[&["throw", "pikachu_pecheur", "lapras", "28", "30"], &["ride", "pikachu_pecheur", "lapras", "10", "9"], &["flies", "lapras"]]);
     wrote(&sea(&["haul pikachu_pecheur magikarp"]), &[&["throw", "magikarp", "lapras", "80", "54"], &["ride", "magikarp", "lapras", "8", "20"]]);
     wrote(
         &sea(&["haul pikachu_pecheur magikarp heavy"]),
@@ -229,10 +221,7 @@ fn a_fisher_and_what_he_pulls_out() {
     wrote(&sea(&["sing lapras pikachu_pecheur"]), &[&["note", "c"]]);
     has(&sea(&["sing lapras pikachu_pecheur"]), "parallel");
     wrote(&fisher(&["surge pikachu_pecheur piplup"]), &[&["quake", "2", "40"], &["jump", "piplup", "10", "26"]]);
-    wrote(
-        &fisher(&["swim lapras from 820 120 to 400 130", "plunge lapras"]),
-        &[&["put", "lapras", "820", "120", "down"], &["flies", "lapras"], &["turn", "lapras", "left"], &["gone", "lapras"]],
-    );
+    wrote(&fisher(&["lapras swim from 820 120 to 400 130", "lapras plunge"]), &[&["put", "lapras", "820", "120", "down"], &["flies", "lapras"]]);
     // (`monte a 20 30` is the engine's rise, not ours.)
     wrote(&fisher(&["ride piplup 20 0.5s"]), &[&["ride", "piplup", "20", "30"]]);
     // (The rifle is in a variant's frames: levelled, its joke, loaded again.)

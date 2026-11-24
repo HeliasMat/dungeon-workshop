@@ -1,7 +1,7 @@
 //! A film being written: its words so far, and what the words alone say. Who
 //! stands where is not here: the stage knows it when the film plays.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use engine::{Beat, Diagnostic, Ground};
@@ -120,6 +120,11 @@ pub struct Staging {
     /// Who the scene's head puts facing someone (`a put left facing b`):
     /// turned once all of it is put, whatever the order of its lines.
     pub facing_later: Vec<(String, String)>,
+    /// Who is in the water (`swim`), and who is under it (`dive`); who
+    /// flies, how high (`fly`).
+    pub swimming: BTreeSet<String>,
+    pub under: BTreeSet<String>,
+    pub flying: BTreeMap<String, f32>,
 }
 
 impl Staging {
