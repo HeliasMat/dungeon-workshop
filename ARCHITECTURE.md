@@ -66,6 +66,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `story` | the game's story (`story.txt`) as engine lines |
 | `stage_view` | everything that is drawn |
 | `film_core` | the films' language by the words it is given: the text read, the scenes compiled, what is written for the engine; the families it leans on |
+| `film_fishing` | the films' fishing: the line cast, what bites and comes out, what was caught and measured, those watching |
 | `film` | the films' language whole: every family of its words gathered (`LEXICON`), a `.film` turned into what the engine plays, the language's service for editors |
 | `rom_formats` | the original game's formats, for `extractor` alone |
 | `decor` | places made for films; the `decor` program |
@@ -106,7 +107,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `rom_formats` | `media`, `rules` |
 | `decor` | `assets`, `diagnostics`, `media` |
 | `film_core` | `assets`, `engine`, `language`, `rules`, `scenes`, `story` |
-| `film` | `assets`, `engine`, `film_core`, `language`, `scenes`, `story` |
+| `film_fishing` | `engine`, `film_core`, `rules`, `scenes` |
+| `film` | `assets`, `engine`, `film_core`, `film_fishing`, `language`, `scenes`, `story` |
 | `stage_view` | `assets`, `engine`, `media`, `rules`, `scenes`, `shell` |
 | `preview` | `assets`, `engine`, `film`, `media`, `rules`, `scenes`, `shell`, `stage_view` |
 | `dive` | `rules`, `scenes`, `shell`, `stage_view` |

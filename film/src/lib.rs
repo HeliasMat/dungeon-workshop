@@ -30,7 +30,7 @@ const FAMILIES: [film_core::verbs::Family; 26] = [
     film_core::plot::FAMILY,
     film_core::verbs::acting::FAMILY,
     film_core::verbs::game::FAMILY,
-    film_core::verbs::fishing::FAMILY,
+    film_fishing::FAMILY,
     film_core::verbs::dungeon::FAMILY,
     film_core::verbs::guild::FAMILY,
     film_core::verbs::things::FAMILY,

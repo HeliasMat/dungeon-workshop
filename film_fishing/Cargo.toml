@@ -1,0 +1,17 @@
+[package]
+name = "film_fishing"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The films' fishing: the line cast, what bites and comes out, what was caught, those watching"
+readme = "../README.md"
+publish.workspace = true
+
+[dependencies]
+engine = { path = "../engine" }
+film_core = { path = "../film_core" }
+rules = { path = "../rules" }
+scenes = { path = "../scenes" }
+glam.workspace = true

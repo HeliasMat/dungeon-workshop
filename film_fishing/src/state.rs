@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::film::Kept;
+use film_core::film::Kept;
 
 /// One thing a fisher pulled out of the water: who or what it is (its
 /// code, or who), its word (the Pokémon's, or the thing's key); in his

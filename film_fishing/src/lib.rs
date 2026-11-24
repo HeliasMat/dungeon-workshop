@@ -18,18 +18,20 @@
 //! his `Swing`, his pull his `Pull`, and where his line starts on each picture
 //! is told in his table (`pointe`). Here is only who shows what.
 
+#![forbid(unsafe_code)]
+
 use engine::{Beat, Cam, Num, Point, Pose, Who};
 use glam::Vec2;
 
-use super::items::set_owner;
-use super::things::{arrives, thing_apart, thing_out};
-use super::{Line, Word};
-use crate::emit;
-use crate::film::Film;
-use crate::names::species;
-use crate::names::things::{known_thing, thing_named};
-use crate::spots::routes::found;
-use crate::words::{digits, plain};
+use film_core::emit;
+use film_core::film::Film;
+use film_core::names::species;
+use film_core::names::things::{known_thing, thing_named};
+use film_core::spots::routes::found;
+use film_core::verbs::items::set_owner;
+use film_core::verbs::things::{arrives, thing_apart, thing_out};
+use film_core::verbs::{Line, Word};
+use film_core::words::{digits, plain};
 
 pub const WORDS: &[Word] = &[
     Word::new("bite", &["[strong|nibble]"], "a fish takes the bait of the line in the water (the last cast): the recipe bite <who> (strong: yanked under; nibble: it only touches)").maybe(bitten),
@@ -54,7 +56,7 @@ pub const WORDS: &[Word] = &[
 ];
 
 /// Its words, a family of the language (`Lexicon`).
-pub const FAMILY: crate::verbs::Family = crate::verbs::Family::new("fishing", WORDS).with_pictures(PICTURES);
+pub const FAMILY: film_core::verbs::Family = film_core::verbs::Family::new("fishing", WORDS).with_pictures(PICTURES);
 
 mod state;
 pub use state::{Caught, FishingState};
@@ -99,14 +101,14 @@ const FOUGHT: i32 = 60;
 /// painted on every side: the lines said around do not turn him from the
 /// water.
 pub fn keeps_his_way(film: &mut Film, who: &str) {
-    if crate::names::fisher(film, who) {
+    if film_core::names::fisher(film, who) {
         film.on(who, |who| emit::hold_gaze(who, true));
     }
 }
 
 /// Free to turn again, his line in.
 pub fn free_to_turn(film: &mut Film, who: &str) {
-    if crate::names::fisher(film, who) {
+    if film_core::names::fisher(film, who) {
         film.on(who, |who| emit::hold_gaze(who, false));
     }
 }
@@ -228,7 +230,7 @@ fn who_of(line: &Line) -> String {
 /// The point a line tells under those names, if it tells it (a point past an
 /// edge, to come in by it, may be below naught).
 fn point_named(line: &Line, x: &str, y: &str) -> Option<(i32, i32)> {
-    let near = |number: f32| (number.abs() <= crate::grammar::FARTHEST).then_some(number as i32);
+    let near = |number: f32| (number.abs() <= film_core::grammar::FARTHEST).then_some(number as i32);
     Some((near(line.args.number(x)?)?, near(line.args.number(y)?)?))
 }
 

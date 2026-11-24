@@ -106,7 +106,7 @@ pub(super) fn catch(film: &mut Film, line: &Line, word: Option<String>, who: &st
     let word = word?;
     // (Where it lands: on free ground by the point told after it, or beside him.)
     let beside = match point_of(line) {
-        Some((x, y)) => engine::Spot::Written(crate::spots::xy(x, y)),
+        Some((x, y)) => engine::Spot::Written(film_core::spots::xy(x, y)),
         None => film.spot_by(who, 34.0, 12.0)?,
     };
     if film.actor(&word).is_some() {
@@ -115,7 +115,7 @@ pub(super) fn catch(film: &mut Film, line: &Line, word: Option<String>, who: &st
         if let (true, Some((x, y))) = (film.staging.mounts.contains_key(who), point_of(line)) {
             out_of_the_water(film, &word, code, at);
             film.on(&word, |word| emit::flies(vec![word]));
-            return Some((word, crate::spots::xy(x, y)));
+            return Some((word, film_core::spots::xy(x, y)));
         }
         let lands = found(film, &word, beside, &["apart"]);
         out_of_the_water(film, &word, code, at);

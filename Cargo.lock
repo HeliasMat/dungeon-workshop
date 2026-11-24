@@ -1120,6 +1120,7 @@ dependencies = [
  "assets",
  "engine",
  "film_core",
+ "film_fishing",
  "glam",
  "language",
  "scenes",
@@ -1138,6 +1139,17 @@ dependencies = [
  "rules",
  "scenes",
  "story",
+]
+
+[[package]]
+name = "film_fishing"
+version = "0.2.0"
+dependencies = [
+ "engine",
+ "film_core",
+ "glam",
+ "rules",
+ "scenes",
 ]
 
 [[package]]
