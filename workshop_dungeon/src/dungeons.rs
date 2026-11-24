@@ -12,19 +12,9 @@ use eframe::egui::{self, RichText, Sense};
 use shell::sound::Hears;
 
 use crate::{DungeonMaking, Summary};
+use workshop_base::ask::{Ask, OpenDungeon};
 use workshop_base::done::Done;
 use workshop_base::{tabs, theme};
-
-/// What to open in the Dungeon space: a new one, one by its word (the open
-/// game's own if it has one by that word, else the shared library's), or
-/// one by its file (a dungeon's or a fight's, wherever it is).
-pub enum Open {
-    NewDungeon,
-    NewFight,
-    Dungeon(String),
-    Fight(String),
-    File(PathBuf),
-}
 
 /// The Dungeon space as the window keeps it.
 pub struct Dungeons {
@@ -42,30 +32,19 @@ pub struct Dungeons {
     lists: Option<(Instant, Vec<Summary>, Vec<Summary>)>,
     /// The game open in the Game space: its folder and its title (its dungeons and fights listed too).
     pub game: Option<(PathBuf, String)>,
-    pub said: Option<String>,
 }
 
 impl Dungeons {
     pub fn new(session: &Arc<Session>) -> Dungeons {
-        let mut dungeons = Dungeons {
-            session: session.clone(),
-            open: Vec::new(),
-            at: 0,
-            listing: true,
-            closing: None,
-            audio: None,
-            volume: 0.8,
-            lists: None,
-            game: None,
-            said: None,
-        };
+        let mut dungeons =
+            Dungeons { session: session.clone(), open: Vec::new(), at: 0, listing: true, closing: None, audio: None, volume: 0.8, lists: None, game: None };
         // (`WORKSHOP_CREATE=dungeon:my_dungeon` or `fight:my_fight`: that one open, for a picture.)
         for kind in session.launch.create.clone().unwrap_or_default().split(',') {
             match kind {
-                "dungeon" => dungeons.open(Open::NewDungeon),
-                "fight" => dungeons.open(Open::NewFight),
-                _ if kind.starts_with("dungeon:") => dungeons.open(Open::Dungeon(kind["dungeon:".len()..].to_string())),
-                _ if kind.starts_with("fight:") => dungeons.open(Open::Fight(kind["fight:".len()..].to_string())),
+                "dungeon" => dungeons.open(OpenDungeon::NewDungeon),
+                "fight" => dungeons.open(OpenDungeon::NewFight),
+                _ if kind.starts_with("dungeon:") => dungeons.open(OpenDungeon::Dungeon(kind["dungeon:".len()..].to_string())),
+                _ if kind.starts_with("fight:") => dungeons.open(OpenDungeon::Fight(kind["fight:".len()..].to_string())),
                 _ => {}
             }
         }
@@ -84,13 +63,13 @@ impl Dungeons {
     }
 
     /// One opened in its editor (already open and written: shown again).
-    pub fn open(&mut self, what: Open) {
+    pub fn open(&mut self, what: OpenDungeon) {
         let making = match what {
-            Open::NewDungeon => DungeonMaking::new(&self.session, "new_dungeon"),
-            Open::NewFight => DungeonMaking::new_fight(&self.session, "new_fight"),
-            Open::Dungeon(word) => DungeonMaking::open_in(&self.session, &self.project_of(&word, false), &word),
-            Open::Fight(word) => DungeonMaking::open_fight_in(&self.session, &self.project_of(&word, true), &word),
-            Open::File(path) => {
+            OpenDungeon::NewDungeon => DungeonMaking::new(&self.session, "new_dungeon"),
+            OpenDungeon::NewFight => DungeonMaking::new_fight(&self.session, "new_fight"),
+            OpenDungeon::Dungeon(word) => DungeonMaking::open_in(&self.session, &self.project_of(&word, false), &word),
+            OpenDungeon::Fight(word) => DungeonMaking::open_fight_in(&self.session, &self.project_of(&word, true), &word),
+            OpenDungeon::File(path) => {
                 let word = path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
                 // (`<project>/dungeons/<word>.dungeon`: the project is two folders up.)
                 let folder = path.parent().and_then(Path::parent).map_or_else(|| self.session.library().folder().to_path_buf(), Path::to_path_buf);
@@ -190,10 +169,10 @@ pub fn tabs(ui: &mut egui::Ui, dungeons: &mut Dungeons) {
         dungeons.close(at);
     }
     if ui.button(RichText::new("+ New Dungeon").strong().color(theme::DUNGEON)).clicked() {
-        dungeons.open(Open::NewDungeon);
+        dungeons.open(OpenDungeon::NewDungeon);
     }
     if ui.button(RichText::new("+ New Boss Fight").strong().color(theme::WRONG)).clicked() {
-        dungeons.open(Open::NewFight);
+        dungeons.open(OpenDungeon::NewFight);
     }
 }
 
@@ -208,13 +187,13 @@ pub fn page(ui: &mut egui::Ui, dungeons: &mut Dungeons) {
         return;
     };
     match crate::make_dungeon(ui, making, &mut dungeons.audio, dungeons.volume) {
-        Some(Done::Fight(word)) => dungeons.open(if word.is_empty() { Open::NewFight } else { Open::Fight(word) }),
+        Some(Done::Fight(word)) => dungeons.open(if word.is_empty() { OpenDungeon::NewFight } else { OpenDungeon::Fight(word) }),
         Some(Done::Closed) => {
             if dungeons.open[at].saved || dungeons.closing == Some(at) {
                 dungeons.close(at);
             } else {
                 dungeons.closing = Some(at);
-                dungeons.said = Some("not saved: Close again (or × on its tab) to close it anyway".to_string());
+                dungeons.session.ask(Ask::Say("not saved: Close again (or × on its tab) to close it anyway".to_string()));
             }
         }
         _ => {}
@@ -252,7 +231,7 @@ fn list(ui: &mut egui::Ui, dungeons: &mut Dungeons) {
                 ui.label(theme::text(title, theme::TITLE, theme::STRONG));
                 let (word, colour) = if fight { ("+ New Boss Fight", theme::WRONG) } else { ("+ New Dungeon", theme::DUNGEON) };
                 if ui.add(egui::Button::new(RichText::new(word).strong().color(theme::GROUND)).fill(colour)).clicked() {
-                    asked = Some(if fight { Open::NewFight } else { Open::NewDungeon });
+                    asked = Some(if fight { OpenDungeon::NewFight } else { OpenDungeon::NewDungeon });
                 }
             });
             ui.label(theme::weak(about));
@@ -263,7 +242,7 @@ fn list(ui: &mut egui::Ui, dungeons: &mut Dungeons) {
                 }
                 for item in items {
                     if card(ui, item, fight, &game_title).clicked() {
-                        asked = Some(Open::File(item.path.clone()));
+                        asked = Some(OpenDungeon::File(item.path.clone()));
                     }
                 }
             });

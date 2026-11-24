@@ -5,11 +5,12 @@
 //! dialogs (`pick`), a long work on its thread (`tool_run`), a line played as
 //! an example (`example`), the own sounds read as samples (`own_sounds`),
 //! what a making asks of the Resources (`done`), the tab of an open making
-//! (`tabs`).
+//! (`tabs`), the spaces and what a part asks of the window (`ask`).
 //!
 //! It uses the engine's crates (`assets`, `film`, `game`, `preview`...) and
 //! `egui`; every other crate of the Workshop uses it.
 
+pub mod ask;
 pub mod done;
 pub mod example;
 pub mod game;

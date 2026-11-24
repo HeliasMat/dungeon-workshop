@@ -19,7 +19,6 @@ pub(super) struct Parts<'a> {
     version_chosen: &'a mut Option<String>,
     notes: &'a mut BTreeMap<usize, crate::workspace::Note>,
     note_editing: &'a mut Option<(usize, String)>,
-    open_asked: &'a mut Option<(PathBuf, usize)>,
     said: &'a mut Option<String>,
 }
 
@@ -33,10 +32,9 @@ pub(super) fn scripts_parts<'a>(
     version_chosen: &'a mut Option<String>,
     notes: &'a mut BTreeMap<usize, crate::workspace::Note>,
     note_editing: &'a mut Option<(usize, String)>,
-    open_asked: &'a mut Option<(PathBuf, usize)>,
     said: &'a mut Option<String>,
 ) -> Parts<'a> {
-    Parts { session, search, quick, beside, versions_shown, version_chosen, notes, note_editing, open_asked, said }
+    Parts { session, search, quick, beside, versions_shown, version_chosen, notes, note_editing, said }
 }
 
 /// The project's windows: words sought and replaced in all the films; a film opened by its name (or put beside);
@@ -48,7 +46,7 @@ pub(super) fn project_windows(ui: &mut egui::Ui, mut parts: Parts, open: &mut Sc
     if let Some(search) = parts.search.as_mut() {
         let mut shown = true;
         egui::Window::new("Search the Project").open(&mut shown).default_width(560.0).default_pos(pos2(160.0, 140.0)).show(&context, |ui| {
-            searched(ui, parts.session, search, open, parts.said, parts.open_asked);
+            searched(ui, parts.session, search, open, parts.said);
         });
         closed = !shown;
     }
@@ -67,14 +65,7 @@ pub(super) fn project_windows(ui: &mut egui::Ui, mut parts: Parts, open: &mut Sc
 
 /// The search in all the films: what is sought (a whole word, its case),
 /// what replaces it (asked twice), where it is (a click opens it there).
-fn searched(
-    ui: &mut egui::Ui,
-    session: &workshop_base::session::Session,
-    search: &mut ProjectSearch,
-    open: &mut Script,
-    said: &mut Option<String>,
-    open_asked: &mut Option<(PathBuf, usize)>,
-) {
+fn searched(ui: &mut egui::Ui, session: &workshop_base::session::Session, search: &mut ProjectSearch, open: &mut Script, said: &mut Option<String>) {
     ui.horizontal(|ui| {
         ui.label(theme::text("Search", theme::SMALL, theme::WEAK));
         let field = ui.add(egui::TextEdit::singleline(&mut search.sought).desired_width(220.0));
@@ -124,7 +115,7 @@ fn searched(
             }
             let said: String = hit.text.chars().take(80).collect();
             if ui.add(egui::Button::new(theme::text(format!("  {:>4}   {said}", hit.line), theme::SMALL, theme::TEXT)).frame(false)).clicked() {
-                *open_asked = Some((hit.path.clone(), hit.line));
+                session.ask(workshop_base::ask::Ask::Film { path: hit.path.clone(), line: hit.line });
             }
         }
     });
@@ -187,7 +178,7 @@ fn quick(context: &egui::Context, parts: &mut Parts) {
         if *beside {
             *parts.beside = Some(path);
         } else {
-            *parts.open_asked = Some((path, 1));
+            parts.session.ask(workshop_base::ask::Ask::Film { path, line: 1 });
         }
         done = true;
     }

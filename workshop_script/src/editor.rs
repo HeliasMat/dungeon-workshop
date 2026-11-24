@@ -75,7 +75,7 @@ pub fn script(ui: &mut egui::Ui, scripts: &mut Scripts, path: Option<&PathBuf>, 
         ui.painter().vline(half.min.x, half.y_range(), Stroke::new(1.0_f32, theme::GAP));
         let mut inside = ui.new_child(egui::UiBuilder::new().max_rect(half.shrink(4.0)).layout(egui::Layout::top_down(egui::Align::Min)));
         if let Some(line) = beside_view(&mut inside, &other, scripts.size) {
-            scripts.open_asked = Some((other.clone(), line));
+            scripts.session.ask(workshop_base::ask::Ask::Film { path: other.clone(), line });
         }
     }
     let mut inside = ui.new_child(egui::UiBuilder::new().max_rect(middle).layout(egui::Layout::top_down(egui::Align::Min)));

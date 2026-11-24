@@ -89,6 +89,8 @@ pub struct Session {
     pub safe: Mutex<crate::safe::Asked>,
     /// The clone of SpriteCollab the Resources read from.
     pub spritecollab: PathBuf,
+    /// What the parts asked of the window this frame (`ask`), done by it once a frame.
+    pub asks: crate::ask::Asks,
 }
 
 impl Session {
@@ -108,7 +110,13 @@ impl Session {
             committed: Mutex::default(),
             safe: Mutex::default(),
             spritecollab,
+            asks: crate::ask::Asks::default(),
         }
+    }
+
+    /// Something asked of the window (`ask`): it does it before the next frame.
+    pub fn ask(&self, ask: crate::ask::Ask) {
+        self.asks.push(ask);
     }
 
     /// The repository's library and data, for the tests (of every part of the Workshop).

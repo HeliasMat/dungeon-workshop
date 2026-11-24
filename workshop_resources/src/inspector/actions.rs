@@ -7,8 +7,9 @@ use std::path::{Path, PathBuf};
 use eframe::egui::{self, RichText};
 
 use super::super::grid::opened;
-use super::super::{Asked, Item, Resources, Shelf};
+use super::super::{Item, Resources, Shelf};
 use super::{plural, word_replaced};
+use workshop_base::ask::{Ask, OpenDungeon};
 use workshop_base::theme;
 use workshop_decor::Decors;
 
@@ -41,7 +42,7 @@ fn dungeon_buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {
             .on_hover_text("open it in the Dungeon space (and try it)")
             .clicked()
     {
-        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::Dungeon(item.word.clone())));
+        resources.session.ask(Ask::Dungeon(OpenDungeon::Dungeon(item.word.clone())));
     }
     if item.shelf == Shelf::Bosses
         && ui
@@ -49,7 +50,7 @@ fn dungeon_buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {
             .on_hover_text("open it in the Dungeon space")
             .clicked()
     {
-        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::Fight(item.word.clone())));
+        resources.session.ask(Ask::Dungeon(OpenDungeon::Fight(item.word.clone())));
     }
 }
 

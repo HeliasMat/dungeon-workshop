@@ -6,7 +6,8 @@ use eframe::egui::{self, FontId, Rect, RichText, vec2};
 
 use super::dropped::take_files;
 use super::shelves::filters_of;
-use super::{Asked, Resources, Shelf};
+use super::{Resources, Shelf};
+use workshop_base::ask::{Ask, OpenDungeon};
 use workshop_base::theme;
 
 /// What the sort button says, by the sort.
@@ -69,12 +70,12 @@ fn create_menu(ui: &mut egui::Ui, resources: &mut Resources) {
         }
     }
     if ui.button("A Dungeon…").on_hover_text("in the Dungeon space: turn-based floors, its Pokémon, its items; in a film: `dungeon <word>`").clicked() {
-        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::NewDungeon));
+        resources.session.ask(Ask::Dungeon(OpenDungeon::NewDungeon));
         ui.close();
     }
     if ui.button("A Boss Fight…").on_hover_text("in the Dungeon space: an arena, a boss, its guards, its phases; a dungeon names it: `fight: <word>`").clicked()
     {
-        resources.asked = Some(Asked::Dungeon(workshop_dungeon::dungeons::Open::NewFight));
+        resources.session.ask(Ask::Dungeon(OpenDungeon::NewFight));
         ui.close();
     }
     ui.separator();
@@ -110,7 +111,7 @@ fn made_and_imported(bar: &mut egui::Ui, resources: &mut Resources) {
     if matches!(resources.shelf, Shelf::Pokemon | Shelf::Variants)
         && bar.button("SpriteCollab…").on_hover_text("the PMDCollab community's sprites and portraits, to look at and import").clicked()
     {
-        resources.ask_spritecollab = Some(None);
+        resources.session.ask(Ask::SpriteCollab(None));
     }
 }
 

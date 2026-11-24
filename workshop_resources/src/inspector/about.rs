@@ -2,8 +2,9 @@
 
 use eframe::egui::{self, Color32, RichText, vec2};
 
-use super::super::{Asked, Item, Resources, Shelf};
+use super::super::{Item, Resources, Shelf};
 use super::{Shown, plural, section};
+use workshop_base::ask::Ask;
 use workshop_base::theme;
 use workshop_script::Scripts;
 
@@ -166,7 +167,11 @@ pub(super) fn where_used(ui: &mut egui::Ui, resources: &mut Resources, item: &It
         for path in used.iter().take(60) {
             let name = path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
             if ui.add(egui::Button::new(theme::text(&name, theme::SMALL, theme::TEXT)).frame(false)).on_hover_text("open it").clicked() {
-                resources.asked = Some(if path.extension().is_some_and(|own| own == "film") { Asked::Film(path.clone()) } else { Asked::Decor(path.clone()) });
+                resources.session.ask(if path.extension().is_some_and(|own| own == "film") {
+                    Ask::Film { path: path.clone(), line: 0 }
+                } else {
+                    Ask::Decor { path: path.clone(), line: 0 }
+                });
             }
         }
     });

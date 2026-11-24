@@ -163,7 +163,7 @@ impl Body<'_> {
     fn going_keys(&mut self, ui: &egui::Ui, cursor: usize) -> bool {
         let Body { scripts, open, .. } = self;
         if pressed(ui, Modifiers::COMMAND, Key::Enter) {
-            scripts.play_from = Some(line_at(&open.text, cursor).0 + 1);
+            scripts.session.ask(workshop_base::ask::Ask::PlayFrom(line_at(&open.text, cursor).0 + 1));
         }
         let bulb_asked = pressed(ui, Modifiers::COMMAND, Key::Period);
         let next_problem = pressed(ui, Modifiers::NONE, Key::F8);
@@ -429,7 +429,7 @@ impl Body<'_> {
                     let at = index_of(text, Spot { line, column: 1 });
                     open.jump = Some((at, at));
                 }
-                Defined::File(path, line) => scripts.open_asked = Some((path, line)),
+                Defined::File(path, line) => scripts.session.ask(workshop_base::ask::Ask::Film { path, line }),
                 Defined::Said(said) => scripts.said = Some(said),
             }
         }

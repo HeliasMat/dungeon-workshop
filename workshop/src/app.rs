@@ -8,53 +8,11 @@ use std::sync::Arc;
 use eframe::egui::{self, RichText};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 
+pub use workshop_base::ask::Space;
+use workshop_base::ask::{Ask, OpenDungeon};
 use workshop_base::project::{Entry, Kind, Project};
 use workshop_base::session::Session;
 use workshop_base::theme;
-
-/// The spaces.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Space {
-    Home,
-    Game,
-    Film,
-    Decor,
-    Dungeon,
-    Assets,
-    Emulator,
-}
-
-impl Space {
-    pub const ALL: [Space; 7] = [Space::Home, Space::Game, Space::Film, Space::Decor, Space::Dungeon, Space::Assets, Space::Emulator];
-
-    pub fn word(self) -> &'static str {
-        match self {
-            Space::Home => "Home",
-            Space::Game => "Game",
-            Space::Film => "Film",
-            Space::Decor => "Decor",
-            Space::Dungeon => "Dungeon",
-            Space::Assets => "Resources",
-            Space::Emulator => "Emulator",
-        }
-    }
-
-    pub fn accent(self) -> egui::Color32 {
-        match self {
-            Space::Home => theme::HOME,
-            Space::Game => theme::GAME,
-            Space::Film => theme::FILM,
-            Space::Decor => theme::DECOR,
-            Space::Dungeon => theme::DUNGEON,
-            Space::Assets => theme::ASSETS,
-            Space::Emulator => theme::EMULATOR,
-        }
-    }
-
-    fn at(self) -> usize {
-        self as usize
-    }
-}
 
 /// The panels, each of one space.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -159,8 +117,6 @@ pub struct Work {
     pub decor: Option<PathBuf>,
     pub said: String,
     pub making: Option<Making>,
-    /// A space asked to be looked at.
-    pub go: Option<Space>,
     /// The Decor space's own.
     pub decors: workshop_decor::Decors,
     /// The Film space's Script; the film played.
@@ -177,15 +133,19 @@ pub struct Work {
 }
 
 impl Work {
-    /// A file opened in its space.
+    /// A file opened at once (the Home plays a film just opened), its space looked at.
     pub fn open(&mut self, entry: &Entry) {
         match entry.kind {
-            Kind::Film => (self.film, self.go) = (Some(entry.path.clone()), Some(Space::Film)),
+            Kind::Film => self.film = Some(entry.path.clone()),
             Kind::Decor => {
-                (self.decor, self.go) = (Some(entry.path.clone()), Some(Space::Decor));
+                self.decor = Some(entry.path.clone());
                 self.decors.open(&entry.path);
             }
         }
+        self.session.ask(Ask::Go(match entry.kind {
+            Kind::Film => Space::Film,
+            Kind::Decor => Space::Decor,
+        }));
         self.said = format!("opened: {}", entry.title);
     }
 }
@@ -215,7 +175,6 @@ impl App {
             decor: None,
             said: String::new(),
             making: None,
-            go: None,
             decors: workshop_decor::Decors::new(&session, context),
             scripts: workshop_script::Scripts::new(&session, context),
             films: workshop_film::Films::new(&session, context),
@@ -269,7 +228,7 @@ impl App {
                 places: Vec::new(),
             });
             app.work.open(&entry);
-            app.space = app.work.go.take().unwrap_or(app.space);
+            app.answer();
         }
         // (`WORKSHOP_FOLDED="Transform,Resident"`: those components of the Inspector folded, for a picture.)
         for part in &launch.folded {
@@ -462,7 +421,7 @@ impl App {
     pub fn go_to(&mut self, going: Going) {
         match going {
             Going::Dungeon(word, fight) => {
-                self.work.dungeons.open(if fight { workshop_dungeon::dungeons::Open::Fight(word) } else { workshop_dungeon::dungeons::Open::Dungeon(word) });
+                self.work.dungeons.open(if fight { OpenDungeon::Fight(word) } else { OpenDungeon::Dungeon(word) });
                 self.space = Space::Dungeon;
             }
             Going::Decor(path) => {
@@ -473,29 +432,39 @@ impl App {
         }
     }
 
-    /// What the Game space asks shown: a film at a line, a decor with a line chosen, a dungeon or a fight.
-    fn show_asked(&mut self, asked: crate::games::Asked) {
-        match asked {
-            crate::games::Asked::Film(path, line) => {
-                match &mut self.work.scripts.open {
-                    Some(open) if open.path == path && line > 0 => open.go_to_line(line),
-                    _ if line > 0 => self.work.scripts.ask_line(line),
-                    _ => {}
+    /// What the parts asked this frame (`workshop_base::ask`), done in the order asked: the one
+    /// place where a part's request reaches another part or the window.
+    fn answer(&mut self) {
+        for ask in self.work.session.asks.take() {
+            match ask {
+                Ask::Go(space) => self.space = space,
+                Ask::Film { path, line } => {
+                    match &mut self.work.scripts.open {
+                        Some(open) if open.path == path && line > 0 => open.go_to_line(line),
+                        _ if line > 0 => self.work.scripts.ask_line(line),
+                        _ => {}
+                    }
+                    self.work.film = Some(path);
+                    self.space = Space::Film;
                 }
-                self.work.film = Some(path);
-                self.space = Space::Film;
-            }
-            crate::games::Asked::Decor(path, line) => {
-                self.go_to(Going::Decor(path));
-                if line > 0
-                    && let Some(open) = &mut self.work.decors.open
-                {
-                    open.choose(vec![(line, 0)]);
+                Ask::Decor { path, line } => {
+                    self.go_to(Going::Decor(path));
+                    if line > 0
+                        && let Some(open) = &mut self.work.decors.open
+                    {
+                        open.choose(vec![(line, 0)]);
+                    }
                 }
-            }
-            crate::games::Asked::DungeonFile(path) => {
-                self.work.dungeons.open(workshop_dungeon::dungeons::Open::File(path));
-                self.space = Space::Dungeon;
+                Ask::Dungeon(what) => {
+                    self.work.dungeons.open(what);
+                    self.space = Space::Dungeon;
+                }
+                Ask::PlayFrom(line) => {
+                    self.work.films.go_to_line(line);
+                    self.work.films.playing = true;
+                }
+                Ask::SpriteCollab(dex) => self.spritecollab = Some(crate::spritecollab::Browser::new(&self.work.session, dex)),
+                Ask::Say(said) => self.work.said = said,
             }
         }
     }
@@ -893,11 +862,6 @@ impl egui_dock::TabViewer for Panels<'_> {
             Panel::DecorInspector => workshop_decor::panels::inspector(ui, &mut self.work.decors),
             Panel::Library => {
                 workshop_decor::library::library(ui, &mut self.work.decors, &self.work.project.decors);
-                // (A decor found by the Library's search, opened.)
-                if let Some(path) = self.work.decors.lib.asked_open.take() {
-                    self.work.decors.open(&path);
-                    self.work.decor = Some(path);
-                }
             }
             Panel::Script => {
                 let seen = workshop_script::Seen {
@@ -911,16 +875,6 @@ impl egui_dock::TabViewer for Panels<'_> {
                 if let Some(line) = workshop_script::script(ui, &mut self.work.scripts, self.work.film.clone().as_ref(), &seen) {
                     self.work.films.go_to_line(line);
                 }
-                // (F12 on a shared file, a recipe from one: that file open, at its line.)
-                if let Some((path, line)) = self.work.scripts.open_asked.take() {
-                    self.work.scripts.ask_line(line);
-                    self.work.film = Some(path);
-                }
-                // (Ctrl+Enter, ▶ in the margin, "Play from Here": the film plays from that line.)
-                if let Some(line) = self.work.scripts.play_from.take() {
-                    self.work.films.go_to_line(line);
-                    self.work.films.playing = true;
-                }
             }
             Panel::FilmScene => workshop_film::scene(ui, &mut self.work.films, &mut self.work.scripts),
             Panel::Timeline => workshop_film::timeline(ui, &mut self.work.films, &mut self.work.scripts),
@@ -930,19 +884,6 @@ impl egui_dock::TabViewer for Panels<'_> {
             Panel::AssetGrid => workshop_resources::grid(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetInspector => {
                 workshop_resources::inspector(ui, &mut self.work.resources, &mut self.work.decors, &mut self.work.scripts);
-                // (A film or a decor it is used in, opened in its space.)
-                match self.work.resources.asked.take() {
-                    Some(workshop_resources::Asked::Film(path)) => (self.work.film, self.work.go) = (Some(path), Some(Space::Film)),
-                    Some(workshop_resources::Asked::Decor(path)) => {
-                        self.work.decors.open(&path);
-                        (self.work.decor, self.work.go) = (Some(path), Some(Space::Decor));
-                    }
-                    Some(workshop_resources::Asked::Dungeon(what)) => {
-                        self.work.dungeons.open(what);
-                        self.work.go = Some(Space::Dungeon);
-                    }
-                    None => {}
-                }
             }
         }
     }
@@ -1084,31 +1025,12 @@ impl eframe::App for App {
         self.welcome(context);
         self.restore(context);
         crate::quant_tool::show(context, &mut self.quant);
-        if let Some(dex) = self.work.resources.ask_spritecollab.take() {
-            self.spritecollab = Some(crate::spritecollab::Browser::new(&self.work.session, dex));
-        }
+        self.answer();
         crate::spritecollab::show(context, &mut self.spritecollab);
         if let Some(browser) = &mut self.spritecollab
             && std::mem::take(&mut browser.fresh)
         {
             self.work.resources.forget();
-        }
-        // (A dungeon or a fight asked from the Resources: opened in the Dungeon space.)
-        if let Some(workshop_resources::Asked::Dungeon(what)) =
-            self.work.resources.asked.take_if(|asked| matches!(asked, workshop_resources::Asked::Dungeon(_)))
-        {
-            self.work.dungeons.open(what);
-            self.space = Space::Dungeon;
-        }
-        if let Some(said) = self.work.dungeons.said.take() {
-            self.work.said = said;
-        }
-        // (A film, a decor, a dungeon asked from the Game space: opened in its space.)
-        if let Some(asked) = self.work.games.asked.take() {
-            self.show_asked(asked);
-        }
-        if let Some(space) = self.work.go.take() {
-            self.space = space;
         }
         if let Some(capture) = &mut self.capture {
             capture.take(context);

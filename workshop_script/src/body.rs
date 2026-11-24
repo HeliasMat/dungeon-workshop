@@ -163,7 +163,6 @@ impl Body<'_> {
                 &mut scripts.version_chosen,
                 &mut scripts.notes,
                 &mut scripts.note_editing,
-                &mut scripts.open_asked,
                 &mut scripts.said,
             ),
             self.open,
@@ -447,7 +446,7 @@ impl Body<'_> {
                     let at = index_of(&open.text, Spot { line, column: 1 });
                     open.jump = Some((at, at));
                 }
-                Defined::File(path, line) => scripts.open_asked = Some((path, line)),
+                Defined::File(path, line) => scripts.session.ask(workshop_base::ask::Ask::Film { path, line }),
                 Defined::Said(said) => scripts.said = Some(said),
             }
         }

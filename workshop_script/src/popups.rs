@@ -108,7 +108,7 @@ impl Body<'_> {
                 theme::WEAK,
             ));
             if ui.button("Play from Here").clicked() {
-                scripts.play_from = Some(first_chosen + 1);
+                scripts.session.ask(workshop_base::ask::Ask::PlayFrom(first_chosen + 1));
                 ui.close();
             }
             ui.separator();

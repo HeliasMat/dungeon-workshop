@@ -48,7 +48,7 @@ impl Body<'_> {
                 .clicked()
                 && !current
             {
-                scripts.open_asked = Some((other.clone(), 1));
+                scripts.session.ask(workshop_base::ask::Ask::Film { path: other.clone(), line: 1 });
             }
             if !current
                 && tabs.add(egui::Button::new(theme::text("×", theme::SMALL - 1.0, theme::FAINT)).frame(false)).on_hover_text("out of the tabs").clicked()

@@ -66,7 +66,8 @@ fn buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item, busy: bool
             resources.said = Some(workshop_dungeon::level_csv::export(&resources.session, item.number, &item.label));
         }
         if ui.button("SpriteCollab…").on_hover_text("its community sprites and portraits, to look at and import").clicked() {
-            resources.ask_spritecollab = Some(u32::try_from(dex_of(&resources.session, item.number)).ok().filter(|dex| *dex > 0));
+            let dex = u32::try_from(dex_of(&resources.session, item.number)).ok().filter(|dex| *dex > 0);
+            resources.session.ask(workshop_base::ask::Ask::SpriteCollab(dex));
         }
         if ui
             .add_enabled(!busy, egui::Button::new("Export for SpriteBot…"))

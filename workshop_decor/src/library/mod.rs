@@ -120,8 +120,6 @@ pub struct Library {
     /// it has none); larger, for the backdrops' cards.
     pub thumbs: HashMap<i64, Option<egui::TextureHandle>>,
     pub pictures: HashMap<i64, Option<egui::TextureHandle>>,
-    /// A decor found by the search, to open (the window opens it).
-    pub asked_open: Option<PathBuf>,
 }
 
 impl Default for Library {
@@ -142,7 +140,6 @@ impl Default for Library {
             folded: HashSet::new(),
             thumbs: HashMap::new(),
             pictures: HashMap::new(),
-            asked_open: None,
         }
     }
 }
@@ -386,8 +383,8 @@ fn done(decors: &mut Decors, asked: Asked) {
         open.change(made);
         open.choose(chosen);
     }
-    if asked.decor.is_some() {
-        decors.lib.asked_open = asked.decor;
+    if let Some(path) = asked.decor {
+        decors.session.ask(workshop_base::ask::Ask::Decor { path, line: 0 });
     }
 }
 

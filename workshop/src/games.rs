@@ -18,6 +18,7 @@ use std::sync::Arc;
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, channel};
+use workshop_base::ask::{Ask, OpenDungeon};
 use workshop_base::session::Session;
 
 use ::game::game_file::GameFile;
@@ -28,15 +29,6 @@ use engine::Diagnostic;
 
 use workshop_base::game::{self, ChapterBox, Link};
 use workshop_base::theme;
-
-/// What the Game space asks another space to show: a film (at a line), a
-/// decor (that line chosen), a dungeon or a fight.
-pub enum Asked {
-    Film(PathBuf, usize),
-    Decor(PathBuf, usize),
-    /// A dungeon's or a fight's file (the game's own, or the shared library's).
-    DungeonFile(PathBuf),
-}
 
 /// A game open: its file, its text (as typed), as written, as read, its chapters.
 struct Open {
@@ -91,7 +83,6 @@ pub struct Games {
     jump: Option<usize>,
     /// The game being packed.
     packing: Option<workshop_base::tool_run::Run>,
-    pub asked: Option<Asked>,
     pub said: Option<String>,
 }
 
@@ -106,7 +97,6 @@ impl Games {
             from_chapter: 1,
             jump: None,
             packing: None,
-            asked: None,
             said: None,
         };
         // (`WORKSHOP_GAME=my_game`: that game open, for a picture.)
@@ -382,17 +372,17 @@ fn link_colour(link: &Link) -> Color32 {
 }
 
 /// Where a link's file is, if it has one; what opening it asks.
-fn link_asked(session: &Session, game: &GameFile, link: &Link) -> Option<Asked> {
+fn link_asked(session: &Session, game: &GameFile, link: &Link) -> Option<Ask> {
     // (Each looked for in the game's folder first, then in the shared library: as the game reads it.)
     let project = session.library().at(&game.folder);
     let decor = |name: &str| project.decor(name);
-    let dungeon = |name: &str| Some(project.dungeon(name)).filter(|path| path.is_file()).map(Asked::DungeonFile);
+    let dungeon = |name: &str| Some(project.dungeon(name)).filter(|path| path.is_file()).map(|path| Ask::Dungeon(OpenDungeon::File(path)));
     match link {
-        Link::Film(name) => Some(project.film(name)).filter(|path| path.is_file()).map(|path| Asked::Film(path, 0)),
-        Link::Place(name) => Some(decor(name)).filter(|path| path.is_file()).map(|path| Asked::Decor(path, 0)),
+        Link::Film(name) => Some(project.film(name)).filter(|path| path.is_file()).map(|path| Ask::Film { path, line: 0 }),
+        Link::Place(name) => Some(decor(name)).filter(|path| path.is_file()).map(|path| Ask::Decor { path, line: 0 }),
         Link::Dungeon(name) => dungeon(name),
-        Link::Fight(name) => Some(project.fight(name)).filter(|path| path.is_file()).map(Asked::DungeonFile),
-        Link::Opened(name) if decor(name).is_file() => Some(Asked::Decor(decor(name), 0)),
+        Link::Fight(name) => Some(project.fight(name)).filter(|path| path.is_file()).map(|path| Ask::Dungeon(OpenDungeon::File(path))),
+        Link::Opened(name) if decor(name).is_file() => Some(Ask::Decor { path: decor(name), line: 0 }),
         Link::Opened(name) => dungeon(name),
     }
 }
@@ -403,7 +393,7 @@ fn chapters(ui: &mut egui::Ui, games: &mut Games) {
         ui.centered_and_justified(|ui| ui.label(theme::weak("Pick a game on the left, or make one.")));
         return;
     };
-    let mut asked: Option<Asked> = None;
+    let mut asked: Option<Ask> = None;
     let mut chosen: Option<u16> = None;
     egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
         ui.label(theme::text(if open.game.title.is_empty() { &open.game.name } else { &open.game.title }, theme::TITLE, theme::STRONG).strong());
@@ -475,8 +465,8 @@ fn chapters(ui: &mut egui::Ui, games: &mut Games) {
         games.from_chapter = number;
         games.jump = open.text.lines().position(|line| line.split_whitespace().take(2).eq(["chapter", &number.to_string()])).map(|at| at + 1);
     }
-    if asked.is_some() {
-        games.asked = asked;
+    if let Some(asked) = asked {
+        games.session.ask(asked);
     }
 }
 
@@ -609,9 +599,9 @@ fn problems(ui: &mut egui::Ui, games: &mut Games) {
         let (file, line) = (file_of(&problem), problem.line());
         match file.extension().and_then(|end| end.to_str()) {
             Some("game") => games.jump = Some(line.max(1)),
-            Some("film") => games.asked = Some(Asked::Film(file, line)),
-            Some("decor") => games.asked = Some(Asked::Decor(file, line)),
-            Some("dungeon" | "fight") => games.asked = Some(Asked::DungeonFile(file)),
+            Some("film") => games.session.ask(Ask::Film { path: file, line }),
+            Some("decor") => games.session.ask(Ask::Decor { path: file, line }),
+            Some("dungeon" | "fight") => games.session.ask(Ask::Dungeon(OpenDungeon::File(file))),
             _ => games.said = Some(format!("{}: nothing to open it in", file.display())),
         }
     }

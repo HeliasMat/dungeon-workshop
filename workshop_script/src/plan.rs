@@ -15,7 +15,7 @@ use workshop_base::theme;
 /// The Plan: the film's scenes (their places as the game names them, how
 /// many lines are wrong in each), their moments; a click goes there.
 pub(super) fn plan(ui: &mut egui::Ui, scripts: &mut Scripts, timing: &BTreeMap<usize, (f64, f64)>, numbers: &BTreeMap<String, f64>) {
-    let Scripts { open, folded, notes, values, session, override_text, play_from, .. } = scripts;
+    let Scripts { open, folded, notes, values, session, override_text, .. } = scripts;
     let Some(open) = open.as_mut() else { return };
     ui.horizontal(|ui| {
         ui.label(theme::text("LAYOUT", theme::SMALL, theme::WEAK));
@@ -60,7 +60,7 @@ pub(super) fn plan(ui: &mut egui::Ui, scripts: &mut Scripts, timing: &BTreeMap<u
                         .map(|(name, value)| (name.clone(), *value))
                         .collect();
                     *override_text = Some(crate::debug::with_values(&open.text, &tried));
-                    *play_from = Some(here);
+                    session.ask(workshop_base::ask::Ask::PlayFrom(here));
                 }
                 if ui.small_button("The Text's Values").on_hover_text("the film played again as it is written").clicked() {
                     values.clear();

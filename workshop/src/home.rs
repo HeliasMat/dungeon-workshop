@@ -222,7 +222,7 @@ pub fn project(ui: &mut egui::Ui, work: &mut Work) {
         .map_or(0, |files| files.flatten().filter(|file| file.path().extension().is_some_and(|own| own == "png")).count());
     if row(ui, "Drawn Objects", Some(theme::ASSETS), drawn, false, theme::TEXT).on_hover_text("in the Resources space").clicked() {
         work.resources.show_drawn();
-        work.go = Some(Space::Assets);
+        work.session.ask(workshop_base::ask::Ask::Go(Space::Assets));
     }
     ui.add_space(8.0);
     for (shelf, count, colour) in [(Shelf::Shared, work.project.shared.len(), theme::TEXT), (Shelf::Bin, work.project.binned.len(), theme::WEAK)] {

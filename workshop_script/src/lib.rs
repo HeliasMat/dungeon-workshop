@@ -290,8 +290,6 @@ pub struct Scripts {
     /// The lines marked (Ctrl+B, F4); what is said at the end of each line, or not.
     bookmarks: BTreeSet<usize>,
     hints: bool,
-    /// The film asked to play from that line (Ctrl+Enter, ▶ in the margin).
-    pub play_from: Option<usize>,
     /// The panels answering each other: the line pointed here; the line, and
     /// who, pointed in the Timeline or on the Scene.
     pub hovered_line: Option<usize>,
@@ -321,8 +319,6 @@ pub struct Scripts {
     followed: Option<usize>,
     /// A recipe being named (its lines, from 0; its name).
     extracting: Option<(usize, usize, String)>,
-    /// Another file asked open (a shared one: F12), and the line to go to there.
-    pub open_asked: Option<(PathBuf, usize)>,
     line_asked: Option<usize>,
     /// The portraits of those pointed at, by species (and face: `species:face`).
     portraits: HashMap<String, Option<egui::TextureHandle>>,
@@ -449,7 +445,6 @@ impl Scripts {
             browsing: None,
             bookmarks: BTreeSet::new(),
             hints: true,
-            play_from: None,
             hovered_line: None,
             lit_line: None,
             lit_who_scene: None,
@@ -471,7 +466,6 @@ impl Scripts {
             marks_text: String::new(),
             followed: None,
             extracting: None,
-            open_asked: None,
             line_asked: None,
             portraits: HashMap::new(),
             dialogue: false,

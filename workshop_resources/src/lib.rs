@@ -292,14 +292,6 @@ impl Sheet {
     }
 }
 
-/// What a click asks of the Workshop: a film or a decor opened.
-pub enum Asked {
-    Film(PathBuf),
-    Decor(PathBuf),
-    /// A dungeon or a boss fight, to open in the Dungeon space.
-    Dungeon(workshop_dungeon::dungeons::Open),
-}
-
 /// The Resources space as the window keeps it.
 pub struct Resources {
     /// What the Workshop works with (`session`).
@@ -354,9 +346,6 @@ pub struct Resources {
     index: HashMap<String, BTreeSet<usize>>,
     examples: workshop_base::example::Examples,
     pub said: Option<String>,
-    pub asked: Option<Asked>,
-    /// The SpriteCollab window asked, on a Pokédex number or not.
-    pub ask_spritecollab: Option<Option<u32>>,
     /// Work going on for the Pokémon chosen (its sheets written or read); a SpriteBot folder being imported.
     run: Option<workshop_base::tool_run::Run>,
     sheet_import: Option<SheetImport>,
@@ -425,8 +414,6 @@ impl Resources {
             index: HashMap::new(),
             examples: workshop_base::example::Examples::new(session, context),
             said: None,
-            asked: None,
-            ask_spritecollab: None,
             run: None,
             sheet_import: None,
         }

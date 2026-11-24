@@ -322,7 +322,7 @@ impl Body<'_> {
                     scripts.folded.insert(*line);
                 }
             } else if (13.0..28.0).contains(&x) {
-                scripts.play_from = Some(*line);
+                scripts.session.ask(workshop_base::ask::Ask::PlayFrom(*line));
             } else {
                 asked_line = Some(*line);
                 open.go_to_line(*line);
