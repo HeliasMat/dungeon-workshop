@@ -1,7 +1,7 @@
 //! What someone does, as Sky's actors do it: animations and poses, emotes
 //! and effects, jumps, moves and blows, the routines Sky has for some words.
 
-use engine::{Beat, BodyBeat, Direction, Play, Pose, ScreenBeat, SoundBeat, Who};
+use engine::{AnimId, Beat, BodyBeat, Direction, MoveId, Play, Pose, ScreenBeat, SoundBeat, Who};
 
 use super::Writer;
 use super::scene::Part;
@@ -52,27 +52,7 @@ impl Writer<'_> {
                     self.wait_for(&actor);
                 }
             }
-            BodyBeat::Anim { who, anim, play } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let looped = matches!(play, Play::Loop);
-                let Some(set) = self.set(*who, anim.0, looped) else {
-                    self.notes.push(format!("line {number}: the animation {} (none of this sprite's shows it)", anim.0));
-                    return;
-                };
-                match play {
-                    Play::Times(times) => {
-                        for _ in 1..*times {
-                            self.line(&format!("SetAnimation<actor {actor}>({set});"));
-                            self.line(&format!("WaitAnimation<actor {actor}>();"));
-                        }
-                        self.line(&format!("SetAnimation<actor {actor}>({set});"));
-                        if !self.stand_after.contains(&actor) {
-                            self.stand_after.push(actor);
-                        }
-                    }
-                    _ => self.line(&format!("SetAnimation<actor {actor}>({set});")),
-                }
-            }
+            BodyBeat::Anim { who, anim, play } => self.animate(number, who, anim, play),
             BodyBeat::Pose { who, pose } => {
                 let Some(actor) = self.who(number, *who) else { return };
                 let set = match pose {
@@ -130,52 +110,10 @@ impl Writer<'_> {
             }
             // What Sky shows otherwise: a knock back, a sleeper's icon.
             // A state, as an effect on someone (LIMITS: confusion's stars, bubbles, Zs, ice).
-            BodyBeat::Status { who, icon, .. } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let effect = match icon.map(str::to_ascii_lowercase) {
-                    None => "EFFECT_NONE",
-                    Some(icon) => match icon.as_str() {
-                        "confused" | "dizzy" => "17",
-                        "poisoned" | "poison" | "badly_poisoned" => "1",
-                        "sleep" | "asleep" | "yawning" => "51",
-                        "frozen" => "23",
-                        "up" | "boost" => "691",
-                        "down" | "slow" | "weak" => "685",
-                        _ => {
-                            self.notes.push(format!("line {number}: the state {icon} (no effect of Sky's for it)"));
-                            return;
-                        }
-                    },
-                };
-                self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
-            }
+            BodyBeat::Status { who, icon, .. } => self.status(number, who, icon),
             // A move, as LIMITS staged it: a wind-up, a lunge, the effect of
             // its type on the target, a small shake.
-            BodyBeat::Move { who, id, target } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let kind = self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1);
-                // Its pain once, crouched, then its own attack (group 1, which every sprite has).
-                let crouch = self.set(*who, 19, false).unwrap_or(11);
-                self.line(&format!("SetAnimation<actor {actor}>({crouch});"));
-                self.line("Wait(12);");
-                self.line(&format!("SetAnimation<actor {actor}>(13);"));
-                // (Aimed at an unseen point, where one dodged from: on no one, it missed.)
-                if let Some(Who::Spot(_)) = target {
-                    self.line("Wait(20);");
-                    self.line(&format!("SetAnimation<actor {actor}>(2);"));
-                    return;
-                }
-                let on = match target.and_then(|target| self.who(number, target)) {
-                    Some(target) => target,
-                    None => actor.clone(),
-                };
-                self.line(&format!("SetEffect<actor {on}>({}, 3);", move_effect(kind)));
-                self.line("camera_SetEffect(2, 1, 1.0);");
-                self.line(&format!("WaitEffect<actor {on}>();"));
-                self.line("camera_SetEffect(0, 0, 0);");
-                self.line(&format!("SetEffect<actor {on}>(EFFECT_NONE, 3);"));
-                self.line(&format!("SetAnimation<actor {actor}>(2);"));
-            }
+            BodyBeat::Move { who, id, target } => self.attack(number, who, id, target),
             BodyBeat::Recoil { who, from, distance } => self.recoil(number, *who, *from, *distance),
             BodyBeat::Float { who, height, frames } => self.float(number, *who, *height, frames.0),
             other => self.unexported(number, word, &Beat::Body(other.clone())),
@@ -323,5 +261,76 @@ impl Writer<'_> {
         let to = (at.0 + away.0 * distance, at.1 + away.1 * distance);
         self.go(who, &actor, to, &speed(distance, 10.0), true);
         self.wait_for(&actor);
+    }
+
+    /// A move, as LIMITS staged it: a wind-up, a lunge, the effect of its type on the target, a small shake.
+    fn attack(&mut self, number: i32, who: &Who, id: &MoveId, target: &Option<Who>) {
+        let Some(actor) = self.who(number, *who) else { return };
+        let kind = self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1);
+        // Its pain once, crouched, then its own attack (group 1, which every sprite has).
+        let crouch = self.set(*who, 19, false).unwrap_or(11);
+        self.line(&format!("SetAnimation<actor {actor}>({crouch});"));
+        self.line("Wait(12);");
+        self.line(&format!("SetAnimation<actor {actor}>(13);"));
+        // (Aimed at an unseen point, where one dodged from: on no one, it missed.)
+        if let Some(Who::Spot(_)) = target {
+            self.line("Wait(20);");
+            self.line(&format!("SetAnimation<actor {actor}>(2);"));
+            return;
+        }
+        let on = match target.and_then(|target| self.who(number, target)) {
+            Some(target) => target,
+            None => actor.clone(),
+        };
+        self.line(&format!("SetEffect<actor {on}>({}, 3);", move_effect(kind)));
+        self.line("camera_SetEffect(2, 1, 1.0);");
+        self.line(&format!("WaitEffect<actor {on}>();"));
+        self.line("camera_SetEffect(0, 0, 0);");
+        self.line(&format!("SetEffect<actor {on}>(EFFECT_NONE, 3);"));
+        self.line(&format!("SetAnimation<actor {actor}>(2);"));
+    }
+
+    /// A state, as an effect on someone (LIMITS: confusion's stars, bubbles, Zs, ice).
+    fn status(&mut self, number: i32, who: &Who, icon: &Option<&'static str>) {
+        let Some(actor) = self.who(number, *who) else { return };
+        let effect = match icon.map(str::to_ascii_lowercase) {
+            None => "EFFECT_NONE",
+            Some(icon) => match icon.as_str() {
+                "confused" | "dizzy" => "17",
+                "poisoned" | "poison" | "badly_poisoned" => "1",
+                "sleep" | "asleep" | "yawning" => "51",
+                "frozen" => "23",
+                "up" | "boost" => "691",
+                "down" | "slow" | "weak" => "685",
+                _ => {
+                    self.notes.push(format!("line {number}: the state {icon} (no effect of Sky's for it)"));
+                    return;
+                }
+            },
+        };
+        self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
+    }
+
+    /// An animation of the sprite's, played as Sky's `SetAnimation` (once, so many times, looped).
+    fn animate(&mut self, number: i32, who: &Who, anim: &AnimId, play: &Play) {
+        let Some(actor) = self.who(number, *who) else { return };
+        let looped = matches!(play, Play::Loop);
+        let Some(set) = self.set(*who, anim.0, looped) else {
+            self.notes.push(format!("line {number}: the animation {} (none of this sprite's shows it)", anim.0));
+            return;
+        };
+        match play {
+            Play::Times(times) => {
+                for _ in 1..*times {
+                    self.line(&format!("SetAnimation<actor {actor}>({set});"));
+                    self.line(&format!("WaitAnimation<actor {actor}>();"));
+                }
+                self.line(&format!("SetAnimation<actor {actor}>({set});"));
+                if !self.stand_after.contains(&actor) {
+                    self.stand_after.push(actor);
+                }
+            }
+            _ => self.line(&format!("SetAnimation<actor {actor}>({set});")),
+        }
     }
 }

@@ -1,7 +1,7 @@
 //! The screen: the place shown (its level, the top screen), fades and
 //! flashes, the light, the weather, captions.
 
-use engine::{Beat, ScreenBeat, Weather};
+use engine::{Beat, Frames, ScreenBeat, Weather};
 
 use super::Writer;
 use crate::sky::{DECOR_LEVEL, TOP_SCREENS, light, quoted};
@@ -34,27 +34,7 @@ impl Writer<'_> {
                 let own = self.level.as_deref().and_then(|level| level.chars().last()).is_some_and(|last| last.is_ascii_alphabetic() && last != 'A');
                 self.tint = light(colour).filter(|_| !own);
             }
-            ScreenBeat::Tint { colour, frames } if !self.memory => {
-                let frames = if self.started { frames.0.round() as i32 } else { 0 };
-                // (Mode 4 multiplies the screen by the colour, as Sky's own warm tint
-                // `128, 96, 64` does; the colours are those its evening and night
-                // levels of the guild's crossroads have against the day's.)
-                let Some(tint) = light(colour) else {
-                    if let Some(tint) = self.tint.take() {
-                        self.flush("In", frames, tint);
-                    }
-                    return;
-                };
-                // (The same light again, as after the rain: kept; FlushIn then FlushOut would flash.)
-                if self.tint == Some(tint) {
-                    return;
-                }
-                if let Some(old) = self.tint.take() {
-                    self.flush("In", 0, old);
-                }
-                self.flush("Out", frames, tint);
-                self.tint = Some(tint);
-            }
+            ScreenBeat::Tint { colour, frames } if !self.memory => self.light_to(colour, frames),
             ScreenBeat::Tint { .. } => {}
             ScreenBeat::Grey(on) => {
                 if *on && !self.memory {
@@ -188,5 +168,28 @@ impl Writer<'_> {
         };
         self.weather = true;
         self.line(&format!("SetEffect<performer 3>({effect}, 3);"));
+    }
+
+    /// The light changed in the scene (`screen_FlushOut`, Sky's mode 4), or taken away.
+    fn light_to(&mut self, colour: &[f32; 4], frames: &Frames) {
+        let frames = if self.started { frames.0.round() as i32 } else { 0 };
+        // (Mode 4 multiplies the screen by the colour, as Sky's own warm tint
+        // `128, 96, 64` does; the colours are those its evening and night
+        // levels of the guild's crossroads have against the day's.)
+        let Some(tint) = light(colour) else {
+            if let Some(tint) = self.tint.take() {
+                self.flush("In", frames, tint);
+            }
+            return;
+        };
+        // (The same light again, as after the rain: kept; FlushIn then FlushOut would flash.)
+        if self.tint == Some(tint) {
+            return;
+        }
+        if let Some(old) = self.tint.take() {
+            self.flush("In", 0, old);
+        }
+        self.flush("Out", frames, tint);
+        self.tint = Some(tint);
     }
 }

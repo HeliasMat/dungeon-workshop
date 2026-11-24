@@ -2,7 +2,7 @@
 //! the place, an evolution, being seen or not. What someone does (an
 //! animation, an emote, a move) is `acting`'s.
 
-use engine::{BodyBeat, Direction, Play, Who};
+use engine::{BodyBeat, Direction, Play, Point, Who};
 
 use super::{BESIDE, Writer, way_to};
 use crate::sky::{HIDDEN, direction};
@@ -45,24 +45,7 @@ impl Writer<'_> {
             BodyBeat::Colour { .. } | BodyBeat::Scale { .. } if matches!(word, Some("evolve" | "transform")) => {}
             // Evolving: a shine, the screen white, the evolved one (an actor of its
             // own) put where the other stood, the other hidden, the screen back.
-            BodyBeat::Disguise { who, like: Some(like) } if word == Some("evolve") => {
-                let (Some(old), Some(&at)) = (self.who(number, *who), self.at.get(who)) else { return };
-                let Some(new) = self.who(number, *like) else { return };
-                let facing = direction(self.facing.get(who).copied().unwrap_or(Direction::Down));
-                let position = self.position(at);
-                self.line(&format!("SetEffect<actor {old}>(691, 3);"));
-                self.line("Wait(40);");
-                self.line("screen_WhiteOut(1, 30);");
-                self.line("WaitScreenFade();");
-                self.line(&format!("SetEffect<actor {old}>(EFFECT_NONE, 3);"));
-                self.line(&format!("SetOutputAttribute<actor {old}>({HIDDEN});"));
-                self.line(&format!("SetPositionMark<actor {new}>({position});"));
-                self.line(&format!("SetDirection<actor {new}>({facing});"));
-                self.line(&format!("ResetOutputAttribute<actor {new}>({HIDDEN});"));
-                self.line("screen_FadeIn(1, 30);");
-                self.line("WaitScreenFade();");
-                self.became.insert(*who, *like);
-            }
+            BodyBeat::Disguise { who, like: Some(like) } if word == Some("evolve") => self.evolve(number, who, like),
             // Transformed: a shine, the screen white and back; Sky's actors keep
             // their look (R-DS-LOSS).
             BodyBeat::Mimic { who, .. } => {
@@ -81,24 +64,7 @@ impl Writer<'_> {
                     self.at.insert(*who, point);
                 }
             }
-            BodyBeat::Put { who, at, direction: way } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let Some(point) = self.point(at) else {
-                    self.problems.push(format!("line {number}: where {who:?} is put is not known before the film plays"));
-                    return;
-                };
-                self.at.insert(*who, point);
-                self.facing.insert(*who, *way);
-                let facing = direction(*way);
-                match self.actors.get_mut(&self.became.get(who).copied().unwrap_or(*who)) {
-                    Some(one) if !self.started || (one.hidden && one.first.is_none()) => one.first = Some((point.0, point.1, facing)),
-                    _ => {
-                        let position = self.position(point);
-                        self.line(&format!("SetPositionMark<actor {actor}>({position});"));
-                        self.line(&format!("SetDirection<actor {actor}>({facing});"));
-                    }
-                }
-            }
+            BodyBeat::Put { who, at, direction: way } => self.put(number, who, at, way),
             BodyBeat::PutNear { who, other, side } => {
                 let (Some(actor), Some(&(x, y))) = (self.who(number, *who), self.at.get(other)) else { return };
                 let right = matches!(side, Direction::Right | Direction::UpRight | Direction::DownRight);
@@ -178,5 +144,45 @@ impl Writer<'_> {
             }
             other => self.acting(number, word, other),
         }
+    }
+
+    /// Someone put somewhere, facing a way: where they first stand, if the scene has not begun.
+    fn put(&mut self, number: i32, who: &Who, at: &Point, way: &Direction) {
+        let Some(actor) = self.who(number, *who) else { return };
+        let Some(point) = self.point(at) else {
+            self.problems.push(format!("line {number}: where {who:?} is put is not known before the film plays"));
+            return;
+        };
+        self.at.insert(*who, point);
+        self.facing.insert(*who, *way);
+        let facing = direction(*way);
+        match self.actors.get_mut(&self.became.get(who).copied().unwrap_or(*who)) {
+            Some(one) if !self.started || (one.hidden && one.first.is_none()) => one.first = Some((point.0, point.1, facing)),
+            _ => {
+                let position = self.position(point);
+                self.line(&format!("SetPositionMark<actor {actor}>({position});"));
+                self.line(&format!("SetDirection<actor {actor}>({facing});"));
+            }
+        }
+    }
+
+    /// Evolving: a shine, the screen white, the evolved one (an actor of its own) put where the other stood, the other hidden, the screen back.
+    fn evolve(&mut self, number: i32, who: &Who, like: &Who) {
+        let (Some(old), Some(&at)) = (self.who(number, *who), self.at.get(who)) else { return };
+        let Some(new) = self.who(number, *like) else { return };
+        let facing = direction(self.facing.get(who).copied().unwrap_or(Direction::Down));
+        let position = self.position(at);
+        self.line(&format!("SetEffect<actor {old}>(691, 3);"));
+        self.line("Wait(40);");
+        self.line("screen_WhiteOut(1, 30);");
+        self.line("WaitScreenFade();");
+        self.line(&format!("SetEffect<actor {old}>(EFFECT_NONE, 3);"));
+        self.line(&format!("SetOutputAttribute<actor {old}>({HIDDEN});"));
+        self.line(&format!("SetPositionMark<actor {new}>({position});"));
+        self.line(&format!("SetDirection<actor {new}>({facing});"));
+        self.line(&format!("ResetOutputAttribute<actor {new}>({HIDDEN});"));
+        self.line("screen_FadeIn(1, 30);");
+        self.line("WaitScreenFade();");
+        self.became.insert(*who, *like);
     }
 }
