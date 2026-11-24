@@ -30,7 +30,7 @@ python tools/check_paths.py # the paths the docs name are in the repository
 python tools/check_tutorial.py  # every snippet of docs/TUTORIAL.md checked for real (after a release build of scene_player)
 ```
 
-CI runs the same steps (`.github/workflows/ci.yml`). Clippy must give no warning; the crates in `verify.sh`'s `formatted` list are formatted by `cargo fmt` (`rustfmt.toml`).
+CI runs the same steps (`.github/workflows/ci.yml`). Clippy must give no warning, and every crate is formatted by `cargo fmt` (`rustfmt.toml`). The tests run under cargo-nextest when it is installed (`.config/nextest.toml`), else under `cargo test`.
 
 ## The crate rule
 

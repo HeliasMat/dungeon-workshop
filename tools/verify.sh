@@ -69,17 +69,12 @@ else
     echo "no data/: the tests that need it are only told as ignored"
 fi
 
-# (Formatted as cargo fmt does it: every crate.)
-formatted="workshop workshop_base workshop_picture workshop_sound workshop_music workshop_dungeon workshop_wiki workshop_script workshop_decor workshop_film workshop_resources diagnostics language engine film_core film_acting film_moving film_dungeon film_fights film_fishing film story dive scene_player preview game decor rom_formats extractor assets media shell spritecollab stage_view dungeon_lsp rules scenes"
-
 if [ -n "$1" ]; then
     packages=$(sh tools/parts.sh "$1") || exit 2
     echo "checked: $packages"
     each=""
-    shown=""
     for package in $packages; do
         each="$each -p $package"
-        case " $formatted " in *" $package "*) shown="$shown -p $package" ;; esac
     done
     step rule sh tools/rule.sh
     step paths "$python" tools/check_paths.py
@@ -95,7 +90,7 @@ if [ -n "$1" ]; then
         [ -n "$data_each" ] && [ -f data/rom/dungeons.bin ] && step data-tests tests $data_each -- --ignored
         step clippy cargo clippy --offline $each --all-targets -- -D warnings
         step doc env RUSTDOCFLAGS="-D warnings" cargo doc --offline --no-deps $each
-        [ -n "$shown" ] && step format cargo fmt --check $shown
+        step format cargo fmt --check $each
     }
 else
     step rule sh tools/rule.sh
@@ -109,8 +104,7 @@ else
     step clippy cargo clippy --offline --workspace --all-targets -- -D warnings
     # (The documentation of the code: no link to nothing.)
     step doc env RUSTDOCFLAGS="-D warnings" cargo doc --offline --workspace --no-deps
-    # shellcheck disable=SC2086
-    step format cargo fmt --check $(for package in $formatted; do printf -- '-p %s ' "$package"; done)
+    step format cargo fmt --all --check
 fi
 # (The films are no longer played here, as the user asked on 2026-11-09:
 # `scene_player check <film>` checks one when it is worked on.)

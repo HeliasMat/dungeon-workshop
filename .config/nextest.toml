@@ -1,0 +1,4 @@
+# cargo-nextest (tools/verify.sh runs the tests with it when it is installed).
+# On CI every test runs even after a failure, so that one run tells them all.
+[profile.ci]
+fail-fast = false
