@@ -25,7 +25,7 @@ pub(super) fn checkered(painter: &egui::Painter, room: Rect, square: f32) {
 }
 
 /// A picture in a room, its pixels whole when it fits so.
-pub(crate) fn fitted(size: Vec2, room: Rect) -> Rect {
+pub fn fitted(size: Vec2, room: Rect) -> Rect {
     let fit = (room.width() / size.x).min(room.height() / size.y);
     let scale = if fit >= 1.0 { fit.floor() } else { fit };
     Rect::from_center_size(room.center(), size * scale)

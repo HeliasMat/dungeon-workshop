@@ -7,9 +7,9 @@ use eframe::egui::{self, Color32, FontId, Rect, vec2};
 
 use super::{Item, Resources, Sheet, Shelf};
 use crate::decors::Decors;
-use crate::picture::fitted;
 use workshop_base::session::{Session, Sheets};
 use workshop_base::theme;
+use workshop_picture::fitted;
 
 /// The widest a picture is made a texture (wider ones are cut: some cards take no more).
 const LARGEST: u32 = 8192;

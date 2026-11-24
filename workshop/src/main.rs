@@ -39,7 +39,6 @@ mod level_csv;
 mod library;
 mod music;
 mod panels;
-mod picture;
 mod placing;
 mod quant_tool;
 mod resources;

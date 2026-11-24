@@ -71,7 +71,7 @@ fn file_buttons(ui: &mut egui::Ui, resources: &mut Resources, item: &Item, file:
         resources.said = Some(file.parent().map_or_else(String::new, opened));
     }
     if item.shelf == Shelf::Drawn && ui.button("Paint Here").on_hover_text("in the Workshop, pixel by pixel, its images one by one").clicked() {
-        match crate::picture::Painting::open(&resources.session, &item.word, file, item.number.max(1) as usize) {
+        match workshop_picture::Painting::open(&resources.session, &item.word, file, item.number.max(1) as usize) {
             Some(painting) => resources.open_making(crate::resources::Maker::Picture(Box::new(painting))),
             None => resources.said = Some("the image could not be read".to_string()),
         }

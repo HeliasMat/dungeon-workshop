@@ -4248,6 +4248,7 @@ dependencies = [
  "spritecollab",
  "stage_view",
  "workshop_base",
+ "workshop_picture",
 ]
 
 [[package]]
@@ -4264,6 +4265,16 @@ dependencies = [
  "shell",
  "spritecollab",
  "stage_view",
+]
+
+[[package]]
+name = "workshop_picture"
+version = "0.2.0"
+dependencies = [
+ "eframe",
+ "film",
+ "image",
+ "workshop_base",
 ]
 
 [[package]]

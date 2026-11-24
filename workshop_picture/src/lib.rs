@@ -21,6 +21,10 @@
 //! Here: the tools,
 //! the game's palette, the layers, and the picture being painted with its
 //! first workings (its steps, its cels, its changes undone and redone).
+//!
+//! A crate of Dungeon Workshop: it uses `workshop_base` (the session, the look,
+//! safe saves); the Resources space holds what it paints (`Painting`, drawn by
+//! `paint`).
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -46,7 +50,7 @@ mod strokes;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use canvas::fitted;
+pub use canvas::fitted;
 pub use editor::paint;
 
 /// What paints.
@@ -197,7 +201,7 @@ pub struct Painting {
     floating_texture: Option<egui::TextureHandle>,
     file: Option<PathBuf>,
     size: (u32, u32),
-    pub(crate) saved: bool,
+    pub saved: bool,
     said: Option<String>,
     /// A stroke: where the pointer was, where a shape began, the pixels laid (to be pixel-perfect,
     /// to shade once), whether with the right button; a move's start.
@@ -314,7 +318,7 @@ impl Painting {
         }
     }
 
-    pub(crate) fn count(&self) -> usize {
+    pub fn count(&self) -> usize {
         self.layers[0].cels.len()
     }
 
