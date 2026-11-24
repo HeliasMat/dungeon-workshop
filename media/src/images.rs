@@ -122,7 +122,7 @@ impl Source {
                 };
                 // (A way with fewer steps than the sheet stays on its last.)
                 for (step, frame) in frames.iter_mut().enumerate() {
-                    (frame.mark, frame.points) = own.get(step).copied().map_or((0, own[own.len() - 1].1), |(mark, points)| (mark, points));
+                    (frame.mark, frame.points) = own.get(step).copied().unwrap_or((0, own[own.len() - 1].1));
                 }
             }
         }
