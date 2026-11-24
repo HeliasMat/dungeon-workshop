@@ -197,7 +197,7 @@ pub fn shared_text(project: &Project, name: &str) -> Result<String, String> {
     if let Some(text) = shared_path(project, name).and_then(|path| std::fs::read_to_string(path).ok()) {
         return Ok(text);
     }
-    // (An optional family's library, `uses dungeon`: all its files of film/recipes/dungeon/.)
+    // (An optional family's library, `uses fishing`: all its files of film/recipes/fishing/.)
     let parts: Vec<&str> =
         LIBRARY.iter().filter(|(from, _)| from.strip_prefix(name).is_some_and(|rest| rest.starts_with('/'))).map(|(_, text)| *text).collect();
     if !parts.is_empty() {

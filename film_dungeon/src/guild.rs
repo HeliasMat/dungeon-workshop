@@ -1,7 +1,6 @@
 //! Life at the guild, between two dungeons: a mission taken from the board
 //! and told back (remembered from one line to the next), a bout of
-//! training. (The reward, the night, the chores, a drink, signing up, an
-//! announcement, a diploma: recipes, `film/recipes/guild.film`.)
+//! training.
 
 use crate::DungeonState;
 use film_core::emit;

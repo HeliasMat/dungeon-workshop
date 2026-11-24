@@ -190,10 +190,10 @@ Nothing below a program's `main` looks for any of it. Each `main` finds the root
 ```text
 my_film.film             what you write
         │  language/     read only once: the tree (each line its range), what is wrong, at its column
-        │  film/text/    the tree as film lines (`ir::Instr`, `Shape`); a recipe written out at each call with what it is given (`front::called`)
-        │  film/verbs/   each word reads its form (`grammar::bind`, typed values, each where it is written), keeps its family's state, makes its `Beat`s (`emit/`)
+        │  film_core/src/text/    the tree as film lines (`ir::Instr`, `Shape`); a recipe written out at each call with what it is given (`front::called`)
+        │  film_core/src/verbs/   each word reads its form (`grammar::bind`, typed values, each where it is written), keeps its family's state, makes its `Beat`s (`emit/`)
 beats                    what depends on the scene is left as said: `front_of a`, `arrives`; a number found while playing, by its name (`Num::Var`, `FlowBeat::WaitFound`)
-        │  film/compile/ each scene opened (`Sortie::Scene`), its beats, each line of the film marked: the events, made without reading anything again
+        │  film_core/src/compile/ each scene opened (`Sortie::Scene`), its beats, each line of the film marked: the events, made without reading anything again
 events                   `Written::events`: each scene, its `Beat`s (the checker, `engine/src/lint/`, reads these written lines)
         │  director/     plays the beats and waits when it should
         │  stage/        who is where, camera, light
@@ -260,7 +260,7 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | The game's world: faces, songs, animations | `scenes/src/vocabulary.rs` (`POKEMON`), handed to the engine |
 | What only the game knows how to play: dungeons, items, map | `scenes/src/commands.rs`, its words in `scenes/src/vocabulary.rs` |
 | What a move does | `rules/src/attack/` (`resolve`, and `foreseen` to estimate it; an explosion on stage goes through it too); the numbers: `rules/src/dungeon/combat/` (damage, accuracy), `rules/src/dungeon/status/` (effects); `run/strike.rs` tells it on the floor, `fight/battle/` shows it on stage |
-| A fight announced by a film | `scenes/src/fight/battle/directed.rs`; `film_core/src/verbs/fights/` only writes its line |
+| A fight announced by a film | `scenes/src/fight/battle/directed.rs`; `film_fights/` only writes its line |
 | The size of bodies, for the view and positions | `film_core/src/compile/mod.rs` writes it as `body` lines; `engine/src/stage/camera/shots.rs` (`fit`) makes the framing from it, `stage/placing/` the gaps |
 | Where the ground is, the path, the free tile | `engine/src/stage/ground.rs` (`Ground`), on the real scene: `stage/placing/` (`front_of a`, formations, crowds, who comes in) |
 | How fast a line is typed out, how long it stays, when it is read too fast | `engine/src/director/reading.rs` (`LETTERS_A_FRAME`, `line_frames`, `read_after`, `least_shown`), for the box, the films, the player and `do` |

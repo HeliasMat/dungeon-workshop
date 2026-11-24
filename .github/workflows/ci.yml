@@ -27,6 +27,9 @@ jobs:
       - name: The rule of the crates
         shell: bash
         run: sh tools/rule.sh
+      - name: The paths the docs name
+        shell: bash
+        run: $(command -v python || command -v python3) tools/check_paths.py
       - name: Build
         run: cargo build --workspace --all-targets
       - name: Tests

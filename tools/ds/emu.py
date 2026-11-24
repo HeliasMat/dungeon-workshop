@@ -1,11 +1,11 @@
 """Development helper: run the ORIGINAL game in DeSmuME (py-desmume), without
 a window, to look at what it really shows.
 
-    python tools/emu.py <rom> <savestate or -> <out prefix> <script>
+    python tools/ds/emu.py <rom> <savestate or -> <out prefix> <script>
 
 The script is a comma-separated list of `frame:action` or `first-last:action`
-steps, like the game's own PMD_SKY_SCRIPT: an action is a button (A, B, X, Y,
-L, R, Start, Select, Up, Down, Left, Right), `shot` (saves both screens to
+steps: an action is a button (A, B, X, Y, L, R, Start, Select, Up, Down,
+Left, Right), `shot` (saves both screens to
 `<out prefix>_<frame>.png`, top above bottom), `save` (writes a savestate to
 `<out prefix>_<frame>.ds`), `vars` (writes the script engine's variables,
 by name, to `<out prefix>_<frame>_vars.txt`: the story's progress, the
@@ -14,8 +14,6 @@ memory in hexadecimal), `poke=<hex address>=<hex bytes>` (writes them in
 memory: what a patched arm9 holds, for a savestate made before the patch)
 or `quit`. `mashA:<period>` in place of a frame range presses A every
 <period> frames for the whole run.
-
-A copy of pmd_explorer_of_sky's tools/emu.py, with `poke` added.
 
 Work on COPIES of the ROM and savestate (the emulator may write a battery
 file next to the ROM). Nothing captured may be committed.

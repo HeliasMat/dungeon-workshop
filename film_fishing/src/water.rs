@@ -1,5 +1,5 @@
 //! What goes on in the water by itself: a leap; a fish's shadow coming up to
-//! a bobber (a stir, a school, a good spot: `film/recipes/fishing/water.film`).
+//! a bobber.
 
 use super::*;
 

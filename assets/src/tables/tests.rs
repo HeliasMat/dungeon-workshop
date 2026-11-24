@@ -36,7 +36,7 @@ fn the_backdrops_are_read_as_before() {
     let old: HashMap<i32, (i32, i32)> =
         rows_of(&folder, "backdrops.txt").iter().filter(|row| row.len() > 3).map(|row| (number(&row[0]), (number(&row[2]), number(&row[3])))).collect();
     assert_eq!(old, new.iter().map(|backdrop| (backdrop.level as i32, (backdrop.width, backdrop.height))).collect());
-    // (game/src/zone/story.rs: a level by its name)
+    // (a level by its name)
     let level_of = |code: &str| {
         text.lines().find_map(|line| {
             let mut fields = line.split('\t');

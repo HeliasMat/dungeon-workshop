@@ -205,7 +205,7 @@ fn the_corpus_reads_and_is_written_back() {
         .flatten()
         .flatten()
         .map(|game| format!("tests/games/{}/films", game.file_name().to_string_lossy()));
-    let folders = ["library/films", "library/films/recipes", "film/recipes", "film/recipes/dungeon", "film/recipes/fishing"].map(String::from);
+    let folders = ["library/films", "library/films/recipes", "film/recipes", "film/recipes/fishing"].map(String::from);
     for folder in folders.into_iter().chain(games) {
         let Ok(found) = std::fs::read_dir(format!("{root}/{folder}")) else { continue };
         files.extend(found.flatten().map(|entry| entry.path()).filter(|path| path.extension().is_some_and(|extension| extension == "film")));

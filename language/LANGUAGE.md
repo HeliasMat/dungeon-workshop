@@ -234,7 +234,7 @@ let n = long_cast(pikachu, (480, 108), 5)       # as a function
 - **Called with `&`**, a recipe plays alongside the film.
 - **`uses name`**: the recipes of `library/films/recipes/name.film`, or of
   `film/recipes/…`. `uses dungeon`, `uses guild`, `uses fishing`: the built-in library of an optional family
-  (all of `film/recipes/dungeon/`…), whose words a film says only after it. That file contains only `define`s and `let`s.
+  (all of `film/recipes/fishing/`…), whose words a film says only after it. That file contains only `define`s and `let`s.
 - **`include name`**: all the scenes of that film, in this place.
 
 ## 6. Time

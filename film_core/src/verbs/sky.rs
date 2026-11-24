@@ -1,6 +1,5 @@
-//! The sky and the light: the weather, the hour (time stopping: recipes,
-//! `film/recipes/sky.film`). Nothing lays
-//! a light on a scene but what is written here.
+//! The sky and the light: the weather, the hour. Nothing lays a light on a
+//! scene but what is written here.
 
 use super::{Line, Word};
 use crate::emit;

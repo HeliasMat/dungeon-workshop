@@ -26,6 +26,7 @@ A test that fails only there needs a line added to the fixture (in the format of
 sh tools/verify.sh          # everything: the crate rule, build, tests, clippy, docs, format
 sh tools/verify.sh <part>   # one crate and those that use it
 sh tools/rule.sh            # the crate rule alone
+python tools/check_paths.py # the paths the docs name are in the repository
 python tools/check_tutorial.py  # every snippet of docs/TUTORIAL.md checked for real (after a release build of scene_player)
 ```
 

@@ -1,5 +1,6 @@
 #!/bin/sh
-# All of it checked, in one go: the rule of the crates, every test (those that
+# All of it checked, in one go: the rule of the crates, the paths the docs
+# name, every test (those that
 # need data/ too when it is there), clippy (not
 # one warning), the format, the documentation, the build,
 # the game by itself (the films are not played: see below). Goes on after a
@@ -13,6 +14,7 @@ cd "$(dirname "$0")/.." || exit 2
 logs=target/verify
 mkdir -p "$logs"
 failed=""
+python=$(command -v python || command -v python3)
 
 step() {
     name=$1
@@ -80,6 +82,7 @@ if [ -n "$1" ]; then
         case " $formatted " in *" $package "*) shown="$shown -p $package" ;; esac
     done
     step rule sh tools/rule.sh
+    step paths "$python" tools/check_paths.py
     # shellcheck disable=SC2086
     {
         step build cargo build --offline $each
@@ -96,6 +99,8 @@ if [ -n "$1" ]; then
     }
 else
     step rule sh tools/rule.sh
+    # (The paths the docs name are in the repository.)
+    step paths "$python" tools/check_paths.py
     step build cargo build --offline --workspace
     step test-places test_places
     step tests tests --workspace

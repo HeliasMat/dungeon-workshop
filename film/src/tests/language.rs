@@ -8,7 +8,7 @@ use film_core::text::front::internal;
 fn every_file_reads_in_the_language() {
     let root = crate::tests::root();
     let mut wrong = Vec::new();
-    for folder in ["film/recipes", "film/recipes/dungeon", "film/recipes/fishing", "tests/games/test_village/films/recipes"] {
+    for folder in ["film/recipes", "film/recipes/fishing", "tests/games/test_village/films/recipes"] {
         let Ok(found) = std::fs::read_dir(root.join(folder)) else { continue };
         for path in found.flatten().map(|entry| entry.path()).filter(|path| path.extension().is_some_and(|extension| extension == "film")) {
             let text = std::fs::read_to_string(&path).unwrap_or_default();

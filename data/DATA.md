@@ -22,7 +22,7 @@ then `extra/decor_<list>` (what `decor` writes) on top of all (`decors.txt`
 too, by its name); a line from above
 replaces the one below with the same key. The three readers of this merge:
 `assets/src/data.rs` (`text`, `text_kept`),
-`film/src/tables/files.rs` (`game_lines`).
+`film_core/src/tables/files.rs` (`game_lines`).
 
 All the lists are UTF-8 text, one line per entry, fields separated by tabs;
 `#` at the start: a comment. In spoken text, `\n` is a line break.
@@ -31,10 +31,10 @@ All the lists are UTF-8 text, one line per entry, fields separated by tabs;
 
 | File | Written by (`extractor/src/`) | Columns, meaning | Read by |
 |---|---|---|---|
-| `story.txt` | `story.rs` | the story: `event <n> <name> <chapter> <step>`, then `scene <level> <name>`, `actor`, `backdrop`, `say <who> <face> <text>`, `ask <answers \| >`, `dungeon <n>`, `ground <level>`... (see `lib.rs`) | `story` (the game, `game/src/zone/story.rs`), `film/src/tables/story.rs`, `preview/src/film.rs` |
-| `town.txt` (list, blocks) | `town.rs` | the places you walk around: `place <level> <name> <tiles wide> <tiles high>`, `music <song>`, one `solid <0/1...>` line per row of 8 px tiles (`1`: you cannot pass), `area <x> <y> <w> <h> <examined>`, `actor <entity> <x> <y> <direction> <leader>` and what it does, `menu <n>`, `moment <chapter> <step>` | `game/src/zone/` (`begin.rs`, `places.rs`), `assets::tables` (`solid_rows`: `shell`; `actors`: the residents of `film`), `decor game_grounds` |
-| `place_things.txt` | `town.rs` | what is set down in these places: `place <level>`, `moment <chapter> <step>`, `thing <object> <x> <y>` | `game/src/zone/places.rs` |
-| `backdrops.txt` (list, key 1) | `pictures.rs` | level, name, width, height (px) of each backdrop | `film/src/tables/` (`places.rs`, `story.rs`), `game/src/zone/story.rs`, `preview/src/check.rs`, `decor` (the free levels) |
+| `story.txt` | `story.rs` | the story: `event <n> <name> <chapter> <step>`, then `scene <level> <name>`, `actor`, `backdrop`, `say <who> <face> <text>`, `ask <answers \| >`, `dungeon <n>`, `ground <level>`... (see `lib.rs`) | `story`, `film_core/src/tables/story.rs`, `preview/src/film.rs` |
+| `town.txt` (list, blocks) | `town.rs` | the places you walk around: `place <level> <name> <tiles wide> <tiles high>`, `music <song>`, one `solid <0/1...>` line per row of 8 px tiles (`1`: you cannot pass), `area <x> <y> <w> <h> <examined>`, `actor <entity> <x> <y> <direction> <leader>` and what it does, `menu <n>`, `moment <chapter> <step>` | `assets::tables` (`solid_rows`: `shell`; `actors`: the residents of `film`), `decor game_grounds` |
+| `place_things.txt` | `town.rs` | what is set down in these places: `place <level>`, `moment <chapter> <step>`, `thing <object> <x> <y>` | (nothing yet) |
+| `backdrops.txt` (list, key 1) | `pictures.rs` | level, name, width, height (px) of each backdrop | `film_core/src/tables/` (`places.rs`, `story.rs`), `preview/src/check.rs`, `decor` (the free levels) |
 | `backdrops/<level>.png` | `pictures.rs` | the whole backdrop (its two layers, first frame) | `shell` (`art.rs`, `images.rs`), `decor`, `scene_player place`, `export`, `decor game_grounds` |
 | `grounds/info/<level>.bin` | `pictures.rs` | `media::art_files::GroundInfo` (bincode): size, length of a frame, how many of each kind, palettes, colour cycles | `media/src/art_files.rs`, `decor/src/source.rs`, `export` |
 | `grounds/pictures/<level>_<f\|u\|i\|v><frame>.png` | `pictures.rs` | each picture of the place: `f` the ground, `u` the layer you pass under, `i` and `v` their palette indices (colours that cycle) | same |
@@ -48,14 +48,14 @@ All the lists are UTF-8 text, one line per entry, fields separated by tabs;
 | `props/<object>_<animation>.png` | `pictures.rs` | like the sprites | same |
 | `entities.txt` | `pictures.rs` | number, script name, Pokémon | `stage_view/src/stage/cast.rs` |
 | `dungeons.txt` | `pictures.rs` | number, name, floors | (the tools) |
-| `items.txt`, `moves.txt` | `pictures.rs` | number, name | `film/src/tables/mod.rs`, `stage_view/src/stage/cast.rs` |
+| `items.txt`, `moves.txt` | `pictures.rs` | number, name | `film_core/src/tables/mod.rs`, `stage_view/src/stage/cast.rs` |
 | `dex.txt` (list, key 1) | `lib.rs` | Pokémon, national Pokédex number | `assets::tables::numbered` (`film`), sprites added by hand in `data/extra/` |
 | `talk.txt` | `people.rs` (`rom_formats::talk`, `MESSAGE/tbl_talk.tlk`) | what team members say by personality: `monster <n> <name> <group>` (each Pokémon's group), `special <n> <group>` (the story's 0x24 own characters: partners, Grovyle, Chatot...), `say <group> <kind> <n> <string> <text>` (kind: `healthy`, `half_life`, `pinch`, `level_up`, `wait`, `ground_wait`; string: its number in `text_e.str`; text in English, with the game's tags) | (nothing yet) |
 | `guests.txt` | `people.rs` (`rom_formats::guests`) | the guests of the story's dungeons: `guest <n> <Pokémon> <name> <level> <HP> <Attack> <Sp. Atk> <Defense> <Sp. Def> <IQ> <exp> <moves ,> <dungeon where it joined> <floor>`, then `dungeon <n> <first guest> <second> <flags ,>` for each dungeon that adds some or has rules (`-`: none; `hidden_land`: Hidden Land's rules (no sending home, no leader change, out if the partner faints) on the first visit, `hidden_land_cleared`: after, `no_recruiting`, `before_side01_boss2nd`) | (nothing yet) |
-| `dungeons.bin` | `tables.rs` | `rules::tables::Tables` (bincode): dungeons, floors, items, species, constants | `game/src/game.rs`, `preview/src/art.rs`, `scene_player dungeons`, `shell::data::folder` (the folder that has it) |
+| `dungeons.bin` | `tables.rs` | `rules::tables::Tables` (bincode): dungeons, floors, items, species, constants | `game/src/playthrough.rs`, `preview/src/art.rs`, `scene_player dungeons`, `shell::data::folder` (the folder that has it) |
 | `tilesets/<n>.png`, `_i.png`, `.cycles`, `.bin` | `tables.rs` | a dungeon's tiles, their palette indices, their cycles, the table of pieces | `shell/src/art.rs`, `decor/src/room/` |
 | `interface.bin` | `lib.rs` (`UiArt::pack`) | the interface's pictures, font and words | `game`, `preview/src/art.rs`, `export` |
-| `sound.bin` | `textures.rs` | `shell::music::Library` (bincode): songs, jingles, noises | `game/src/main.rs`, `shell`, `scene_player sounds` |
+| `sound.bin` | `textures.rs` | `shell::music::Library` (bincode): songs, jingles, noises | `shell/src/sound.rs`, `scene_player sounds` |
 | `effects.txt` | `textures.rs` | id, width, height, durations, time, repeats, full screen, sound, point, directions | `assets::tables::effects` (`shell`), `export` |
 | `effects/<id>.png` | `textures.rs` | an effect's frames side by side, one row per direction | same |
 | `status.txt`, `status/<name>.png` | `textures.rs` | name, width, height, frames; the strip of icons | `assets::tables::statuses` (`shell`), `export` |
@@ -66,7 +66,7 @@ All the lists are UTF-8 text, one line per entry, fields separated by tabs;
 
 | File | Only writer | Columns, meaning | Read by |
 |---|---|---|---|
-| `decors.txt` | `decor` (`decor/src/write.rs`) | name of the built place, level, middle x, y, name shown, entrances `x,y,name;...` | `film/src/tables/places.rs` (`Tables::decors`), `decor` (the levels), `decor game_grounds` |
+| `decors.txt` | `decor` (`decor/src/write.rs`) | name of the built place, level, middle x, y, name shown, entrances `x,y,name;...` | `film_core/src/tables/places.rs` (`Tables::decors`), `decor` (the levels), `decor game_grounds` |
 | `decor_town.txt` (over `town.txt`) | `decor` | the block of each built place, like those of `town.txt` (`place`, `music`, `departure`, `solid`, `area` + `ground`, `link`, `actor`, `say`) | everything that reads `town.txt` |
 | `decor_backdrops.txt` (over `backdrops.txt`) | `decor` | the line of each built place: level, NAME, width, height | everything that reads `backdrops.txt` |
 | `decor_ground.txt` (over `ground.txt`) | `decor` | the ground of each built place, like `ground.txt` (`jeu`) | everything that reads `ground.txt` |

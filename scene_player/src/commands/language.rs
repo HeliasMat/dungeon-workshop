@@ -13,7 +13,7 @@ pub(super) fn files(context: &Context, words: &[String]) -> Vec<PathBuf> {
     }
     let root = context.root();
     let mut found = Vec::new();
-    for folder in ["library/films", "library/films/recipes", "film/recipes", "film/recipes/dungeon"] {
+    for folder in ["library/films", "library/films/recipes", "film/recipes", "film/recipes/fishing"] {
         let Ok(entries) = std::fs::read_dir(root.join(folder)) else { continue };
         let mut these: Vec<PathBuf> =
             entries.flatten().map(|entry| entry.path()).filter(|path| path.extension().is_some_and(|extension| extension == "film")).collect();
