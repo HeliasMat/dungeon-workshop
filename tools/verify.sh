@@ -106,7 +106,7 @@ else
     step doc env RUSTDOCFLAGS="-D warnings" cargo doc --offline --workspace --no-deps
     step format cargo fmt --all --check
 fi
-# (The films are no longer played here, as the user asked on 2026-11-09:
+# (The films are not played here:
 # `scene_player check <film>` checks one when it is worked on.)
 if [ -n "$failed" ]; then
     echo "failed:$failed"

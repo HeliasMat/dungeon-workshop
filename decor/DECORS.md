@@ -1,16 +1,16 @@
 # Making a place
 
-> **Since 2026-11-15, the Workshop only offers what the ROM itself keeps apart**:
+> **The Workshop only offers what the ROM itself keeps apart**:
 > - the objects of the upper layer `e<level>_<n>` (their transparent pixels really are), with nothing of the ground layer;
 > - the animated tiles of the ground layer `a<level>_<n>` (BPA tiles, cycling palettes: windmill, flowers, water);
 > - the objects laid by the scenes `o<n>` (chests, signs…), their first frame.
 >
 > The rest of each place `r<level>` stays in the catalogue, backstage, to make a place of the game again.
 >
-> The pieces of before were removed, and the sections below that speak of them describe the tool of before:
+> Some sections below still speak of pieces the catalogue does not have:
 > - `pieces.txt` is empty;
-> - no more grounds, edges or paths to weave;
-> - no more things `l…`, whole places `l…_tout` or scene objects `o…`.
+> - there are no grounds, edges or paths to weave;
+> - there are no things `l…` or whole places `l…_tout`, and `o…` names only the scenes' objects above.
 
 A place is written like a film: a short file, `library/decors/<name>.decor`, one idea per line. The tool builds it with the elements of the game's places; no pixel is drawn, no built image goes into git (everything goes into `data/extra/`). Then the place plays in a film by its name: `scene: my_village`.
 

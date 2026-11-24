@@ -34,7 +34,7 @@ CI runs the same steps (`.github/workflows/ci.yml`). Clippy must give no warning
 
 ## How-to guides
 
-- [Add a film word](docs/ADD_A_FILM_WORD.md): its family and crate, the `Word`, the plan, the DS status, the Wiki page, FILMS.md, `scene_player try`.
+- [Add a film word](docs/ADD_A_FILM_WORD.md): its family and crate, the `Word` with its DS status, the Wiki page, FILMS.md, `scene_player try`.
 - [Add a Workshop panel or part](docs/ADD_A_WORKSHOP_PANEL.md): its crate, the session, asking the window (`workshop_base/src/ask.rs`), registering it in `workshop/src/app.rs`.
 
 ## The crate rule
