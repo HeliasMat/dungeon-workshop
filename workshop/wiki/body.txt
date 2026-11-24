@@ -100,3 +100,21 @@ machamp put center
 pikachu put left
 machamp carry pikachu
 machamp put_down pikachu to left
+
+== shiver
+> Someone shivers, with cold or fear: they tremble, a drop of sweat.
+scene: beach pikachu piplup
+pikachu shiver
+pikachu (worried): It's cold tonight...
+
+== stretch
+> Someone stretches: up to the sky, then a deep breath. Where their sprite has no such animation, the nearest it has plays.
+scene: beach pikachu piplup
+pikachu stretch
+pikachu (happy): What a morning!
+
+== celebrate
+> Someone celebrates: a spin, happy hops, their proud pose.
+scene: beach pikachu piplup
+piplup: We won!
+pikachu celebrate

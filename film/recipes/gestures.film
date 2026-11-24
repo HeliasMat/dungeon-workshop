@@ -125,3 +125,56 @@ define ghost who:pokemon
   who opacity 0.5 30f &
   who float 5 70f
 end
+
+# He laughs: the game's laugh balloon, little hops on the spot.
+define laugh who:pokemon
+  who emote laugh
+  repeat 2
+    who jump height 4
+  end
+  wait 0.3s
+end
+
+# He cries: head down in pain, a drop of sweat, shaking a little.
+define cry who:pokemon
+  who pose pain
+  who tremble
+  who emote sweat silent
+  wait 1.6s
+  who tremble off
+  who pose off
+end
+
+# He sulks: he turns his back, and sighs.
+define sulk who:pokemon
+  who face away
+  wait 0.4s
+  who emote sweat silent
+  wait 1s
+end
+
+# He shivers, with cold or fear: trembling, a drop of sweat.
+define shiver who:pokemon
+  who tremble
+  who emote sweat silent
+  wait 1.2s
+  who tremble off
+end
+
+# He stretches: up to the sky, a deep breath.
+define stretch who:pokemon
+  who pose look_up
+  wait 0.6s
+  who pose breathe
+  wait 0.6s
+  who pose off
+end
+
+# He celebrates: a spin, happy hops, his proud pose.
+define celebrate who:pokemon
+  who pose spin
+  wait 0.4s
+  who hop happy times 2
+  who pose proud
+  wait 0.6s
+end

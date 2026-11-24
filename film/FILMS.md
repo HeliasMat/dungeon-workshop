@@ -174,8 +174,8 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 | Formations | `form row\|column\|ring\|lineup who... [to where] [walk\|run]` |
 | Movement | `who walk to where [slow\|brisk] [backward] [via a b...]`, `who run to where`, `who shift to\|by where`, `who jump [to where] [height h]`, `who hop [happy\|surprised\|angry] [times n]`, `who follow other`, `who chase other`, `who flee from other [to where]`, `who wander [area]` (each `off` to stop), `who ride on other [back\|head]`, `who get_off [to where]` |
 | Turning | `who face side\|other\|away [fast\|slow]`, `who look around\|left\|right\|up\|down`, `who nod [times n]`, `who shake_head` |
-| Body | `who pose animation [once\|loop\|hold]`, `who sleep`, `who eat [item]`, `who hurt [hard]`, `who tremble`, `who fall [over\|back\|trip]`, `who faint`, `who cower [from other]`, `who hug other`, `who comfort other`, `who cheer`, `who carry other`, `who put_down other [to where]` |
-| Emotions | `who emote exclaim\|shock\|sweat\|joy\|laugh\|question\|notice\|anger\|munch [silent]`, `who react joy\|surprise\|anger\|fear\|doubt\|relief`, `who sigh` |
+| Body | `who pose animation [once\|loop\|hold]`, `who sleep`, `who eat [item]`, `who hurt [hard]`, `who tremble`, `who fall [over\|back\|trip]`, `who faint`, `who cower [from other]`, `who hug other`, `who comfort other`, `who cheer`, `who carry other`, `who put_down other [to where]`, `who shiver`, `who stretch`, `who celebrate` |
+| Emotions | `who emote exclaim\|shock\|sweat\|joy\|laugh\|question\|notice\|anger\|munch [silent]`, `who react joy\|surprise\|anger\|fear\|doubt\|relief`, `who sigh`, `who laugh`, `who cry`, `who sulk` |
 | Camera | `frame who... [where] [snap\|follows]`, `glide to where\|who [in d]`, `shake [soft\|hard]` |
 | Screen | `flash [white\|colour]`, `memory … end` |
 | Sound | `music track [fade d] [volume v]`, `music off [fade d]`, `sound name [on who] [loop]`, `jingle name` |
@@ -191,6 +191,8 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 **Riding and carrying.** `pikachu ride on lapras` hops him onto its back: he goes where it goes, turns with it as it walks, rises and sinks with it (`ride a b`, the same). He sits as high as the mount's middle and a quarter of its span behind it, from the game's own points of its body (`points.txt`); `head`: on its head instead; `high 12`, `behind 6`: by hand. `pikachu get_off [to x y]` (or `dismount`) hops him down, beside it or there. `machamp carry pikachu` lifts pikachu over machamp's head (as high as its head's point), carried wherever it goes; `machamp put_down pikachu [to where]` hops him down before it. `ride a 20 0.5s`, numbers and no mount, is still the engine's own `ride`. On DS, the rider climbs up but stays where he got on (`R-DS-LOSS`).
 
 **A move out of a fight.** `piplup use Hypnosis on pikachu`, `pikachu use Protect`, `pikachu use Thunderbolt at 350 170`: the move by its name, as the game shows it (his own animation, its effects and its sound), turned to the one or the point it is used on; no one knocked back nor hurt, nothing missed (that is `attack`). Only moves: `a uses Oran Berry`, in a directed fight, is another word. On DS, as `attack` (`R-DS-LOSS`).
+
+**Gestures, and what a sprite lacks.** `who pose name` plays the sprite's animations by a clear name (`sit`, `lie`, `look_up`, `proud`, `stagger`, `cringe`, `faint`, `nod`, `breathe`, `spin`…: `POSES` in `film/src/verbs/acting.rs`). The film knows which animations each species' sprite really has (`sprites.txt`): one it lacks plays the nearest it has (`sit`: lying, else asleep; `cringe`: pain, else hurt; `proud`: a hop…), and where none is near, `check` remarks it (“lapras has no Float animation: he stays standing”). The gestures the game has no animation for are recipes (`film/recipes/gestures.film`): `who laugh` (its laugh balloon, little hops), `who cry` (pain, sweat, shaking), `who sulk` (back turned, a sigh), `who shiver`, `who stretch`, `who celebrate` (a spin, happy hops, its proud pose).
 
 The **advanced words**, folded in the Workshop, are the engine's own commands (`layer`, `tint`, `zoom`, `node`, `prop`, `attach`, `timer`, `every`, `while`, `random`, `tempo`, `halo`...: `engine/docs/COMMANDS.md`), and the lines of a place's scene the game makes (`player`, `dialogue`, `explore`, `game`, `way`).
 
@@ -798,6 +800,12 @@ Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each 
 | `sigh` |  | `gestures` | by the line | `sigh who:pokemon`:  |
 | `react` |  | `gestures` | by the line | `react who:pokemon joy`:  |
 | `ghost` |  | `gestures` | by the line | `ghost who:pokemon`: He turns half see-through and floats, as a ghost does. |
+| `laugh` |  | `gestures` | by the line | `laugh who:pokemon`: He laughs: the game's laugh balloon, little hops on the spot. |
+| `cry` |  | `gestures` | by the line | `cry who:pokemon`: He cries: head down in pain, a drop of sweat, shaking a little. |
+| `sulk` |  | `gestures` | by the line | `sulk who:pokemon`: He sulks: he turns his back, and sighs. |
+| `shiver` |  | `gestures` | by the line | `shiver who:pokemon`: He shivers, with cold or fear: trembling, a drop of sweat. |
+| `stretch` |  | `gestures` | by the line | `stretch who:pokemon`: He stretches: up to the sky, a deep breath. |
+| `celebrate` |  | `gestures` | by the line | `celebrate who:pokemon`: He celebrates: a spin, happy hops, his proud pose. |
 | `finish` |  | `fights` | by the line | `finish who:pokemon target:pokemon move...`: The finishing blow: time slowed, the screen white, the move; the one struck faints, and the music falls silent a moment over them. |
 | `reel` |  | `fishing/line` | by the line | `reel who:pokemon catch what:word`: He reels in what bit: it flies out of the water and lands beside him. |
 <!-- end of words -->

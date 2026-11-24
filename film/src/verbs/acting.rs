@@ -539,12 +539,61 @@ fn posed(film: &mut Film, line: &Line) -> bool {
         _ if line.args.has("hold") => Plays::Hold,
         _ => by_default,
     };
-    film.on(&who, |one| match hold {
-        Plays::Once => emit::anim_times(one, group, 1),
-        Plays::Hold => emit::anim(one, group, false, false),
-        Plays::Loop => emit::anim(one, group, true, false),
-    });
+    for one in film.members(&who) {
+        // (An animation his sprite lacks: the nearest it has, else he stands, told.)
+        let Some(group) = animation_had(film, &one, group, line.number) else {
+            continue;
+        };
+        film.on(&one, |one| match hold {
+            Plays::Once => emit::anim_times(one, group, 1),
+            Plays::Hold => emit::anim(one, group, false, false),
+            Plays::Loop => emit::anim(one, group, true, false),
+        });
+    }
     true
+}
+
+/// For an animation a sprite may lack, the nearest ones to play instead,
+/// in turn (most sprites have Hurt, Hop, Charge and Attack).
+const NEAREST: [(&str, &[&str]); 18] = [
+    ("Sit", &["Laying", "Sleep"]),
+    ("Laying", &["Sleep"]),
+    ("LookUp", &["Charge"]),
+    ("Nod", &["Hop"]),
+    ("DeepBreath", &["Nod", "Charge"]),
+    ("Pose", &["Hop", "Charge"]),
+    ("Cringe", &["Pain", "Hurt"]),
+    ("LostBalance", &["Pain", "Hurt"]),
+    ("Pain", &["Hurt"]),
+    ("Faint", &["Sleep", "Hurt"]),
+    ("Tumble", &["TumbleBack", "Hurt"]),
+    ("TumbleBack", &["Tumble", "Hurt"]),
+    ("Trip", &["Tumble", "Hurt"]),
+    ("HitGround", &["Hop"]),
+    ("LeapForth", &["Hop"]),
+    ("Head", &["Attack"]),
+    ("Pull", &["Charge"]),
+    ("Wake", &["Hop"]),
+];
+
+/// The animation someone plays for that one: itself if his sprite has it
+/// (or his sheets are not known), else the nearest he has; none, told: he
+/// stands.
+fn animation_had(film: &mut Film, who: &str, group: AnimId, number: usize) -> Option<AnimId> {
+    let Some(code) = film.actor(who) else {
+        return Some(group);
+    };
+    let has = |film: &Film, group: AnimId| film.has_animation(&code, group.0).unwrap_or(true);
+    if has(film, group) {
+        return Some(group);
+    }
+    let name = scenes::vocabulary::POKEMON.animations.iter().find(|(_, at)| *at == usize::from(group.0)).map_or("that", |(name, _)| *name);
+    let nearest = NEAREST.iter().find(|(said, _)| *said == name).map_or(&[][..], |(_, nearest)| *nearest);
+    if let Some(instead) = nearest.iter().filter_map(|name| emit::anim_of(name)).find(|instead| has(film, *instead)) {
+        return Some(instead);
+    }
+    film.remark(number, format!("{who} has no {name} animation: he stays standing"));
+    None
 }
 
 /// `pikachu sleep off`: awake, his Wake animation.

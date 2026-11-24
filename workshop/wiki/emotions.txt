@@ -22,3 +22,24 @@ scene: beach pikachu piplup
 piplup: The rain again...
 pikachu sigh
 pikachu (sad): We stay in today.
+
+== laugh
+> Someone laughs: the game's laugh balloon and little hops on the spot.
+scene: beach pikachu piplup
+piplup: And then I fell in the water!
+pikachu laugh
+pikachu (happy): Ha ha!
+
+== cry
+> Someone cries: head down in pain, a drop of sweat, shaking a little.
+scene: beach pikachu piplup
+piplup cry
+piplup (crying): I lost it...
+pikachu comfort piplup
+
+== sulk
+> Someone sulks: they turn their back and sigh.
+scene: beach pikachu piplup
+pikachu: You can't come.
+piplup sulk
+piplup (angry): Fine.

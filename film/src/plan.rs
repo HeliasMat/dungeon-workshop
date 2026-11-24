@@ -136,10 +136,16 @@ pub const WORDS: &[Planned] = &[
     recipe("Body", "hug", "who hug other"),
     recipe("Body", "comfort", "who comfort other"),
     recipe("Body", "cheer", "who cheer"),
+    recipe("Body", "shiver", "who shiver"),
+    recipe("Body", "stretch", "who stretch"),
+    recipe("Body", "celebrate", "who celebrate"),
     // Emotions
     word("Emotions", "emote", "who emote exclaim|shock|sweat|joy|laugh|question|notice|anger|munch [silent] / who emote off"),
     recipe("Emotions", "react", "who react joy|surprise|anger|fear|doubt|relief"),
     recipe("Emotions", "sigh", "who sigh"),
+    recipe("Emotions", "laugh", "who laugh"),
+    recipe("Emotions", "cry", "who cry"),
+    recipe("Emotions", "sulk", "who sulk"),
     // Camera
     word("Camera", "frame", "frame who... [where] [snap]"),
     word("Camera", "glide", "glide to where|who [in d]"),
