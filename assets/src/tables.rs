@@ -147,6 +147,50 @@ pub struct Sheet {
     pub shadow: (i32, i32),
 }
 
+/// The original game's groups of a sprite's animations, by the names the
+/// PMDCollab community gives them (as its sheets' AnimData.xml writes them;
+/// the sprites added by hand in `data/extra/` use them too). The last two
+/// only variants have, painted by hand.
+pub const ANIMATION_GROUPS: [(&str, usize); 37] = [
+    ("Walk", 0),
+    ("Attack", 1),
+    ("Kick", 2),
+    ("Shoot", 3),
+    ("Strike", 4),
+    ("Sleep", 5),
+    ("Hurt", 6),
+    ("Idle", 7),
+    ("Swing", 8),
+    ("Double", 9),
+    ("Hop", 10),
+    ("Charge", 11),
+    ("Rotate", 12),
+    ("EventSleep", 13),
+    ("Wake", 14),
+    ("Eat", 15),
+    ("Tumble", 16),
+    ("Pose", 17),
+    ("Pull", 18),
+    ("Pain", 19),
+    ("Float", 20),
+    ("DeepBreath", 21),
+    ("Nod", 22),
+    ("Sit", 23),
+    ("LookUp", 24),
+    ("Sink", 25),
+    ("Trip", 26),
+    ("Laying", 27),
+    ("LeapForth", 28),
+    ("Head", 29),
+    ("Cringe", 30),
+    ("LostBalance", 31),
+    ("TumbleBack", 32),
+    ("Faint", 33),
+    ("HitGround", 34),
+    ("Vise", 50),
+    ("FireRifle", 51),
+];
+
 /// A line of `sprites.txt` or `props.txt`: whose sheet (monster or object),
 /// which animation, the sheet; for a thing, whether it lies on the ground.
 #[derive(Clone, Debug, PartialEq, Eq)]

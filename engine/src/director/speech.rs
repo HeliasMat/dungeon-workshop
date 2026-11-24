@@ -22,16 +22,7 @@ pub fn emphasis(text: &str) -> String {
 /// Words as they are compared (see `Director::holds`): in small letters,
 /// without accents, without the spaces around.
 pub(super) fn plain(words: &str) -> String {
-    let plain = |c: char| match c {
-        'à' | 'â' | 'ä' => 'a',
-        'é' | 'è' | 'ê' | 'ë' => 'e',
-        'î' | 'ï' => 'i',
-        'ô' | 'ö' => 'o',
-        'ù' | 'û' | 'ü' => 'u',
-        'ç' => 'c',
-        c => c,
-    };
-    words.trim().to_lowercase().chars().map(plain).collect()
+    words.trim().to_lowercase().chars().map(diagnostics::text::unaccented).collect()
 }
 
 /// A text with the names it asks for put in: of those it names

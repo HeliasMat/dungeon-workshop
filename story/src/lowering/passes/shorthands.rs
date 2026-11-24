@@ -315,8 +315,8 @@ impl Writer<'_> {
 }
 
 /// The emote a crowd shows by its name, as the engine names it (see
-/// `cheer`).
-fn crowd_emote(name: &str) -> Option<&'static str> {
+/// `cheer`; a film's `Film::cheered` too).
+pub fn crowd_emote(name: &str) -> Option<&'static str> {
     Some(match name {
         "joy" | "sparkle" => "joy",
         "anger" => "anger",

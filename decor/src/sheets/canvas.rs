@@ -137,15 +137,7 @@ pub fn text_wide(words: &str) -> usize {
 /// A letter's five rows, three bits each (the leftmost the highest); a
 /// capital as its small one, an accent left off.
 fn letter_of(letter: char) -> Option<[u8; 5]> {
-    let letter = match letter.to_ascii_lowercase() {
-        'à' | 'â' | 'ä' => 'a',
-        'é' | 'è' | 'ê' | 'ë' => 'e',
-        'î' | 'ï' => 'i',
-        'ô' | 'ö' => 'o',
-        'ù' | 'û' | 'ü' => 'u',
-        'ç' => 'c',
-        other => other,
-    };
+    let letter = diagnostics::text::unaccented(letter.to_ascii_lowercase());
     Some(match letter {
         'a' => [2, 5, 7, 5, 5],
         'b' => [6, 5, 6, 5, 6],

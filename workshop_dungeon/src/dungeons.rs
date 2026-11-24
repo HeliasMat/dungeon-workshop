@@ -8,12 +8,12 @@ use assets::project::Project;
 use std::time::Instant;
 use workshop_base::session::Session;
 
-use eframe::egui::{self, RichText, Sense, vec2};
+use eframe::egui::{self, RichText, Sense};
 use shell::sound::Hears;
 
 use crate::{DungeonMaking, Summary};
 use workshop_base::done::Done;
-use workshop_base::theme;
+use workshop_base::{tabs, theme};
 
 /// What to open in the Dungeon space: a new one, one by its word (the open
 /// game's own if it has one by that word, else the shared library's), or
@@ -169,48 +169,22 @@ pub fn tabs(ui: &mut egui::Ui, dungeons: &mut Dungeons) {
         let chosen = !dungeons.listing && at == dungeons.at;
         let making = &dungeons.open[at];
         let colour = if making.fight { theme::WRONG } else { theme::DUNGEON };
-        let frame = egui::Frame::new()
-            .fill(if chosen { theme::GROUND } else { egui::Color32::TRANSPARENT })
-            .stroke(egui::Stroke::new(1.0_f32, if chosen { colour } else { theme::HOVERED }))
-            .corner_radius(4)
-            .inner_margin(egui::Margin::symmetric(8, 2));
-        let shown = frame.show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = 5.0;
-                let (dot, _) = ui.allocate_exact_size(vec2(8.0, 8.0), Sense::hover());
-                ui.painter().rect_filled(dot, 2.0, colour);
-                ui.label(theme::text(if making.fight { "Fight" } else { "Dungeon" }, theme::SMALL - 1.0, theme::WEAK));
-                if making.own() {
-                    ui.label(theme::text("game", theme::SMALL - 1.0, theme::GAME)).on_hover_text(making.path().display().to_string());
-                }
-                let word = format!("{}{}", making.word, if making.saved { "" } else { " •" });
-                let name = ui.add(egui::Label::new(RichText::new(word).strong().color(if chosen { theme::STRONG } else { theme::TEXT })).sense(Sense::click()));
-                let asking = dungeons.closing == Some(at);
-                let cross = ui.add(
-                    egui::Button::new(RichText::new(if asking { "close without saving?" } else { "×" }).size(theme::SMALL).color(if asking {
-                        theme::WRONG
-                    } else {
-                        theme::FAINT
-                    }))
-                    .frame(false),
-                );
-                (name, cross)
-            })
-            .inner
-        });
-        let (name, cross) = shown.inner;
-        let whole = ui.interact(shown.response.rect, egui::Id::new(("dungeon tab", at)), Sense::click());
-        if (name.clicked() || whole.clicked()) && !cross.clicked() {
-            (dungeons.at, dungeons.listing, dungeons.closing) = (at, false, None);
+        let shown = tabs::Tab {
+            id: egui::Id::new(("dungeon tab", at)),
+            kind: if making.fight { "Fight" } else { "Dungeon" },
+            colour,
+            word: &making.word,
+            saved: making.saved,
+            chosen,
+            asking: dungeons.closing == Some(at),
+            game: making.own().then(|| making.path().display().to_string()),
+        };
+        match tabs::tab(ui, shown) {
+            tabs::Clicked::Show => (dungeons.at, dungeons.listing, dungeons.closing) = (at, false, None),
+            tabs::Clicked::Close if dungeons.open[at].saved || dungeons.closing == Some(at) => closed = Some(at),
+            tabs::Clicked::Close => dungeons.closing = Some(at),
+            tabs::Clicked::Nothing => {}
         }
-        if whole.middle_clicked() || cross.clicked() {
-            if dungeons.open[at].saved || dungeons.closing == Some(at) {
-                closed = Some(at);
-            } else {
-                dungeons.closing = Some(at);
-            }
-        }
-        whole.on_hover_text(if dungeons.open[at].saved { "click: show it · middle click: close" } else { "• not saved yet · Ctrl+Tab: the next one" });
     }
     if let Some(at) = closed {
         dungeons.close(at);

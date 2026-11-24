@@ -2973,6 +2973,7 @@ dependencies = [
 name = "scenes"
 version = "0.2.0"
 dependencies = [
+ "assets",
  "bincode",
  "engine",
  "glam",
@@ -3229,6 +3230,7 @@ name = "spritecollab"
 version = "0.2.0"
 dependencies = [
  "assets",
+ "diagnostics",
  "image",
  "serde_json",
 ]

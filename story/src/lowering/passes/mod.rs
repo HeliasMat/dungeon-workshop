@@ -21,6 +21,7 @@ mod tests;
 use crossings::crossings;
 use names::{groups, names};
 use sequences::sequences;
+pub use shorthands::crowd_emote;
 use shorthands::shorthands;
 
 /// Lines of fields, their short forms written out, each then written as

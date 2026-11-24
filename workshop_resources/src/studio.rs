@@ -1,10 +1,10 @@
 //! The tabs of what is being made, and the studio it is made in.
 
-use eframe::egui::{self, RichText, Sense, vec2};
+use eframe::egui::{self, RichText};
 
 use super::dropped::take_dropped_while_making;
 use super::{Resources, Shelf};
-use workshop_base::theme;
+use workshop_base::{tabs, theme};
 
 /// The tabs of what is being made, in the window's tools bar: back to the Library, each making
 /// (a click shows it, × closes it), a new one; Ctrl+Tab the next, Ctrl+Shift+Tab the one before.
@@ -32,50 +32,25 @@ pub fn making_tabs(ui: &mut egui::Ui, resources: &mut Resources) {
             "Animation" => theme::DECOR,
             _ => theme::ASSETS,
         };
-        let frame = egui::Frame::new()
-            .fill(if chosen { theme::GROUND } else { egui::Color32::TRANSPARENT })
-            .stroke(egui::Stroke::new(1.0_f32, if chosen { colour } else { theme::HOVERED }))
-            .corner_radius(4)
-            .inner_margin(egui::Margin::symmetric(8, 2));
-        let shown = frame.show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = 5.0;
-                let (dot, _) = ui.allocate_exact_size(vec2(8.0, 8.0), Sense::hover());
-                ui.painter().rect_filled(dot, 2.0, colour);
-                ui.label(theme::text(maker.kind(), theme::SMALL - 1.0, theme::WEAK));
-                let word = format!("{}{}", maker.word(), if maker.saved() { "" } else { " •" });
-                let name = ui.add(egui::Label::new(RichText::new(word).strong().color(if chosen { theme::STRONG } else { theme::TEXT })).sense(Sense::click()));
-                let asking = resources.closing == Some(at);
-                let cross = ui.add(
-                    egui::Button::new(RichText::new(if asking { "close without saving?" } else { "×" }).size(theme::SMALL).color(if asking {
-                        theme::WRONG
-                    } else {
-                        theme::FAINT
-                    }))
-                    .frame(false),
-                );
-                (name, cross)
-            })
-            .inner
-        });
-        let (name, cross) = shown.inner;
-        let whole = ui.interact(shown.response.rect, egui::Id::new(("making tab", at)), Sense::click());
-        if (name.clicked() || whole.clicked()) && !cross.clicked() {
-            resources.making_at = at;
-            resources.closing = None;
-        }
-        if whole.middle_clicked() || cross.clicked() {
-            if resources.makings[at].saved() || resources.closing == Some(at) {
-                closed = Some(at);
-            } else {
-                resources.closing = Some(at);
+        let shown = tabs::Tab {
+            id: egui::Id::new(("making tab", at)),
+            kind: maker.kind(),
+            colour,
+            word: maker.word(),
+            saved: maker.saved(),
+            chosen,
+            asking: resources.closing == Some(at),
+            game: None,
+        };
+        match tabs::tab(ui, shown) {
+            tabs::Clicked::Show => {
+                resources.making_at = at;
+                resources.closing = None;
             }
+            tabs::Clicked::Close if resources.makings[at].saved() || resources.closing == Some(at) => closed = Some(at),
+            tabs::Clicked::Close => resources.closing = Some(at),
+            tabs::Clicked::Nothing => {}
         }
-        whole.on_hover_text(if resources.makings[at].saved() {
-            "click: show it · middle click: close"
-        } else {
-            "• not saved yet · Ctrl+Tab: the next one"
-        });
     }
     if let Some(at) = closed {
         resources.close_making(at);

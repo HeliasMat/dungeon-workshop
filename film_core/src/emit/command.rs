@@ -172,7 +172,7 @@ impl Film {
     /// that emote), not all at once.
     fn cheered(&mut self, args: &[Arg]) {
         let shown = match args.last() {
-            Some(Arg::Word(name)) => crowd_emote(name),
+            Some(Arg::Word(name)) => story::lowering::passes::crowd_emote(name),
             _ => None,
         };
         let crowd = &args[..args.len() - usize::from(shown.is_some())];
@@ -275,17 +275,3 @@ fn said_from(verb: &str, words: &[String]) -> Option<usize> {
     Some(if placed { at + 1 } else { at })
 }
 
-/// The emote a crowd shows by its name, as the engine names it (see
-/// `Film::cheered`).
-fn crowd_emote(name: &str) -> Option<&'static str> {
-    Some(match name {
-        "joy" | "sparkle" => "joy",
-        "anger" => "anger",
-        "sweat" | "tears" => "sweat",
-        "surprise" | "exclaim" | "!" => "exclaim",
-        "question" | "?" => "question",
-        "shock" => "shock",
-        "laugh" => "laugh",
-        _ => return None,
-    })
-}

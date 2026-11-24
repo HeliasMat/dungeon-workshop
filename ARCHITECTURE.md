@@ -107,8 +107,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `rules` | `diagnostics` |
 | `media` | `assets` |
 | `shell` | `assets`, `media` |
-| `spritecollab` | `assets` |
-| `scenes` | `engine`, `rules` |
+| `spritecollab` | `assets`, `diagnostics` |
+| `scenes` | `assets`, `engine`, `rules` |
 | `story` | `engine` |
 | `rom_formats` | `media`, `rules` |
 | `decor` | `assets`, `diagnostics`, `media` |

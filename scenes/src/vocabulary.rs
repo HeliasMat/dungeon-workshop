@@ -96,46 +96,8 @@ pub static POKEMON: Vocabulary = Vocabulary {
     // (Each named by what it sounds like.)
     sounds: rules::songs::NOISE_WORDS,
     // (As the original game numbers them and the PMDCollab community names
-    // them: their sprites add those the game lacks, see the sprites added
-    // by hand in `data/extra/`.)
-    animations: &[
-        ("Walk", 0),
-        ("Attack", anim::ATTACK.0 as usize),
-        ("Sleep", 5),
-        ("Hurt", 6),
-        ("Idle", 7),
-        ("Swing", 8),
-        ("Double", 9),
-        ("Hop", 10),
-        ("Charge", 11),
-        ("Rotate", 12),
-        ("EventSleep", 13),
-        ("Wake", 14),
-        ("Eat", anim::EAT.0 as usize),
-        ("Tumble", 16),
-        ("Pose", 17),
-        ("Pull", 18),
-        ("Pain", 19),
-        ("Float", 20),
-        ("DeepBreath", 21),
-        ("Nod", 22),
-        ("Sit", 23),
-        ("LookUp", 24),
-        ("Sink", 25),
-        ("Trip", anim::TRIP.0 as usize),
-        ("Laying", 27),
-        ("LeapForth", 28),
-        ("Head", 29),
-        ("Cringe", 30),
-        ("LostBalance", 31),
-        ("TumbleBack", 32),
-        ("Faint", 33),
-        ("HitGround", 34),
-        ("Shoot", 3),
-        // (Only variants have these, painted by hand.)
-        ("Vise", 50),
-        ("FireRifle", 51),
-    ],
+    // them.)
+    animations: &assets::tables::ANIMATION_GROUPS,
     // (The game's own names, those of the pictures of `data/rom/status`.)
     status_icons: &[
         "sleep",

@@ -50,45 +50,9 @@ const LOWER: u32 = 4;
 /// A face's side.
 const FACE: u32 = 40;
 
-/// The original game's groups of animations, by the community's names (for
-/// the sprites whose AnimData.xml gives no index).
-pub const GROUPS: [(&str, u32); 35] = [
-    ("Walk", 0),
-    ("Attack", 1),
-    ("Kick", 2),
-    ("Shoot", 3),
-    ("Strike", 4),
-    ("Sleep", 5),
-    ("Hurt", 6),
-    ("Idle", 7),
-    ("Swing", 8),
-    ("Double", 9),
-    ("Hop", 10),
-    ("Charge", 11),
-    ("Rotate", 12),
-    ("EventSleep", 13),
-    ("Wake", 14),
-    ("Eat", 15),
-    ("Tumble", 16),
-    ("Pose", 17),
-    ("Pull", 18),
-    ("Pain", 19),
-    ("Float", 20),
-    ("DeepBreath", 21),
-    ("Nod", 22),
-    ("Sit", 23),
-    ("LookUp", 24),
-    ("Sink", 25),
-    ("Trip", 26),
-    ("Laying", 27),
-    ("LeapForth", 28),
-    ("Head", 29),
-    ("Cringe", 30),
-    ("LostBalance", 31),
-    ("TumbleBack", 32),
-    ("Faint", 33),
-    ("HitGround", 34),
-];
+// (The original game's groups of animations, by the community's names, for
+// the sprites whose AnimData.xml gives no index.)
+use assets::tables::ANIMATION_GROUPS as GROUPS;
 
 /// The game's own first five (walk, idle, hurt, sleep, attack), by group.
 const DUNGEON: [(u32, u32); 5] = [(0, 0), (7, 1), (6, 2), (5, 3), (1, 4)];
@@ -263,7 +227,7 @@ pub fn animations(folder: &Path) -> BTreeMap<String, Animation> {
         let block = block.split("</Anim>").next().unwrap_or(block);
         let Some(name) = tag(block, "Name") else { continue };
         let group =
-            tag(block, "Index").and_then(|index| index.parse().ok()).or_else(|| GROUPS.iter().find(|(known, _)| *known == name).map(|(_, group)| *group));
+            tag(block, "Index").and_then(|index| index.parse().ok()).or_else(|| GROUPS.iter().find(|(known, _)| *known == name).map(|(_, group)| *group as u32));
         let Some(group) = group else { continue };
         if let Some(copy) = tag(block, "CopyOf") {
             copies.push((name, group, copy));
@@ -605,7 +569,7 @@ pub fn export(places: &Places, monster: u32, target: &Path) -> Result<String, St
         } else {
             (high + 2 * LOWER, 2 * LOWER)
         };
-        let name = GROUPS.iter().find(|(_, own)| own == group).map_or_else(|| format!("Anim{group}"), |(name, _)| name.to_string());
+        let name = GROUPS.iter().find(|(_, own)| *own as u32 == *group).map_or_else(|| format!("Anim{group}"), |(name, _)| name.to_string());
         let mut sheet = RgbaImage::new(wide * frames, theirs * lines);
         let mut shadows = RgbaImage::new(sheet.width(), sheet.height());
         for row in 0..lines {
@@ -741,14 +705,8 @@ fn plain_word(word: &str) -> String {
         .to_lowercase()
         .chars()
         .map(|letter| match letter {
-            'à' | 'â' | 'ä' => 'a',
-            'é' | 'è' | 'ê' | 'ë' => 'e',
-            'î' | 'ï' => 'i',
-            'ô' | 'ö' => 'o',
-            'ù' | 'û' | 'ü' => 'u',
-            'ç' => 'c',
             ' ' | '-' => '_',
-            other => other,
+            other => diagnostics::text::unaccented(other),
         })
         .filter(|letter| letter.is_ascii_alphanumeric() || *letter == '_')
         .collect();

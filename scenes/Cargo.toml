@@ -12,6 +12,7 @@ publish.workspace = true
 # This game on the scene engine: its words, the commands only it plays,
 # its fights on a stage. The rules stay in rules, which knows no engine.
 [dependencies]
+assets = { path = "../assets" }
 rules = { path = "../rules" }
 engine = { path = "../engine" }
 glam.workspace = true
