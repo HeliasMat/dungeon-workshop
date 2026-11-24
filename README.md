@@ -128,6 +128,7 @@ A `.dwpack` holds the game's own files (and those of the library it uses), never
 - [dungeon_lsp/README.md](dungeon_lsp/README.md): `dungeon_lsp`, a language server to write films, games and decors in any editor (VS Code, Neovim, Helix).
 - [engine/docs/COMMANDS.md](engine/docs/COMMANDS.md): the scene engine's commands.
 - [ARCHITECTURE.md](ARCHITECTURE.md): how the project is built.
+- [CONTRIBUTING.md](CONTRIBUTING.md): building, checking, committing; the how-to guides [Add a film word](docs/ADD_A_FILM_WORD.md) and [Add a Workshop panel or part](docs/ADD_A_WORKSHOP_PANEL.md).
 
 ## Checking
 

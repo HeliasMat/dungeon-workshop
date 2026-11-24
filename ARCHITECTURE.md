@@ -83,7 +83,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `scene_player` | the program that plays a film or a game, and its commands |
 | `emulator` | a small libretro frontend: a core the user chose loaded, a game run frame by frame (program `emulator`, headless) |
 | `dungeon_lsp` | the language server (program `dungeon_lsp`) |
-| `workshop_base` | what every part of the Workshop shares: the `Session`, the look, the project's files, safe saves, the system's dialogs |
+| `workshop_base` | what every part of the Workshop shares: the `Session`, the look, the project's files, safe saves, the system's dialogs, the spaces and what a part asks of the window (`Ask`) |
 | `workshop_picture` | the Resources' painter: pictures and animations painted as in a pixel-art studio |
 | `workshop_sound` | the Resources' sound maker: sounds made as the sound makers of games make them, then mixed; the instruments music plays with |
 | `workshop_music` | the Resources' music maker: a song of tracks, regions and notes, its mixer, MIDI files |
@@ -294,7 +294,8 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | The engine in detail | [engine/README.md](engine/README.md) |
 | The player and packs | [scene_player/README.md](scene_player/README.md) |
 | Make a place | [decor/DECORS.md](decor/DECORS.md) |
-| Add a word to films | the `WORDS` list and the `match` of its theme's file (`film_core/src/verbs/`, or its family's crate: `film_fishing/src/`...; and `.brings`, `.puts` or `.arrives` if its line brings someone onto the stage), and a test in `film/src/tests/`; a new family: its `FAMILY` in `FAMILIES` (`film/src/lib.rs`), where its words go in the order; what it keeps from one line to the next, a type of its own kept by the film (`Film::kept`, `film_core::film::Kept`) |
+| Add a word to films | [docs/ADD_A_FILM_WORD.md](docs/ADD_A_FILM_WORD.md): its family (`film_core/src/verbs/` or a family's crate), its `Word`, its line in the plan (`film_core/src/plan.rs`) and in the DS table (`film_core/src/ds.rs`), its Wiki page, `film/FILMS.md` |
+| Add a panel or a part to the Workshop | [docs/ADD_A_WORKSHOP_PANEL.md](docs/ADD_A_WORKSHOP_PANEL.md): its crate, its state with the `Session`, what it asks the window (`workshop_base/src/ask.rs`), its place in `workshop/src/app.rs` |
 | Add a command to the engine | its family's file in `beat/`, then `stage/direct/` or `director/happen.rs` |
 
 ## Checking

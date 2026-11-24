@@ -32,6 +32,11 @@ python tools/check_tutorial.py  # every snippet of docs/TUTORIAL.md checked for 
 
 CI runs the same steps (`.github/workflows/ci.yml`). Clippy must give no warning, and every crate is formatted by `cargo fmt` (`rustfmt.toml`). The tests run under cargo-nextest when it is installed (`.config/nextest.toml`), else under `cargo test`.
 
+## How-to guides
+
+- [Add a film word](docs/ADD_A_FILM_WORD.md): its family and crate, the `Word`, the plan, the DS status, the Wiki page, FILMS.md, `scene_player try`.
+- [Add a Workshop panel or part](docs/ADD_A_WORKSHOP_PANEL.md): its crate, the session, asking the window (`workshop_base/src/ask.rs`), registering it in `workshop/src/app.rs`.
+
 ## The crate rule
 
 Each crate only uses crates of the layers below it, as the table in `ARCHITECTURE.md` lists them; `sh tools/rule.sh` fails when a `Cargo.toml` and that table differ. Adding a dependency between crates means changing both. Read `ARCHITECTURE.md` first: who decides what, where each rule lives.
