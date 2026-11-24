@@ -1,10 +1,9 @@
-//! The words of a film, by what they do: a group a theme, each with its
-//! own words (`WORDS`, its `GROUP`): a word, its forms, what it writes for
-//! the engine, who it names, how it plays. The groups here are those the
-//! core leans on; the others are a crate each (`film_fishing`...), and
-//! `film` gathers them all in their order (`Lexicon`). A line goes to the
-//! groups whose form of its word fits, the narrower first; what none plays
-//! is the engine's own command (`engine`), or a recipe of the film's.
+//! What a word of a film is: its forms, what it writes for the engine, who
+//! it names, how it plays (`Word`); a group of them (`Group`), the language
+//! they make (`Lexicon`), a line as a word reads it (`Line`), and the forms
+//! a line fits. The groups themselves are in `crate::groups` and in a crate
+//! each (`film_view`...), `film` gathering them in their order; a line is
+//! played by the groups whose form fits, the narrower first (`crate::play`).
 //!
 //! What a form says, word by word (one reader, `crate::grammar`, checks each
 //! line against them and says what is wrong):

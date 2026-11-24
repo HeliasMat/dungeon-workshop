@@ -1,16 +1,10 @@
-//! The groups of words the core leans on, a file by theme, each its words
-//! (`WORDS`) and its `GROUP`; the other groups are a crate each
-//! (`film_fishing`...), and `film` gathers them all in their order
+//! The groups of words the core keeps, a file by theme, each its words
+//! (`WORDS`) and its `GROUP`: those its compile calls (`things`, `timing`,
+//! `story`, `aura`) and those beside them (`items`, `game`, `crowds`). The
+//! other groups are a crate each (`film_view`, `film_speech`,
+//! `film_acting`...), and `film` gathers them all in their order
 //! (`Lexicon`). A group plays a line by the film's helpers (`emit`,
-//! `names`, `spots`), never by another layer above it.
-//!
-//! - `said`, `heard`, `view`, `sky`, `pictures`: what is said and shown,
-//!   heard, the view, the light, the game's pictures;
-//! - `things`, `items`, `effects`, `aura`, `nodes`: things of a scene and
-//!   in the hands, effects, auras, the nodes' properties;
-//! - `crowds`, `rituals`, `game`, `story`: crowds, the guild's days, what a
-//!   game is told, a story's moments;
-//! - `timing`: time in a scene, the one rule of who waits.
+//! `names`, `spots`) and calls another word by `Film::call` (`play`).
 
 pub mod aura;
 pub mod crowds;

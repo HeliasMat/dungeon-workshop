@@ -155,14 +155,14 @@ pub struct Film {
     pub staging: Staging,
     /// What a line said keeps: the faces said, who spoke last (`compile/said.rs`).
     pub speaking: Speaking,
-    /// The things of the scene at hand, how many of each (`verbs/things.rs`).
+    /// The things of the scene at hand, how many of each (`groups/things.rs`).
     pub things: ThingsState,
-    /// The film's time: threads, marks, what the scene waits for, what is open (`verbs/timing.rs`).
+    /// The film's time: threads, marks, what the scene waits for, what is open (`groups/timing.rs`).
     pub timing: TimingState,
     /// The film's plan: a line each, its thread, placing and time (`time::plan`).
     pub plan: crate::time::Plan,
 
-    /// A film one plays: who the player walks (`verbs/game.rs`).
+    /// A film one plays: who the player walks (`groups/game.rs`).
     pub game: Game,
     /// What each family keeps of its own (`Kept`), by its type: fishing's,
     /// a dungeon's, a fight's.

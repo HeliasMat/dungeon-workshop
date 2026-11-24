@@ -11,15 +11,18 @@ Two words to keep apart:
 
 ## 1. Pick its group and its crate
 
-- **The core leans on it** (things, sounds, the view, the sky, effects, items, pictures, crowds, lines said, timing): a file of `film_core/src/verbs/`, for example `film_core/src/verbs/sky.rs`.
-- **Everything else** goes in a group's crate, which uses `film_core` and nothing above it:
+- **The core leans on it** (things and items, crowds, timing, a story's moments, what a game is told; the ambience of auras): a file of `film_core/src/groups/`, for example `film_core/src/groups/things.rs`. A new word goes there only if the core's compile calls its group (as it calls `things`, `timing`, `story`); else in a group's crate.
+- **Everything else** goes in a group's crate, which uses `film_core` (and, if it leans on them, the other group crates) and nothing above it:
   - `film_acting/src/lib.rs`: what someone says and does where they stand (`hop`, `think`, `narrate`...).
   - `film_moving/src/`: moving, swimming, flying, riding, contact, hiding, body.
+  - `film_view/src/`: the view, the sky and its light, effects, the game's pictures, the nodes.
+  - `film_speech/src/`: what is said and shown over the scene, what is heard.
   - `film_fishing/src/`: fishing.
-  - `film_dungeon/src/`: the dungeon and the guild.
+  - `film_dungeon/src/`: the dungeon, the guild and its days.
   - `film_fights/src/`: fights.
 - **A new group**: put its `GROUP` (`Group::new("name", WORDS)`) in `GROUPS` in `film/src/lib.rs`, and change the array's length. The order matters: the narrower groups come first, and the first form that fits wins. If the group keeps state from one line to the next, give it a type of its own, kept by the film (`Film::kept`, `film_core::film::Kept`; `film_fishing/src/state.rs` is an example).
-- **A new group crate**: add it to `members` in `Cargo.toml` and as a dependency of `film/Cargo.toml`, then add its rows to the crate tables of `ARCHITECTURE.md`. `sh tools/rule.sh` fails until the table and the manifests agree.
+- **A new group crate**: add it to `members` in `Cargo.toml` and as a dependency of `film/Cargo.toml`, then add its rows to the crate tables of `ARCHITECTURE.md` and its line to `tools/rule.sh`. `sh tools/rule.sh` fails until the table and the manifests agree.
+- **A recipe file of the library** (`film/recipes/`): its line in `LIBRARY` in `film/src/lib.rs`, by the name a film gives it (`fishing/line`); film_core never includes one.
 
 ## 2. Write the `Word`
 

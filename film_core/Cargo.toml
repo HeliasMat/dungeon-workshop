@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "The core of the films' language: the text read, the scenes compiled, what is written for the engine, by the families of words it is given"
+description = "The core of the films' language: the text read, the scenes compiled, what is written for the engine, by the groups of words it is given; the groups its compile leans on"
 readme = "../README.md"
 publish.workspace = true
 

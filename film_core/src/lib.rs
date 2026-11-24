@@ -1,19 +1,24 @@
 //! The language of the films, whatever its words: a film written in plain
 //! English turned into what the engine plays, by the groups of words it is
-//! given (`Lexicon`; `film` gathers them all).
+//! given (`Lexicon`; `film` gathers them all, and the library's recipes).
 //!
-//! - `text`: the text read by the language, its recipes played out, who each
-//!   scene names;
-//! - `compile`: a film's scenes, and what is said in them;
-//! - `verbs`: what a word is (`Word`, `Group`, `Lexicon`), a line played
-//!   by the group whose form fits; the groups the language leans on, a
-//!   file by theme;
-//! - `names`: what a film calls those it shows, things, places, ways;
-//! - `spots`: where a line says, routes, formations;
-//! - `tables`: the game's files as a film reads them;
-//! - `ds`: what each word becomes on the DS (the export's table);
-//! - `words`, `screen`, `check`: the small words, words on the screen, what
-//!   is wrong and the nearest names.
+//! Its modules go one way, each layer using only those below it:
+//!
+//! 1. the base, knowing no film: `codes`, `ds` (what each word becomes on
+//!    the DS), `temps`, `words` (the small words, a line's own readers);
+//!    `ir` (what a line is), `plot` (a story's names and map), `tables`
+//!    (the game's files as a film reads them); `context`, `doc`, `screen`;
+//!    `time`; `lines` (the text's tools);
+//! 2. the model, types that name each other: `film` (a film being written,
+//!    its state), `verbs` (what a word is: `Word`, `Group`, `Line`,
+//!    `Lexicon`, the forms a line fits), `grammar` (the one reader);
+//! 3. the film's helpers: `check` (what is wrong, the nearest names),
+//!    `emit` (the beats a word makes), `vocabulary`; `names`, `spots`;
+//! 4. `text`: the text read by the language, its recipes played out, who
+//!    each scene names, what is told of a line as written;
+//! 5. `groups` (the groups the core keeps; the others are a crate each) and
+//!    `play` (a line played by the groups whose form fits);
+//! 6. `compile`: a film's scenes, what is said in them, the events.
 //!
 //! Only what the words say is known here. What depends on the scene as it
 //! stands is written as such (`Spot`, `PlaceBeat`) and found on the stage.

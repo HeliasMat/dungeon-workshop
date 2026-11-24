@@ -6,7 +6,7 @@
 //! `seen_<name>`, counted for the run of a film alone; kept by the game's
 //! story across plays when a game plays it: [`counters`], `game/src/lib.rs`),
 //! and the film's map of them (`StoryMap`, made by `compile`). Its word,
-//! `go`, is a group's: `verbs/story.rs`.
+//! `go`, is a group's: `groups/story.rs`.
 //!
 //! A film that does none of it is written as before: no label, no count.
 

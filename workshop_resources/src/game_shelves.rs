@@ -16,7 +16,7 @@ pub(super) const EFFECT_ROLES: [&str; 4] = ["before it", "as it strikes", "on th
 /// Which of a move's effects stands for it on a card: on the target, as it strikes, what flies, before it.
 const CARD_ROLES: [usize; 4] = [2, 1, 3, 0];
 
-/// The weathers a film's sky has (`sky <word>`, `film_core/src/verbs/sky.rs`): the word, its name, what it is.
+/// The weathers a film's sky has (`sky <word>`, `film_view/src/sky.rs`): the word, its name, what it is.
 pub(super) const WEATHERS: [(&str, &str, &str); 7] = [
     ("rain", "Rain", "rain falls · weather rain heavy: under a storm's light"),
     ("sun", "Sun", "the sun shines hard"),

@@ -4,8 +4,8 @@
 //! the films' language it asks here: a film compiled, its words, the
 //! language's service for editors.
 //!
-//! - the groups: the core's own (`film_core::verbs`), and those of a crate
-//!   each;
+//! - the groups: the core's own (`film_core::groups`), and those of a crate
+//!   each; the library's recipes (`film/recipes/`, `LIBRARY`);
 //! - `service`: what an editor asks of a film's text (problems, hovers,
 //!   completions, the outline);
 //! - `steps`: a film's text shown as it goes through the language, step by step.

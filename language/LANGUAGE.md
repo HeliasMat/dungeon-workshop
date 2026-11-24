@@ -24,7 +24,7 @@ text. The reader does not stop at the first one: it reports them all.
 
 The vocabulary (`film_core/src/vocabulary.rs`) follows these rules:
 
-1. **Who acts comes first**, like a spoken line (`pikachu (happy): Hi`): `pikachu walk to piplup`, `pikachu hug piplup`, `pikachu emote shock`. A line where nobody acts starts with its word: `music beach`, `wait 2s`, `frame pikachu piplup`, `transition fade`. One order only: a line written the word first (`walk pikachu to piplup`) is an error, `E-ORDER`, its fix writing it who first. The compiler reads it from the words' forms (a first part `who:pokemon`, `who:code`, `who:word`, a team of one: `film_core/src/order.rs`), never from a list of words, and from the words' own declarations for those written word first (`Word::word_first`).
+1. **Who acts comes first**, like a spoken line (`pikachu (happy): Hi`): `pikachu walk to piplup`, `pikachu hug piplup`, `pikachu emote shock`. A line where nobody acts starts with its word: `music beach`, `wait 2s`, `frame pikachu piplup`, `transition fade`. One order only: a line written the word first (`walk pikachu to piplup`) is an error, `E-ORDER`, its fix writing it who first. The compiler reads it from the words' forms (a first part `who:pokemon`, `who:code`, `who:word`, a team of one: `film_core/src/text/written.rs`), never from a list of words, and from the words' own declarations for those written word first (`Word::word_first`).
 2. **One word per idea**: variants are options of the word.
 3. **`off` only for a state that lasts** (sleep, weather, music, an emotion, a chase); an action with its own verb keeps it (`drop`, `close`, `vanish`).
 4. **Plain English verbs**, an underscore only when nothing else will do (`shake_head`).
@@ -172,7 +172,7 @@ between the parentheses of a call, and between braces everywhere else.
 - **What the game says** (read on every frame): `clock`, `answer` (the last option chosen),
   `timer(name)`, `controlled`, `target`.
 - **What the story played**: `seen(name)`, how many times that moment (or scene, by its place) was
-  played; `go moment name` and `go scene place` go there (`film_core/src/plot.rs`).
+  played; `go moment name` and `go scene place` go there (`film_core/src/groups/story.rs`; the names counted, `film_core/src/plot.rs`).
 - **Scopes**:
   - `let` in a block or a recipe: until its `end`;
   - `let` in a scene: until the end of the scene;
