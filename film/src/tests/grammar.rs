@@ -2,16 +2,15 @@
 //! do not fit.
 
 use super::*;
-use crate::film::Film;
-use crate::grammar::{bind, place_words, read, read_recipe, shown};
+use film_core::grammar::{bind, place_words, read, read_recipe, shown};
 
 fn words(line: &str) -> Vec<String> {
     line.split_whitespace().map(str::to_string).collect()
 }
 
 /// A line bound to a form, without anyone of the scene in it.
-fn bound(form: &str, line: &str) -> Result<crate::grammar::Bound, String> {
-    bind(&mut Film::new(), &read(form), &words(line))
+fn bound(form: &str, line: &str) -> Result<film_core::grammar::Bound, String> {
+    bind(&mut crate::tests::film(), &read(form), &words(line))
 }
 
 #[test]

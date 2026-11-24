@@ -42,7 +42,7 @@ pub const ADVANCED: &str = "Advanced";
 /// What a word of the plan is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Made {
-    /// A word of the language (a family of `film/src/verbs/`).
+    /// A word of the language (a family of `film_core/src/verbs/`).
     Word,
     /// A recipe written in the language, provided (`film/recipes/`).
     Recipe,

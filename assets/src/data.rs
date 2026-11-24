@@ -31,7 +31,7 @@ pub fn built_folder(folder: &str) -> PathBuf {
 pub const DECORS: &str = "decor_";
 
 /// Each list by how many of a line's first fields are its key; 0: blocks,
-/// each from a `place` line, by its number. (`film/src/tables/files.rs`
+/// each from a `place` line, by its number. (`film_core/src/tables/files.rs`
 /// reads it too.)
 const INDEXES: &str = include_str!("indexes.txt");
 

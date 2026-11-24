@@ -35,9 +35,9 @@ fn too_many_is_told_not_attempted() {
 
 #[test]
 fn a_number_is_digits_not_nan_nor_too_far() {
-    assert_eq!(crate::grammar::number_in("nan"), None);
-    assert_eq!(crate::grammar::number_in("inf"), None);
-    assert_eq!(crate::grammar::number_in("1e40"), None);
-    assert_eq!(crate::grammar::coordinate_in("1e30"), None);
-    assert_eq!(crate::grammar::coordinate_in("-12.5"), Some(-12));
+    assert_eq!(film_core::grammar::number_in("nan"), None);
+    assert_eq!(film_core::grammar::number_in("inf"), None);
+    assert_eq!(film_core::grammar::number_in("1e40"), None);
+    assert_eq!(film_core::grammar::coordinate_in("1e30"), None);
+    assert_eq!(film_core::grammar::coordinate_in("-12.5"), Some(-12));
 }

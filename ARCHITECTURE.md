@@ -22,12 +22,15 @@
     a film being worked on,    a dungeon on screen            extracts data/rom/ from the ROM, once
     with no window
 
-4   stage_view
-    everything that is drawn
+4   stage_view                 film
+    everything that is drawn   the films' language whole:
+                               every family of its words
 
-3   film                       shell                          rom_formats            decor
-    what the words say         window, sound played,          the ROM's formats      places made for films
-                               Screen, the art kept
+3   film_core                  shell                          rom_formats            decor
+    what the words say: the    window, sound played,          the ROM's formats      places made for films
+    text read, the scenes      Screen, the art kept
+    compiled, by the words
+    it is given
 
 2   scenes                     story                          media                  spritecollab
     this game on the engine:   the game's story: story.txt    pictures, font, music, the community's sprites
@@ -62,7 +65,8 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `scenes` | this game on the engine: its words, commands, fights |
 | `story` | the game's story (`story.txt`) as engine lines |
 | `stage_view` | everything that is drawn |
-| `film` | a `.film` turned into what the engine plays |
+| `film_core` | the films' language by the words it is given: the text read, the scenes compiled, what is written for the engine; the families it leans on |
+| `film` | the films' language whole: every family of its words gathered (`LEXICON`), a `.film` turned into what the engine plays, the language's service for editors |
 | `rom_formats` | the original game's formats, for `extractor` alone |
 | `decor` | places made for films; the `decor` program |
 | `preview` | a film being worked on, with no window |
@@ -101,7 +105,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `story` | `engine` |
 | `rom_formats` | `media`, `rules` |
 | `decor` | `assets`, `diagnostics`, `media` |
-| `film` | `assets`, `engine`, `language`, `rules`, `scenes`, `story` |
+| `film_core` | `assets`, `engine`, `language`, `rules`, `scenes`, `story` |
+| `film` | `assets`, `engine`, `film_core`, `language`, `scenes`, `story` |
 | `stage_view` | `assets`, `engine`, `media`, `rules`, `scenes`, `shell` |
 | `preview` | `assets`, `engine`, `film`, `media`, `rules`, `scenes`, `shell`, `stage_view` |
 | `dive` | `rules`, `scenes`, `shell`, `stage_view` |
@@ -143,7 +148,7 @@ So `preview` plays and draws films and knows no game (no `decor`, `language` nor
 | **Game** | `game/` | The game, conducting the films: `lib.rs` (`Game`: the title, a place walked about, a cutscene, a dungeon, a screen), `story.rs` (where the story stands, its save), `game_file.rs` (the `.game` file), `roam.rs` (a place's scene made of its decor's life, its ways and zones as rectangles; a decor not built yet built on demand into `data/built/`), `playthrough.rs` (the rules' `Run`: team, bag, money), `dive.rs` (a dungeon or a fight of one's own), `game_screens.rs` (shops, bank, map…), `dungeon_check.rs` and `project_check.rs` (what is wrong in a dungeon, in a whole game), `pack.rs` (a `.dwpack`: the files its game, places, films and dungeons name), `drive.rs` (a game played by a script at the keys, no window: the end-to-end tests, `e2e_tests.rs`) |
 | **Player** | `scene_player/` | Plays a film, in a window (`window.rs`) or in one go (through `preview`), and all its commands (`commands/`, `scene_player help`) |
 | **Story** | `story/` | Reads the game's story (`story.txt`, tab-separated fields, split by `engine::read_fields`) as engine lines; `lowering/`: `read_text` and the passes that write out in full what engine lines write short. `lines_of`, `read_events`: what the game reads; a `.film` or a `.scene` is refused |
-| **Films** | `film/` | Reads a `.film` through the language (`text/front/` writes it as lines of words, `ir::Instr` and their `Shape`; a recipe kept as the language read it, written out at each call), `story.txt` through `story` (`read_any_with`, `lines_of`: a `.film` or the story), and the language service for the Workshop and agents (`service.rs`). Each word makes its `Beat`s (`emit/`, one kind of beat per file, as in the engine), and the film makes the engine's events itself (`compile/`), with no line read twice. A `.film`: what its words say, a single table (`verbs/`, each word with its forms, its doc and its function; `verbs/engine.rs`, the engine's commands). What depends on the scene is worked out on the `Stage`, when it plays (`PlaceBeat`, `Spot`). `doc/`: the text as it is written, read back byte for byte, its outline, its edits (`Edit`); `order.rs`: one word order, who acts first; `plan.rs`: the v2.1 vocabulary being built, its families, the words to build; `plot.rs`: the Story family (going to a moment or a scene, `seen`) |
+| **Films** | `film_core/`, `film/` | `film_core` reads a `.film` through the language (`text/front/` writes it as lines of words, `ir::Instr` and their `Shape`; a recipe kept as the language read it, written out at each call), by the words it is given (`verbs/lexicon.rs`, `Lexicon`: the families of words in their order, what is read once of them; a film carries its own, `Film::lexicon`). Each word makes its `Beat`s (`emit/`, one kind of beat per file, as in the engine), and the film makes the engine's events itself (`compile/`), with no line read twice. A `.film`: what its words say, a table a family (`verbs/`, each word with its forms, its doc and its function, each family its `FAMILY`; `verbs/engine.rs`, the engine's commands); what a family keeps from one line to the next is its own type, kept by the film (`Film::kept`, `Kept`). What depends on the scene is worked out on the `Stage`, when it plays (`PlaceBeat`, `Spot`). `doc/`: the text as it is written, read back byte for byte, its outline, its edits (`Edit`); `order.rs`: one word order, who acts first; `plan.rs`: the v2.1 vocabulary being built, its families, the words to build; `plot.rs`: the Story family (going to a moment or a scene, `seen`). `film` gathers every family in its order (`LEXICON`) and is what the others use: a film compiled with every word (`compile_with`), `story.txt` through `story` (`read_any_with`, `lines_of`: a `.film` or the story), the language service for the Workshop and agents (`service.rs`), `steps`; its tests compile films with all the words |
 | **Places** | `decor/` | Builds the places made for films (`.decor`) from pieces of the game's places, cut out from their ground, and dungeon rooms from the tiles of a floor: `lang.rs` (the language), `cut.rs` and `matte.rs` (cutting, matting, shadows), `weave.rs` (weaving grounds, strips, paths), `build/` (laying out: `place.rs` what gets laid, `mod.rs` line by line), `remarks.rs`, `write.rs` (into `data/extra/`), `room/`, `inventory.rs`, `sheets/` (contact sheets), `fault.rs` (what is wrong, and on which line). A single command, `decor` (`decor/DECORS.md`) |
 | **Workshop** | `workshop/`, `workshop_*/` | The editor (`egui`): films, decors, dungeons, boss fights, pictures, sounds, music; the first launch (`first.rs`) extracts the resources from the user's copy of the game; the window that ties its parts, each a crate of its own so that a change builds only that part: `workshop_base/` (the session, the look, the project's files, shared by all), `workshop_script/` (the Script), `workshop_wiki/` (the Wiki), `workshop_film/` (the Film played), `workshop_decor/` (the Decor space), `workshop_dungeon/` (the dungeon and fight editor), `workshop_resources/` (the Resources and their makings: `workshop_picture/`, `workshop_sound/`, `workshop_music/`). See `workshop/README.md` (its map: "The code") |
 
@@ -166,7 +171,7 @@ Nothing below a program's `main` looks for any of it. Each `main` finds the root
 | `extractor` | its folder: the one named, else `DUNGEON_DATA`, else `./data` |
 | the tests | `assets::testing`: the repository's root, its library, its data folder (through `assets::data::folder`; the fixture `tests/fixture_data/` where that holds no extraction), the same for every block |
 
-`film::Context` (`film/src/context.rs`) keeps the film tables of each project read so far (`tables_for`), read again only when told (`reload`, `reload_for` once a game built a place). The tables carry their project, their data folder and the language the lines are said in: what a film is compiled with. The shell's `Art` keeps what it read of the pictures and the sounds' lengths. What stays static is program data that never changes (the vocabulary `POKEMON`, the engine's commands, the properties, the recipes built into the programs) and caches of a file's content by its path and when it changed (`assets::data::text_kept`, the pictures a film shows).
+`film::Context` (`film_core/src/context.rs`) keeps the film tables of each project read so far (`tables_for`), read again only when told (`reload`, `reload_for` once a game built a place). The tables carry their project, their data folder and the language the lines are said in: what a film is compiled with. The shell's `Art` keeps what it read of the pictures and the sounds' lengths. What stays static is program data that never changes (the vocabulary `POKEMON`, the engine's commands, the properties, the recipes built into the programs) and caches of a file's content by its path and when it changed (`assets::data::text_kept`, the pictures a film shows).
 
 ## From a film to the screen
 
@@ -189,17 +194,17 @@ On each frame, whatever is displaying does three things: `director.tick(...)`, i
 
 ### The bridge from a word to the engine
 
-A word hands the engine typed `Beat`s, never text to be read again: each family of `film/src/verbs/` builds them by the constructors of `film/src/emit/` (`emit::jump(who, height, frames)`, `emit::music(song)`), and `Film::beat` keeps them for the events. The lines of fields a beat writes (`Beat::fields`, `engine/src/beat/written/`) are only for what shows them: packs, `scene_player fingerprint`, `steps`, the checker; `Beat::written` makes sure each reads back the same beat.
+A word hands the engine typed `Beat`s, never text to be read again: each family of `film_core/src/verbs/` builds them by the constructors of `film_core/src/emit/` (`emit::jump(who, height, frames)`, `emit::music(song)`), and `Film::beat` keeps them for the events. The lines of fields a beat writes (`Beat::fields`, `engine/src/beat/written/`) are only for what shows them: packs, `scene_player fingerprint`, `steps`, the checker; `Beat::written` makes sure each reads back the same beat.
 
 Two ways still go through words, by design:
 
-- **The engine's own commands** a film writes as they are (an Advanced word, a recipe of `film/recipes/`, `> …`): the line's words are typed by the form that fit (`grammar::bind`, the command's forms as the engine declares them: `engine::forms`, each kind's `FORMS`) into `engine::Arg`s, then built by `Beat::build`, the very reading `declare!` gives `story.txt`'s lines (`Film::engine_command`, `film/src/emit/command.rs`). A word is typed once, nothing is reparsed from a joined line.
+- **The engine's own commands** a film writes as they are (an Advanced word, a recipe of `film/recipes/`, `> …`): the line's words are typed by the form that fit (`grammar::bind`, the command's forms as the engine declares them: `engine::forms`, each kind's `FORMS`) into `engine::Arg`s, then built by `Beat::build`, the very reading `declare!` gives `story.txt`'s lines (`Film::engine_command`, `film_core/src/emit/command.rs`). A word is typed once, nothing is reparsed from a joined line.
 - **Recipes** stay text of the language (`film/recipes/`, the library's): each call is written out and read as the film's own lines.
 
 What is left to type, in order:
 
-1. The three lines the front writes for the engine as text (`film/src/text/front/`: `position` in `values.rs`, `measure` in `values.rs`, `waitmoves` in `blocks.rs`), as `Shape::Engine`: they name someone by the film's name, which only the film knows when it plays. A `Shape` carrying the names and a closure making the beat once they are codes would end them.
-2. The Advanced words whose form is the engine's (`film/src/verbs/engine.rs`, 79 words, and `commands.rs`, every other command): left on purpose. They are already typed end to end: their words bound by the engine's own form (`grammar::bind`), handed over as `engine::Arg`s and built by `Beat::build`, which for a `declare!`d command is the reading generated from its one line (`zoom`, `letterbox`, `float`, `spin`, `jump`...), with the film's waits (`.lasts()`, `.until()`) and its found numbers (`{x}`) handled once in `Film::engine_command`. A constructor in `emit/` for one of them would be a second reading of the same form, to keep in step by hand; one is worth writing only when the word grows a meaning of its own beyond the command (as `frame`, `music` or `pose` did).
+1. The three lines the front writes for the engine as text (`film_core/src/text/front/`: `position` in `values.rs`, `measure` in `values.rs`, `waitmoves` in `blocks.rs`), as `Shape::Engine`: they name someone by the film's name, which only the film knows when it plays. A `Shape` carrying the names and a closure making the beat once they are codes would end them.
+2. The Advanced words whose form is the engine's (`film_core/src/verbs/engine.rs`, 79 words, and `commands.rs`, every other command): left on purpose. They are already typed end to end: their words bound by the engine's own form (`grammar::bind`), handed over as `engine::Arg`s and built by `Beat::build`, which for a `declare!`d command is the reading generated from its one line (`zoom`, `letterbox`, `float`, `spin`, `jump`...), with the film's waits (`.lasts()`, `.until()`) and its found numbers (`{x}`) handled once in `Film::engine_command`. A constructor in `emit/` for one of them would be a second reading of the same form, to keep in step by hand; one is worth writing only when the word grows a meaning of its own beyond the command (as `frame`, `music` or `pose` did).
 3. `Beat::Host` and `Course::Host` (a game's lines of words) and `FlowBeat::Filled` (see "Known debt").
 
 Every core family (Structure to Story) and the optional ones build their beats themselves; since wave 4 the `music` and `pose` words no longer let a plain line (`music peace 1s`, `pose a attack`) fall through to the engine's command.
@@ -243,8 +248,8 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | The game's world: faces, songs, animations | `scenes/src/vocabulary.rs` (`POKEMON`), handed to the engine |
 | What only the game knows how to play: dungeons, items, map | `scenes/src/commands.rs`, its words in `scenes/src/vocabulary.rs` |
 | What a move does | `rules/src/attack/` (`resolve`, and `foreseen` to estimate it; an explosion on stage goes through it too); the numbers: `rules/src/dungeon/combat/` (damage, accuracy), `rules/src/dungeon/status/` (effects); `run/strike.rs` tells it on the floor, `fight/battle/` shows it on stage |
-| A fight announced by a film | `scenes/src/fight/battle/directed.rs`; `film/src/verbs/fights/` only writes its line |
-| The size of bodies, for the view and positions | `film/src/compile/mod.rs` writes it as `body` lines; `engine/src/stage/camera/shots.rs` (`fit`) makes the framing from it, `stage/placing/` the gaps |
+| A fight announced by a film | `scenes/src/fight/battle/directed.rs`; `film_core/src/verbs/fights/` only writes its line |
+| The size of bodies, for the view and positions | `film_core/src/compile/mod.rs` writes it as `body` lines; `engine/src/stage/camera/shots.rs` (`fit`) makes the framing from it, `stage/placing/` the gaps |
 | Where the ground is, the path, the free tile | `engine/src/stage/ground.rs` (`Ground`), on the real scene: `stage/placing/` (`front_of a`, formations, crowds, who comes in) |
 | How fast a line is typed out, how long it stays, when it is read too fast | `engine/src/director/reading.rs` (`LETTERS_A_FRAME`, `line_frames`, `read_after`, `least_shown`), for the box, the films, the player and `do` |
 | What a fight and a film say alike | `scenes/src/fight/said.txt`, read by `fight/said.rs`, public for `film/` |
@@ -254,15 +259,15 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | Bubbles on screen | `stage_view/src/overlay/bubbles.rs` |
 | The dialogue box: a line typed out letter by letter, portrait, choices (the game and the player) | `stage_view/src/ui/message.rs` (`Words`, `Said`); a scene's line: `Play::said` (`stage_view/src/stage/said.rs`) |
 | Lights, pictures, weather on screen | `stage_view/src/overlay/marks.rs` |
-| The films' words | `film/src/verbs/`, one file per theme, each with its words (`WORDS`): `acting`, `fishing/`, `dungeon/`, `things`, `heard`, `view`, `sky`, `effects`, `fights/`, `items`, `moving/`, `pictures`, `rituals`, `crowds`, `said`, `timing`, `nodes`, `game`, `guild`; the engine's commands in `engine.rs` and `commands.rs` (the advanced words); the vocabulary, its families and the old words refused in `film/src/plan.rs`; all of them in the "All the words" table of `film/FILMS.md`, checked by `film/src/tests/docs.rs`; what is wrong, with the closest name: `film/src/check.rs` |
+| The films' words | `film_core/src/verbs/`, one file per theme, each with its words (`WORDS`): `acting`, `fishing/`, `dungeon/`, `things`, `heard`, `view`, `sky`, `effects`, `fights/`, `items`, `moving/`, `pictures`, `rituals`, `crowds`, `said`, `timing`, `nodes`, `game`, `guild`; the engine's commands in `engine.rs` and `commands.rs` (the advanced words); the vocabulary, its families and the old words refused in `film_core/src/plan.rs`; all of them in the "All the words" table of `film/FILMS.md`, checked by `film/src/tests/docs.rs`; what is wrong, with the closest name: `film_core/src/check.rs` |
 | The game's pictures, their categories, their animations | `library/tables/images.txt` |
-| An object on stage: a game item, a decor piece, a picture of our own | `engine/src/stage/thing.rs` (`Thing`); its words: `film/src/verbs/things.rs`, `items.rs`; the word for each decor piece: `library/tables/objects.txt`; our pictures: `library/images/` |
+| An object on stage: a game item, a decor piece, a picture of our own | `engine/src/stage/thing.rs` (`Thing`); its words: `film_core/src/verbs/things.rs`, `items.rs`; the word for each decor piece: `library/tables/objects.txt`; our pictures: `library/images/` |
 | A Pokémon variant | painted by hand in `data/hand/`, its line in `data/extra/variants.txt` (none is provided) |
-| What a Pokémon wears | painted into a variant; where its rod's line starts: `pointe` in its table, written by hand in `data/extra/rod_tips.txt`, read by `Art::rod_tip` (`shell/src/art.rs`); its words: `film/src/verbs/fishing/` and the recipes in `film/recipes/fishing/`; the small things the words use (bobber, crosshair, footprints): `library/images/` |
+| What a Pokémon wears | painted into a variant; where its rod's line starts: `pointe` in its table, written by hand in `data/extra/rod_tips.txt`, read by `Art::rod_tip` (`shell/src/art.rs`); its words: `film_core/src/verbs/fishing/` and the recipes in `film/recipes/fishing/`; the small things the words use (bobber, crosshair, footprints): `library/images/` |
 | What replaces the scene on screen | `engine/src/stage/light.rs` (`Cutaway`) |
 | Where a game file is, the merged lists, the tables read | `assets/src/data.rs` (where, merged) and `assets/src/tables.rs` (read: backgrounds, grounds, built places, names, walls); the keys of the lists: `assets/src/indexes.txt`; each file: `data/DATA.md` |
 | Where you can walk in each place | `data/extra/ground.txt`, made by `decor game_grounds`; places traced by hand: `library/tables/grounds.txt` |
-| A place made for films | `library/decors/<name>.decor`, built by `decor/` (`cargo run --release -p decor -- build <name>`; language, laying out, matting and shadows, weaving, remarks, contact sheets; also dungeon rooms) from the pieces in `library/tables/pieces.txt`; its name for films: `data/extra/decors.txt` (its walls, its background and its residents: `data/extra/decor_*.txt`), read by `Tables::decors` (`film/src/tables/places.rs`) |
+| A place made for films | `library/decors/<name>.decor`, built by `decor/` (`cargo run --release -p decor -- build <name>`; language, laying out, matting and shadows, weaving, remarks, contact sheets; also dungeon rooms) from the pieces in `library/tables/pieces.txt`; its name for films: `data/extra/decors.txt` (its walls, its background and its residents: `data/extra/decor_*.txt`), read by `Tables::decors` (`film_core/src/tables/places.rs`) |
 
 ## Who writes and who reads `data/`
 
@@ -277,7 +282,7 @@ Each rule has a single source. To change it, this is the place, and nowhere else
 | The engine in detail | [engine/README.md](engine/README.md) |
 | The player and packs | [scene_player/README.md](scene_player/README.md) |
 | Make a place | [decor/DECORS.md](decor/DECORS.md) |
-| Add a word to films | the `WORDS` list and the `match` of its theme's file in `film/src/verbs/` (and `.brings`, `.puts` or `.arrives` if its line brings someone onto the stage), and a test in `film/src/tests/` |
+| Add a word to films | the `WORDS` list and the `match` of its theme's file in `film_core/src/verbs/` (and `.brings`, `.puts` or `.arrives` if its line brings someone onto the stage), and a test in `film/src/tests/` |
 | Add a command to the engine | its family's file in `beat/`, then `stage/direct/` or `director/happen.rs` |
 
 ## Checking
@@ -322,6 +327,6 @@ A regular command (fields in their place, each read in a single way) is declared
 "jump" => Jump { who: Who, height: f32 = 10.0, frames: Frames = Frames(12.0) },
 ```
 
-its name, its fields in the order of the line, each by the way it is read and written (a `Field` from `engine/src/beat/declare.rs`: `Who`, `f32`, `u16`, `Frames`, `Point`, `Vec2`, `Direction`, `Text`, `Value`, `OnOff`, `Bit`, `Flag`, `Opt<_>`, `OrOff<_>`, `Dash<_>`, `IfAbsent<_> = default`…). From this line come its reading, its writing (read back the same by construction) and the list of commands (`commands()`). What is left: its variant in its kind's enum (the same file, `body/mod.rs` for the body), what it does (`engine/src/stage/direct/`), whom it names if it names someone (`beat/cast.rs`), its form beside its `declare!` (`FORMS`: `Form::new("jump", &["who:code [height:number] [frames:duration]"], "a jump on the spot")`, which the language reads and `engine/docs/COMMANDS.md`'s table of forms is written from: `GOLDEN=write cargo test -p engine forms`), its row in a theme of `COMMANDS.md` (a test checks it says the same), and an example in the round-trip test of `beat/written/<kind>.rs`. A film word that plays it comes on top of that (`film/src/verbs/`).
+its name, its fields in the order of the line, each by the way it is read and written (a `Field` from `engine/src/beat/declare.rs`: `Who`, `f32`, `u16`, `Frames`, `Point`, `Vec2`, `Direction`, `Text`, `Value`, `OnOff`, `Bit`, `Flag`, `Opt<_>`, `OrOff<_>`, `Dash<_>`, `IfAbsent<_> = default`…). From this line come its reading, its writing (read back the same by construction) and the list of commands (`commands()`). What is left: its variant in its kind's enum (the same file, `body/mod.rs` for the body), what it does (`engine/src/stage/direct/`), whom it names if it names someone (`beat/cast.rs`), its form beside its `declare!` (`FORMS`: `Form::new("jump", &["who:code [height:number] [frames:duration]"], "a jump on the spot")`, which the language reads and `engine/docs/COMMANDS.md`'s table of forms is written from: `GOLDEN=write cargo test -p engine forms`), its row in a theme of `COMMANDS.md` (a test checks it says the same), and an example in the round-trip test of `beat/written/<kind>.rs`. A film word that plays it comes on top of that (`film_core/src/verbs/`).
 
 A command with several forms or a reading of its own (`anim … times`, `pose … image`, an `@ x y` or someone, groups) is declared `hand:` (its names only) and keeps its reading in `read` and its writing in `beat/written/<kind>.rs`. `scene_player fingerprint --compare` says whether the films' written lines have changed.

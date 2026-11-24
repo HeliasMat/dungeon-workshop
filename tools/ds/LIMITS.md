@@ -136,7 +136,7 @@ How Sky keeps a map, and what the export does to fit:
   levels could be added instead; not needed.
 - **Walls**: the decor's (`decor_ground.txt`) as the map's collision.
 
-Lost (`R-DS-LOSS` on the scene, `film/src/ds.rs` LOSSES `decor`):
+Lost (`R-DS-LOSS` on the scene, `film_core/src/ds.rs` LOSSES `decor`):
 
 - the animated tiles (water, torches: Sky's BPA) and the colours that change
   with time (palette animation): the decor's first frame, still;

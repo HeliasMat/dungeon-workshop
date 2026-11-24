@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn how_a_sound_plays_is_read_past_its_name() {
-        let film = Film::with(&crate::LEXICON, Default::default());
+        let film = Film::with(&crate::verbs::lexicon::BARE, Default::default());
         let (name, how) = name_and_how(&film, &words("soft wind left volume 0.5 pitch -3 loop as wind in 2s"));
         assert_eq!(name, words("soft wind"));
         assert_eq!(how.pan, Some(Side::At(-1.0)));
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn a_name_is_the_games_sound_first_then_a_moves_then_ours() {
-        let film = Film::with(&crate::LEXICON, Default::default());
+        let film = Film::with(&crate::verbs::lexicon::BARE, Default::default());
         let own = vec!["flash".to_string(), "my_noise".to_string()];
         let game = POKEMON.sound("flash").expect("a sound of the game");
         assert_eq!(found(&film, &words("flash"), &own), Found::Game(game, true));

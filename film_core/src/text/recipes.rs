@@ -52,10 +52,10 @@ const DEEPEST: usize = 8;
 
 /// The library's recipes, a file a theme.
 const LIBRARY: [(&str, &str); 4] = [
-    ("gestures", include_str!("../../recipes/gestures.film")),
-    ("contact", include_str!("../../recipes/contact.film")),
-    ("fights", include_str!("../../recipes/fights.film")),
-    ("fishing/line", include_str!("../../recipes/fishing/line.film")),
+    ("gestures", include_str!("../../../film/recipes/gestures.film")),
+    ("contact", include_str!("../../../film/recipes/contact.film")),
+    ("fights", include_str!("../../../film/recipes/fights.film")),
+    ("fishing/line", include_str!("../../../film/recipes/fishing/line.film")),
 ];
 
 /// The words that are words said, or that carry them: no `there` nor `team`

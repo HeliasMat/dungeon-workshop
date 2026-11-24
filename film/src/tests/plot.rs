@@ -66,8 +66,8 @@ fn go_on_to_a_moment_or_a_scene_and_count_them() {
     let (_, problems) = written("scene: beach pikachu\nmoment: the bet\nif seen(the_bat) > 0\n  pikachu: Hi.\nend\n");
     assert!(problems.iter().any(|problem| problem.contains("seen(the_bat)")), "{problems:?}");
     // (What a game keeps of it.)
-    assert_eq!(crate::plot::counters(film).into_iter().collect::<Vec<_>>(), ["seen_beach", "seen_the_bet", "seen_the_end", "seen_town"]);
-    assert!(crate::plot::counters("scene: beach pikachu\nmoment: a\n").is_empty());
+    assert_eq!(film_core::plot::counters(film).into_iter().collect::<Vec<_>>(), ["seen_beach", "seen_the_bet", "seen_the_end", "seen_town"]);
+    assert!(film_core::plot::counters("scene: beach pikachu\nmoment: a\n").is_empty());
 }
 
 #[test]
@@ -101,9 +101,9 @@ fn an_optional_family_comes_with_uses() {
         assert!(written.problems.iter().all(|problem| problem.is_remark()), "{library}: {:?}", written.problems);
     }
     let without = "scene: beach pikachu\nbite\n";
-    let told: Vec<_> = crate::tests::compile(without).problems.into_iter().filter(|problem| problem.code == Some(crate::codes::USES)).collect();
+    let told: Vec<_> = crate::tests::compile(without).problems.into_iter().filter(|problem| problem.code == Some(film_core::codes::USES)).collect();
     assert_eq!(told.len(), 1, "{told:?}");
     let fixed = crate::service::applied(without, &told[0].fixes[0].edits);
     assert!(fixed.starts_with("uses fishing\nscene:"), "{fixed}");
-    assert!(crate::tests::compile(&fixed).problems.iter().all(|problem| problem.code != Some(crate::codes::USES)));
+    assert!(crate::tests::compile(&fixed).problems.iter().all(|problem| problem.code != Some(film_core::codes::USES)));
 }

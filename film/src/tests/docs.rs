@@ -50,7 +50,7 @@ fn the_times_of_the_engine_s_commands_are_in_films_md_as_the_registry_has_them()
 #[test]
 fn every_word_has_its_forms() {
     let families = crate::LEXICON.families().iter().flat_map(|family| family.words.iter().map(move |word| (family.name, word)));
-    let text = crate::text::WORDS.iter().map(|word| ("text", word));
+    let text = film_core::text::WORDS.iter().map(|word| ("text", word));
     let missing: Vec<String> =
         families.chain(text).filter(|(_, word)| word.forms.is_empty()).map(|(family, word)| format!("{} ({family})", word.word)).collect();
     assert!(missing.is_empty(), "these words have no form: {missing:?}");
@@ -96,7 +96,7 @@ fn every_command_a_film_writes_is_in_commands_md() {
     let commands = read("engine/docs/COMMANDS.md");
     let mut written = BTreeSet::new();
     for path in corpus() {
-        let film = crate::Written::of_file_with(&path, tables()).expect("a film");
+        let film = crate::Written::of_file_with(&crate::LEXICON, &path, tables()).expect("a film");
         written.extend(film.lines.into_iter().map(|(_, fields)| fields[0].clone()));
     }
     let missing: Vec<&String> = written.iter().filter(|command| !names(&commands, command)).collect();

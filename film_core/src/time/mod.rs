@@ -50,6 +50,3 @@ impl WordTime {
         }
     }
 }
-
-#[cfg(test)]
-mod tests;

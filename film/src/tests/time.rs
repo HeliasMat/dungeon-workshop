@@ -1,4 +1,4 @@
-use super::*;
+use film_core::time::*;
 
 /// The plan of a film's text, and each of its lines placed without playing.
 fn planned(text: &str) -> (Plan, Vec<Place>) {

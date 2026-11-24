@@ -60,7 +60,7 @@ In the window: `P` pauses, then `.` steps one frame; `Page Up` and `Page Down` g
 
 ## A film
 
-**The rules of the language** (the v2.1 vocabulary it is being rebuilt to, family by family: `film/src/plan.rs`):
+**The rules of the language** (the v2.1 vocabulary it is being rebuilt to, family by family: `film_core/src/plan.rs`):
 
 1. **Who acts comes first**, like a line said (`pikachu (happy): Hi!`): `pikachu walk to piplup`, `eevee jump`, `piplup emote joy`, `pikachu exit via left`. When nobody acts, the line starts with what happens: `music beach`, `wait 2s`, `frame pikachu piplup`, `transition fade`. One order only: a line written the word first (`walk pikachu to piplup`) is wrong (`E-ORDER`), its fix writing it who first (the Workshop and the language server apply it); the turns of a directed fight (`pikachu Thunder Shock krabby`) stay as they are. Which words are said of someone is read from their forms (a first part `who:pokemon`, `who:code`, a team of one) and from the plan, which writes some word first (`fight a vs b`, `wait`, `open`). The Workshop suggests and writes who first; typed `pikachu `, it offers what Pikachu can do.
 2. **One word per idea**: its variants are options of the word.
@@ -72,7 +72,7 @@ In the window: `P` pauses, then `.` steps one frame; `Page Up` and `Page Down` g
 
 The words come in families: Structure, Speech, Presence, Formations, Movement, Turning, Body, Emotions, Camera, Screen, Sound, Effects, Objects, Fights, Time, Story; Dungeon, Guild and Fishing come with `uses dungeon`, `uses guild`, `uses fishing` (their words without it: a remark `R-USES`, its fix the `uses` line); the Advanced words (the engine's commands) are folded. A word of the old vocabulary is refused (`E-OLD-WORD`), with the form that says it now.
 
-**Written for the DS**: a line `for ds` before the first scene says the film is to play in Explorers of Sky (`scene_player export-ds`, docs/DS.md), as a new game starts; `for ds scene`, in place of a scene of a game going on. Then what the DS can't play is told, by the table of `film/src/ds.rs` (`export-ds --table`): a word it has nothing for (`E-DS-WORD`, with how to write it another way: `fight` as blows of `attack`), a word that exports with a loss (`R-DS-LOSS`, what is lost, once a word), more than 21 Pokémon at once in a scene (`E-DS-ACTORS`, who the export leaves out), a place that is neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor exports as a map of its own, with a loss), the hero or the partner before the player chose them (`E-DS-HERO`, as a new game starts), a zoom or a frame wider than the screen (`R-DS-ZOOM`: Sky has no zoom). Without the line, nothing of it is said.
+**Written for the DS**: a line `for ds` before the first scene says the film is to play in Explorers of Sky (`scene_player export-ds`, docs/DS.md), as a new game starts; `for ds scene`, in place of a scene of a game going on. Then what the DS can't play is told, by the table of `film_core/src/ds.rs` (`export-ds --table`): a word it has nothing for (`E-DS-WORD`, with how to write it another way: `fight` as blows of `attack`), a word that exports with a loss (`R-DS-LOSS`, what is lost, once a word), more than 21 Pokémon at once in a scene (`E-DS-ACTORS`, who the export leaves out), a place that is neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor exports as a map of its own, with a loss), the hero or the partner before the player chose them (`E-DS-HERO`, as a new game starts), a zoom or a frame wider than the screen (`R-DS-ZOOM`: Sky has no zoom). Without the line, nothing of it is said.
 
 **The Story family**, the logic of a story told:
 
@@ -164,7 +164,7 @@ Listeners do not copy the speaker's emotion: `react on` does that, if you want i
 
 ## What you can write
 
-The words of a film, family by family (`film/src/plan.rs`); each has its page in the Workshop's Wiki, with an example that plays, and its forms in the table "All the words" below.
+The words of a film, family by family (`film_core/src/plan.rs`); each has its page in the Workshop's Wiki, with an example that plays, and its forms in the table "All the words" below.
 
 | Family | Words |
 |---|---|
@@ -204,7 +204,7 @@ The words of a film, family by family (`film/src/plan.rs`); each has its page in
 
 **Family and types.** `pichu evolve`, no species: the next form of its family, as the game's tables say (the first that evolves from it: `eevee evolve` is Vaporeon); `pichu evolve charmander`, not of its family, is a remark of `check`, played all the same. `ditto transform into its next form`: the same, as a look. `aura on charmander` (never by itself; `aura off charmander`): an ambience of its type, in sharp pixels, no glow nor veil: a fire kind's few cinders about its body; a spark off an electric kind when angry (an `angry` or `shouting` line, `emote anger`, `hop angry`); a drop off a water kind when scared (a `worried` line, `emote sweat`, `react fear`); leaves off a grass kind dancing (`pose spin`). A kind of none of these types: remarked. On DS, nothing shows (`R-DS-LOSS`).
 
-**Gestures, and what a sprite lacks.** `who pose name` plays the sprite's animations by a clear name (`sit`, `lie`, `look_up`, `proud`, `stagger`, `cringe`, `faint`, `nod`, `breathe`, `spin`…: `POSES` in `film/src/verbs/acting.rs`). The film knows which animations each species' sprite really has (`sprites.txt`): one it lacks plays the nearest it has (`sit`: lying, else asleep; `cringe`: pain, else hurt; `proud`: a hop…), and where none is near, `check` remarks it (“lapras has no Float animation: he stays standing”). The gestures the game has no animation for are recipes (`film/recipes/gestures.film`): `who laugh` (its laugh balloon, little hops), `who cry` (pain, sweat, shaking), `who sulk` (back turned, a sigh), `who shiver`, `who stretch`, `who celebrate` (a spin, happy hops, its proud pose).
+**Gestures, and what a sprite lacks.** `who pose name` plays the sprite's animations by a clear name (`sit`, `lie`, `look_up`, `proud`, `stagger`, `cringe`, `faint`, `nod`, `breathe`, `spin`…: `POSES` in `film_core/src/verbs/acting.rs`). The film knows which animations each species' sprite really has (`sprites.txt`): one it lacks plays the nearest it has (`sit`: lying, else asleep; `cringe`: pain, else hurt; `proud`: a hop…), and where none is near, `check` remarks it (“lapras has no Float animation: he stays standing”). The gestures the game has no animation for are recipes (`film/recipes/gestures.film`): `who laugh` (its laugh balloon, little hops), `who cry` (pain, sweat, shaking), `who sulk` (back turned, a sigh), `who shiver`, `who stretch`, `who celebrate` (a spin, happy hops, its proud pose).
 
 **Faces a species lacks.** The film knows which faces each species' portraits really have (`portraits/<species>_<face>.png`). A line asking one it lacks shows the nearest it has (`joyous`: happy; `crying`, `teary_eyed`: each other, else sad; `shouting`: angry; `surprised`: stunned; `dizzy`: pain…), else its normal face, and `check` remarks it (“lapras has no crying portrait: normal instead”).
 
@@ -338,7 +338,7 @@ The **advanced words**, folded in the Workshop, are the engine's own commands (`
 | `runto` | until |
 <!-- end of engine times -->
 
-**A word of the old vocabulary** (`fadein`, `turn`, `camera`, `gathering`...) is wrong (`E-OLD-WORD`): `check` says the form that replaces it, and writes the line again when it can (`fadein 30`: `transition fade in 30`; `turn pikachu left`: `pikachu face left`). The table of them is `REPLACED` in `film/src/plan.rs`.
+**A word of the old vocabulary** (`fadein`, `turn`, `camera`, `gathering`...) is wrong (`E-OLD-WORD`): `check` says the form that replaces it, and writes the line again when it can (`fadein 30`: `transition fade in 30`; `turn pikachu left`: `pikachu face left`). The table of them is `REPLACED` in `film_core/src/plan.rs`.
 
 ## A game: chapters, places, cutscenes
 
@@ -696,9 +696,9 @@ Every problem has its code, a stable one: `E-…` an error (the film does not pl
 
 ## All the words
 
-Every word of a film, its forms, the file that reads it (`film/src/verbs/<file>.rs`, `verbs/moving/body.rs` for `body`, `film/src/text/` for `text`, `engine`: an engine command, by its name) and what it writes for the engine (see `engine/docs/COMMANDS.md`).
+Every word of a film, its forms, the file that reads it (`film_core/src/verbs/<file>.rs`, `verbs/moving/body.rs` for `body`, `film_core/src/text/` for `text`, `engine`: an engine command, by its name) and what it writes for the engine (see `engine/docs/COMMANDS.md`).
 
-**The forms**: each word has its own in its line of `WORDS`, in its family's file (`film/src/verbs/`, the engine commands in `engine.rs`), and a single reader, `film/src/grammar.rs`. Each line of a film must fit one of its word's forms, otherwise `check` says which ones and what is missing ("“pikachoo walk to 300 120”: “pikachoo” is not someone of the scene"). When several families share a word, the form decides: `ride pikachu lapras` (fishing), `rise pikachu 24 0.3s` (the engine). An engine command is written in a film only if the language has its form; `>` in front of a line, for debugging only. The notation: `who:pokemon` (someone of the scene), `*who` (one or more), `where:place` (`x y`, someone, `front_of b`, `left_of b`, `between a b`, `3 tiles from b`, `tile 12 7`, a spot), `d:duration` (`1.5s`, `6f`), `n:number`, `word`, `thing...` (one word or more), `text...` (the rest), `rest...` (the end that the word reads itself), `a|b` (one of these words), `[...]` (optional). Recipes are written in the same notation, with default values on top (`turns=4`).
+**The forms**: each word has its own in its line of `WORDS`, in its family's file (`film_core/src/verbs/`, the engine commands in `engine.rs`), and a single reader, `film_core/src/grammar.rs`. Each line of a film must fit one of its word's forms, otherwise `check` says which ones and what is missing ("“pikachoo walk to 300 120”: “pikachoo” is not someone of the scene"). When several families share a word, the form decides: `ride pikachu lapras` (fishing), `rise pikachu 24 0.3s` (the engine). An engine command is written in a film only if the language has its form; `>` in front of a line, for debugging only. The notation: `who:pokemon` (someone of the scene), `*who` (one or more), `where:place` (`x y`, someone, `front_of b`, `left_of b`, `between a b`, `3 tiles from b`, `tile 12 7`, a spot), `d:duration` (`1.5s`, `6f`), `n:number`, `word`, `thing...` (one word or more), `text...` (the rest), `rest...` (the end that the word reads itself), `a|b` (one of these words), `[...]` (optional). Recipes are written in the same notation, with default values on top (`turns=4`).
 
 Tests (`film/src/tests/docs.rs`) check that this table is the code's, that each word has its forms, that the `film` skill mentions every word, and that `COMMANDS.md` mentions every command a film writes.
 
@@ -886,7 +886,7 @@ What depends on the scene is not decided here: `front_of a`, `to b`, formations,
 
 **When something is badly written**, each problem carries its line of the film, and the words it quotes between “ ” are pointed out in place (the Workshop and `analyze` underline them); an unknown name is always told the same way: `unknown item “aple”. Closest: apple (scene_player items)`.
 
-To add a word, add it to the `WORDS` list of its theme's file in `film/src/verbs/`, with its forms, what it makes play and its function, which receives its values already read and makes its `Beat`s:
+To add a word, add it to the `WORDS` list of its theme's file in `film_core/src/verbs/`, with its forms, what it makes play and its function, which receives its values already read and makes its `Beat`s:
 
 ```rust
 Word::new("greet", &["who:pokemon other:pokemon"], "face, jump").does(greets),

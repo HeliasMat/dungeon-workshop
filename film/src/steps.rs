@@ -7,14 +7,14 @@ use std::fmt::Write;
 
 use language::ast::{Kind, Opening, Stmt};
 
-use crate::compile::scenes::read;
-use crate::film::Film;
-use crate::ir::{Instr, Shape};
-use crate::text::front::{holds, internal};
-use crate::text::recipes::unfold;
+use film_core::compile::scenes::read;
+use film_core::film::Film;
+use film_core::ir::{Instr, Shape};
+use film_core::text::front::{holds, internal};
+use film_core::text::recipes::unfold;
 
 /// Every step of a film, told.
-pub fn steps(text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> String {
+pub fn steps(text: &str, tables: std::sync::Arc<film_core::tables::Tables>) -> String {
     let mut out = String::new();
     let title = |out: &mut String, step: &str, what: &str| {
         let _ = writeln!(out, "\n=== {step}  ({what})");
@@ -44,7 +44,7 @@ pub fn steps(text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Strin
     }
 
     title(&mut out, "3. The film's tree", "text::front: each line what it is (ir::Shape), a recipe kept as it is");
-    for instr in internal(&crate::LEXICON, text, 0, crate::tables::ENGLISH).lines.iter().filter(|instr| instr.shape != Shape::Blank) {
+    for instr in internal(&crate::LEXICON, text, 0, film_core::tables::ENGLISH).lines.iter().filter(|instr| instr.shape != Shape::Blank) {
         told_instr(&mut out, instr, 1);
     }
 
@@ -173,7 +173,7 @@ fn told_instr(out: &mut String, instr: &Instr, depth: usize) {
         Shape::Beat(_) => format!("Beat: {}", instr.text.trim_start_matches('>')),
         Shape::Arrives { who, then } => format!("When {} arrives{}", who.join(" "), then.as_ref().map_or(String::new(), |then| format!(": {}", then.text))),
         Shape::AtMark { name, after, then } if name.starts_with('@') => {
-            let clock = if name == crate::ir::MUSIC_CLOCK { "of the music" } else { "of the scene" };
+            let clock = if name == film_core::ir::MUSIC_CLOCK { "of the music" } else { "of the scene" };
             format!("At {after} frames {clock}{}", then.as_ref().map_or(String::new(), |then| format!(": {}", then.text)))
         }
         Shape::AtMark { name, after, then } => {

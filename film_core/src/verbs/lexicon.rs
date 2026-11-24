@@ -194,6 +194,11 @@ impl Lexicon {
     }
 }
 
+/// The language with no family of words but the text's and the engine's:
+/// what the core's own tests read with.
+#[cfg(test)]
+pub(crate) static BARE: Lexicon = Lexicon::new(&[]);
+
 /// Whether the film's own recipe of that name is said of someone: its first
 /// value `who`, `*who`, or one of the cast (`a:pokemon`).
 fn own_recipe_of_someone(word: &str, text: &str) -> bool {

@@ -4,7 +4,7 @@ real game, one contact sheet per family.
 
     python tools/ds/gate.py <rom> [family...] [--every N] [--no-play]
 
-For each family of `film/src/plan.rs` (the core ones, the optional ones,
+For each family of `film_core/src/plan.rs` (the core ones, the optional ones,
 the advanced words), each word's example in the Wiki (`workshop_wiki/wiki/*.txt`,
 under `== word`) is exported with `scene_player export-ds --partial`; the
 examples that export become the scenes of one film (its name shown on black

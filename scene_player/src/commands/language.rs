@@ -180,7 +180,7 @@ fn print_of(context: &Context, path: &std::path::Path) -> (String, Vec<String>) 
         Err(error) => made += &format!("unreadable {error}\n"),
     }
     if path.extension().is_some_and(|kind| kind == "film")
-        && let Ok(written) = ::film::Written::of_file_with(path, context.tables())
+        && let Ok(written) = ::film::Written::of_file_with(&::film::LEXICON, path, context.tables())
     {
         left = written.left_as_fields.iter().map(|(_, fields)| fields[0].clone()).collect();
         for (number, read) in &written.read_as {

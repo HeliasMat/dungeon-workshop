@@ -5,18 +5,18 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "The language of the films: from the written text to the lines the engine plays"
+description = "The language of the films whole: its core and every family of its words"
 readme = "../README.md"
 publish.workspace = true
 
-# A film in plain English turned into what the engine plays. Only what the
-# words say is known here: what depends on the stage is found as it plays.
+# The core and every family of words, gathered; what an editor asks of a film.
 [dependencies]
 assets = { path = "../assets" }
+film_core = { path = "../film_core" }
 language = { path = "../language" }
-rules = { path = "../rules" }
 scenes = { path = "../scenes" }
 story = { path = "../story" }
 engine = { path = "../engine" }
-bincode.workspace = true
+
+[dev-dependencies]
 glam.workspace = true

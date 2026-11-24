@@ -186,8 +186,9 @@ mod tests {
     /// The commands family should be, from the docs: one line of Rust a word.
     fn table_from_docs() -> Vec<String> {
         let documented = from_docs();
-        let taken =
-            |word: &str| !KEPT.contains(&word) && crate::LEXICON.all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == word));
+        let taken = |word: &str| {
+            !KEPT.contains(&word) && crate::verbs::lexicon::BARE.all_families_but_commands().any(|family| family.words.iter().any(|known| known.word == word))
+        };
         engine::commands()
             .iter()
             .filter(|own| !taken(own))
@@ -206,7 +207,7 @@ mod tests {
 
     /// The commands family is, one line of Rust a word.
     fn table_of_code() -> Vec<String> {
-        crate::LEXICON
+        crate::verbs::lexicon::BARE
             .commands()
             .words
             .iter()
@@ -230,7 +231,7 @@ mod tests {
             .map(|line| format!("the docs: {line}"))
             .chain(code.iter().filter(|line| !docs.contains(line)).map(|line| format!("the code: {line}")))
             .collect();
-        assert!(differ.is_empty(), "engine/docs/COMMANDS.md and the commands family (film/src/verbs/commands.rs) differ:\n{}", differ.join("\n"));
+        assert!(differ.is_empty(), "engine/docs/COMMANDS.md and the commands family (film_core/src/verbs/commands.rs) differ:\n{}", differ.join("\n"));
     }
 
     /// Every command's rows by theme, those the families have a word for
@@ -252,10 +253,10 @@ mod tests {
 
     #[test]
     fn every_command_of_the_engine_has_a_word() {
-        let family = crate::LEXICON.commands();
+        let family = crate::verbs::lexicon::BARE.commands();
         assert!(family.words.len() > 100, "{}", family.words.len());
         for own in engine::commands() {
-            assert!(crate::LEXICON.all_families().any(|family| family.words.iter().any(|word| word.word == *own)), "“{own}” has no word");
+            assert!(crate::verbs::lexicon::BARE.all_families().any(|family| family.words.iter().any(|word| word.word == *own)), "“{own}” has no word");
         }
         for word in family.words {
             assert!(engine::commands().contains(&word.word), "“{}” is no command of the engine", word.word);

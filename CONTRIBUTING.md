@@ -48,7 +48,7 @@ One commit for one finished change, its message in English: what changed and why
 
 ## The quality gate of a word
 
-The film language is the v2.1 vocabulary (`film/src/plan.rs`: each word, its family, its form as an author writes it). A new word joins its family only once it passes the gate.
+The film language is the v2.1 vocabulary (`film_core/src/plan.rs`: each word, its family, its form as an author writes it). A new word joins its family only once it passes the gate.
 
 The part a test checks (`every_word_of_the_v2_families_passes_the_gate`, `workshop_wiki/src/tests.rs`): every word of the catalogue is a word of the plan or an advanced one (an engine's command), none of the old vocabulary (`REPLACED`) nor of the library's own (`_bobber`); each has its page in the Wiki (`workshop_wiki/wiki/*.txt`, written by hand for the core's and the optional families' words), with an example that reads with no problem and no remark, and that plays with nothing to say where the game's files are there (as `scene_player check` tells it; with the fixture, `DUNGEON_DATA=tests/fixture_data`, only the reading). The words of the plan not built yet are listed by the test (`cargo test -p workshop_wiki gate -- --nocapture`), not asked.
 

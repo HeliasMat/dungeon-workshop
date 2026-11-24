@@ -19,7 +19,7 @@ use scenes::read;
 mod said;
 pub use said::Speaking;
 pub(crate) mod scene;
-pub(crate) mod scenes;
+pub mod scenes;
 
 /// The event a film opens, for the engine (its first chapter, first step).
 const EVENT: &str = "EVENT_M01_01";
@@ -312,7 +312,7 @@ fn bodies(film: &Film) -> Vec<Beat> {
 /// What the film writes, each line of its plan starting where its beats do
 /// (`filmline <n>`, with how it ends), each line gone back to after another
 /// told again (`filmline <n> again`), but at a scene's opening and a label.
-pub(crate) fn with_lines(written: Vec<(usize, Sortie)>, plan: &crate::time::Plan) -> Vec<(usize, Sortie)> {
+pub fn with_lines(written: Vec<(usize, Sortie)>, plan: &crate::time::Plan) -> Vec<(usize, Sortie)> {
     let mut starts: std::collections::BTreeMap<usize, Vec<&crate::time::PlanLine>> = std::collections::BTreeMap::new();
     for (_, line) in plan.shown() {
         starts.entry(line.written).or_default().push(line);

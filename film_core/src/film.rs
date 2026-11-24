@@ -248,12 +248,6 @@ pub struct Film {
 }
 
 impl Film {
-    /// A film compiled with the repository's tables, for the tests.
-    #[cfg(test)]
-    pub fn new() -> Self {
-        Film::with(&crate::LEXICON, crate::tests::tables())
-    }
-
     /// A film compiled with these tables.
     pub fn with(lexicon: &'static crate::verbs::Lexicon, tables: Arc<Tables>) -> Self {
         Film {

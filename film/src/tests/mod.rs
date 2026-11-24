@@ -5,10 +5,11 @@ use ::scenes::vocabulary::POKEMON;
 use engine::{Beat, Call, Director, Stage, Who};
 use glam::Vec2;
 
-use crate::compile::with_lines;
-use crate::film::Sortie;
-use crate::verbs::fights::Combat;
-use crate::{Written, emit};
+use crate::Written;
+use film_core::compile::with_lines;
+use film_core::emit;
+use film_core::film::Sortie;
+use film_core::verbs::fights::Combat;
 
 /// The repository's root, where the tests read the library and `data/` from.
 pub(crate) fn root() -> std::path::PathBuf {
@@ -36,9 +37,14 @@ pub(crate) fn corpus() -> Vec<std::path::PathBuf> {
 }
 
 /// The repository's tables (its `data/`, or `DUNGEON_DATA`), read once for all the tests.
-pub(crate) fn tables() -> std::sync::Arc<crate::tables::Tables> {
-    static READ: std::sync::OnceLock<std::sync::Arc<crate::tables::Tables>> = std::sync::OnceLock::new();
-    READ.get_or_init(|| std::sync::Arc::new(crate::tables::Tables::read(&project(), &assets::testing::data()))).clone()
+pub(crate) fn tables() -> std::sync::Arc<film_core::tables::Tables> {
+    static READ: std::sync::OnceLock<std::sync::Arc<film_core::tables::Tables>> = std::sync::OnceLock::new();
+    READ.get_or_init(|| std::sync::Arc::new(film_core::tables::Tables::read(&project(), &assets::testing::data()))).clone()
+}
+
+/// A film being written with every word and the repository's tables.
+pub(crate) fn film() -> film_core::Film {
+    film_core::Film::with(&crate::LEXICON, tables())
 }
 
 /// A film's text compiled with the repository's tables.
@@ -233,7 +239,7 @@ fn each_line_of_the_film_tells_its_number() {
             (1, Sortie::Beat(emit::wait(3))),
             (4, Sortie::Beat(emit::wait(5))),
         ],
-        &crate::time::Plan::default(),
+        &film_core::time::Plan::default(),
     );
     let words: Vec<String> = out.iter().map(|(_, made)| made.fields().join(" ")).collect();
     assert_eq!(words, ["scene 3 a", "label a", "filmline 1 again", "t 2", "t 3", "filmline 4 again", "t 5"]);
@@ -265,12 +271,15 @@ mod fights;
 mod grammar;
 mod hostile;
 mod language;
+mod lines;
 mod nodes;
 mod plot;
 mod recipes;
+mod replace;
 mod scenes;
 mod stage;
 mod things;
+mod time;
 mod words;
 
 #[test]

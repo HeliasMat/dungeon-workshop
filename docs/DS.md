@@ -12,7 +12,7 @@ A line `for ds` before the first scene (the Script's **DS Mode** writes it)
 says the film is for the DS, played as a new game starts; `for ds scene`, in
 place of a scene of a game going on (the hero and partner chosen). Then what
 the DS can't play is told as you write, from the same table `scene_player
-export-ds --table` prints (`film/src/ds.rs`): a word the DS has nothing for
+export-ds --table` prints (`film_core/src/ds.rs`): a word the DS has nothing for
 (`E-DS-WORD`, with how to write it: a `fight` as blows of `attack`), a word
 that exports with a loss (`R-DS-LOSS`: what is lost), more than 21 Pokémon at
 once in a scene (`E-DS-ACTORS`: who the export leaves out), a place that is
@@ -123,7 +123,7 @@ make contact sheets and videos.
 
 `python tools/ds/gate.py <rom> [family...]` checks every word of the
 language on the real game at once. For each family of the plan
-(`film/src/plan.rs`: the core ones, the optional ones, the advanced
+(`film_core/src/plan.rs`: the core ones, the optional ones, the advanced
 words), it takes each word's example from the Wiki (`workshop_wiki/wiki/*.txt`;
 a line said, `option`, `{if}`, `{value}`, `seen()`, `#id` and `keep`, which
 have no page, get a short one of the script's own), exports it with

@@ -7,7 +7,7 @@
 //! words left. With what the command does, in words.
 //!
 //! The language gives each command no word of its own these forms
-//! (`film/src/verbs/commands.rs`); `engine/docs/COMMANDS.md` has their table
+//! (`film_core/src/verbs/commands.rs`); `engine/docs/COMMANDS.md` has their table
 //! written from here (`GOLDEN=write cargo test -p engine forms`), and its rows
 //! by theme are checked against it.
 

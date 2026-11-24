@@ -163,7 +163,7 @@ pub fn usages(context: &Context, word: &str, most: usize, as_json: bool) -> Resu
     let (mut count, mut shown, mut films) = (0, 0, 0);
     for path in super::language::files(context, &[]) {
         let Ok(text) = std::fs::read_to_string(&path) else { continue };
-        let written = Written::of_file_with(&path, context.tables()).ok();
+        let written = Written::of_file_with(&::film::LEXICON, &path, context.tables()).ok();
         let mut here = Vec::new();
         for (number, _, line) in lines_read(&text) {
             let word = match written.as_ref().and_then(|written| written.read_as.get(&number)) {

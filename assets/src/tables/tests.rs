@@ -32,7 +32,7 @@ fn the_backdrops_are_read_as_before() {
     };
     let old: HashMap<u16, (f32, f32)> = text.lines().filter_map(size).collect();
     assert_eq!(old, new.iter().map(|backdrop| (backdrop.level, (backdrop.width as f32, backdrop.height as f32))).collect());
-    // (film/src/tables/places.rs and story.rs)
+    // (film_core/src/tables/places.rs and story.rs)
     let old: HashMap<i32, (i32, i32)> =
         rows_of(&folder, "backdrops.txt").iter().filter(|row| row.len() > 3).map(|row| (number(&row[0]), (number(&row[2]), number(&row[3])))).collect();
     assert_eq!(old, new.iter().map(|backdrop| (backdrop.level as i32, (backdrop.width, backdrop.height))).collect());
@@ -53,7 +53,7 @@ fn the_backdrops_are_read_as_before() {
 #[ignore = "needs the extracted data/ (run with --ignored)"]
 fn the_grounds_are_read_as_before() {
     let folder = real().expect("the extracted data/");
-    // (film/src/tables/places.rs, decor/src/source.rs)
+    // (film_core/src/tables/places.rs, decor/src/source.rs)
     let old: Vec<(u16, String)> =
         rows_of(&folder, "ground.txt").into_iter().filter(|row| row.len() > 2).filter_map(|row| Some((row[0].parse().ok()?, row[2].clone()))).collect();
     let new: Vec<(u16, String)> = grounds(&folder).into_iter().map(|ground| (ground.level, ground.rows)).collect();
@@ -65,7 +65,7 @@ fn the_grounds_are_read_as_before() {
 #[ignore = "needs the extracted data/ (run with --ignored)"]
 fn the_places_built_are_read_as_before() {
     let folder = real().expect("the extracted data/");
-    // (film/src/tables/places.rs)
+    // (film_core/src/tables/places.rs)
     let mut old = Vec::new();
     for row in rows_of(&folder, "decors.txt").into_iter().filter(|row| row.len() > 3) {
         let ways: Vec<(String, i32, i32)> = row
@@ -131,7 +131,7 @@ fn the_sheets_are_read_as_before() {
     };
     let old: HashSet<u16> = data::text(&folder, "props.txt").lines().filter_map(flat).collect();
     assert_eq!(old, sheets(&folder, "props.txt").into_iter().filter(|row| row.flat).map(|row| row.number).collect());
-    // (film/src/tables/monsters.rs: how big each shows, who is drawn, who aims)
+    // (film_core/src/tables/monsters.rs: how big each shows, who is drawn, who aims)
     let rows = rows_of(&folder, "sprites.txt");
     let mut old: HashMap<String, (i32, i32)> = HashMap::new();
     for row in rows.iter().filter(|row| row.len() > 3) {
@@ -146,7 +146,7 @@ fn the_sheets_are_read_as_before() {
     assert_eq!(drawn, sheets(&folder, "sprites.txt").iter().map(|row| row.number.to_string()).collect());
     let aiming: HashSet<String> = rows.iter().filter(|row| row.len() > 1 && row[1] == "55").map(|row| row[0].clone()).collect();
     assert_eq!(aiming, sheets(&folder, "sprites.txt").iter().filter(|row| row.animation == 55).map(|row| row.number.to_string()).collect());
-    // (film/src/tables/places.rs: the steps of each thing)
+    // (film_core/src/tables/places.rs: the steps of each thing)
     let old: HashMap<u16, i32> = rows_of(&folder, "props.txt")
         .into_iter()
         .filter(|row| row.len() > 4 && row[1] == "0")
@@ -212,7 +212,7 @@ fn the_effects_and_the_statuses_are_read_as_before() {
 #[ignore = "needs the extracted data/ (run with --ignored)"]
 fn the_variants_the_tips_and_who_lives_where_are_read_as_before() {
     let folder = real().expect("the extracted data/");
-    // (shell/src/art.rs: `variants_of`; film/src/tables/monsters.rs: the rows of three fields)
+    // (shell/src/art.rs: `variants_of`; film_core/src/tables/monsters.rs: the rows of three fields)
     let old: HashMap<u16, u16> =
         rows_of(&folder, "variants.txt").into_iter().filter_map(|row| Some((row.first()?.parse().ok()?, row.get(1)?.parse().ok()?))).collect();
     assert_eq!(old, variants(&folder).into_iter().map(|variant| (variant.number, variant.of)).collect());
@@ -231,7 +231,7 @@ fn the_variants_the_tips_and_who_lives_where_are_read_as_before() {
         let old: Vec<(String, String)> = rows_of(&folder, file).into_iter().filter(|row| row.len() > 1).map(|row| (row[0].clone(), row[1].clone())).collect();
         assert_eq!(old, numbered(&folder, file).into_iter().map(|(id, name)| (id.to_string(), name)).collect::<Vec<_>>(), "{file}");
     }
-    // (film/src/tables/places.rs: `read_residents`)
+    // (film_core/src/tables/places.rs: `read_residents`)
     let (mut level, mut old) = (0, Vec::new());
     for row in rows_of(&folder, "town.txt") {
         match row[0].as_str() {

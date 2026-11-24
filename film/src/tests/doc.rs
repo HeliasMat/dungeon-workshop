@@ -1,7 +1,7 @@
 //! A film's text as written: read back to the same bytes, every line in its
 //! outline once, each edit undone by the one it gives back.
 
-use crate::doc::{Doc, Edit, Kind};
+use film_core::doc::{Doc, Edit, Kind};
 /// Every film of the tests' corpus, its path and its text.
 fn films() -> Vec<(String, String)> {
     crate::tests::corpus().into_iter().map(|path| (path.display().to_string(), std::fs::read_to_string(&path).unwrap_or_default())).collect()
@@ -30,7 +30,7 @@ fn every_line_of_a_film_is_in_its_outline_once() {
         seen.sort();
         let all: Vec<usize> = (1..=doc.len()).collect();
         assert_eq!(seen, all, "{name}: lines are missing from its outline, or are in it twice");
-        let scenes = doc.numbered().filter(|(_, line)| matches!(crate::doc::kind_of(line), Kind::Scene { .. })).count();
+        let scenes = doc.numbered().filter(|(_, line)| matches!(film_core::doc::kind_of(line), Kind::Scene { .. })).count();
         assert_eq!(outline.scenes.len(), scenes, "{name}");
     }
 }

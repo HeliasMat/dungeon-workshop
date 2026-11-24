@@ -185,9 +185,9 @@ fn what_stands_in_a_place_is_put_there() {
 /// code the film gives, a place as its words say it.
 #[test]
 fn the_spots_said_name_who_they_are_found_from() {
-    use crate::spots::{Goal, goal_of};
     use engine::{Spot, Who};
-    let mut film = crate::film::Film::new();
+    use film_core::spots::{Goal, goal_of};
+    let mut film = crate::tests::film();
     film.give_name("krabby".to_string(), "m98".to_string());
     film.give_name("apple".to_string(), "0".to_string());
     let krabby = Who::Monster(98);

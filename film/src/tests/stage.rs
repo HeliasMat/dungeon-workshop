@@ -255,8 +255,8 @@ scene: town krabby
     let written = compile("include welcome\nscene: town krabby piplup\npiplup salute\n");
     assert!(written.lines.iter().all(|(number, _)| *number < 100), "no line number of an included file is left");
     let included = vec![(1, "welcome".to_string())];
-    assert_eq!(crate::text::recipes::told_line(&included, 1_000_004), (1, Some(("welcome".to_string(), 4))));
-    assert_eq!(crate::text::recipes::told_line(&included, 7), (7, None));
+    assert_eq!(film_core::text::recipes::told_line(&included, 1_000_004), (1, Some(("welcome".to_string(), 4))));
+    assert_eq!(film_core::text::recipes::told_line(&included, 7), (7, None));
 }
 
 #[test]

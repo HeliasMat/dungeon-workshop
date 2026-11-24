@@ -588,7 +588,7 @@ fn command_here(film: &mut Film, item: &Instr) {
         // (Only the words the language has a form for: `engine.rs`.)
         film.wrong(
             line.number,
-            format!("“{}”: a command of the engine the language does not know (its form in film/src/verbs/engine.rs, or `>` to debug)", line.text),
+            format!("“{}”: a command of the engine the language does not know (its form in film_core/src/verbs/engine.rs, or `>` to debug)", line.text),
         );
     } else {
         // (How long it lasts, as the registry says of the word: its `d`, or
@@ -646,7 +646,7 @@ pub(crate) fn wrong_form(film: &mut Film, verb: &str, first: &str, rest: &[Strin
         return Some(crate::check::unknown("unknown word", first, &close, "film/FILMS.md"));
     }
     (verb != "else" || !rest.is_empty())
-        .then(|| format!("“{text}”: a command of the engine the language does not know (its form in film/src/verbs/engine.rs, or `>` to debug)"))
+        .then(|| format!("“{text}”: a command of the engine the language does not know (its form in film_core/src/verbs/engine.rs, or `>` to debug)"))
 }
 
 /// How near a point said in numbers must be to a place's named spot to be

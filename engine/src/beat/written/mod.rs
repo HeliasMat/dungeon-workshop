@@ -1,5 +1,5 @@
 //! A beat written back as the engine's line, for as long as a film hands
-//! the engine lines of fields (`film/src/emit.rs`): a word makes its beat,
+//! the engine lines of fields (`film_core/src/emit/`): a word makes its beat,
 //! typed, and its line is that beat's. Each kind of beat writes its own
 //! (one file each, as `beat/` reads them); a beat with none is written by
 //! the word as fields still.

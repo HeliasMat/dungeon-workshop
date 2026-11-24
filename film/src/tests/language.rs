@@ -1,6 +1,6 @@
 //! The language read by `language`, then written as the words play it.
 
-use crate::text::front::internal;
+use film_core::text::front::internal;
 
 /// Every file of recipes and every film reads with nothing wrong: what
 /// is wrong in a recipe of the library is told nowhere else.
@@ -12,7 +12,7 @@ fn every_file_reads_in_the_language() {
         let Ok(found) = std::fs::read_dir(root.join(folder)) else { continue };
         for path in found.flatten().map(|entry| entry.path()).filter(|path| path.extension().is_some_and(|extension| extension == "film")) {
             let text = std::fs::read_to_string(&path).unwrap_or_default();
-            for (number, told) in internal(&crate::LEXICON, &text, 0, crate::tables::ENGLISH).diagnostics {
+            for (number, told) in internal(&crate::LEXICON, &text, 0, film_core::tables::ENGLISH).diagnostics {
                 wrong.push(format!("{}:{number}: {}", path.display(), told.message));
             }
         }
@@ -21,10 +21,10 @@ fn every_file_reads_in_the_language() {
 }
 
 fn written(text: &str) -> Vec<String> {
-    let read = internal(&crate::LEXICON, text, 0, crate::tables::ENGLISH);
+    let read = internal(&crate::LEXICON, text, 0, film_core::tables::ENGLISH);
     assert!(read.diagnostics.is_empty(), "{:?}", read.diagnostics);
     // (Each block's lines after its opening, then its `end`: as written.)
-    fn flat(lines: &[crate::ir::Instr], out: &mut Vec<String>) {
+    fn flat(lines: &[film_core::ir::Instr], out: &mut Vec<String>) {
         for instr in lines {
             out.push(instr.text.clone());
             if let Some(inner) = &instr.inner {
@@ -213,7 +213,7 @@ fn the_old_order_is_told_with_its_fix() {
     let old =
         "scene: beach pikachu eevee\nwalk pikachu to right\njump eevee\nemote eevee joy &\nlook pikachu right\nframe pikachu eevee\nmusic beach\nwait 1s\n";
     let ordered = |text: &str| {
-        crate::service::diagnostics(text, crate::tests::tables()).into_iter().filter(|told| told.code == Some(crate::codes::OLD_ORDER)).collect::<Vec<_>>()
+        crate::service::diagnostics(text, crate::tests::tables()).into_iter().filter(|told| told.code == Some(film_core::codes::OLD_ORDER)).collect::<Vec<_>>()
     };
     let told = ordered(old);
     let lines: Vec<usize> = told.iter().map(|one| one.span.start.line).collect();

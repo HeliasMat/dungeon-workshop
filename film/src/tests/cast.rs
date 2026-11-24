@@ -1,9 +1,8 @@
 //! Who a line brings onto the stage, as its word declares it
 //! (`verbs::Word::brings`), read from the values of its form.
 
-use crate::film::Film;
-use crate::ir::Instr;
-use crate::text::cast::{placed_by_a_line, who_acts};
+use film_core::ir::Instr;
+use film_core::text::cast::{placed_by_a_line, who_acts};
 
 /// The lines, each a word's line as the language reads it: its word first
 /// (`walk pikachu to piplup`, written `pikachu walk to piplup`).
@@ -20,7 +19,7 @@ fn lines_of(lines: &[&str]) -> Vec<Instr> {
 
 /// Who the lines name, `chest` someone of the film.
 fn named(lines: &[&str]) -> Vec<String> {
-    let mut film = Film::new();
+    let mut film = crate::tests::film();
     film.give_name("chest".to_string(), "m1".to_string());
     who_acts(&mut film, &lines_of(lines))
 }
@@ -39,7 +38,7 @@ fn a_line_names_those_its_form_gives_someone() {
 /// Those the lines put on the stage, the head naming those listed, so many
 /// of the lines setting the scene; `chest` someone of the film.
 fn placed(lines: &[&str], listed: &[&str], setting: usize) -> Vec<String> {
-    let mut film = Film::new();
+    let mut film = crate::tests::film();
     film.give_name("chest".to_string(), "m1".to_string());
     let lines = lines_of(lines);
     let listed: Vec<String> = listed.iter().map(|one| one.to_string()).collect();

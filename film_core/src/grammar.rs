@@ -78,7 +78,7 @@ impl Kind {
         }
     }
 
-    pub(crate) fn said(self) -> &'static str {
+    pub fn said(self) -> &'static str {
         match self {
             Kind::Word => "a word",
             Kind::Thing => "a thing, a sound, an object (its name)",

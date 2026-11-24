@@ -61,20 +61,20 @@ fn a_failure_at_a_call_says_which_recipe_line() {
 /// nothing wrong in them.
 #[test]
 fn every_shared_recipe_is_checked_alone() {
-    let mut known: std::collections::HashMap<String, Vec<crate::text::recipes::Recipe>> = Default::default();
+    let mut known: std::collections::HashMap<String, Vec<film_core::text::recipes::Recipe>> = Default::default();
     let mut all = crate::LEXICON.library().to_vec();
     for name in crate::shared_files(&crate::tests::project()).iter().filter(|name| name.as_str() == "welcome") {
-        let text = crate::text::recipes::shared_text(&crate::tests::project(), name).expect("read");
-        all.extend(crate::text::recipes::recipes_of(&crate::LEXICON, &text, name));
+        let text = film_core::text::recipes::shared_text(&crate::tests::project(), name).expect("read");
+        all.extend(film_core::text::recipes::recipes_of(&crate::LEXICON, &text, name));
     }
     for recipe in &all {
         known.entry(recipe.name.clone()).or_default().push(recipe.clone());
     }
     let mut wrong = Vec::new();
     for recipe in &all {
-        let mut alone = crate::Film::new();
-        for (line, message) in crate::text::checked::wrong_in(&mut alone, recipe, &known) {
-            wrong.push(format!("{}: {message}", crate::text::recipes::told_at(&recipe.file, line)));
+        let mut alone = crate::tests::film();
+        for (line, message) in film_core::text::checked::wrong_in(&mut alone, recipe, &known) {
+            wrong.push(format!("{}: {message}", film_core::text::recipes::told_at(&recipe.file, line)));
         }
     }
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));

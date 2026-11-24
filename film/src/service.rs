@@ -8,7 +8,7 @@
 use language::ast::{Arg, ArgKind, Block, Call, Expr, ExprKind, File, Kind, Opening, PartKind, Piece, Stmt};
 use language::{Source, Span};
 
-use crate::text::front::{holds, internal};
+use film_core::text::front::{holds, internal};
 
 /// A place in the text (lines and columns from 1).
 pub use language::Position as Spot;
@@ -62,12 +62,12 @@ fn writing(name: String, at: Range) -> Fix {
 
 /// What is wrong with a film: what the language says (its column, its
 /// fixes), then what the words say once played through (its line; the
-/// nearest names as fixes; [`crate::codes::WORDS`] for those with no code
+/// nearest names as fixes; [`film_core::codes::WORDS`] for those with no code
 /// of their own). Each with its lines and columns, its bytes too when said.
-pub fn diagnostics(text: &str, tables: std::sync::Arc<crate::tables::Tables>) -> Vec<Diagnostic> {
+pub fn diagnostics(text: &str, tables: std::sync::Arc<film_core::tables::Tables>) -> Vec<Diagnostic> {
     let source = Source::new(text);
     let mut told: Vec<Diagnostic> =
-        internal(&crate::LEXICON, text, 0, crate::tables::ENGLISH).diagnostics.into_iter().map(|(_, wrong)| wrong.resolved(&source)).collect();
+        internal(&crate::LEXICON, text, 0, film_core::tables::ENGLISH).diagnostics.into_iter().map(|(_, wrong)| wrong.resolved(&source)).collect();
     let said: Vec<(usize, String)> = told.iter().map(|one| (one.span.start.line, one.message.clone())).collect();
     for mut problem in crate::compile_with(text, tables).problems {
         let line = problem.line();
@@ -81,7 +81,7 @@ pub fn diagnostics(text: &str, tables: std::sync::Arc<crate::tables::Tables>) ->
             None => line_range(&source, line),
         };
         let mut fixes = Vec::new();
-        if let Some((word, near)) = crate::check::offered(&problem.message) {
+        if let Some((word, near)) = film_core::check::offered(&problem.message) {
             let found = || source.line_text(line).find(&word).map(|byte| source.line_text(line)[..byte].chars().count() + 1);
             if problem.span.bytes.is_none()
                 && let Some(column) = found()
@@ -94,7 +94,7 @@ pub fn diagnostics(text: &str, tables: std::sync::Arc<crate::tables::Tables>) ->
         }
         let bytes = problem.span.bytes;
         problem.span = Location { bytes, ..at.into() };
-        problem.code = Some(problem.code_or(crate::codes::WORDS));
+        problem.code = Some(problem.code_or(film_core::codes::WORDS));
         if !fixes.is_empty() {
             problem.fixes = fixes;
         }
@@ -513,7 +513,7 @@ fn word_help(name: &str, text: &str, project: &assets::project::Project) -> Opti
         let from = if recipe.from.is_empty() { format!("line {}", recipe.line) } else { recipe.from.clone() };
         return Some(format!("{} — {} ({from})", recipe.shape, recipe.doc));
     }
-    let word = crate::words::plain(name);
+    let word = film_core::words::plain(name);
     let shown = |known: &str, forms: &[&str], writes: &str, family: &str| {
         let forms: Vec<String> = forms.iter().map(|form| crate::shown_form(known, form)).collect();
         format!("{} — {writes} ({family})", forms.join(" · "))
@@ -527,7 +527,7 @@ fn word_help(name: &str, text: &str, project: &assets::project::Project) -> Opti
 /// What a word's line wants at one of its places, by the word's first form.
 enum Wanted {
     /// A value of that kind, by its name in the form.
-    Kind(String, crate::grammar::Kind),
+    Kind(String, film_core::grammar::Kind),
     /// One of these very words.
     Choice(Vec<String>),
 }
@@ -570,8 +570,8 @@ fn wanted_at(text: &str, at: Spot) -> Vec<Wanted> {
         return Vec::new();
     }
     // (The arguments before the one under the cursor, or the next one.)
-    let mut before: Vec<String> = call.args.iter().filter(|arg| arg.span.end < byte).map(|arg| crate::words::plain(&arg.text)).collect();
-    let mut word = crate::words::plain(&call.word.text);
+    let mut before: Vec<String> = call.args.iter().filter(|arg| arg.span.end < byte).map(|arg| film_core::words::plain(&arg.text)).collect();
+    let mut word = film_core::words::plain(&call.word.text);
     // (Who first, `pikachu walk `: the word is the second, who its first.)
     if crate::LEXICON.subject_first(&call.word.text, call.args.first().map(|arg| arg.text.as_str()), text) && !before.is_empty() {
         let verb = before.remove(0);
@@ -597,8 +597,8 @@ fn who_first_at(text: &str, at: Spot) -> Option<(String, bool)> {
     }
     let within = |span: Span| span.start <= byte && byte <= span.end;
     match (within(call.word.span), within(second.span)) {
-        (_, true) => Some((crate::words::plain(&second.text), true)),
-        (true, false) => Some((crate::words::plain(&second.text), false)),
+        (_, true) => Some((film_core::words::plain(&second.text), true)),
+        (true, false) => Some((film_core::words::plain(&second.text), false)),
         _ => None,
     }
 }
@@ -606,7 +606,7 @@ fn who_first_at(text: &str, at: Spot) -> Option<(String, bool)> {
 /// What a word wants after these words of its line, by each of its forms
 /// whose very words fit them (a team: all that is left).
 fn wanted_of(word: &str, before: &[String]) -> Vec<Wanted> {
-    use crate::grammar::Piece as FormPiece;
+    use film_core::grammar::Piece as FormPiece;
     // (Every word of that name: several families may have one, `walk` a
     // formation's and a walk's.)
     let forms: Vec<&str> = crate::LEXICON.every_word().filter(|(_, known, ..)| *known == word).flat_map(|(_, _, forms, _)| forms.iter().copied()).collect();
@@ -624,7 +624,7 @@ fn wanted_of(word: &str, before: &[String]) -> Vec<Wanted> {
     let mut wanted = Vec::new();
     for form in forms.iter() {
         let mut pieces = Vec::new();
-        flat(crate::grammar::read(form), &mut pieces);
+        flat(film_core::grammar::read(form), &mut pieces);
         let fits = before.iter().zip(&pieces).all(|(said, piece)| !matches!(piece, FormPiece::Choice(words) if !words.contains(said)));
         if !fits {
             continue;
@@ -632,7 +632,7 @@ fn wanted_of(word: &str, before: &[String]) -> Vec<Wanted> {
         let piece = pieces.get(before.len()).or(pieces.last().filter(|piece| matches!(piece, FormPiece::Team(_))));
         wanted.extend(match piece.cloned() {
             Some(FormPiece::One { name, kind, .. }) => Some(Wanted::Kind(name, kind)),
-            Some(FormPiece::Team(name)) => Some(Wanted::Kind(name, crate::grammar::Kind::Someone)),
+            Some(FormPiece::Team(name)) => Some(Wanted::Kind(name, film_core::grammar::Kind::Someone)),
             Some(FormPiece::Choice(words)) => Some(Wanted::Choice(words)),
             _ => None,
         });
@@ -655,7 +655,7 @@ fn named_in_scenes(text: &str) -> Vec<String> {
 
 /// What may be written where a word wants a value of that kind.
 fn offered_for(text: &str, wanted: Wanted) -> Vec<(String, String)> {
-    use crate::grammar::Kind as Of;
+    use film_core::grammar::Kind as Of;
     let (name, kind) = match wanted {
         Wanted::Choice(words) => return words.into_iter().map(|word| (word, "one of the words of the form".to_string())).collect(),
         Wanted::Kind(name, kind) => (name, kind),
@@ -740,7 +740,7 @@ pub fn completions(text: &str, at: Spot, project: &assets::project::Project) -> 
         for (word, forms) in
             crate::LEXICON.every_word().map(|(_, word, forms, _)| (word, forms)).chain(crate::LEXICON.shown_commands().map(|(word, forms, _)| (word, forms)))
         {
-            if let Some(form) = forms.iter().find(|form| crate::performer_first(&crate::grammar::read(form))) {
+            if let Some(form) = forms.iter().find(|form| crate::performer_first(&film_core::grammar::read(form))) {
                 let shown = crate::shown_form(word, form);
                 offered.push((word.to_string(), format!("{who} {}", shown.split_once(' ').map_or("", |(_, rest)| rest))));
             }
@@ -801,7 +801,7 @@ mod tests {
         assert_eq!(span_of("where"), Some(language::Span::new(37, 42)), "{:?}", read.values);
         // (Its fields written again in place, who first.)
         let edit = read.edit(2, "pikachu walk to right slow", "who", &["piplup".to_string()]).expect("who");
-        let mut doc = crate::doc::Doc::read("scene: beach pikachu\npikachu walk to right slow\n");
+        let mut doc = film_core::doc::Doc::read("scene: beach pikachu\npikachu walk to right slow\n");
         doc.apply(&edit).expect("applied");
         assert_eq!(doc.line(2), Some("piplup walk to right slow"));
         let edit = read.edit(2, "piplup walk to right slow", "where", &["front_of".to_string(), "eevee".to_string()]).expect("where");

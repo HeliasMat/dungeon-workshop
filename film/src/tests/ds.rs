@@ -1,7 +1,7 @@
 //! A film written `for ds`: what the DS can't play of it told, each by its
 //! code; nothing told without the line.
 
-use crate::codes;
+use film_core::codes;
 
 /// The codes a film is told, in order.
 fn coded(film: &str) -> Vec<(&'static str, String)> {
@@ -15,8 +15,8 @@ fn told(film: &str, code: &str) -> Vec<String> {
 #[test]
 fn for_ds_is_read_and_written_back() {
     let film = "for ds\nscene: beach krabby\nkrabby: Hi.\n";
-    assert!(crate::ds::written_for_ds(film));
-    assert!(!crate::ds::written_for_ds("scene: beach krabby\nkrabby: Hi.\n"));
+    assert!(film_core::ds::written_for_ds(film));
+    assert!(!film_core::ds::written_for_ds("scene: beach krabby\nkrabby: Hi.\n"));
     assert!(crate::tests::compile(film).problems.iter().all(|problem| problem.is_remark()), "{:?}", coded(film));
     assert_eq!(crate::formatted(film), film);
     assert!(crate::tests::compile("for ds\nscene: beach krabby\nkrabby: Hi.\n").problems.iter().all(|problem| problem.code != Some(codes::DS_HERO)));

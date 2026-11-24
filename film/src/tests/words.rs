@@ -179,7 +179,7 @@ fn every_gesture_of_the_library_plays() {
         let mut words = header.split_whitespace();
         let name = words.next().expect("a name");
         // (The library's own, `_evolution`: no film writes it.)
-        if crate::verbs::internal(name) {
+        if film_core::verbs::internal(name) {
             continue;
         }
         // (A word that may be left out, `back:number=12` or `[in`, is; who acts first.)
@@ -197,7 +197,7 @@ fn every_gesture_of_the_library_plays() {
 /// no line said.
 #[test]
 fn a_line_said_is_cut_as_the_box_shows_it() {
-    let lines = crate::screen::boxed("pikachu (joyous): Wait...[1s] Shall we *really* go to the end of the beach, the two of us, tonight?").expect("said");
+    let lines = film_core::screen::boxed("pikachu (joyous): Wait...[1s] Shall we *really* go to the end of the beach, the two of us, tonight?").expect("said");
     assert_eq!(lines, ["Wait... Shall we really go to the", "end of the beach, the two of us,", "tonight?"]);
-    assert!(crate::screen::boxed("pikachu walk to right").is_none());
+    assert!(film_core::screen::boxed("pikachu walk to right").is_none());
 }
