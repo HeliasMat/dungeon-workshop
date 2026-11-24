@@ -76,7 +76,10 @@ impl Sim {
         }
         let wait = facts.art.effect(before).map_or(0.0, |art| art.ticks);
         let thrown = facts.art.effect(flying).filter(|_| target.is_some()).map(|art| art.sound);
-        stage_move(&mut self.stage, who, target, &shown, wait, thrown.is_some());
+        // (The blow lands on the step its user's sprite marks, if it does.)
+        let way = self.stage.cast.get(&who).map_or(0, |actor| super::pose::way_of(actor.direction));
+        let hit = self.shown.get(&who).and_then(|own| own.hit_of(shown.group, way));
+        stage_move(&mut self.stage, who, target, &shown, wait, thrown.is_some(), hit);
         if let Some(sound) = thrown.filter(|_| audible) {
             self.sound(sound, 1.0, who);
         }

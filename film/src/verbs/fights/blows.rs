@@ -42,6 +42,8 @@ pub struct Blow {
     pub moved: usize,
     pub struck: std::ops::Range<usize>,
     pub written: usize,
+    /// The frames from the move's start to its blow landing.
+    pub strike: f32,
 }
 
 /// An unseen point put where someone stands now, for a move to land on
@@ -127,7 +129,7 @@ pub fn dodged(film: &mut Film, line: &Line) {
     };
     let blow = film.combat.blow.take().filter(|blow| blow.target == who && straight_after(film, blow.written));
     let from = blow.as_ref().map(|blow| blow.user);
-    let at = blow.as_ref().map_or(0.0, |_| super::STRIKE_FRAMES - SIDESTEP_FRAMES);
+    let at = blow.as_ref().map_or(0.0, |blow| (blow.strike - SIDESTEP_FRAMES).max(0.0));
     let start = film.written.len();
     // (The move aimed where he stood: it lands there, he is gone.)
     let stood = where_stood(film, &who, me);
@@ -153,7 +155,8 @@ pub fn dodged(film: &mut Film, line: &Line) {
         // (The blow written already: its knock back and hurt become the
         // sidestep, played as it was about to land.)
         Some(blow) => {
-            missed(film, &who, super::STRIKE_FRAMES);
+            missed(film, &who, blow.strike);
+
             let dodge: Vec<_> = film.written.drain(start..).collect();
             film.written.splice(blow.moved..blow.struck.end, dodge);
         }

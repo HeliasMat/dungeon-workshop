@@ -148,6 +148,10 @@ pub struct Tables {
     /// The animations each monster's sprite has, by its number: their
     /// groups (`Sit` is 23), as `sprites.txt` lists its sheets.
     pub sprite_groups: HashMap<String, HashSet<u16>>,
+    /// The 60ths of a second of each step of each monster's animations, by
+    /// its number and the animation (`sprites.txt`).
+    pub sheet_ticks: HashMap<(u16, u8), Vec<u8>>,
+
     /// Where each monster's head, hands and middle are (`points.txt`), by
     /// its number: from where it stands, y downwards, facing us.
     pub points: HashMap<String, [(i32, i32); 4]>,
@@ -164,6 +168,10 @@ pub struct Tables {
     pub kinds: HashMap<String, Kind>,
     /// Each move's type and power, by its number (`dungeons.bin`).
     pub move_kinds: Vec<(u8, i32)>,
+    /// How each move is shown, by its number (`dungeons.bin`): the group
+    /// of its user's animations it plays.
+    pub move_motions: Vec<rules::tables::MoveMotion>,
+
     /// The faces each monster's portraits have, by its number (`happy` is
     /// 1), as `portraits/` holds them.
     pub portraits: HashMap<String, HashSet<u16>>,

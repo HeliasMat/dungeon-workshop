@@ -197,8 +197,10 @@ impl MoveShown {
 /// it, what shows before it, then what shows as it strikes, then what flies
 /// at its own speed, and what shows on the target as the blow lands.
 /// (`before`: how long what shows first lasts; `flies`: what flies can be
-/// shown.)
-pub fn stage_move(stage: &mut Stage, who: Who, target: Option<Who>, shown: &MoveShown, before: f32, flies: bool) {
+/// shown; `hit`: the frames to the step its user's sprite marks for the
+/// blow, if it does: what it strikes with shows then, what flies leaves
+/// then, a blow struck by hand lands then.)
+pub fn stage_move(stage: &mut Stage, who: Who, target: Option<Who>, shown: &MoveShown, before: f32, flies: bool, hit: Option<f32>) {
     let [first, strike, on_target, flying] = shown.effects;
     if let Some(actor) = stage.cast.get_mut(&who) {
         actor.cue(Cue::Motion(shown.group));
@@ -207,14 +209,19 @@ pub fn stage_move(stage: &mut Stage, who: Who, target: Option<Who>, shown: &Move
         stage.effect(who, first, None);
     }
     if strike != 0 {
-        stage.shoot_as(who, who, 0, strike, before, false, false);
+        stage.shoot_as(who, who, 0, strike, hit.map_or(before, |hit| hit.max(before)), false, false);
     }
     let Some(target) = target else {
         return;
     };
     let far = stage.cast.get(&who).zip(stage.cast.get(&target)).map_or(0.0, |(from, to)| from.position.distance(to.position));
-    let landing = if flies { (far / shown.flight).max(SHOT_FRAMES) } else { SHOT_FRAMES };
-    stage.shoot_as(who, target, if flies { flying } else { 0 }, on_target, landing, shown.lob, true);
+    let landing = match (flies, hit) {
+        (true, _) => (far / shown.flight).max(SHOT_FRAMES),
+        (false, Some(hit)) => hit,
+        (false, None) => SHOT_FRAMES,
+    };
+    let wait = if flies { hit.unwrap_or(0.0) } else { 0.0 };
+    stage.shoot_after(who, target, if flies { flying } else { 0 }, on_target, landing, shown.lob, true, wait);
 }
 
 #[cfg(test)]

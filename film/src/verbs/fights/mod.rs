@@ -39,7 +39,7 @@ pub const WORDS: &[Word] = &[
     Word::new(
         "attack",
         &["who:pokemon move:thing... at target:pokemon", "who:pokemon move:thing..."],
-        "face, move (the move's own animation and effects, its sound), recoil and the Hurt pose of the target",
+        "face, move (the move's own animation and effects, its sound), recoil and the Hurt pose of the target on the frame his sprite marks for the blow (else after 24 frames)",
     )
     .does(attacked),
     Word::new(
@@ -52,7 +52,7 @@ pub const WORDS: &[Word] = &[
             "who:pokemon at x:number y:number",
             "who:pokemon",
         ],
-        "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one); no knock back, no hurt; no move, or `its move`: one his kind learns by his level, of his type if it can",
+        "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one; they leave on the frame his sprite marks for the blow); no knock back, no hurt; no move, or `its move`: one his kind learns by his level, of his type if it can",
     )
     .does(used),
     Word::new(
@@ -125,9 +125,36 @@ fn level_of(line: &Line, usual: i32) -> i32 {
     line.args.number("n").map_or(usual, |level| level as i32)
 }
 
-/// The frames from a move's start to its blow landing, and after.
+/// The frames from a move's start to its blow landing (when its user's
+/// sprite marks no step for it), and after.
 pub(super) const STRIKE_FRAMES: f32 = 24.0;
 const STRUCK_FRAMES: i64 = 40;
+
+/// The frames from a move's start to its blow landing, for that user: to
+/// the step his sprite marks for the blow in the motion the move plays (its
+/// own group, else his attack), as the game has it; else `STRIKE_FRAMES`.
+pub(super) fn strike_frames(film: &mut Film, who: &str, id: u16) -> f32 {
+    /// The animations every monster has before its own groups; its attack.
+    const OWN: u8 = 5;
+    const ATTACK: u8 = 4;
+    type Known = std::sync::Mutex<std::collections::HashMap<(String, u16, u8), Option<f32>>>;
+    static KNOWN: std::sync::OnceLock<Known> = std::sync::OnceLock::new();
+    let code = film.actor(who).unwrap_or_default();
+    let Some(number) = crate::names::species(&code).and_then(|number| number.parse::<u16>().ok()) else {
+        return STRIKE_FRAMES;
+    };
+    let tables = film.tables.clone();
+    let group = tables.move_motions.get(id as usize).map_or(1, |motion| motion.of(Some(number)).0);
+    let own = tables.sprite_groups.get(&number.to_string()).is_some_and(|groups| groups.contains(&u16::from(group)));
+    let animation = if own { OWN + group } else { ATTACK };
+    let hit = || {
+        let steps = assets::tables::steps(&tables.data, number);
+        let at = steps.get(&(animation, 0))?.iter().position(|(mark, _)| *mark == assets::tables::HIT_MARK)?;
+        Some(tables.sheet_ticks.get(&(number, animation))?.iter().take(at).map(|&ticks| f32::from(ticks)).sum())
+    };
+    let mut known = KNOWN.get_or_init(Default::default).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    known.entry((tables.data.clone(), number, animation)).or_insert_with(hit).unwrap_or(STRIKE_FRAMES)
+}
 
 /// `pikachu attack Thunderbolt at koffing`: the move by its name, as the
 /// game shows it: the user's own animation and the move's effects and sound,
@@ -166,26 +193,27 @@ fn attacked(film: &mut Film, line: &Line) {
     }
     // (Dodged: aimed where they stood.)
     let aimed = dodged.as_ref().and_then(|(_, _, stood)| film.other(stood)).or(on);
+    let strike = strike_frames(film, &who, id);
     let moved = film.written.len();
     film.beat(emit::uses_move(user, engine::MoveId(id), aimed));
     film.combat.blow = None;
     if let (Some(target), Some(_)) = (&target, on) {
         if dodged.is_some() {
-            blows::missed(film, target, STRIKE_FRAMES);
+            blows::missed(film, target, strike);
         } else {
             let start = film.written.len();
-            film.on(target, |struck| emit::after(STRIKE_FRAMES, 0.0, emit::recoil(struck, user, if strong { 20.0 } else { 12.0 })));
+            film.on(target, |struck| emit::after(strike, 0.0, emit::recoil(struck, user, if strong { 20.0 } else { 12.0 })));
             if let Some(hurt) = emit::anim_of("Hurt") {
-                film.on(target, |struck| emit::after(STRIKE_FRAMES, 0.0, emit::anim(struck, hurt, false, false)));
+                film.on(target, |struck| emit::after(strike, 0.0, emit::anim(struck, hurt, false, false)));
             }
             if strong {
-                blows::strong(film, STRIKE_FRAMES);
+                blows::strong(film, strike);
             }
             let struck = start..film.written.len();
-            film.combat.blow = Some(blows::Blow { target: target.clone(), user, id: engine::MoveId(id), moved, struck, written: 0 });
+            film.combat.blow = Some(blows::Blow { target: target.clone(), user, id: engine::MoveId(id), moved, struck, written: 0, strike });
         }
     }
-    film.wait_frames((STRIKE_FRAMES as i64 + STRUCK_FRAMES) as i32, line.wait);
+    film.wait_frames((strike as i64 + STRUCK_FRAMES) as i32, line.wait);
     if let Some(blow) = film.combat.blow.as_mut() {
         blow.written = film.written.len();
     }
@@ -227,8 +255,9 @@ fn used(film: &mut Film, line: &Line) {
         }
         (None, None) => None,
     };
+    let strike = strike_frames(film, &who, id);
     film.beat(emit::uses_move(user, engine::MoveId(id), target));
-    film.wait_frames((STRIKE_FRAMES as i64 + STRUCK_FRAMES) as i32, line.wait);
+    film.wait_frames((strike as i64 + STRUCK_FRAMES) as i32, line.wait);
 }
 
 /// The level someone is at in a film: his fight's, else a fight's usual.

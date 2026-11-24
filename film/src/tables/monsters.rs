@@ -65,6 +65,7 @@ struct Natures {
     weights: HashMap<String, u16>,
     kinds: HashMap<String, super::Kind>,
     moves: Vec<(u8, i32)>,
+    motions: Vec<rules::tables::MoveMotion>,
 }
 
 fn natures(folder: &str) -> Natures {
@@ -74,7 +75,7 @@ fn natures(folder: &str) -> Natures {
         return known.clone();
     }
     let tables = assets::data::read(folder, "dungeons.bin").and_then(|bytes| bincode::deserialize::<rules::tables::Tables>(&bytes).ok());
-    let (species, slots) = tables.map(|tables| (tables.species, tables.move_slots)).unwrap_or_default();
+    let (species, slots, motions) = tables.map(|tables| (tables.species, tables.move_slots, tables.move_motions)).unwrap_or_default();
     let movements = species
         .iter()
         .enumerate()
@@ -98,7 +99,7 @@ fn natures(folder: &str) -> Natures {
         })
         .collect();
     let moves = slots.iter().map(|slot| (slot.type_id, slot.power)).collect();
-    let found = Natures { movements, weights, kinds, moves };
+    let found = Natures { movements, weights, kinds, moves, motions };
     read.push((folder.to_string(), found.clone()));
     found
 }
@@ -109,9 +110,12 @@ pub(super) fn read_monsters(tables: &mut Tables) {
     let folder = tables.data.clone();
     let sheets = assets::tables::sheets(&folder, "sprites.txt");
     tables.bodies = bodies(&sheets);
+    tables.sheet_ticks = sheets.iter().map(|row| ((row.number, row.animation), row.sheet.durations.clone())).collect();
     tables.sprite_groups = sprite_groups(&sheets);
     let natures = natures(&folder);
     (tables.movements, tables.weights, tables.kinds, tables.move_kinds) = (natures.movements, natures.weights, natures.kinds, natures.moves);
+    tables.move_motions = natures.motions;
+
     tables.points = assets::tables::points(&folder).into_iter().map(|(number, points)| (number.to_string(), points)).collect();
     tables.portraits = portraits(&folder);
     for (id, name) in numbered(&folder, "monsters.txt") {

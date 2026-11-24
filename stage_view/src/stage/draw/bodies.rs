@@ -202,7 +202,7 @@ impl Play {
     pub(super) fn draw_shots(&self, world: &mut Screen, brush: &Brush, art: &Art) {
         const FLYING: f32 = 12.0;
         let view = &brush.large;
-        for shot in self.sim.stage.shots.iter().filter(|shot| shot.effect != 0) {
+        for shot in self.sim.stage.shots.iter().filter(|shot| shot.effect != 0 && shot.left()) {
             let Some(to) = self.sim.stage.cast.get(&shot.target).map(|actor| actor.position) else {
                 continue;
             };

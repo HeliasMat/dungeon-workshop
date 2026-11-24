@@ -80,8 +80,21 @@ impl Shown {
 
     /// A move's motion: one of its own animations, or its attack.
     pub(super) fn motion(&mut self, group: u8) {
+        self.start(self.motion_of(group), true);
+    }
+
+    fn motion_of(&self, group: u8) -> usize {
         let index = SCENE_ANIMATIONS + group as usize;
-        self.start(if self.has(index) { index } else { ATTACK }, true);
+        if self.has(index) { index } else { ATTACK }
+    }
+
+    /// The 60ths of a second from a move's motion starting to the step its
+    /// sprite marks for the blow, that way (none marked: none).
+    pub(super) fn hit_of(&self, group: u8, way: usize) -> Option<f32> {
+        let ways = self.sprite.ways(self.motion_of(group));
+        let steps = ways.get(way % ways.len().max(1))?;
+        let hit = steps.iter().position(|frame| frame.mark == assets::tables::HIT_MARK)?;
+        Some(steps[..hit].iter().map(|frame| frame.ticks as f32).sum())
     }
 
     pub(super) fn steps(&self, way: usize) -> &[Frame] {

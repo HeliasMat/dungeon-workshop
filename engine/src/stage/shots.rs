@@ -11,6 +11,7 @@ pub struct Shot {
     pub from: Vec2,
     pub target: Who,
     pub hit: u16,
+    /// The frames it has flown for (below 0: it is yet to leave).
     pub gone: f32,
     /// The frames it flies for.
     pub whole: f32,
@@ -27,7 +28,12 @@ pub(super) const LOB_HEIGHT: f32 = 24.0;
 impl Shot {
     /// Where it is, on its way to where its target stands.
     pub fn at(&self, to: Vec2) -> Vec2 {
-        self.from.lerp(to, (self.gone / self.whole).min(1.0))
+        self.from.lerp(to, (self.gone / self.whole).clamp(0.0, 1.0))
+    }
+
+    /// It has left its user.
+    pub fn left(&self) -> bool {
+        self.gone >= 0.0
     }
 
     /// How high it is above its way.
@@ -47,8 +53,15 @@ impl Stage {
     /// The same, in so many frames, in an arc or not; on someone who only
     /// shows it, or who takes it.
     pub fn shoot_as(&mut self, who: Who, target: Who, effect: u16, hit: u16, whole: f32, lob: bool, hurts: bool) {
+        self.shoot_after(who, target, effect, hit, whole, lob, hurts, 0.0);
+    }
+
+    /// The same, leaving its user so many frames from now (as the blow
+    /// of its motion lands).
+    #[allow(clippy::too_many_arguments)]
+    pub fn shoot_after(&mut self, who: Who, target: Who, effect: u16, hit: u16, whole: f32, lob: bool, hurts: bool, wait: f32) {
         if let Some(from) = self.cast.get(&who).map(|actor| actor.position) {
-            self.shots.push(Shot { effect, from, target, hit, gone: 0.0, whole: whole.max(1.0), lob, hurts });
+            self.shots.push(Shot { effect, from, target, hit, gone: -wait.max(0.0), whole: whole.max(1.0), lob, hurts });
         }
     }
 
