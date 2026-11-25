@@ -182,7 +182,6 @@ pub struct Film {
     /// `collisions on` before the first scene: each of its scenes opens
     /// with them (a film's are without).
     pub collisions: bool,
-    pub clouds: i32,
     /// (The same film, the same fight.)
     pub chance: u64,
     pub seeing: bool,
@@ -271,7 +270,6 @@ impl Film {
             paths: BTreeMap::new(),
             acting: true,
             collisions: false,
-            clouds: 8,
             chance: 7,
             seeing: false,
             last_spot: None,

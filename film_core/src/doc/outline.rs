@@ -188,11 +188,6 @@ impl Outline {
         }
         out
     }
-
-    /// The scene a line is in (from 0), if it is in one.
-    pub fn scene_of(&self, number: usize) -> Option<usize> {
-        self.scenes.iter().rposition(|scene| scene.number <= number)
-    }
 }
 
 /// The lines of a scene before its first moment.

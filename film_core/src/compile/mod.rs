@@ -67,11 +67,6 @@ impl Film {
         }
     }
 
-    /// A line said by someone, as written in a line that does more.
-    pub fn play_said(&mut self, who: &str, words: &str, number: usize) {
-        self.said(who, None, words, number);
-    }
-
     fn played(&mut self, item: &Instr) {
         let number = item.number;
         if !matches!(item.verb(), Some("catch" | "miss")) {

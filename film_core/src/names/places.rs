@@ -3,7 +3,7 @@
 
 use crate::check::{closest, unknown};
 use crate::film::Film;
-use crate::tables::{HOME, MAP_PICTURE, NOT_FOR_FILMS, Named, PLACES, Picture, Tables};
+use crate::tables::{NOT_FOR_FILMS, Named, PLACES, Picture, Tables};
 use crate::words::{of, plain};
 
 impl Tables {
@@ -51,30 +51,9 @@ impl Film {
         None
     }
 
-    /// A picture of the game by its name; told when there is none.
-    pub fn picture_named(&mut self, word: &str, number: usize) -> Option<Picture> {
-        let found = self.tables.pictures.get(&plain(word)).cloned();
-        if found.is_none() {
-            let tables = self.tables.clone();
-            self.unknown(number, "unknown picture", word, tables.pictures.keys().map(String::as_str), "scene_player illustrations");
-        }
-        found
-    }
-
     /// A picture of the catalogue that must be there; a dark one where it is not.
     pub fn picture(&self, name: &str) -> Picture {
         self.tables.pictures.get(name).cloned().unwrap_or(Picture { level: 0, category: String::new(), x: 128, y: 96 })
-    }
-
-    /// An animation of the game by its name; told when there is none.
-    pub fn animation_named(&mut self, word: &str, number: usize) -> Option<String> {
-        let name = plain(word);
-        if self.tables.animations.contains_key(&name) {
-            return Some(name);
-        }
-        let tables = self.tables.clone();
-        self.unknown(number, "unknown animation", word, tables.animations.keys().map(String::as_str), "scene_player illustrations");
-        None
     }
 
     /// A move as written: its number and its name; told when there is none.
@@ -93,17 +72,5 @@ impl Film {
     /// The number of a move as written; told when there is none.
     pub fn move_said(&mut self, words: &[String], number: usize) -> Option<String> {
         self.move_named(words, number).map(|row| row.0)
-    }
-
-    /// A place's point on the map's picture of the clouds as they are now.
-    pub fn on_the_map(&mut self, word: &str, number: usize) -> Option<(i32, i32)> {
-        let key = plain(word);
-        let at = if matches!(key.as_str(), "town" | "guild" | "home" | "treasuretown") { Some(HOME) } else { self.tables.map_spots.get(&key).copied() };
-        let Some(at) = at else {
-            let tables = self.tables.clone();
-            self.unknown(number, "unknown place on the map", word, tables.map_spots.keys().map(String::as_str), "");
-            return None;
-        };
-        Some((at.0 + (self.clouds - 1) % 2 * MAP_PICTURE.0, at.1 + (self.clouds - 1) / 2 * MAP_PICTURE.1))
     }
 }

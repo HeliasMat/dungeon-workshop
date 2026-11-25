@@ -24,14 +24,6 @@ impl Film {
     }
 
     /// Something that plays, but should be looked at.
-    /// A remark with its stable code (see `engine::codes`, `crate::codes`).
-    pub fn remark_coded(&mut self, number: usize, code: &'static str, message: String) {
-        self.remark(number, message);
-        if let Some(problem) = self.problems.pop() {
-            self.problems.push(problem.coded(code));
-        }
-    }
-
     pub fn remark(&mut self, number: usize, message: String) {
         let span = self.quoted(number, &message);
         self.problems.push(Diagnostic::at(number, message).as_remark().on(span));

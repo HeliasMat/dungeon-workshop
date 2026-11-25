@@ -51,9 +51,6 @@ pub const NOT_FOR_FILMS: [&str; 1] = ["screen"];
 pub const SOMEWHERE: (u16, i32, i32) = PLACES[2].1;
 /// The world map's level: a picture, not a place to walk.
 pub const MAP_LEVEL: u16 = 268;
-/// The world map: the size of its pictures, where the team's town is on it.
-pub const MAP_PICTURE: (i32, i32) = (504, 336);
-pub const HOME: (i32, i32) = (212, 180);
 
 /// A name of the game: its number, how it is written.
 pub type Named = (String, String);
@@ -190,7 +187,6 @@ pub struct Tables {
     pub grounds: HashMap<u16, Ground>,
     pub things: HashMap<String, Vec<(String, i32, i32)>>,
     pub usual_spots: HashMap<String, Vec<(i32, i32)>>,
-    pub map_spots: HashMap<String, (i32, i32)>,
     pub levels: BTreeMap<String, Level>,
     /// Every level of Explorers of Sky's, by its number (`levels.txt`): what
     /// a film `for ds` can show.

@@ -1,6 +1,5 @@
 //! What the story's scenes say of its places: what stands in them, where
-//! someone is put most, where each is on the world map; and the names the
-//! game gives its places.
+//! someone is put most; and the names the game gives its places.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -25,8 +24,6 @@ pub(super) fn read_story(tables: &mut Tables) {
     let (mut backdrop, mut here, mut place) = (String::new(), HashSet::new(), String::new());
     let mut usual: Counted<(i32, i32)> = HashMap::new();
     let mut heroes: Counted<(i32, i32)> = HashMap::new();
-    let mut map: Counted<(i32, i32)> = HashMap::new();
-    let mut last: Option<(i32, i32)> = None;
     for line in text.lines() {
         let f: Vec<&str> = line.split('\t').collect();
         match f[0] {
@@ -49,15 +46,6 @@ pub(super) fn read_story(tables: &mut Tables) {
                     *seen.entry(backdrop.clone()).or_default().entry((f[1].to_string(), x, y)).or_default() += 1;
                 }
             }
-            "map" if f.len() >= 3 => match f[1] {
-                "look" if f.len() >= 4 => last = Some((number(f[2]), number(f[3]))),
-                "name" if f[2] != "-" => {
-                    if let Some(at) = last {
-                        *map.entry(plain(f[2])).or_default().entry(at).or_default() += 1;
-                    }
-                }
-                _ => {}
-            },
             _ => {}
         }
     }
@@ -70,11 +58,6 @@ pub(super) fn read_story(tables: &mut Tables) {
         let mut spots: Vec<((i32, i32), u32)> = spots.into_iter().collect();
         spots.sort_by_key(|(_, times)| std::cmp::Reverse(*times));
         tables.usual_spots.insert(level, spots.into_iter().map(|(spot, _)| spot).collect());
-    }
-    for (name, spots) in map {
-        if let Some((at, _)) = spots.into_iter().max_by_key(|(_, times)| *times) {
-            tables.map_spots.insert(name, at);
-        }
     }
     read_levels(tables, &heroes);
 }

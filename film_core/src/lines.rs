@@ -80,34 +80,6 @@ pub fn places_of(film: &str) -> Vec<String> {
     places
 }
 
-/// A film's text with its scenes in one place now in another, if it has any.
-pub fn scenes_moved(film: &str, from: &str, to: &str) -> Option<String> {
-    let mut changed = false;
-    let mut lines: Vec<String> = film
-        .lines()
-        .map(|line| {
-            let Kind::Scene { place, .. } = kind_of(line) else {
-                return line.to_string();
-            };
-            let lead = &line[..line.len() - line.trim_start().len()];
-            let Some(rest) = line.trim_start().strip_prefix("scene:") else {
-                return line.to_string();
-            };
-            let mut words: Vec<&str> = rest.split_whitespace().collect();
-            if place != from || words.first() != Some(&from) {
-                return line.to_string();
-            }
-            changed = true;
-            words[0] = to;
-            format!("{lead}scene: {}", words.join(" "))
-        })
-        .collect();
-    if film.ends_with('\n') {
-        lines.push(String::new());
-    }
-    changed.then(|| lines.join("\n"))
-}
-
 /// Seconds as a film writes them: `2s`, `1.5s`.
 pub fn seconds_said(seconds: f32) -> String {
     let tenths = (seconds * 10.0).round() / 10.0;
