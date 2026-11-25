@@ -6,7 +6,7 @@ use crate::jobs;
 
 /// What a Thank-You mail brings: a Reviver Seed.
 const REVIVER_SEED: u16 = 73;
-/// The explorations an egg takes to hatch.
+/// The days an egg takes to hatch (`Progress::next_day`).
 const EGG_TRIPS: u8 = 2;
 use crate::services::{BAG_CAPACITY, MONEY_LIMIT};
 
@@ -67,6 +67,11 @@ impl Run {
     /// bag and the money along. The song of the dungeon comes out with the
     /// next `step`.
     fn enter(&mut self, id: u16, seed: u32, jobs: bool) {
+        // (Off again the evening it came back, without a night in a bed: the
+        // team slept on the way, a new day begins.)
+        if self.team.progress.evening {
+            self.next_day();
+        }
         let book = self.book.clone();
         let table = book.tables.dungeons.get(id as usize);
         let song = table.map(|table| table.music).filter(|&song| song != crate::tables::NO_MUSIC);
@@ -303,9 +308,7 @@ impl Run {
         // (What Brick-Tough and Multitalent give is the dungeon's only.)
         dungeon.monsters.iter_mut().for_each(Monster::unboost);
         let progress = &mut self.team.progress;
-        // (An exploration: the eggs at the Day Care grow, an SOS sent may be
-        // answered.)
-        progress.eggs.iter_mut().for_each(|(_, trips)| *trips = trips.saturating_sub(1));
+        // (An exploration: an SOS sent may be answered.)
         if let Some(sos) = progress.sos.as_mut().filter(|sos| sos.sent) {
             sos.trips = sos.trips.saturating_sub(1);
         }
@@ -337,10 +340,9 @@ impl Run {
                 grow_recruit(&self.book, recruit, dungeon.shared_exp);
             }
         }
-        // The shops restock meanwhile, and the boards change their jobs.
-        progress.stock = [None, None];
-        progress.offers.clear();
-        progress.outlaws.clear();
+        // Back in the evening: the boards and the shops keep the day's,
+        // till the team sleeps (`next_day`).
+        progress.evening = true;
         // Fainting costs the jobs taken on, half the money, and about half
         // of the bag: each item is a coin toss, but the aura bows, which
         // stay. Two dungeons (and the mazes) are forgiving and take nothing.
@@ -471,9 +473,25 @@ impl Run {
         told
     }
 
-    /// Chansey's Day Care: the eggs, and the explorations each still needs.
+    /// Chansey's Day Care: the eggs, and the days each still needs.
     pub fn eggs(&self) -> &[(u16, u8)] {
         &self.team.progress.eggs
+    }
+
+    /// The day it is (the first is 1), and whether it is evening (back
+    /// from a dungeon, not slept since).
+    pub fn day(&self) -> (u32, bool) {
+        (self.team.progress.day + 1, self.team.progress.evening)
+    }
+
+    /// The team sleeps: a new day (`Progress::next_day`).
+    pub fn next_day(&mut self) {
+        self.team.progress.next_day();
+    }
+
+    /// Evening falls (back from a dungeon the game did not go through).
+    pub fn evening(&mut self) {
+        self.team.progress.evening = true;
     }
 
     /// The egg at that place hatches, if it is ready: what is told.
@@ -484,7 +502,7 @@ impl Run {
                 self.recruit_species(species);
                 format!("Crack... The Egg hatched! It's {}!\n{} joined the team!", self.book.species_name(species), self.book.species_name(species))
             }
-            Some((_, trips)) => format!("The Day Care: this Egg moves a little... It needs {trips} more exploration(s)!"),
+            Some((_, trips)) => format!("The Day Care: this Egg moves a little... It needs {trips} more day(s)!"),
             None => String::new(),
         }
     }

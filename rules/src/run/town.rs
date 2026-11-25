@@ -545,7 +545,7 @@ impl Run {
         }
     }
 
-    /// A shop not visited since the last dungeon restocks.
+    /// A shop not visited since the day began restocks.
     pub fn restock(&mut self, shop: usize, chapter: usize, seed: u32) {
         if self.team.progress.stock[shop].is_none() {
             self.team.progress.stock[shop] = Some(self.book.shop_stock(shop == 1, chapter as i32, seed));

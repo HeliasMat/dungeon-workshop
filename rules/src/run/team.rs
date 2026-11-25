@@ -102,7 +102,14 @@ impl Progress {
         tactics.sort();
         let tactics = format!("{TACTICS_LINE}{}\n", tactics.join(";"));
         let rank = format!("{RANK_LINE}{}\n", self.rank);
-        format!("{NAMES_LINE}{}|{}|{}\n{RECRUITS_LINE}{recruits}\n{RECRUIT_MOVES_LINE}{}\n{chosen}{tactics}{rank}", names.0, names.1, names.2, moves.join(";"))
+        let day = format!("{DAY_LINE}{}{}\n", self.day, if self.evening { ",evening" } else { "" });
+        format!(
+            "{NAMES_LINE}{}|{}|{}\n{RECRUITS_LINE}{recruits}\n{RECRUIT_MOVES_LINE}{}\n{chosen}{tactics}{rank}{day}",
+            names.0,
+            names.1,
+            names.2,
+            moves.join(";")
+        )
     }
 
     pub(crate) fn read_names(&mut self, text: &str) {
@@ -126,6 +133,10 @@ impl Progress {
         let chosen = text.lines().find_map(|line| line.strip_prefix(CHOSEN_LINE));
         self.chosen = chosen.map(|chosen| chosen.split(',').filter_map(|at| at.parse().ok()).collect());
         self.rank = text.lines().find_map(|line| line.strip_prefix(RANK_LINE)).and_then(|rank| rank.parse().ok()).unwrap_or(0);
+        // (The day: absent from older saves, the first, in the morning.)
+        let day = text.lines().find_map(|line| line.strip_prefix(DAY_LINE)).unwrap_or("0");
+        let (days, evening) = day.split_once(',').unwrap_or((day, ""));
+        (self.day, self.evening) = (days.trim().parse().unwrap_or(0), evening.trim() == "evening");
         let tactics = text.lines().find_map(|line| line.strip_prefix(TACTICS_LINE)).unwrap_or("");
         self.tactics = tactics
             .split(';')
@@ -138,6 +149,18 @@ impl Progress {
 }
 
 impl Progress {
+    /// A new day, as the team wakes (`GroundMainNextDay`): the boards put
+    /// up new jobs, the shops new wares, the eggs at the Day Care wait a
+    /// day less; morning again.
+    pub fn next_day(&mut self) {
+        self.day += 1;
+        self.evening = false;
+        self.stock = [None, None];
+        self.offers.clear();
+        self.outlaws.clear();
+        self.eggs.iter_mut().for_each(|(_, days)| *days = days.saturating_sub(1));
+    }
+
     /// A recruit sent away for good: off the list, its tactic forgotten,
     /// those picked to come along still the same ones.
     pub fn release(&mut self, at: usize) {
@@ -165,6 +188,8 @@ pub(crate) const RECRUIT_MOVES_LINE: &str = "recruit_moves=";
 pub(crate) const CHOSEN_LINE: &str = "chosen=";
 pub(crate) const TACTICS_LINE: &str = "tactics=";
 pub(crate) const RANK_LINE: &str = "rank=";
+/// The days gone by, and `,evening` once back from a dungeon (not slept since).
+pub(crate) const DAY_LINE: &str = "day=";
 
 /// The tactics of the team's members (`enum tactic_id`).
 pub mod tactic {
@@ -339,7 +364,7 @@ pub struct Progress {
     /// Items left at Kangaskhan Storage.
     pub storage: Vec<u16>,
     /// Jobs the team holds, and those the guild's boards offer (redrawn
-    /// while the team is in a dungeon).
+    /// each day: `next_day`).
     pub jobs: Vec<Job>,
     pub offers: Vec<Job>,
     pub outlaws: Vec<Job>,
@@ -348,7 +373,7 @@ pub struct Progress {
     pub names: (String, String, String),
     pub recruits: Vec<Recruit>,
     /// What the Kecleon Shop and Kecleon Wares have left to sell; `None`
-    /// until visited. They restock while the team is in a dungeon.
+    /// until visited. They restock each day.
     pub stock: [Option<Vec<u16>>; 2],
     /// The special episodes the story has opened so far.
     pub episodes: Vec<u16>,
@@ -370,8 +395,12 @@ pub struct Progress {
     /// The dungeons opened by play, not by the story (`unlocks`).
     pub opened: Vec<u16>,
     /// The eggs at Chansey's Day Care: what hatches from each, and the
-    /// explorations till it does.
+    /// days till it does.
     pub eggs: Vec<(u16, u8)>,
+    /// The days gone by since the game began (`Run::day`: the first is 1),
+    /// and whether it is evening: back from a dungeon, not slept since.
+    pub day: u32,
+    pub evening: bool,
     /// What the team lost fainting last, for an SOS (Pelipper's mail).
     pub sos: Option<Sos>,
     /// The Dojo's mazes gone through to their end.
@@ -534,6 +563,22 @@ mod tests {
         let moves = known_moves(&start, &Growing::default(), &kept, None);
         assert_eq!(moves.iter().map(|slot| (slot.id, slot.off, slot.linked)).collect::<Vec<_>>(), [(33, true, false), (45, false, true)]);
         assert_eq!(kept.map(move_id), [33, 45]);
+    }
+
+    #[test]
+    fn a_new_day_redraws_the_boards_and_the_shops_and_is_saved() {
+        let job = crate::jobs::Job::default();
+        let mut progress = Progress { offers: vec![job.clone()], outlaws: vec![job.clone()], jobs: vec![job], evening: true, ..Progress::default() };
+        (progress.stock, progress.eggs) = ([Some(vec![70]), None], vec![(25, 2)]);
+        progress.next_day();
+        assert_eq!((progress.day, progress.evening, progress.offers.len(), progress.outlaws.len()), (1, false, 0, 0));
+        assert_eq!((progress.stock.clone(), progress.eggs.clone(), progress.jobs.len()), ([None, None], vec![(25, 1)], 1), "the jobs taken kept");
+        progress.evening = true;
+        let mut read = Progress::default();
+        read.read_names(&progress.names_text());
+        assert_eq!((read.day, read.evening), (1, true));
+        read.read_names("names=a|b|c\n");
+        assert_eq!((read.day, read.evening), (0, false), "a save of before: the first day, morning");
     }
 
     #[test]
