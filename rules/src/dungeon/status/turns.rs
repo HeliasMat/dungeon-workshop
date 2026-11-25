@@ -221,6 +221,8 @@ impl Statuses {
             &mut self.cringe_turns,
             &mut self.confused_turns,
             &mut self.terrified_turns,
+            &mut self.cowering_turns,
+            &mut self.muzzled_turns,
             &mut self.invisible_turns,
             &mut self.taunted_turns,
             &mut self.sure_shot_turns,

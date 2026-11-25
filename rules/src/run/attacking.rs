@@ -144,8 +144,11 @@ impl Run {
         };
         let (from, facing, side) = (monster.at, monster.facing, monster.side);
         let spared = monster.status.exclusive.has(NO_FRIENDLY_FIRE);
-        // (Confused without Nontraitor, its blows may strike its own side.)
-        let traitor = super::others::traitor(monster);
+        // (Confused without Nontraitor, its blows may strike its own side;
+        // cowering, they go behind it, at whoever stands there.)
+        let cowering = monster.status.cowering_turns > 0;
+        let facing = if cowering { (-facing.0, -facing.1) } else { facing };
+        let traitor = super::others::traitor(monster) || cowering;
         self.show(Sight::Strike(user));
         if let Some(effect) = attack.effect.filter(|effect| effect.on_user()) {
             self.show(Sight::Move { move_id: attack.slot.id, user, from, targets: Vec::new() });

@@ -48,6 +48,10 @@ pub struct Statuses {
     pub confused_turns: i32,
     /// Turns left of terror: it flees and does not attack.
     pub terrified_turns: i32,
+    /// Turns left of cowering (a Shocker Orb): its moves go the other way
+    /// than it faces; of being muzzled (a Silence Orb): no moves.
+    pub cowering_turns: i32,
+    pub muzzled_turns: i32,
     /// Turns left of invisibility: the foes do not see it.
     pub invisible_turns: i32,
     /// Turns left of Magic Coat (Rebound Orb): the moves that would give it
@@ -231,6 +235,8 @@ impl Default for Statuses {
             cringe_turns: 0,
             confused_turns: 0,
             terrified_turns: 0,
+            cowering_turns: 0,
+            muzzled_turns: 0,
             invisible_turns: 0,
             bouncing_turns: 0,
             snatching_turns: 0,

@@ -3,6 +3,8 @@
 
 use crate::dungeon::{FIXED_ONE, FLOOR_HEIGHT, FLOOR_WIDTH, Floor, MoveEffect, Pos, Tile, ability, ai, apply_effect, pick_weighted, stack, status};
 
+use crate::services::BAG_CAPACITY;
+
 use super::attack::{Attack, chebyshev};
 use super::dungeon::{FloorItem, FloorTrap, Outcome, Shove, weather_name};
 use super::monster::Side;
@@ -15,8 +17,11 @@ use super::{MonsterId, Run, Sight};
 pub(crate) enum Orb {
     /// To each foe of the leader's room (or, from a hallway, close by).
     Foes(MoveEffect),
-    /// The foes of the room cannot act until struck.
-    Petrify,
+    /// The foes of the room (Petrify), or of the floor (Foe-Hold), cannot
+    /// act until struck.
+    Petrify {
+        floor: bool,
+    },
     /// To each of the team.
     Team(MoveEffect),
     Weather(u8),
@@ -27,8 +32,12 @@ pub(crate) enum Orb {
     SeeTrap,
     Trapbust,
     Escape,
-    /// Its move, on each foe of the room (Rocky, Lob, Sizebust, Mug).
+    /// Its move, on each foe of the room (Rocky, Lob, Sizebust).
     Strike,
+    /// The first foe in line ahead, up to ten tiles: struck and robbed of
+    /// what it holds (Mug), made to cower (Shocker), muzzled (Silence).
+    Mug,
+    Shocker,
     /// The foe in front: blown away, swapped with, sent to the stairs,
     /// knocked out, turned into an item.
     Blowback,
@@ -40,7 +49,6 @@ pub(crate) enum Orb {
     Spurn,
     /// The foes of the room at 1 HP, the leader at half its own.
     TwoEdge,
-    /// The foes of the room cannot use their moves.
     Silence,
     /// Every item of the floor brought to the leader.
     Trawl,
@@ -96,15 +104,21 @@ impl Orb {
             316 => Orb::Foes(MoveEffect::TargetSpeedDown),
             317 => Orb::Team(MoveEffect::UserSpeedUp),
             318 => Orb::Luminous,
-            319 => Orb::Petrify,
+            319 => Orb::Petrify { floor: false },
             326 => Orb::Foes(MoveEffect::Sleep),
             327 => Orb::Foes(MoveEffect::Confuse),
             330 => Orb::Escape,
             334 => Orb::Trapbust,
             335 => Orb::Rollcall,
             350 => Orb::Stairs,
-            355 => Orb::Foes(MoveEffect::Paralyze),
-            306 | 309 | 311 | 341 => Orb::Strike,
+            // (By the moves the game gives them, and their reach: Foe-Hold
+            // petrifies the floor, Foe-Seal pauses the room, Mug, Shocker
+            // and Silence go at the first foe in line.)
+            355 => Orb::Petrify { floor: true },
+            359 => Orb::Foes(MoveEffect::Pause),
+            306 | 311 | 341 => Orb::Strike,
+            309 => Orb::Mug,
+            340 => Orb::Shocker,
             312 => Orb::Switcher,
             313 => Orb::Blowback,
             320 => Orb::Stayaway,
@@ -115,7 +129,6 @@ impl Orb {
             331 => Orb::Scanner,
             332 => Orb::Radar,
             337 => Orb::OneShot,
-            340 | 359 => Orb::Foes(MoveEffect::Cringe),
             346 => Orb::Itemizer,
             354 => Orb::Spurn,
             356 => Orb::Team(MoveEffect::UserSpeedUp),
@@ -253,9 +266,10 @@ impl Run {
             return false;
         }
         match orb {
-            Orb::Foes(_) | Orb::Petrify | Orb::Team(_) | Orb::Spurn | Orb::TwoEdge | Orb::FoeFear | Orb::AllHit | Orb::Strike | Orb::Identify => {
+            Orb::Foes(_) | Orb::Petrify { .. } | Orb::Team(_) | Orb::Spurn | Orb::TwoEdge | Orb::FoeFear | Orb::AllHit | Orb::Strike | Orb::Identify => {
                 self.on_many(orb, &scene, item)
             }
+            Orb::Mug | Orb::Shocker | Orb::Silence => self.on_line(orb, &scene, item),
             Orb::Blowback | Orb::Switcher | Orb::Stayaway | Orb::OneShot | Orb::Itemizer | Orb::Decoy | Orb::Transfer | Orb::Hurl => self.on_front(orb, &scene),
             Orb::Drought | Orb::FillIn | Orb::OneRoom => self.reshape(orb, &scene),
             _ => self.on_floor(orb, &scene),
@@ -276,8 +290,9 @@ impl Run {
                     self.log.push("But there is nobody.".to_string());
                 }
             }
-            Orb::Petrify => {
-                for &foe in &scene.room {
+            Orb::Petrify { floor } => {
+                let foes: Vec<MonsterId> = if floor { self.foes().iter().map(|foe| foe.0).collect() } else { scene.room.clone() };
+                for foe in foes {
                     self.work(foe, |foe, _, _, log| {
                         foe.status.sleep_turns = status::DEEP_SLEEP;
                         log.push(format!("{} is petrified!", foe.name));
@@ -352,6 +367,60 @@ impl Run {
                 holding.into_iter().for_each(|said| self.log.push(said));
             }
             _ => {}
+        }
+    }
+
+    /// Orbs on the first foe in line ahead, up to ten tiles (the reach of
+    /// the moves the game gives them).
+    fn on_line(&mut self, orb: Orb, scene: &Scene, item: u16) {
+        let foes = self.foes();
+        let target = self.dungeon.as_ref().and_then(|dungeon| {
+            let tiles: Vec<Pos> = foes.iter().map(|foe| foe.1).collect();
+            let reached = crate::dungeon::targets_in_range(&dungeon.floor, scene.here, scene.facing, crate::dungeon::range::FRONT_10, &tiles);
+            foes.iter().find(|foe| reached.contains(&foe.1)).map(|foe| foe.0)
+        });
+        let Some(foe) = target else {
+            self.log.push("But there is nobody.".to_string());
+            return;
+        };
+        match orb {
+            // Struck by the orb's move, then robbed: what it held goes to the
+            // bag, if the leader holds nothing and the bag has room (Sticky
+            // Hold keeps it).
+            Orb::Mug => {
+                if let Some(slot) = self.book.move_slot(self.book.item_move(item)) {
+                    let attack = Attack { slot, effect: None, damage_mult: FIXED_ONE, linked: false };
+                    self.strike(scene.me, foe, &attack);
+                }
+                let free = self.dungeon.as_ref().is_some_and(|dungeon| dungeon.leader().stats.held == 0) && self.bag.items.len() < BAG_CAPACITY;
+                let taken = self
+                    .work(foe, |foe, _, _, _| match foe.stats.held != 0 && !ability::has(&foe.stats, ability::STICKY_HOLD) && free {
+                        true => Some((std::mem::take(&mut foe.stats.held), foe.name.clone())),
+                        false => None,
+                    })
+                    .flatten();
+                if let Some((held, name)) = taken {
+                    self.bag.items.push(held);
+                    self.log.push(format!("{} stole {} from {name}!", scene.name, self.book.item_name(held)));
+                }
+                self.say_if_out(foe);
+            }
+            // Cowering: its moves go behind it (the game's 10 to 11 turns,
+            // and the one it starts on).
+            Orb::Shocker => {
+                self.work(foe, |foe, rng, _, log| {
+                    foe.status.cowering_turns = rng.rand_range(10, 12) + 1;
+                    log.push(format!("{} is cowering!", foe.name));
+                });
+            }
+            // Muzzled: no moves for a while (the game's 10 turns).
+            _ => {
+                const MUZZLED_TURNS: i32 = 10;
+                self.work(foe, |foe, _, _, log| {
+                    foe.status.muzzled_turns = MUZZLED_TURNS + 1;
+                    log.push(format!("{} is muzzled: it can't use moves!", foe.name));
+                });
+            }
         }
     }
 
@@ -571,14 +640,6 @@ impl Run {
                 let floor = &dungeon.floor;
                 dungeon.traps.retain(|trap| !same_room(floor, here, trap.at));
                 self.log.push(format!("{} traps were destroyed.", before - dungeon.traps.len()));
-            }
-            Orb::Silence => {
-                // (The foes' moves are sealed: what remains is the regular
-                // attack.)
-                self.log.push("The foes in the room can no longer use their moves!".to_string());
-                if let Some(dungeon) = self.dungeon.as_mut() {
-                    dungeon.silence = true;
-                }
             }
             Orb::Trawl => self.trawl(scene),
             Orb::Scanner => {

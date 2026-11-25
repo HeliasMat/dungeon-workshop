@@ -394,7 +394,7 @@ impl Run {
                 .map(|monster| candidate(&book, me, monster, monster.side == Side::Foe || leader_decoy))
                 .collect();
             let user = ai_user(me, direction, walks);
-            let moves = me.moves.clone();
+            let moves = open_moves(me);
             ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &moves, &others)
         };
         // Confused, it strikes any way.
@@ -523,7 +523,7 @@ impl Run {
             let others: Vec<Candidate> =
                 hostile.chain(kin.iter().filter_map(|&pos| at_tile(pos)).map(|monster| candidate(&book, &me, monster, false))).collect();
             let user = ai_user(&me, direction, walks);
-            ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &me.moves, &others)
+            ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &open_moves(&me), &others)
         };
         let action = foe_action(&dungeon.floor, &mut dungeon.rng, &me, target, choice, occupied, &foes, walks);
         self.foe_does(who, act, at, action, choice, decoy.map(|(id, _)| id))
@@ -743,6 +743,14 @@ fn shunned(dungeon: &Dungeon, me: &Monster, secondary_kind: u8) -> Vec<Pos> {
 /// strike its own side.
 pub(crate) fn traitor(me: &Monster) -> bool {
     me.status.confused() && !iq::has(&me.stats, iq::NONTRAITOR)
+}
+
+/// The moves the AI may pick from: none but the regular attack while
+/// muzzled. (The game lets through the moves that need no mouth, which
+/// the data here does not tell.)
+fn open_moves(me: &Monster) -> Vec<crate::dungeon::MoveSlot> {
+    let muzzled = me.status.muzzled_turns > 0;
+    me.moves.iter().map(|&slot| crate::dungeon::MoveSlot { sealed: slot.sealed || muzzled, ..slot }).collect()
 }
 
 /// A foe's action: the attack the AI chose, else fleeing the closest of the

@@ -159,3 +159,39 @@ impl Monster {
         matches!(self.side, Side::Leader | Side::Ally)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dungeon::exclusive::effect;
+
+    #[test]
+    fn exclusive_items_give_hp_and_pp_and_take_them_back() {
+        let stats = Stats {
+            level: 5,
+            max_hp: 30,
+            hp: 30,
+            attack: 9,
+            defense: 9,
+            sp_attack: 9,
+            sp_defense: 9,
+            types: (1, 0),
+            abilities: [0, 0],
+            held: 0,
+            iq: 1,
+            iq_group: 0,
+            iq_skills: 0,
+            female: false,
+        };
+        let slot = MoveSlot { id: 33, pp: 20, max_pp: 20, ..MoveSlot::fallback_regular_attack() };
+        let mut member = Monster::new(MonsterId(1), Side::Leader, "Me".into(), None, stats, vec![slot], Statuses::default(), Pos::new(1, 1));
+        for which in [effect::MAX_HP_BOOST_10, effect::MAX_PP_BOOST] {
+            member.status.exclusive.effects[which as usize / 64] |= 1 << (which % 64);
+        }
+        member.keep_item_boosts();
+        member.keep_item_boosts();
+        assert_eq!((member.stats.max_hp, member.stats.hp, member.moves[0].max_pp, member.moves[0].pp), (40, 40, 22, 22));
+        member.unboost();
+        assert_eq!((member.stats.max_hp, member.stats.hp, member.moves[0].max_pp, member.moves[0].pp), (30, 30, 20, 20));
+    }
+}
