@@ -488,7 +488,7 @@ pub fn bind(film: &mut Film, form: &[Piece], words: &[String]) -> Result<Bound, 
     }
     let mut missed = Missed::default();
     let mut bound = given.clone();
-    if !go(film, form, &said, 0, &mut missed, &mut bound, &given) {
+    if !(Fit { words: &said, given: &given, missed: &mut missed, bound: &mut bound }).go(film, form, 0) {
         return Err(if missed.why.is_empty() { format!("too many: “{}”", said.join(" ")) } else { missed.why });
     }
     // (What was left out: its default, or nothing.)
@@ -540,107 +540,129 @@ fn defaults(form: &[Piece], out: &mut Bound) {
     }
 }
 
-/// The pieces from the first, the words from `at`: whether all fit to the end.
-fn go(film: &mut Film, form: &[Piece], words: &[String], at: usize, missed: &mut Missed, bound: &mut Vec<Value>, given: &[Value]) -> bool {
-    let Some((piece, rest)) = form.split_first() else {
-        if at < words.len() {
-            missed.tell(at, format!("too many: “{}”", words[at..].join(" ")));
+/// A line's words fitted to a form, piece by piece: what is bound so far,
+/// what was given by name, and why it fits not, for the furthest it went.
+struct Fit<'a> {
+    words: &'a [String],
+    given: &'a [Value],
+    missed: &'a mut Missed,
+    bound: &'a mut Vec<Value>,
+}
+
+impl Fit<'_> {
+    /// The pieces from the first, the words from `at`: whether all fit to the end.
+    fn go(&mut self, film: &mut Film, form: &[Piece], at: usize) -> bool {
+        let words = self.words;
+        let Some((piece, rest)) = form.split_first() else {
+            if at < words.len() {
+                self.missed.tell(at, format!("too many: “{}”", words[at..].join(" ")));
+            }
+            return at == words.len();
+        };
+        // (Given by its name: nothing of the line for it.)
+        if piece.name().is_some_and(|name| self.given.iter().any(|value| value.name == name)) {
+            return self.go(film, rest, at);
         }
-        return at == words.len();
-    };
-    // (Given by its name: nothing of the line for it.)
-    if piece.name().is_some_and(|name| given.iter().any(|value| value.name == name)) {
-        return go(film, rest, words, at, missed, bound, given);
+        match piece {
+            Piece::One { name, kind, default } => self.one(film, rest, at, name, *kind, default.is_some()),
+            Piece::Team(name) => self.team(film, rest, at, name),
+            Piece::Words { name, least, kind, default } => {
+                let left = words.len().saturating_sub(at);
+                let least = if default.is_some() { 0 } else { *least };
+                if left < least {
+                    self.missed.tell(at, format!("{name}... is missing"));
+                    return false;
+                }
+                // (As few as leave the rest to fit: `Apple 100 180 rattata`.)
+                (least..=left).any(|long| {
+                    let value = Value { name: name.clone(), words: words[at..at + long].to_vec(), kind: *kind, at: (long > 0).then_some(at), span: None };
+                    if long == 0 && default.is_some() {
+                        return self.go(film, rest, at);
+                    }
+                    self.take(film, rest, value, at + long)
+                })
+            }
+            Piece::Choice(choices) => match words.get(at).map(|word| plain(word)) {
+                // (The word said is kept under its own name: `args.has("off")`.)
+                Some(word) if stands_for_any(&word) || choices.iter().any(|choice| plain(choice) == word) => {
+                    let value = Value { name: word.clone(), words: vec![word.clone()], kind: Kind::Word, at: Some(at), span: None };
+                    self.take(film, rest, value, at + 1)
+                }
+                Some(word) => {
+                    self.missed.tell(at, format!("“{word}”: {} expected", choices.join(" or ")));
+                    false
+                }
+                None => {
+                    self.missed.tell(at, format!("{} is missing", choices.join(" or ")));
+                    false
+                }
+            },
+            Piece::Maybe(inner) => {
+                let mut with: Vec<Piece> = inner.clone();
+                with.extend(rest.iter().cloned());
+                self.go(film, &with, at) || self.go(film, rest, at)
+            }
+        }
     }
-    let take = |film: &mut Film, value: Value, next: usize, bound: &mut Vec<Value>, missed: &mut Missed| {
-        bound.push(value);
-        let fits = go(film, rest, words, next, missed, bound, given);
+
+    /// A value bound, then the rest fitted from `next`: unbound if it does not fit.
+    fn take(&mut self, film: &mut Film, rest: &[Piece], value: Value, next: usize) -> bool {
+        self.bound.push(value);
+        let fits = self.go(film, rest, next);
         if !fits {
-            bound.pop();
+            self.bound.pop();
         }
         fits
-    };
-    match piece {
-        Piece::One { name, kind, default } => {
-            let word = words.get(at);
-            let long = if *kind == Kind::Place { place_words(words, at) } else { 1 };
-            let fits_here = match word {
-                // (A number alone is not a place.)
-                Some(word) if *kind == Kind::Place && long == 1 && word.parse::<f32>().is_ok() => false,
-                Some(word) => of_kind(film, *kind, word),
-                None => false,
+    }
+
+    /// One value of its kind (a place, two numbers or a name); left out, with
+    /// its default.
+    fn one(&mut self, film: &mut Film, rest: &[Piece], at: usize, name: &str, kind: Kind, has_default: bool) -> bool {
+        let words = self.words;
+        let word = words.get(at);
+        let long = if kind == Kind::Place { place_words(words, at) } else { 1 };
+        let fits_here = match word {
+            // (A number alone is not a place.)
+            Some(word) if kind == Kind::Place && long == 1 && word.parse::<f32>().is_ok() => false,
+            Some(word) => of_kind(film, kind, word),
+            None => false,
+        };
+        if fits_here {
+            let value = Value { name: name.to_string(), words: words[at..at + long].to_vec(), kind, at: Some(at), span: None };
+            if self.take(film, rest, value, at + long) {
+                return true;
+            }
+        } else {
+            match word {
+                Some(word) => self.missed.tell(at, format!("“{word}” is not {} ({name})", kind.said())),
+                None => self.missed.tell(at, format!("{name} is missing ({})", kind.said())),
+            }
+        }
+        // (Left out, with its default.)
+        has_default && self.go(film, rest, at)
+    }
+
+    /// Those of the scene, as many as leave the rest to fit, the most first.
+    fn team(&mut self, film: &mut Film, rest: &[Piece], at: usize, name: &str) -> bool {
+        let words = self.words;
+        let those = words[at.min(words.len())..]
+            .iter()
+            .take_while(|word| stands_for_any(word) || film.actor(word).is_some() || film.groups.contains_key(&plain(word)))
+            .count();
+        if those == 0 {
+            self.missed.tell(at, format!("{name} is missing (someone of the scene)"));
+            return false;
+        }
+        (1..=those).rev().any(|long| {
+            let value = Value {
+                name: name.to_string(),
+                words: words[at..at + long].iter().map(|word| plain(word)).collect(),
+                kind: Kind::Someone,
+                at: Some(at),
+                span: None,
             };
-            if fits_here {
-                let value = Value { name: name.clone(), words: words[at..at + long].to_vec(), kind: *kind, at: Some(at), span: None };
-                if take(film, value, at + long, bound, missed) {
-                    return true;
-                }
-            } else {
-                match word {
-                    Some(word) => missed.tell(at, format!("“{word}” is not {} ({name})", kind.said())),
-                    None => missed.tell(at, format!("{name} is missing ({})", kind.said())),
-                }
-            }
-            // (Left out, with its default.)
-            default.is_some() && go(film, rest, words, at, missed, bound, given)
-        }
-        Piece::Team(name) => {
-            let those = words[at.min(words.len())..]
-                .iter()
-                .take_while(|word| stands_for_any(word) || film.actor(word).is_some() || film.groups.contains_key(&plain(word)))
-                .count();
-            if those == 0 {
-                missed.tell(at, format!("{name} is missing (someone of the scene)"));
-                return false;
-            }
-            // (As many as leave the rest to fit, the most first.)
-            (1..=those).rev().any(|long| {
-                let value = Value {
-                    name: name.clone(),
-                    words: words[at..at + long].iter().map(|word| plain(word)).collect(),
-                    kind: Kind::Someone,
-                    at: Some(at),
-                    span: None,
-                };
-                take(film, value, at + long, bound, missed)
-            })
-        }
-        Piece::Words { name, least, kind, default } => {
-            let left = words.len().saturating_sub(at);
-            let least = if default.is_some() { 0 } else { *least };
-            if left < least {
-                missed.tell(at, format!("{name}... is missing"));
-                return false;
-            }
-            // (As few as leave the rest to fit: `Apple 100 180 rattata`.)
-            (least..=left).any(|long| {
-                let value = Value { name: name.clone(), words: words[at..at + long].to_vec(), kind: *kind, at: (long > 0).then_some(at), span: None };
-                if long == 0 && default.is_some() {
-                    return go(film, rest, words, at, missed, bound, given);
-                }
-                take(film, value, at + long, bound, missed)
-            })
-        }
-        Piece::Choice(choices) => match words.get(at).map(|word| plain(word)) {
-            // (The word said is kept under its own name: `args.has("off")`.)
-            Some(word) if stands_for_any(&word) || choices.iter().any(|choice| plain(choice) == word) => {
-                let value = Value { name: word.clone(), words: vec![word.clone()], kind: Kind::Word, at: Some(at), span: None };
-                take(film, value, at + 1, bound, missed)
-            }
-            Some(word) => {
-                missed.tell(at, format!("“{word}”: {} expected", choices.join(" or ")));
-                false
-            }
-            None => {
-                missed.tell(at, format!("{} is missing", choices.join(" or ")));
-                false
-            }
-        },
-        Piece::Maybe(inner) => {
-            let mut with: Vec<Piece> = inner.clone();
-            with.extend(rest.iter().cloned());
-            go(film, &with, words, at, missed, bound, given) || go(film, rest, words, at, missed, bound, given)
-        }
+            self.take(film, rest, value, at + long)
+        })
     }
 }
 

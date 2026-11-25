@@ -292,43 +292,62 @@ impl Lower<'_> {
     }
 
     pub(super) fn called(&mut self, span: Span, called: &str, args: &[Expr], number: usize) -> Option<String> {
-        let mut fields = Vec::new();
         match called {
-            // (A countdown named: the number that holds its seconds left.)
-            "timer" => {
-                return match args {
-                    [Expr { kind: ExprKind::Name(name), .. }] => Some(format!("timer_{name}")),
-                    _ => {
-                        self.error(span, "“timer” takes the name of a countdown: “timer(bomb)”");
-                        None
-                    }
-                };
-            }
-            // (How many times a moment or a scene was played: the number that counts it.)
-            "seen" => {
-                return match args {
-                    [Expr { kind: ExprKind::Name(name), span: at }] => {
-                        let slug = crate::plot::slug(name);
-                        if !self.story.is_empty() && !self.story.contains(&slug) {
-                            let known = self.story.join(", ");
-                            self.error(*at, format!("“seen({name})”: no moment nor scene of that name in the film (its moments and places: {known})"));
-                            return None;
-                        }
-                        Some(crate::plot::seen_var(&slug))
-                    }
-                    _ => {
-                        self.error(span, "“seen” takes the name of a moment or a scene: “seen(the_bet)”");
-                        None
-                    }
-                };
-            }
+            "timer" => self.timer_of(span, args),
+            "seen" => self.seen_of(span, args),
             "chance" | "random" | "min" | "max" | "div" | "abs" | "distance" => {
+                let mut fields = Vec::new();
                 for arg in args {
                     fields.push(if called == "distance" { self.someone(arg)? } else { self.value(arg, number)? });
                 }
+                self.reckoning(span, called, &fields, number)
             }
-            _ => {}
+            _ => {
+                // (A recipe that gives back a value: called on its line, then read.)
+                let mut line = called.to_string();
+                for arg in args {
+                    line.push(' ');
+                    line.push_str(&self.given(arg, number)?);
+                }
+                self.line_word(number, line);
+                Some(format!("_return_{called}"))
+            }
         }
+    }
+
+    /// A countdown named: the number that holds its seconds left.
+    fn timer_of(&mut self, span: Span, args: &[Expr]) -> Option<String> {
+        match args {
+            [Expr { kind: ExprKind::Name(name), .. }] => Some(format!("timer_{name}")),
+            _ => {
+                self.error(span, "“timer” takes the name of a countdown: “timer(bomb)”");
+                None
+            }
+        }
+    }
+
+    /// How many times a moment or a scene was played: the number that counts it.
+    fn seen_of(&mut self, span: Span, args: &[Expr]) -> Option<String> {
+        match args {
+            [Expr { kind: ExprKind::Name(name), span: at }] => {
+                let slug = crate::plot::slug(name);
+                if !self.story.is_empty() && !self.story.contains(&slug) {
+                    let known = self.story.join(", ");
+                    self.error(*at, format!("“seen({name})”: no moment nor scene of that name in the film (its moments and places: {known})"));
+                    return None;
+                }
+                Some(crate::plot::seen_var(&slug))
+            }
+            _ => {
+                self.error(span, "“seen” takes the name of a moment or a scene: “seen(the_bet)”");
+                None
+            }
+        }
+    }
+
+    /// A reckoning of the language's (`chance`, `random`, `min`, `max`,
+    /// `div`, `abs`, `distance`), its values read: the number it is made in.
+    fn reckoning(&mut self, span: Span, called: &str, fields: &[String], number: usize) -> Option<String> {
         let arity = |wanted: usize, this: &mut Self| {
             if fields.len() != wanted {
                 this.error(span, format!("“{called}” takes {wanted} value{}", if wanted > 1 { "s" } else { "" }));
@@ -378,23 +397,14 @@ impl Lower<'_> {
                 self.flow(number, crate::emit::calc(&made, operand(&fields[0]), "max", Value::Var(minus)));
                 made
             }
-            "distance" => {
+            // (`distance`, between two.)
+            _ => {
                 if !arity(2, self) {
                     return None;
                 }
                 let made = self.temp();
                 self.engine(number, format!("measure {made} {} {}", fields[0], fields[1]));
                 made
-            }
-            _ => {
-                // (A recipe that gives back a value: called on its line, then read.)
-                let mut line = called.to_string();
-                for arg in args {
-                    line.push(' ');
-                    line.push_str(&self.given(arg, number)?);
-                }
-                self.line_word(number, line);
-                format!("_return_{called}")
             }
         };
         Some(made)
