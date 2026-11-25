@@ -1,0 +1,6 @@
+# What the game's tables (dungeons.bin) say of a few kinds, for the tests with no data:
+# number, types, the number it evolves from, its moves by level (level:move), by a machine.
+4	2,0	0	1:260	1 18 29 30 48 50 197 232 301
+25	5,0	172	1:188 26:129	1 29 48 50 129 197 232 273 301
+172	5,0	0	1:188	1 48 129 197 232 273 301
+428	3,0	0	8:16 15:174 32:32 36:130 43:240	14 18 48 158 197 219 232 301 480

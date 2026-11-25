@@ -16,9 +16,11 @@
 37	Vulpix
 39	Jigglypuff
 43	Oddish
+50	Diglett
 52	Meowth
 60	Poliwag
 63	Abra
+68	Machamp
 69	Bellsprout
 72	Tentacool
 73	Tentacruel
@@ -37,7 +39,9 @@
 129	Magikarp
 130	Gyarados
 131	Lapras
+132	Ditto
 133	Eevee
+143	Snorlax
 150	Mewtwo
 152	Chikorita
 158	Totodile
@@ -45,6 +49,7 @@
 164	Noctowl
 167	Spinarak
 170	Chinchou
+172	Pichu
 179	Mareep
 181	Ampharos
 183	Marill
@@ -73,8 +78,10 @@
 415	Groudon
 416	Rayquaza
 428	Piplup
+434	Bidoof
 435	Bibarel
 456	Pachirisu
 483	Chatot
+488	Munchlax
 489	Riolu
 525	Dialga

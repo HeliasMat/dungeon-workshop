@@ -98,10 +98,42 @@ fn natures(folder: &str) -> Natures {
             (number.to_string(), kind)
         })
         .collect();
+    let kinds = if species.is_empty() { written_kinds(folder) } else { kinds };
     let moves = slots.iter().map(|slot| (slot.type_id, slot.power)).collect();
     let found = Natures { movements, weights, kinds, moves, motions };
     read.push((folder.to_string(), found.clone()));
     found
+}
+
+/// A few kinds written by hand where the folder has no `dungeons.bin` (the
+/// tests' fixture, `kinds.txt`): number, types (`5,0`), the number it
+/// evolves from, its moves by level (`1:188 26:129`), by a machine.
+fn written_kinds(folder: &str) -> HashMap<String, super::Kind> {
+    let numbers = |field: Option<&String>, cut: char| -> Vec<u16> {
+        field.map_or(Vec::new(), |field| field.split(cut).filter_map(|one| one.trim().parse().ok()).collect())
+    };
+    super::files::table(folder, "kinds.txt")
+        .iter()
+        .filter(|row| row.len() > 1)
+        .map(|row| {
+            let types: Vec<u8> = row[1].split(',').filter_map(|one| one.trim().parse().ok()).collect();
+            let learnset = row.get(3).map_or(Vec::new(), |field| {
+                field
+                    .split_whitespace()
+                    .filter_map(|pair| pair.split_once(':'))
+                    .filter_map(|(level, id)| Some((level.parse().ok()?, id.parse().ok()?)))
+                    .collect()
+            });
+            let kind = super::Kind {
+                types: (types.first().copied().unwrap_or(0), types.get(1).copied().unwrap_or(0)),
+                from: numbers(row.get(2), ' ').first().copied().unwrap_or(0),
+                learnset,
+                machines: numbers(row.get(4), ' '),
+                ..super::Kind::default()
+            };
+            (row[0].clone(), kind)
+        })
+        .collect()
 }
 
 /// The monsters, those drawn, those with a portrait alone, the variants and
