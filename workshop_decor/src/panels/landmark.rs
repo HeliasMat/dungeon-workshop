@@ -1,6 +1,7 @@
 //! A landmark, and someone who lives there: where they face, how far they
 //! wander.
 
+use assets::project::Project;
 use eframe::egui::{self, RichText};
 
 use super::badge_of;
@@ -42,57 +43,9 @@ pub(super) fn landmark(ui: &mut egui::Ui, decors: &mut Decors, item: &Item) {
             });
         }
         if item.kind == Kind::Exit {
-            prop(ui, "Leads To", |ui| {
-                let shown = if to.parse::<i64>().is_ok() { format!("game place {to}") } else { to.clone() };
-                egui::ComboBox::from_id_salt(("exit to", number)).selected_text(shown).width(ui.available_width() - 8.0).show_ui(ui, |ui| {
-                    let numbered = to.parse::<i64>().is_ok();
-                    if ui.selectable_label(numbered, "a game place, by its number").clicked() && !numbered {
-                        (to, entrance) = ("224".to_string(), String::new());
-                    }
-                    ui.separator();
-                    for decor in decor::names(&library) {
-                        if ui.selectable_label(to == decor, &decor).clicked() {
-                            to = decor;
-                        }
-                    }
-                });
-            });
-            if let Ok(mut place) = to.parse::<i64>() {
-                prop(ui, "Game Place", |ui| {
-                    if ui.add(egui::DragValue::new(&mut place).range(0..=999)).changed() {
-                        to = place.to_string();
-                    }
-                });
-            } else {
-                // (The entrances of the decor it leads to.)
-                let there = std::fs::read_to_string(library.decors().join(format!("{to}.decor"))).unwrap_or_default();
-                let named: Vec<String> = decor::doc::entrances(&there).into_iter().map(|(_, name)| name).filter(|name| !name.is_empty()).collect();
-                prop(ui, "By Entrance", |ui| {
-                    let shown = if entrance.is_empty() { "its first".to_string() } else { entrance.clone() };
-                    egui::ComboBox::from_id_salt(("exit entrance", number)).selected_text(shown).show_ui(ui, |ui| {
-                        if ui.selectable_label(entrance.is_empty(), "its first").clicked() {
-                            entrance.clear();
-                        }
-                        for name in &named {
-                            if ui.selectable_label(entrance == *name, name).clicked() {
-                                entrance = name.clone();
-                            }
-                        }
-                    });
-                });
-            }
+            leads_to(ui, &library, number, &mut to, &mut entrance);
         }
-        let clean = |said: &str| said.split_whitespace().collect::<Vec<_>>().join("_");
-        let number_of = |value: f32| format!("{}", value.round() as i64);
-        let rewritten = match item.kind {
-            Kind::Spot => format!("spot {} {} {}", clean(&name), number_of(point[0]), number_of(point[1])),
-            Kind::Entrance => format!("entrance {} {} {}", number_of(point[0]), number_of(point[1]), name.trim()).trim_end().to_string(),
-            Kind::Zone => format!("zone {} {} {} {} {}", clean(&name), number_of(point[0]), number_of(point[1]), number_of(size[0]), number_of(size[1])),
-            _ => format!("exit {} {} {} {} to {to} {entrance}", number_of(point[0]), number_of(point[1]), number_of(size[0]), number_of(size[1]))
-                .trim_end()
-                .to_string(),
-        };
-        let unnamed = matches!(item.kind, Kind::Spot | Kind::Zone) && clean(&name).is_empty();
+        let (rewritten, unnamed) = rewritten(item.kind, &name, point, size, &to, &entrance);
         if rewritten.split_whitespace().ne(line.split_whitespace()) && !unnamed {
             made = Some(edit::with_lines(&text, &[(number, rewritten)]));
         }
@@ -118,6 +71,67 @@ pub(super) fn landmark(ui: &mut egui::Ui, decors: &mut Decors, item: &Item) {
     if let (Some(made), Some(open)) = (made, &mut decors.open) {
         open.change(made);
     }
+}
+
+/// Where an exit leads: a game place by its number, or a decor by its name,
+/// by one of its entrances.
+fn leads_to(ui: &mut egui::Ui, library: &Project, number: usize, to: &mut String, entrance: &mut String) {
+    prop(ui, "Leads To", |ui| {
+        let shown = if to.parse::<i64>().is_ok() { format!("game place {to}") } else { to.clone() };
+        egui::ComboBox::from_id_salt(("exit to", number)).selected_text(shown).width(ui.available_width() - 8.0).show_ui(ui, |ui| {
+            let numbered = to.parse::<i64>().is_ok();
+            if ui.selectable_label(numbered, "a game place, by its number").clicked() && !numbered {
+                (*to, *entrance) = ("224".to_string(), String::new());
+            }
+            ui.separator();
+            for decor in decor::names(library) {
+                if ui.selectable_label(*to == decor, &decor).clicked() {
+                    *to = decor;
+                }
+            }
+        });
+    });
+    if let Ok(mut place) = to.parse::<i64>() {
+        prop(ui, "Game Place", |ui| {
+            if ui.add(egui::DragValue::new(&mut place).range(0..=999)).changed() {
+                *to = place.to_string();
+            }
+        });
+    } else {
+        // (The entrances of the decor it leads to.)
+        let there = std::fs::read_to_string(library.decors().join(format!("{to}.decor"))).unwrap_or_default();
+        let named: Vec<String> = decor::doc::entrances(&there).into_iter().map(|(_, name)| name).filter(|name| !name.is_empty()).collect();
+        prop(ui, "By Entrance", |ui| {
+            let shown = if entrance.is_empty() { "its first".to_string() } else { entrance.clone() };
+            egui::ComboBox::from_id_salt(("exit entrance", number)).selected_text(shown).show_ui(ui, |ui| {
+                if ui.selectable_label(entrance.is_empty(), "its first").clicked() {
+                    entrance.clear();
+                }
+                for name in &named {
+                    if ui.selectable_label(*entrance == *name, name).clicked() {
+                        *entrance = name.clone();
+                    }
+                }
+            });
+        });
+    }
+}
+
+/// A landmark's line as its fields now say it, and whether it is a spot or
+/// a zone left with no name.
+fn rewritten(kind: Kind, name: &str, point: [f32; 2], size: [f32; 2], to: &str, entrance: &str) -> (String, bool) {
+    let clean = |said: &str| said.split_whitespace().collect::<Vec<_>>().join("_");
+    let number_of = |value: f32| format!("{}", value.round() as i64);
+    let rewritten = match kind {
+        Kind::Spot => format!("spot {} {} {}", clean(name), number_of(point[0]), number_of(point[1])),
+        Kind::Entrance => format!("entrance {} {} {}", number_of(point[0]), number_of(point[1]), name.trim()).trim_end().to_string(),
+        Kind::Zone => format!("zone {} {} {} {} {}", clean(name), number_of(point[0]), number_of(point[1]), number_of(size[0]), number_of(size[1])),
+        _ => format!("exit {} {} {} {} to {to} {entrance}", number_of(point[0]), number_of(point[1]), number_of(size[0]), number_of(size[1]))
+            .trim_end()
+            .to_string(),
+    };
+    let unnamed = matches!(kind, Kind::Spot | Kind::Zone) && clean(name).is_empty();
+    (rewritten, unnamed)
 }
 
 /// The way someone faces, of the words after his feet; how far he wanders.
