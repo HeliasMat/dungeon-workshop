@@ -193,6 +193,13 @@ pub mod tactic {
 /// The bit of a kept move's id that links it to the move before (move ids
 /// are below 600).
 pub const LINKED_MOVE: u16 = 0x8000;
+/// The bit that keeps it switched off for the AI (`MoveSlot::off`).
+pub const SWITCHED_OFF: u16 = 0x4000;
+
+/// A kept move's id, without the bits kept with it.
+pub fn move_id(kept: u16) -> u16 {
+    kept & !(LINKED_MOVE | SWITCHED_OFF)
+}
 
 /// The team kept between dungeons: what the leader and partner start a run
 /// with, and what has become of them.
@@ -431,7 +438,7 @@ impl Member {
     pub fn leaving(stats: &Stats, moves: &[MoveSlot], experience: &Experience) -> Self {
         Self {
             stats: Stats { hp: stats.max_hp, ..*stats },
-            moves: moves.iter().map(|slot| if slot.linked { slot.id | LINKED_MOVE } else { slot.id }).collect(),
+            moves: moves.iter().map(|slot| slot.id | if slot.linked { LINKED_MOVE } else { 0 } | if slot.off { SWITCHED_OFF } else { 0 }).collect(),
             exp: experience.growth.points,
         }
     }
@@ -447,7 +454,7 @@ impl Member {
 
 /// The moves with these ids, from those a species starts with or learns,
 /// by level or TM (no ids: its starting moves), with the PP given or all of
-/// it, linked as they were (`LINKED_MOVE`).
+/// it, linked and switched off as they were (`LINKED_MOVE`, `SWITCHED_OFF`).
 pub(crate) fn known_moves(start: &[MoveSlot], growing: &Growing, ids: &[u16], pp: Option<&[i32]>) -> Vec<MoveSlot> {
     let known = |id: u16| {
         let learnt = growing.learnset.iter().map(|(_, slot)| slot);
@@ -455,7 +462,10 @@ pub(crate) fn known_moves(start: &[MoveSlot], growing: &Growing, ids: &[u16], pp
     };
     let mut moves: Vec<MoveSlot> = match ids {
         [] => start.to_vec(),
-        ids => ids.iter().filter_map(|&id| known(id & !LINKED_MOVE).map(|slot| MoveSlot { linked: id & LINKED_MOVE != 0, ..slot })).collect(),
+        ids => ids
+            .iter()
+            .filter_map(|&id| known(move_id(id)).map(|slot| MoveSlot { linked: id & LINKED_MOVE != 0, off: id & SWITCHED_OFF != 0, ..slot }))
+            .collect(),
     };
     // (The first move links to nothing.)
     if let Some(first) = moves.first_mut() {
@@ -514,7 +524,17 @@ pub(crate) fn earn(
 
 #[cfg(test)]
 mod tests {
-    use super::Sos;
+    use super::*;
+
+    #[test]
+    fn a_move_switched_off_stays_so_between_dungeons() {
+        let slot = |id| MoveSlot { id, pp: 5, max_pp: 5, ..MoveSlot::fallback_regular_attack() };
+        let start = [slot(33), slot(45)];
+        let kept = [33 | SWITCHED_OFF, 45 | LINKED_MOVE];
+        let moves = known_moves(&start, &Growing::default(), &kept, None);
+        assert_eq!(moves.iter().map(|slot| (slot.id, slot.off, slot.linked)).collect::<Vec<_>>(), [(33, true, false), (45, false, true)]);
+        assert_eq!(kept.map(move_id), [33, 45]);
+    }
 
     #[test]
     fn an_sos_is_saved_as_text() {

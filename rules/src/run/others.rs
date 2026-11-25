@@ -419,7 +419,8 @@ impl Run {
             self.use_chain(who, unleash.or(choice.slot), unleash.is_some(), true, true, None);
             return Acted::Attacked;
         }
-        if me.status.rooted() {
+        // (Hungry Pal: an empty belly keeps it where it stands.)
+        if me.status.rooted() || me.hungry_pal() {
             return Acted::Done;
         }
         let step = around.ally_step(&dungeon.floor, &mut dungeon.rng, tactic, low, flees, previous, confused);
@@ -776,12 +777,12 @@ pub(crate) fn traitor(me: &Monster) -> bool {
     me.status.confused() && !iq::has(&me.stats, iq::NONTRAITOR)
 }
 
-/// The moves the AI may pick from: none but the regular attack while
-/// muzzled. (The game lets through the moves that need no mouth, which
-/// the data here does not tell.)
+/// The moves the AI may pick from: those not switched off, and none but
+/// the regular attack while muzzled. (The game lets through the moves that
+/// need no mouth, which the data here does not tell.)
 fn open_moves(me: &Monster) -> Vec<crate::dungeon::MoveSlot> {
     let muzzled = me.status.muzzled_turns > 0;
-    me.moves.iter().map(|&slot| crate::dungeon::MoveSlot { sealed: slot.sealed || muzzled, ..slot }).collect()
+    me.moves.iter().map(|&slot| crate::dungeon::MoveSlot { sealed: slot.sealed || muzzled || slot.off, ..slot }).collect()
 }
 
 /// A foe's action: the attack the AI chose, else fleeing the closest of the

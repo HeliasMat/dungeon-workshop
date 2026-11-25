@@ -13,7 +13,7 @@ use super::pause::{Page, Pause, allies, iq_skills, member_of, shown_monster};
 type Row<'a> = (&'a str, [u8; 3]);
 
 const TEAM_COLOURS: [[u8; 3]; 2] = [color::BLUE, color::YELLOW];
-/// An IQ skill switched off.
+/// An IQ skill or a move switched off.
 const OFF_GREY: [u8; 3] = [136, 136, 136];
 
 pub fn draw(canvas: &mut Canvas, ui: &UiArt, run: &Run, pause: &Pause) {
@@ -73,10 +73,16 @@ fn moves_page(canvas: &mut Canvas, ui: &UiArt, run: &Run, pause: &Pause) {
     let (book, strings) = (&run.book, &ui.strings);
     let (screen, left) = (SCREEN_HEIGHT as i32, (2 * TILE) as i32);
     let moves = &member.moves;
-    let title = strings.moves_title.replace("[string:0]", &member.name);
-    // (A move linked to the one before: "+", in yellow.)
+    let title = format!("{}  (S: on/off)", strings.moves_title.replace("[string:0]", &member.name));
+    // (A move linked to the one before: "+", in yellow; one switched off
+    // for the AI, in grey.)
     let names: Vec<String> = moves.iter().map(|slot| if slot.linked { format!("+{}", book.move_name(slot.id)) } else { book.move_name(slot.id) }).collect();
-    let rows: Vec<Row> = names.iter().zip(moves).map(|(row, slot)| (row.as_str(), if slot.linked { color::YELLOW } else { color::GREEN })).collect();
+    let colour = |slot: &rules::dungeon::MoveSlot| match (slot.off, slot.linked) {
+        (true, _) => OFF_GREY,
+        (false, true) => color::YELLOW,
+        (false, false) => color::GREEN,
+    };
+    let rows: Vec<Row> = names.iter().zip(moves).map(|(row, slot)| (row.as_str(), colour(slot))).collect();
     let lines = canvas.titled_menu(ui, (2, BOTTOM + 2, 18), (&title, color::WHITE), &rows, 4, Some(pause.cursor.at), 16);
     let pp: Vec<String> = moves.iter().map(|slot| format!("{}/{}", slot.pp, slot.max_pp)).collect();
     let pp: Vec<Row> = pp.iter().map(|pp| (pp.as_str(), color::GREEN)).collect();
@@ -117,8 +123,11 @@ fn team_page(canvas: &mut Canvas, ui: &UiArt, run: &Run, leader: &Monster, team:
         &format!("Holds: {held}   IQ {}  ({} skills, I)", stats.iq, stats.iq_skills.count_ones()),
         color::WHITE,
     );
+    // The leader, or L to make the one chosen leader; its belly.
     canvas.window(ui, 2, BOTTOM + below, 15, 2);
-    canvas.text(ui, left + 4, screen + (below * TILE) as i32 + 2, &strings.leader, color::WHITE);
+    let role = if cursor == 0 { strings.leader.as_str() } else { "L: lead" };
+    let belly = members[cursor].belly.map_or(String::new(), |belly| format!("  Belly {}", belly.points()));
+    canvas.text(ui, left + 4, screen + (below * TILE) as i32 + 2, &format!("{role}{belly}"), color::WHITE);
     // Its types, each by its badge (the Fairy type's among them).
     canvas.window(ui, 18, BOTTOM + below, 12, 2);
     let (first, second) = stats.types;

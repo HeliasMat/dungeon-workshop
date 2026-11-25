@@ -615,6 +615,8 @@ impl Run {
             Input::ToggleIq { who, skill } => self.toggle_iq(*who, *skill),
             Input::Link { who, slot } => self.link(*who, *slot),
             Input::SwitchControl => self.switch_control(),
+            Input::MakeLeader(who) => self.make_leader(*who),
+            Input::SwitchMove { who, slot } => self.switch_move(*who, *slot),
             _ => {}
         }
     }
@@ -641,20 +643,42 @@ impl Run {
         }
     }
 
+    /// The member chosen leads the team from now on (the dungeon menu's
+    /// "Leader"): one of the team standing, not a client.
+    fn make_leader(&mut self, who: MonsterId) {
+        let able =
+            |monster: &Monster| monster.team() && monster.alive() && monster.fading.is_none() && monster.experience.is_some() && monster.escorted.is_none();
+        if self.here().monster(who).is_some_and(able) {
+            self.hand_control(who);
+        }
+    }
+
+    /// A move switched off for the AI, or on again (the menu's "Switch").
+    fn switch_move(&mut self, who: MonsterId, slot: usize) {
+        let Some(switched) = self.here().monster_mut(who).and_then(|monster| monster.moves.get_mut(slot)) else {
+            return;
+        };
+        switched.off = !switched.off;
+        let (id, off) = (switched.id, switched.off);
+        let name = self.book.move_name(id);
+        self.log.push(format!("{name} is switched {}.", if off { "off" } else { "on" }));
+    }
+
     /// That member is the one the player moves; the one moved till then
-    /// follows on its own. The team's belly goes with it.
+    /// follows on its own. Each keeps its own belly: the leader's is the one
+    /// that empties.
     pub(crate) fn hand_control(&mut self, to: MonsterId) {
         let dungeon = self.here();
         let now = dungeon.leader().id;
         if now == to || dungeon.monster(to).is_none_or(|monster| !monster.team()) {
             return;
         }
-        let belly = dungeon.leader_mut().belly.take();
         for monster in &mut dungeon.monsters {
             if monster.id == now {
                 monster.side = Side::Ally;
             } else if monster.id == to {
-                (monster.side, monster.belly) = (Side::Leader, belly);
+                monster.side = Side::Leader;
+                monster.belly.get_or_insert_with(crate::dungeon::Belly::full);
             }
         }
         dungeon.trail = None;

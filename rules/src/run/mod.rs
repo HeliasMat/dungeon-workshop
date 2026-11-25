@@ -121,6 +121,15 @@ pub enum Input {
     /// The player moves the next member of the team, the one moved till
     /// then following on its own (`RuleOptions::team_control`).
     SwitchControl,
+    /// That member of the team leads it from now on (the dungeon menu's
+    /// "Leader").
+    MakeLeader(MonsterId),
+    /// A team member's move switched off for the AI, or on again (the
+    /// menu's "Switch").
+    SwitchMove {
+        who: MonsterId,
+        slot: usize,
+    },
 }
 
 /// What just happened that is to be shown or heard. Anything that stays

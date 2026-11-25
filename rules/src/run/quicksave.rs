@@ -7,7 +7,7 @@
 use crate::dungeon::save::{PartnerSave, SaveData};
 use crate::dungeon::{Belly, DungeonRng, Statuses};
 
-use super::team::{Experience, LINKED_MOVE, known_moves};
+use super::team::{Experience, known_moves, move_id};
 use super::{Monster, Run, Side, Sight};
 
 /// How a quicksave tells its dungeon.
@@ -112,7 +112,7 @@ impl Run {
                 experience.growth.points = saved.exp;
             }
             for slot in &mut monster.moves {
-                let kept = saved.moves.iter().position(|&id| id & !LINKED_MOVE == slot.id).and_then(|at| saved.pp.get(at));
+                let kept = saved.moves.iter().position(|&id| move_id(id) == slot.id).and_then(|at| saved.pp.get(at));
                 slot.pp = kept.copied().unwrap_or(slot.max_pp);
             }
         }

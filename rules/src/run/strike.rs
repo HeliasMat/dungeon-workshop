@@ -66,7 +66,9 @@ impl Arena<'_> {
             bonds: &mut dungeon.bonds,
             sides,
         };
-        let Outcome { landed, happened } = attack::resolve(&mut party(user), &mut party(victim), attack, Tuning::default(), &mut field);
+        // (Hungry Pal: an ally on an empty belly strikes for 1.)
+        let tuning = Tuning { cap: user.hungry_pal().then_some(1), ..Tuning::default() };
+        let Outcome { landed, happened } = attack::resolve(&mut party(user), &mut party(victim), attack, tuning, &mut field);
         for happened in happened {
             self.tell(happened, user, victim);
         }

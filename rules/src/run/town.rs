@@ -9,7 +9,7 @@ use crate::services::{BAG_CAPACITY, Goods};
 use crate::town::{self, RecycleTrade, item};
 
 use super::Run;
-use super::team::{LINKED_MOVE, Member, Team, Whose, tactic};
+use super::team::{LINKED_MOVE, Member, Team, Whose, move_id, tactic};
 
 /// The moves a member knows at most.
 const MOVES_KNOWN: usize = 4;
@@ -241,12 +241,12 @@ impl Run {
                 (
                     [stats.level, stats.max_hp, stats.attack, stats.defense, stats.sp_attack, stats.sp_defense],
                     Some(stats.iq),
-                    member.moves.iter().map(|id| id & !LINKED_MOVE).collect(),
+                    member.moves.iter().map(|&id| move_id(id)).collect(),
                 )
             }
             Whom::Recruit(at) => {
                 let recruit = &self.team.progress.recruits[at];
-                (recruit.stats, None, recruit.moves.iter().map(|id| id & !LINKED_MOVE).collect())
+                (recruit.stats, None, recruit.moves.iter().map(|&id| move_id(id)).collect())
             }
         };
         let bag = self.bag_ids();
@@ -398,7 +398,7 @@ impl Run {
         let founder = if partner { &self.team.partner } else { &self.team.leader };
         let mut forgotten: Vec<u16> = Vec::new();
         for (_, slot) in founder.growth.learnset.iter().filter(|(at, _)| *at as i32 <= member.stats.level) {
-            let known = member.moves.iter().any(|&id| id & !LINKED_MOVE == slot.id);
+            let known = member.moves.iter().any(|&id| move_id(id) == slot.id);
             if !known && !forgotten.contains(&slot.id) {
                 forgotten.push(slot.id);
             }
@@ -426,7 +426,7 @@ impl Run {
         if member.moves.len() <= 1 || slot >= member.moves.len() {
             return format!("{name} must keep at least one move.");
         }
-        let id = member.moves.remove(slot) & !LINKED_MOVE;
+        let id = move_id(member.moves.remove(slot));
         // (What was linked to it is unlinked; the first links to nothing.)
         if let Some(next) = member.moves.get_mut(slot) {
             *next &= !LINKED_MOVE;

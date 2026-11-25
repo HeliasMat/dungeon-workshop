@@ -46,7 +46,9 @@ pub struct Monster {
     pub stats: Stats,
     pub moves: Vec<MoveSlot>,
     pub status: Statuses,
-    /// Only the leader gets hungry.
+    /// The team's. Only the leader's empties as turns go by (as the
+    /// game's); an ally's, by a Hunger Seed and the like, and empty it
+    /// stands still and strikes for 1 (`hungry_pal`).
     pub belly: Option<Belly>,
     pub at: Pos,
     pub facing: (i32, i32),
@@ -97,7 +99,7 @@ impl Monster {
             stats,
             moves,
             status,
-            belly: None,
+            belly: matches!(side, Side::Leader | Side::Ally).then(Belly::full),
             at,
             facing: (0, 1),
             exp_value: 0,
@@ -161,6 +163,12 @@ impl Monster {
     pub fn team(&self) -> bool {
         matches!(self.side, Side::Leader | Side::Ally)
     }
+
+    /// An ally with an empty belly (the game's Hungry Pal): it walks
+    /// nowhere, and its blows do 1 damage.
+    pub fn hungry_pal(&self) -> bool {
+        self.side == Side::Ally && self.belly.is_some_and(|belly| belly.points() == 0)
+    }
 }
 
 #[cfg(test)]
@@ -196,5 +204,13 @@ mod tests {
         assert_eq!((member.stats.max_hp, member.stats.hp, member.moves[0].max_pp, member.moves[0].pp), (40, 40, 22, 22));
         member.unboost();
         assert_eq!((member.stats.max_hp, member.stats.hp, member.moves[0].max_pp, member.moves[0].pp), (30, 30, 20, 20));
+        // The team has bellies; an ally's emptied, it is a Hungry Pal, the
+        // leader never.
+        let mut ally = Monster { side: Side::Ally, ..member.clone() };
+        assert!(member.belly.is_some() && !ally.hungry_pal());
+        ally.belly.as_mut().unwrap().empty();
+        member.belly.as_mut().unwrap().empty();
+        assert!(ally.hungry_pal() && !member.hungry_pal());
+        assert!(Monster::new(MonsterId(2), Side::Foe, "Foe".into(), None, stats, Vec::new(), Statuses::default(), Pos::new(2, 2)).belly.is_none());
     }
 }

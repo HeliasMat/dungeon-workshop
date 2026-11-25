@@ -3,7 +3,9 @@
 //! original's. Of "Others": the options, the window's frame, the map shown
 //! or not, the message log, the jobs taken, who may be recruited, the
 //! dungeon's hints; of "Rest": the quicksave, giving up, the quicksave and
-//! back to the title.)
+//! back to the title.) On the moves, L links one, S switches it off for the
+//! AI or on again; on the team, I shows a member's IQ skills, L makes it
+//! the leader.
 
 use rules::dungeon::MoveSlot;
 use rules::run::options::OPTION_ROWS;
@@ -143,6 +145,16 @@ pub fn read(game: &mut Turn<'_, Dive>, keys: &Keys) -> Input {
     // Box in the bag (as the original's).
     if pause.page == Page::Moves && keys.named.iter().any(|key| key == "l") {
         return shown_monster(pause, run).map_or(Input::Menu, |monster| Input::Link { who: monster.id, slot: pause.cursor.at });
+    }
+    // S on a move switches it off for the AI, or on again.
+    if pause.page == Page::Moves && keys.named.iter().any(|key| key == "s") {
+        return shown_monster(pause, run).map_or(Input::Menu, |monster| Input::SwitchMove { who: monster.id, slot: pause.cursor.at });
+    }
+    // L on a member makes it the leader.
+    if pause.page == Page::Team && keys.named.iter().any(|key| key == "l") {
+        let who = member_of(run, pause.cursor.at).map(|monster| monster.id);
+        pause.turn_to(Page::Team);
+        return who.map_or(Input::Menu, Input::MakeLeader);
     }
     // I on a member: its IQ skills.
     if pause.page == Page::Team && keys.named.iter().any(|key| key == "i") {

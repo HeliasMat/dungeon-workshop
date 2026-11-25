@@ -28,6 +28,7 @@ impl MoveSlot {
             ai_chance: 0,
             linked: false,
             talented: false,
+            off: false,
         }
     }
 }
@@ -109,6 +110,10 @@ pub struct MoveSlot {
     /// the tables' (skipped, so `dungeons.bin` keeps its shape).
     #[serde(skip)]
     pub talented: bool,
+    /// Switched off: the AI does not use it (the leader still may). A
+    /// member's, not the tables' (skipped, as `talented`).
+    #[serde(skip)]
+    pub off: bool,
 }
 
 impl MoveSlot {
