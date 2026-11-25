@@ -244,7 +244,7 @@ impl Emulate {
     fn choose_rom(&mut self) {
         let start = self.settings.path(settings::ROM);
         if let Some(rom) = workshop_base::pick::file("A DS game of yours", &[("Nintendo DS cartridge", &["nds"]), ("Any file", &["*"])], start.as_deref()) {
-            if self.settings.get(settings::ROM).is_none() && crate::first::check_rom(&rom).is_ok() {
+            if self.settings.get(settings::ROM).is_none() && workshop_first::check_rom(&rom).is_ok() {
                 self.remember(settings::ROM, &rom);
             }
             self.load(&rom, false);
@@ -434,7 +434,7 @@ fn put_in_rom(root: &Path, data: &str, film: &Path, rom: &Path, armips: &Path, t
     std::fs::create_dir_all(&folder).map_err(|why| format!("{}: {why}", folder.display()))?;
     let (exps, out) = (folder.join(format!("{PLAYED}.exps")), folder.join(format!("{PLAYED}.nds")));
     say(format!("1/2 export: scene_player export-ds {}", film.display()));
-    let player = crate::first::program_beside("scene_player")?;
+    let player = workshop_first::program_beside("scene_player")?;
     let mut export = std::process::Command::new(&player);
     export.args(["export-ds".as_ref(), film.as_os_str(), "--out".as_ref(), exps.as_os_str(), "--partial".as_ref()]).env("DUNGEON_DATA", data);
     told_run(export, root, &say).map_err(|why| format!("the export failed: {why}"))?;

@@ -26,6 +26,7 @@ workshop_base = { path = "../workshop_base" }
 workshop_decor = { path = "../workshop_decor" }
 workshop_dungeon = { path = "../workshop_dungeon" }
 workshop_film = { path = "../workshop_film" }
+workshop_first = { path = "../workshop_first" }
 workshop_game = { path = "../workshop_game" }
 workshop_resources = { path = "../workshop_resources" }
 workshop_script = { path = "../workshop_script" }

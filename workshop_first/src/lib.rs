@@ -88,7 +88,7 @@ impl Wrong {
 
 /// What a DS cartridge's first bytes say: Explorers of Sky of a region the
 /// tool reads, or why not. (Its title at 0, 12 bytes; its game code at 12, 4.)
-pub fn read_header(bytes: &[u8]) -> Result<Region, Wrong> {
+fn read_header(bytes: &[u8]) -> Result<Region, Wrong> {
     if bytes.len() < 0x200 {
         return Err(Wrong::NotNds);
     }
@@ -121,7 +121,7 @@ pub fn check_rom(path: &Path) -> Result<Region, Wrong> {
 
 /// What the first launch does, in order.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Step {
+enum Step {
     /// The cartridge read into `data/rom/` (the `extractor` program).
     Extract,
     /// Each dungeon floor's tileset, the stairs and the traps as pictures (`scene_player dungeons`).
@@ -151,7 +151,7 @@ impl Step {
 }
 
 /// An error a step met, said for a person: the disk full, a folder that cannot be written, else as it is.
-pub fn explained(step: Step, error: &str) -> String {
+fn explained(step: Step, error: &str) -> String {
     let lower = error.to_lowercase();
     let full = ["os error 112", "os error 28", "no space left", "not enough space", "disk full", "storage full"];
     let denied = ["os error 5)", "os error 13", "permission denied", "access is denied"];
@@ -169,7 +169,7 @@ pub fn explained(step: Step, error: &str) -> String {
 }
 
 /// A program the first launch runs beside the Workshop, not there: why, and how to get it.
-pub fn missing_program(path: &Path) -> String {
+fn missing_program(path: &Path) -> String {
     let program = path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
     let folder = path.parent().map(Path::to_path_buf).unwrap_or_default();
     match folder.components().any(|part| part.as_os_str() == "target") {
@@ -190,7 +190,7 @@ pub fn missing_program(path: &Path) -> String {
 
 /// Where the first launch is.
 #[derive(Clone, Debug, PartialEq)]
-pub enum Phase {
+enum Phase {
     /// No cartridge chosen yet, or one that will not do (why).
     Choosing(Option<Wrong>),
     /// A cartridge the tool reads, chosen: Extract can be clicked.
@@ -205,7 +205,7 @@ pub enum Phase {
 
 /// What happens to it.
 #[derive(Clone, Debug, PartialEq)]
-pub enum Event {
+enum Event {
     /// A file chosen, and what its header said.
     Chosen(PathBuf, Result<Region, Wrong>),
     /// A step begins.

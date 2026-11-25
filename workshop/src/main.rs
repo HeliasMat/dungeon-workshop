@@ -25,7 +25,6 @@ mod app;
 mod bug;
 mod capture;
 mod emulate;
-mod first;
 mod home;
 mod quant_tool;
 mod settings;
@@ -56,9 +55,9 @@ fn main() -> eframe::Result {
         Box::new(move |creation| {
             workshop_base::theme::apply(&creation.egui_ctx);
             // (No game data yet: the first launch first.)
-            Ok(Box::new(match first::has_data(&session) && !session.launch.first {
+            Ok(Box::new(match workshop_first::has_data(&session) && !session.launch.first {
                 true => Start::Workshop(Box::new(app::App::new(&creation.egui_ctx, session))),
-                false => Start::First(first::First::new(session)),
+                false => Start::First(workshop_first::First::new(session)),
             }))
         }),
     )
@@ -66,7 +65,7 @@ fn main() -> eframe::Result {
 
 /// What the window shows: the first launch, then the Workshop.
 enum Start {
-    First(first::First),
+    First(workshop_first::First),
     Workshop(Box<app::App>),
 }
 

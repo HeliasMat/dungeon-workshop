@@ -367,7 +367,8 @@ The Workshop's **settings** (`settings.rs`) are a small `key = value` file of th
 The Workshop is several crates, a part each, so that a change to one part builds only that part and the window over it. In each, a module a subject; a big one is a folder, its `mod.rs` (or the crate's `lib.rs`) holding its state and what its files share. Each crate's `lib.rs` says what it holds and what it uses; `tools/rule.sh` (the building-block rule) lists the crates each may use.
 
 ```text
-workshop                       the window: menus, spaces, Home, first launch, Emulator, Tools
+workshop                       the window: menus, spaces, Home, Emulator, Tools
+├── workshop_first             the first launch
 ├── workshop_game              the Game space
 ├── workshop_resources         the Resources space and its makings
 │   ├── workshop_picture       the painter
@@ -386,7 +387,8 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 | Crate, module | What it holds |
 |---|---|
 | `workshop/`: `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state |
-| `workshop/`: `home.rs`, `first.rs` | the Home, the first launch (the resources extracted) |
+| `workshop/`: `home.rs` | the Home |
+| `workshop_first/` | the first launch: the user's copy of the game checked (`check_rom`), the resources extracted step by step (`Phase`, `Event`), what goes wrong said for a person; the programs beside the Workshop (`program_beside`) |
 | `workshop_game/` | the Game space: `lib.rs` (the game open, its three columns), `game.rs` (a `.game` file as the space reads and writes it: its card, its chapters as boxes) |
 | `workshop/`: `spritecollab.rs`, `quant_tool.rs` | the Tools: SpriteCollab, an image converted |
 | `workshop/`: `emulate.rs`, `settings.rs` | the Emulator space (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), the Workshop's own settings |
