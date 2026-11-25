@@ -8,6 +8,10 @@
 //! - the Preview (right): its picture (▶ plays it), what it is (scenes,
 //!   places as the game names them, who is in it, its problems), and what to
 //!   do with it: open, duplicate, rename, put in the bin, a favourite.
+//!
+//! Its panels work with the Home's own state and the project the window
+//! keeps; what touches another space (a file opened, a film played, a file
+//! open moved, the things drawn shown) is asked of the window (`Ask`).
 
 use std::sync::Arc;
 
@@ -19,13 +23,13 @@ use workshop_base::session::Session;
 use decor::tags::PlaceKind;
 use eframe::egui::{self, Color32, FontId, Rect, RichText, Sense, Stroke, StrokeKind, pos2, vec2};
 
-use crate::app::{Space, Work};
+use workshop_base::ask::Ask;
 use workshop_base::project::{Entry, Kind, Project};
 use workshop_base::theme;
 
 /// What the files show.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Shelf {
+enum Shelf {
     Recent,
     Favourites,
     Films,
@@ -73,6 +77,8 @@ pub struct Home {
     trashing: bool,
     erasing: bool,
     pub said: Option<String>,
+    /// The file chosen (the bar of state names it).
+    pub chosen: Option<PathBuf>,
 }
 
 impl Home {
@@ -93,6 +99,7 @@ impl Home {
             trashing: false,
             erasing: false,
             said: None,
+            chosen: None,
         }
     }
 
@@ -106,6 +113,22 @@ impl Home {
         let said: Vec<String> = self.favourites.iter().map(|path| path.display().to_string()).collect();
         _ = std::fs::write(favourites_file(&self.session), said.join("\n"));
     }
+}
+
+/// What the Home's panels work with: its own, and the project the window keeps.
+struct Desk<'a> {
+    home: &'a mut Home,
+    project: &'a mut Project,
+}
+
+/// A file opened in its space, and said in the bar of state.
+pub fn open(session: &Session, entry: &Entry) {
+    let path = entry.path.clone();
+    session.ask(match entry.kind {
+        Kind::Film => Ask::Film { path, line: 0 },
+        Kind::Decor => Ask::Decor { path, line: 0 },
+    });
+    session.ask(Ask::Say(format!("opened: {}", entry.title)));
 }
 
 fn favourites_file(session: &Session) -> PathBuf {
@@ -165,13 +188,14 @@ fn paint_picture(painter: &egui::Painter, home: &mut Home, context: &egui::Conte
 
 // --- The Project ---
 
-pub fn project(ui: &mut egui::Ui, work: &mut Work) {
+pub fn project(ui: &mut egui::Ui, home: &mut Home, project: &mut Project) {
+    let desk = &mut Desk { home, project };
     ui.add_space(4.0);
     let counts = [
-        (Shelf::Recent, None, work.project.films.len() + work.project.decors.len(), theme::HOME),
-        (Shelf::Favourites, None, work.home.favourites.len(), theme::FILM),
-        (Shelf::Films, Some(theme::FILM), work.project.films.len(), theme::TEXT),
-        (Shelf::Decors, Some(theme::DECOR), work.project.decors.len(), theme::TEXT),
+        (Shelf::Recent, None, desk.project.films.len() + desk.project.decors.len(), theme::HOME),
+        (Shelf::Favourites, None, desk.home.favourites.len(), theme::FILM),
+        (Shelf::Films, Some(theme::FILM), desk.project.films.len(), theme::TEXT),
+        (Shelf::Decors, Some(theme::DECOR), desk.project.decors.len(), theme::TEXT),
     ];
     let row = |ui: &mut egui::Ui, said: &str, dot: Option<Color32>, count: usize, chosen: bool, colour: Color32| -> egui::Response {
         let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::click());
@@ -213,22 +237,21 @@ pub fn project(ui: &mut egui::Ui, work: &mut Work) {
             ui.add_space(8.0);
         }
         let said = if shelf == Shelf::Favourites { "★ Favourites".to_string() } else { shelf.name().to_string() };
-        if row(ui, &said, dot, count, work.home.shelf == shelf && work.home.sought.is_empty(), colour).clicked() {
-            (work.home.shelf, work.home.sought) = (shelf, String::new());
+        if row(ui, &said, dot, count, desk.home.shelf == shelf && desk.home.sought.is_empty(), colour).clicked() {
+            (desk.home.shelf, desk.home.sought) = (shelf, String::new());
         }
     }
     // (The things drawn: in the Resources.)
-    let drawn = std::fs::read_dir(work.session.library().images())
+    let drawn = std::fs::read_dir(desk.home.session.library().images())
         .map_or(0, |files| files.flatten().filter(|file| file.path().extension().is_some_and(|own| own == "png")).count());
     if row(ui, "Drawn Objects", Some(theme::ASSETS), drawn, false, theme::TEXT).on_hover_text("in the Resources space").clicked() {
-        work.resources.show_drawn();
-        work.session.ask(workshop_base::ask::Ask::Go(Space::Assets));
+        desk.home.session.ask(Ask::Drawn);
     }
     ui.add_space(8.0);
-    for (shelf, count, colour) in [(Shelf::Shared, work.project.shared.len(), theme::TEXT), (Shelf::Bin, work.project.binned.len(), theme::WEAK)] {
+    for (shelf, count, colour) in [(Shelf::Shared, desk.project.shared.len(), theme::TEXT), (Shelf::Bin, desk.project.binned.len(), theme::WEAK)] {
         let said = shelf.name();
-        if row(ui, said, None, count, work.home.shelf == shelf && work.home.sought.is_empty(), colour).clicked() {
-            (work.home.shelf, work.home.sought) = (shelf, String::new());
+        if row(ui, said, None, count, desk.home.shelf == shelf && desk.home.sought.is_empty(), colour).clicked() {
+            (desk.home.shelf, desk.home.sought) = (shelf, String::new());
         }
     }
 }
@@ -236,15 +259,15 @@ pub fn project(ui: &mut egui::Ui, work: &mut Work) {
 // --- The files ---
 
 /// The files the shelf shows (or those that answer what is sought), sorted.
-fn shown(work: &Work) -> Vec<Entry> {
-    let home = &work.home;
+fn shown(desk: &Desk) -> Vec<Entry> {
+    let home = &desk.home;
     let sought = film::words::plain(home.sought.trim());
     let mut entries: Vec<Entry> = if !sought.is_empty() {
-        work.project
+        desk.project
             .films
             .iter()
-            .chain(&work.project.decors)
-            .chain(&work.project.shared)
+            .chain(&desk.project.decors)
+            .chain(&desk.project.shared)
             .filter(|entry| {
                 let file = entry.path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
                 [entry.title.as_str(), file.as_str(), entry.about.as_str()]
@@ -257,20 +280,20 @@ fn shown(work: &Work) -> Vec<Entry> {
             .collect()
     } else {
         match home.shelf {
-            Shelf::Recent => work.project.recent().into_iter().take(60).cloned().collect(),
-            Shelf::Favourites => work
+            Shelf::Recent => desk.project.recent().into_iter().take(60).cloned().collect(),
+            Shelf::Favourites => desk
                 .project
                 .films
                 .iter()
-                .chain(&work.project.decors)
-                .chain(&work.project.shared)
+                .chain(&desk.project.decors)
+                .chain(&desk.project.shared)
                 .filter(|entry| home.favourites.contains(&entry.path))
                 .cloned()
                 .collect(),
-            Shelf::Films => work.project.films.clone(),
-            Shelf::Decors => work.project.decors.clone(),
-            Shelf::Shared => work.project.shared.clone(),
-            Shelf::Bin => work.project.binned.clone(),
+            Shelf::Films => desk.project.films.clone(),
+            Shelf::Decors => desk.project.decors.clone(),
+            Shelf::Shared => desk.project.shared.clone(),
+            Shelf::Bin => desk.project.binned.clone(),
         }
     };
     let (column, back) = home.sort;
@@ -293,33 +316,34 @@ fn shown(work: &Work) -> Vec<Entry> {
 const COLUMNS: [(&str, f32, Column); 4] =
     [("Kind", 70.0, Column::Kind), ("Places · Size", 220.0, Column::Places), ("Scenes", 60.0, Column::Scenes), ("Modified", 100.0, Column::Changed)];
 
-pub fn list(ui: &mut egui::Ui, work: &mut Work) {
+pub fn list(ui: &mut egui::Ui, home: &mut Home, project: &mut Project) {
+    let desk = &mut Desk { home, project };
     let context = ui.ctx().clone();
-    tools(ui, work);
+    tools(ui, desk);
     // --- Where one is, how it is seen ---
-    let entries = shown(work);
-    if work.chosen.is_none()
-        && let Some(asked) = work.session.launch.home_file.clone()
+    let entries = shown(desk);
+    if desk.home.chosen.is_none()
+        && let Some(asked) = desk.home.session.launch.home_file.clone()
     {
-        work.chosen = work
+        desk.home.chosen = desk
             .project
             .films
             .iter()
-            .chain(&work.project.decors)
+            .chain(&desk.project.decors)
             .find(|entry| entry.path.file_stem().is_some_and(|stem| stem.to_string_lossy() == asked))
             .map(|entry| entry.path.clone());
     }
-    let (entries, sections) = grouped_decors(work, entries);
-    head(ui, work, entries.len());
-    let chosen_at = entries.iter().position(|entry| work.chosen.as_ref() == Some(&entry.path));
+    let (entries, sections) = grouped_decors(desk, entries);
+    head(ui, desk, entries.len());
+    let chosen_at = entries.iter().position(|entry| desk.home.chosen.as_ref() == Some(&entry.path));
     let clicked = match &sections {
-        Some(sections) => grouped(ui, work, &context, &entries, sections, chosen_at),
-        None if work.home.grid => grid(ui, work, &context, &entries, chosen_at),
-        None => table(ui, work, &context, &entries, chosen_at),
+        Some(sections) => grouped(ui, desk, &context, &entries, sections, chosen_at),
+        None if desk.home.grid => grid(ui, desk, &context, &entries, chosen_at),
+        None => table(ui, desk, &context, &entries, chosen_at),
     };
     if entries.is_empty() {
-        let said = match work.home.shelf {
-            _ if !work.home.sought.trim().is_empty() => "nothing answers this search",
+        let said = match desk.home.shelf {
+            _ if !desk.home.sought.trim().is_empty() => "nothing answers this search",
             Shelf::Favourites => "no favourite yet: ★ in the Preview",
             Shelf::Bin => "the bin is empty",
             _ => "nothing here",
@@ -327,22 +351,22 @@ pub fn list(ui: &mut egui::Ui, work: &mut Work) {
         ui.label(theme::weak(said));
     }
     if let Some((at, twice)) = clicked {
-        choose(work, &entries[at]);
-        if twice && work.home.shelf != Shelf::Bin {
+        choose(desk, &entries[at]);
+        if twice && desk.home.shelf != Shelf::Bin {
             let entry = entries[at].clone();
-            work.open(&entry);
+            open(&desk.home.session, &entry);
         }
     }
-    keys(ui, work, &entries, chosen_at);
+    keys(ui, desk, &entries, chosen_at);
 }
 
 /// The tools: open (any file of the project); sought in all the project.
-fn tools(ui: &mut egui::Ui, work: &mut Work) {
+fn tools(ui: &mut egui::Ui, desk: &mut Desk) {
     let tools = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width(), 34.0));
     ui.painter().rect_filled(tools, 0.0, theme::TOOLS);
     let mut bar = ui.new_child(egui::UiBuilder::new().max_rect(tools.shrink2(vec2(6.0, 5.0))).layout(egui::Layout::left_to_right(egui::Align::Center)));
     bar.set_clip_rect(tools.intersect(ui.clip_rect()));
-    let mut all: Vec<Entry> = work.project.films.iter().chain(&work.project.decors).cloned().collect();
+    let mut all: Vec<Entry> = desk.project.films.iter().chain(&desk.project.decors).cloned().collect();
     all.sort_by_key(|entry| film::words::plain(&entry.title));
     bar.menu_button("Open…", |ui| {
         ui.set_max_height(420.0);
@@ -350,39 +374,39 @@ fn tools(ui: &mut egui::Ui, work: &mut Work) {
             for entry in &all {
                 let said = RichText::new(format!("{}  ·  {}", entry.title, entry.kind.word())).color(colour_of(entry.kind));
                 if ui.button(said).clicked() {
-                    work.open(entry);
+                    open(&desk.home.session, entry);
                     ui.close();
                 }
             }
         });
     });
     bar.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        let field = ui.add(egui::TextEdit::singleline(&mut work.home.sought).hint_text("Search the project  (Ctrl K)").desired_width(280.0));
+        let field = ui.add(egui::TextEdit::singleline(&mut desk.home.sought).hint_text("Search the project  (Ctrl K)").desired_width(280.0));
         if ui.input(|input| input.modifiers.command && input.key_pressed(egui::Key::K)) {
             field.request_focus();
         }
-        if !work.home.sought.is_empty() && ui.small_button("✕").clicked() {
-            work.home.sought.clear();
+        if !desk.home.sought.is_empty() && ui.small_button("✕").clicked() {
+            desk.home.sought.clear();
         }
     });
     ui.advance_cursor_after_rect(tools);
 }
 
 /// Where one is, how many files, the list or the grid, what was said.
-fn head(ui: &mut egui::Ui, work: &mut Work, count: usize) {
+fn head(ui: &mut egui::Ui, desk: &mut Desk, count: usize) {
     let head = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width(), 26.0));
     ui.painter().rect_filled(head, 0.0, theme::TABS);
-    let title = if work.home.sought.trim().is_empty() { work.home.shelf.name().to_string() } else { format!("\"{}\" in the project", work.home.sought.trim()) };
+    let title = if desk.home.sought.trim().is_empty() { desk.home.shelf.name().to_string() } else { format!("\"{}\" in the project", desk.home.sought.trim()) };
     ui.painter().text(head.left_center() + vec2(10.0, 0.0), egui::Align2::LEFT_CENTER, title, FontId::proportional(theme::BODY), theme::STRONG);
     let mut head_ui = ui.new_child(egui::UiBuilder::new().max_rect(head.shrink2(vec2(8.0, 2.0))).layout(egui::Layout::right_to_left(egui::Align::Center)));
-    if head_ui.selectable_label(!work.home.grid, "List").clicked() {
-        work.home.grid = false;
+    if head_ui.selectable_label(!desk.home.grid, "List").clicked() {
+        desk.home.grid = false;
     }
-    if head_ui.selectable_label(work.home.grid, "Grid").clicked() {
-        work.home.grid = true;
+    if head_ui.selectable_label(desk.home.grid, "Grid").clicked() {
+        desk.home.grid = true;
     }
     head_ui.label(theme::text(format!("{count} file{}", if count > 1 { "s" } else { "" }), theme::SMALL, theme::WEAK));
-    if let Some(said) = &work.home.said {
+    if let Some(said) = &desk.home.said {
         head_ui.label(theme::text(said, theme::SMALL, theme::FAINT));
     }
     ui.advance_cursor_after_rect(head);
@@ -397,7 +421,7 @@ fn grid_columns(width: f32) -> usize {
 }
 
 /// A grid of their pictures; the one clicked (twice?).
-fn grid(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entries: &[Entry], chosen_at: Option<usize>) -> Option<(usize, bool)> {
+fn grid(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entries: &[Entry], chosen_at: Option<usize>) -> Option<(usize, bool)> {
     let mut clicked = None;
     let columns = grid_columns(ui.available_width());
     let rows = entries.len().div_ceil(columns);
@@ -407,7 +431,7 @@ fn grid(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entries: &[
                 ui.add_space(8.0);
                 ui.spacing_mut().item_spacing.x = 10.0;
                 for (at, entry) in entries.iter().enumerate().take(((row + 1) * columns).min(entries.len())).skip(row * columns) {
-                    let response = grid_card(ui, work, context, entry, Some(at) == chosen_at);
+                    let response = grid_card(ui, desk, context, entry, Some(at) == chosen_at);
                     if response.clicked() || response.double_clicked() {
                         clicked = Some((at, response.double_clicked()));
                     }
@@ -421,11 +445,11 @@ fn grid(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entries: &[
 
 /// The Decors shelf (nothing sought): its decors by the kind of place they
 /// are (`library/tables/place_kinds.txt`), in that order, and the sections; none else.
-fn grouped_decors(work: &Work, entries: Vec<Entry>) -> (Vec<Entry>, Option<Vec<(PlaceKind, usize)>>) {
-    if work.home.shelf != Shelf::Decors || !work.home.sought.trim().is_empty() {
+fn grouped_decors(desk: &Desk, entries: Vec<Entry>) -> (Vec<Entry>, Option<Vec<(PlaceKind, usize)>>) {
+    if desk.home.shelf != Shelf::Decors || !desk.home.sought.trim().is_empty() {
         return (entries, None);
     }
-    let kinds = workshop_base::project::place_kinds(work.session.library());
+    let kinds = workshop_base::project::place_kinds(desk.home.session.library());
     let kind_of = |entry: &Entry| {
         let name = entry.path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
         workshop_decor::decor_kind(&kinds, &name, &entry.text)
@@ -439,15 +463,15 @@ fn grouped_decors(work: &Work, entries: Vec<Entry>) -> (Vec<Entry>, Option<Vec<(
 /// grid or the list; the one clicked (twice?).
 fn grouped(
     ui: &mut egui::Ui,
-    work: &mut Work,
+    desk: &mut Desk,
     context: &egui::Context,
     entries: &[Entry],
     sections: &[(PlaceKind, usize)],
     chosen_at: Option<usize>,
 ) -> Option<(usize, bool)> {
     let mut clicked = None;
-    let columns = if work.home.grid { grid_columns(ui.available_width()) } else { 1 };
-    let name_width = if work.home.grid { 0.0 } else { table_header(ui, work) };
+    let columns = if desk.home.grid { grid_columns(ui.available_width()) } else { 1 };
+    let name_width = if desk.home.grid { 0.0 } else { table_header(ui, desk) };
     egui::ScrollArea::vertical().id_salt("home sections").auto_shrink(false).show(ui, |ui| {
         let mut first = 0;
         for (kind, count) in sections {
@@ -460,10 +484,10 @@ fn grouped(
             ui.add_space(4.0);
             let range: Vec<usize> = (first..first + count).collect();
             first += count;
-            if !work.home.grid {
+            if !desk.home.grid {
                 ui.spacing_mut().item_spacing.y = 0.0;
                 for at in range {
-                    let response = table_row(ui, work, context, &entries[at], Some(at) == chosen_at, name_width);
+                    let response = table_row(ui, desk, context, &entries[at], Some(at) == chosen_at, name_width);
                     if response.clicked() || response.double_clicked() {
                         clicked = Some((at, response.double_clicked()));
                     }
@@ -475,7 +499,7 @@ fn grouped(
                     ui.add_space(8.0);
                     ui.spacing_mut().item_spacing.x = 10.0;
                     for at in row {
-                        let response = grid_card(ui, work, context, &entries[*at], Some(*at) == chosen_at);
+                        let response = grid_card(ui, desk, context, &entries[*at], Some(*at) == chosen_at);
                         if response.clicked() || response.double_clicked() {
                             clicked = Some((*at, response.double_clicked()));
                         }
@@ -489,7 +513,7 @@ fn grouped(
 }
 
 /// A file's card: its picture (a star if a favourite), its title, its kind and age.
-fn grid_card(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entry: &Entry, chosen: bool) -> egui::Response {
+fn grid_card(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entry: &Entry, chosen: bool) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(CARD, Sense::click());
     let fill = if chosen {
         theme::CHOSEN
@@ -500,8 +524,8 @@ fn grid_card(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entry:
     };
     ui.painter().rect_filled(rect, 3.0, fill);
     let picture = Rect::from_min_size(rect.min + vec2(6.0, 6.0), vec2(CARD.x - 12.0, 96.0));
-    paint_picture(ui.painter(), &mut work.home, context, entry, picture);
-    if work.home.favourites.contains(&entry.path) {
+    paint_picture(ui.painter(), &mut desk.home, context, entry, picture);
+    if desk.home.favourites.contains(&entry.path) {
         workshop_base::icons::star(ui.painter(), Rect::from_min_size(picture.min + vec2(4.0, 4.0), vec2(12.0, 12.0)), true, theme::FILM);
     }
     let painter = ui.painter_at(rect);
@@ -524,13 +548,13 @@ fn sorted_by(sort: (Column, bool), column: Column) -> (Column, bool) {
 }
 
 /// A table: the header sorts; the one clicked (twice?).
-fn table(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entries: &[Entry], chosen_at: Option<usize>) -> Option<(usize, bool)> {
+fn table(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entries: &[Entry], chosen_at: Option<usize>) -> Option<(usize, bool)> {
     let mut clicked = None;
-    let name_width = table_header(ui, work);
+    let name_width = table_header(ui, desk);
     egui::ScrollArea::vertical().id_salt("home list").auto_shrink(false).show_rows(ui, 44.0, entries.len(), |ui, range| {
         ui.spacing_mut().item_spacing.y = 0.0;
         for at in range {
-            let response = table_row(ui, work, context, &entries[at], Some(at) == chosen_at, name_width);
+            let response = table_row(ui, desk, context, &entries[at], Some(at) == chosen_at, name_width);
             if response.clicked() || response.double_clicked() {
                 clicked = Some((at, response.double_clicked()));
             }
@@ -540,7 +564,7 @@ fn table(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entries: &
 }
 
 /// The table's header, each column sorting; the name's width.
-fn table_header(ui: &mut egui::Ui, work: &mut Work) -> f32 {
+fn table_header(ui: &mut egui::Ui, desk: &mut Desk) -> f32 {
     let fixed: f32 = COLUMNS.iter().map(|(_, width, _)| width).sum::<f32>() + 76.0;
     let (header, _) = ui.allocate_exact_size(vec2(ui.available_width(), 22.0), Sense::hover());
     ui.painter().rect_filled(header, 0.0, theme::TOOLS);
@@ -549,8 +573,8 @@ fn table_header(ui: &mut egui::Ui, work: &mut Work) -> f32 {
     for (word, width, column) in std::iter::once(("Name", name_width, Column::Name)).chain(COLUMNS) {
         let room = Rect::from_min_max(pos2(x, header.top()), pos2(x + width - 6.0, header.bottom()));
         let pressed = ui.interact(room, ui.id().with(("colonne", word)), Sense::click());
-        let sorted = work.home.sort.0 == column;
-        let said = if sorted { format!("{word} {}", if work.home.sort.1 { "▼" } else { "▲" }) } else { word.to_string() };
+        let sorted = desk.home.sort.0 == column;
+        let said = if sorted { format!("{word} {}", if desk.home.sort.1 { "▼" } else { "▲" }) } else { word.to_string() };
         ui.painter().text(
             pos2(x, header.center().y),
             egui::Align2::LEFT_CENTER,
@@ -559,7 +583,7 @@ fn table_header(ui: &mut egui::Ui, work: &mut Work) -> f32 {
             if sorted || pressed.hovered() { theme::STRONG } else { theme::WEAK },
         );
         if pressed.on_hover_text("sort by this (again: reversed)").clicked() {
-            work.home.sort = sorted_by(work.home.sort, column);
+            desk.home.sort = sorted_by(desk.home.sort, column);
         }
         x += width;
     }
@@ -567,7 +591,7 @@ fn table_header(ui: &mut egui::Ui, work: &mut Work) -> f32 {
 }
 
 /// A row of the table: its picture, its title (a star if a favourite) and file, its kind, places, scenes, age.
-fn table_row(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entry: &Entry, chosen: bool, name_width: f32) -> egui::Response {
+fn table_row(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entry: &Entry, chosen: bool, name_width: f32) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 44.0), Sense::click());
     let painter = ui.painter_at(rect);
     let fill = if chosen {
@@ -580,10 +604,10 @@ fn table_row(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entry:
     painter.rect_filled(rect, 0.0, fill);
     painter.hline(rect.x_range(), rect.bottom() - 0.5, Stroke::new(1.0_f32, theme::TOOLS));
     let picture = Rect::from_min_size(rect.min + vec2(8.0, 4.0), vec2(64.0, 36.0));
-    paint_picture(&painter, &mut work.home, context, entry, picture);
+    paint_picture(&painter, &mut desk.home, context, entry, picture);
     let font = FontId::proportional(theme::BODY);
     let mut x = rect.left() + 8.0 + 76.0;
-    let star = if work.home.favourites.contains(&entry.path) { "★ " } else { "" };
+    let star = if desk.home.favourites.contains(&entry.path) { "★ " } else { "" };
     painter.text(pos2(x, rect.top() + 14.0), egui::Align2::LEFT_CENTER, format!("{star}{}", entry.title), font.clone(), theme::STRONG);
     let file = entry.path.file_name().unwrap_or_default().to_string_lossy().into_owned();
     painter.text(
@@ -595,7 +619,7 @@ fn table_row(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entry:
     );
     x += name_width;
     let places = if entry.kind == Kind::Film {
-        entry.places.iter().map(|place| place_said(&work.session, place)).collect::<Vec<_>>().join(", ")
+        entry.places.iter().map(|place| place_said(&desk.home.session, place)).collect::<Vec<_>>().join(", ")
     } else {
         entry.about.clone()
     };
@@ -620,7 +644,7 @@ fn after_arrows(now: usize, count: usize, step: i64, grid: bool, [up, down, left
 }
 
 /// The keys, the pointer over it: ↑ ↓ (and ← → in the grid) another; Enter opens; Delete: the bin.
-fn keys(ui: &egui::Ui, work: &mut Work, entries: &[Entry], chosen_at: Option<usize>) {
+fn keys(ui: &egui::Ui, desk: &mut Desk, entries: &[Entry], chosen_at: Option<usize>) {
     if !ui.ui_contains_pointer() || ui.ctx().wants_keyboard_input() || entries.is_empty() {
         return;
     }
@@ -635,40 +659,41 @@ fn keys(ui: &egui::Ui, work: &mut Work, entries: &[Entry], chosen_at: Option<usi
             input.key_pressed(Key::Delete),
         )
     });
-    let grid = work.home.grid;
+    let grid = desk.home.grid;
     let step = if grid { ((ui.available_width() - 12.0) / 190.0).floor().max(1.0) as i64 } else { 1 };
     if up || down || (grid && (left || right)) {
         let entry = entries[after_arrows(chosen_at.unwrap_or(0), entries.len(), step, grid, [up, down, left, right])].clone();
-        choose(work, &entry);
+        choose(desk, &entry);
     }
-    if enter && let Some(entry) = chosen_at.map(|at| entries[at].clone()).filter(|_| work.home.shelf != Shelf::Bin) {
-        work.open(&entry);
+    if enter && let Some(entry) = chosen_at.map(|at| entries[at].clone()).filter(|_| desk.home.shelf != Shelf::Bin) {
+        open(&desk.home.session, &entry);
     }
     if delete && chosen_at.is_some() {
-        work.home.trashing = true;
+        desk.home.trashing = true;
     }
 }
 
 /// A file chosen: what is being done to the one before let go.
-fn choose(work: &mut Work, entry: &Entry) {
-    if work.chosen.as_ref() != Some(&entry.path) {
-        (work.home.renaming, work.home.trashing, work.home.erasing) = (None, false, false);
+fn choose(desk: &mut Desk, entry: &Entry) {
+    if desk.home.chosen.as_ref() != Some(&entry.path) {
+        (desk.home.renaming, desk.home.trashing, desk.home.erasing) = (None, false, false);
     }
-    work.chosen = Some(entry.path.clone());
+    desk.home.chosen = Some(entry.path.clone());
 }
 
 // --- The Preview ---
 
-pub fn preview(ui: &mut egui::Ui, work: &mut Work) {
-    let Some(entry) = work.chosen.clone().and_then(|path| work.project.entry(&path).cloned()) else {
+pub fn preview(ui: &mut egui::Ui, home: &mut Home, project: &mut Project) {
+    let desk = &mut Desk { home, project };
+    let Some(entry) = desk.home.chosen.clone().and_then(|path| desk.project.entry(&path).cloned()) else {
         ui.add_space(8.0);
         ui.label(theme::weak("Choose a file to see it here; a double-click opens it."));
         return;
     };
     let context = ui.ctx().clone();
-    let binned = work.project.binned.iter().any(|known| known.path == entry.path);
+    let binned = desk.project.binned.iter().any(|known| known.path == entry.path);
     egui::ScrollArea::vertical().id_salt("home preview").auto_shrink(false).show(ui, |ui| {
-        preview_picture(ui, work, &context, &entry, binned);
+        preview_picture(ui, desk, &context, &entry, binned);
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             ui.add_space(8.0);
@@ -680,17 +705,17 @@ pub fn preview(ui: &mut egui::Ui, work: &mut Work) {
         });
         // --- Details ---
         section(ui, "Details");
-        let problems = (entry.kind == Kind::Film && !binned).then(|| problems_of(work, &entry));
-        let used = films_set_in(work, &entry);
-        details(ui, work, &entry, problems, &used);
+        let problems = (entry.kind == Kind::Film && !binned).then(|| problems_of(desk, &entry));
+        let used = films_set_in(desk, &entry);
+        details(ui, desk, &entry, problems, &used);
         // --- What to do with it ---
         ui.add_space(10.0);
         if binned {
-            bin_actions(ui, work, &entry);
+            bin_actions(ui, desk, &entry);
         } else {
-            actions(ui, work, &entry, &used);
+            actions(ui, desk, &entry, &used);
         }
-        if let Some(said) = &work.home.said {
+        if let Some(said) = &desk.home.said {
             ui.add_space(6.0);
             ui.horizontal(|ui| {
                 ui.add_space(8.0);
@@ -701,10 +726,10 @@ pub fn preview(ui: &mut egui::Ui, work: &mut Work) {
 }
 
 /// Its picture: ▶ plays a film.
-fn preview_picture(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, entry: &Entry, binned: bool) {
+fn preview_picture(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entry: &Entry, binned: bool) {
     let room = Rect::from_min_size(ui.cursor().min + vec2(8.0, 8.0), vec2(ui.available_width() - 16.0, 180.0));
     let picture = ui.allocate_rect(room.expand2(vec2(0.0, 8.0)), Sense::click());
-    paint_picture(ui.painter(), &mut work.home, context, entry, room);
+    paint_picture(ui.painter(), &mut desk.home, context, entry, room);
     ui.painter().rect_stroke(room, 0.0, Stroke::new(1.0_f32, theme::GAP), StrokeKind::Outside);
     if entry.kind == Kind::Film && !binned {
         let button = Rect::from_center_size(room.center(), vec2(44.0, 44.0));
@@ -716,32 +741,31 @@ fn preview_picture(ui: &mut egui::Ui, work: &mut Work, context: &egui::Context, 
             Stroke::NONE,
         ));
         if picture.on_hover_text("open it and play it").clicked() {
-            work.open(entry);
-            work.films.go(0);
-            work.films.playing = true;
+            open(&desk.home.session, entry);
+            desk.home.session.ask(Ask::Play);
         }
     }
 }
 
 /// A film's errors and remarks, kept while its file does not change.
-fn problems_of(work: &mut Work, entry: &Entry) -> (usize, usize) {
-    let known = work.home.problems.get(&entry.path).filter(|(when, ..)| *when == entry.changed).map(|(_, wrong, remarked)| (*wrong, *remarked));
+fn problems_of(desk: &mut Desk, entry: &Entry) -> (usize, usize) {
+    let known = desk.home.problems.get(&entry.path).filter(|(when, ..)| *when == entry.changed).map(|(_, wrong, remarked)| (*wrong, *remarked));
     known.unwrap_or_else(|| {
-        let told = film::service::diagnostics(&entry.text, work.session.tables());
+        let told = film::service::diagnostics(&entry.text, desk.home.session.tables());
         let wrong = told.iter().filter(|told| told.is_error()).count();
         let made = (wrong, told.len() - wrong);
-        work.home.problems.insert(entry.path.clone(), (entry.changed, made.0, made.1));
+        desk.home.problems.insert(entry.path.clone(), (entry.changed, made.0, made.1));
         made
     })
 }
 
 /// The films set in a decor (none for another file).
-fn films_set_in(work: &Work, entry: &Entry) -> Vec<String> {
+fn films_set_in(desk: &Desk, entry: &Entry) -> Vec<String> {
     if entry.kind != Kind::Decor {
         return Vec::new();
     }
     let word = film::words::plain(&entry.path.file_stem().unwrap_or_default().to_string_lossy());
-    work.project.films.iter().filter(|film| film.places.iter().any(|place| film::words::plain(place) == word)).map(|film| film.title.clone()).collect()
+    desk.project.films.iter().filter(|film| film.places.iter().any(|place| film::words::plain(place) == word)).map(|film| film.title.clone()).collect()
 }
 
 /// A film's state, as its errors and remarks say it, and its colour.
@@ -760,7 +784,7 @@ fn lines_said(text: &str) -> usize {
 
 /// The details: its kind; a film's scenes, places, characters, lines said; another's size and the films set there;
 /// its lines, its state, when it changed.
-fn details(ui: &mut egui::Ui, work: &Work, entry: &Entry, problems: Option<(usize, usize)>, used: &[String]) {
+fn details(ui: &mut egui::Ui, desk: &Desk, entry: &Entry, problems: Option<(usize, usize)>, used: &[String]) {
     egui::Grid::new("home details").num_columns(2).spacing([12.0, 6.0]).min_col_width(84.0).show(ui, |ui| {
         let pair = |ui: &mut egui::Ui, key: &str, value: RichText| {
             ui.horizontal(|ui| {
@@ -773,14 +797,14 @@ fn details(ui: &mut egui::Ui, work: &Work, entry: &Entry, problems: Option<(usiz
         pair(ui, "Kind", RichText::new(entry.kind.word()).color(colour_of(entry.kind)));
         if entry.kind == Kind::Film {
             pair(ui, "Scenes", RichText::new(entry.scenes.to_string()));
-            pair(ui, "Places", RichText::new(entry.places.iter().map(|place| place_said(&work.session, place)).collect::<Vec<_>>().join(", ")));
+            pair(ui, "Places", RichText::new(entry.places.iter().map(|place| place_said(&desk.home.session, place)).collect::<Vec<_>>().join(", ")));
             let cast: Vec<String> = entry
                 .cast
                 .iter()
                 .take(10)
                 .map(|name| {
                     let plain = film::words::plain(name);
-                    work.session.tables().monsters.get(&plain).map_or_else(|| name.clone(), |(_, game)| game.clone())
+                    desk.home.session.tables().monsters.get(&plain).map_or_else(|| name.clone(), |(_, game)| game.clone())
                 })
                 .collect();
             let more = entry.cast.len().saturating_sub(10);
@@ -812,18 +836,18 @@ fn section(ui: &mut egui::Ui, name: &str) {
 }
 
 /// A file of the project: open, duplicate, rename, the bin, a favourite, where it is.
-fn actions(ui: &mut egui::Ui, work: &mut Work, entry: &Entry, used: &[String]) {
+fn actions(ui: &mut egui::Ui, desk: &mut Desk, entry: &Entry, used: &[String]) {
     let half = ((ui.available_width() - 24.0) / 2.0).max(60.0);
     ui.horizontal(|ui| {
         ui.add_space(8.0);
         if ui.add_sized([half, 26.0], egui::Button::new(RichText::new("Open").strong().color(theme::STRONG)).fill(theme::DECOR)).clicked() {
-            work.open(entry);
+            open(&desk.home.session, entry);
         }
         if ui.add_sized([half, 26.0], egui::Button::new("Duplicate")).on_hover_text("a copy, under another file name").clicked() {
-            work.home.said = Some(match duplicated(entry) {
+            desk.home.said = Some(match duplicated(entry) {
                 Ok(path) => {
-                    work.project = Project::read(&work.session);
-                    work.chosen = Some(path.clone());
+                    *desk.project = Project::read(&desk.home.session);
+                    desk.home.chosen = Some(path.clone());
                     format!("copied: {}", path.file_name().unwrap_or_default().to_string_lossy())
                 }
                 Err(why) => why,
@@ -834,32 +858,32 @@ fn actions(ui: &mut egui::Ui, work: &mut Work, entry: &Entry, used: &[String]) {
         ui.add_space(8.0);
         if ui.add_sized([half, 26.0], egui::Button::new("Rename")).clicked() {
             let stem = entry.path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
-            work.home.renaming = Some((stem, true));
+            desk.home.renaming = Some((stem, true));
         }
         if ui.add_sized([half, 26.0], egui::Button::new(RichText::new("Bin").color(theme::WRONG))).clicked() {
-            work.home.trashing = true;
+            desk.home.trashing = true;
         }
     });
     ui.horizontal(|ui| {
         ui.add_space(8.0);
-        let favourite = work.home.favourites.contains(&entry.path);
+        let favourite = desk.home.favourites.contains(&entry.path);
         if ui.selectable_label(favourite, if favourite { "★ Favourite" } else { "☆ Favourite" }).clicked() {
-            work.home.favourite(&entry.path);
+            desk.home.favourite(&entry.path);
         }
         if ui.button("Show in Explorer").clicked() {
             _ = std::process::Command::new("explorer").arg(format!("/select,{}", entry.path.display())).spawn();
         }
     });
-    renaming(ui, work, entry, used);
-    if work.home.trashing {
-        trashing(ui, work, entry);
+    renaming(ui, desk, entry, used);
+    if desk.home.trashing {
+        trashing(ui, desk, entry);
     }
 }
 
 /// Named anew: its file; a decor, in the films that are set there too, if asked.
-fn renaming(ui: &mut egui::Ui, work: &mut Work, entry: &Entry, used: &[String]) {
+fn renaming(ui: &mut egui::Ui, desk: &mut Desk, entry: &Entry, used: &[String]) {
     let mut done: Option<bool> = None;
-    if let Some((name, in_films)) = &mut work.home.renaming {
+    if let Some((name, in_films)) = &mut desk.home.renaming {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.add_space(8.0);
@@ -886,48 +910,43 @@ fn renaming(ui: &mut egui::Ui, work: &mut Work, entry: &Entry, used: &[String]) 
     }
     match done {
         Some(true) => {
-            let (name, in_films) = work.home.renaming.take().unwrap_or_default();
-            work.home.said = Some(match renamed(work, entry, &name, in_films) {
+            let (name, in_films) = desk.home.renaming.take().unwrap_or_default();
+            desk.home.said = Some(match renamed(desk, entry, &name, in_films) {
                 Ok(said) => said,
                 Err(why) => why,
             });
         }
-        Some(false) => work.home.renaming = None,
+        Some(false) => desk.home.renaming = None,
         None => {}
     }
 }
 
 /// Put in the bin: asked once more.
-fn trashing(ui: &mut egui::Ui, work: &mut Work, entry: &Entry) {
+fn trashing(ui: &mut egui::Ui, desk: &mut Desk, entry: &Entry) {
     ui.add_space(6.0);
     ui.horizontal_wrapped(|ui| {
         ui.add_space(8.0);
         ui.label(theme::text("Put this file in the Workshop's bin?", theme::SMALL, theme::WRONG));
         if ui.button("Yes").clicked() {
-            work.home.said = Some(match binned(&work.session, entry) {
+            desk.home.said = Some(match binned(&desk.home.session, entry) {
                 Ok(to) => {
-                    if work.film.as_ref() == Some(&entry.path) {
-                        work.film = None;
-                    }
-                    if work.decor.as_ref() == Some(&entry.path) {
-                        work.decor = None;
-                    }
-                    work.project = Project::read(&work.session);
-                    work.chosen = None;
+                    desk.home.session.ask(Ask::Moved { from: entry.path.clone(), to: None });
+                    *desk.project = Project::read(&desk.home.session);
+                    desk.home.chosen = None;
                     format!("in the bin: {}", to.file_name().unwrap_or_default().to_string_lossy())
                 }
                 Err(why) => why,
             });
-            work.home.trashing = false;
+            desk.home.trashing = false;
         }
         if ui.button("No").clicked() {
-            work.home.trashing = false;
+            desk.home.trashing = false;
         }
     });
 }
 
 /// A file of the bin: taken back where it was, or rubbed out for good (asked once more).
-fn bin_actions(ui: &mut egui::Ui, work: &mut Work, entry: &Entry) {
+fn bin_actions(ui: &mut egui::Ui, desk: &mut Desk, entry: &Entry) {
     ui.horizontal(|ui| {
         ui.add_space(8.0);
         if ui
@@ -935,37 +954,37 @@ fn bin_actions(ui: &mut egui::Ui, work: &mut Work, entry: &Entry) {
             .on_hover_text("in its folder, as before")
             .clicked()
         {
-            work.home.said = Some(match restored(&work.session, &entry.path) {
+            desk.home.said = Some(match restored(&desk.home.session, &entry.path) {
                 Ok(to) => {
-                    work.project = Project::read(&work.session);
-                    work.chosen = Some(to.clone());
+                    *desk.project = Project::read(&desk.home.session);
+                    desk.home.chosen = Some(to.clone());
                     format!("put back: {}", to.display())
                 }
                 Err(why) => why,
             });
         }
         if ui.button(RichText::new("Delete Permanently…").color(theme::WRONG)).clicked() {
-            work.home.erasing = true;
+            desk.home.erasing = true;
         }
     });
-    if work.home.erasing {
+    if desk.home.erasing {
         ui.add_space(6.0);
         ui.horizontal_wrapped(|ui| {
             ui.add_space(8.0);
             ui.label(theme::text("Erase this file forever? It cannot be taken back.", theme::SMALL, theme::WRONG));
             if ui.button("Erase").clicked() {
-                work.home.said = Some(match std::fs::remove_file(&entry.path) {
+                desk.home.said = Some(match std::fs::remove_file(&entry.path) {
                     Ok(()) => {
-                        work.project = Project::read(&work.session);
-                        work.chosen = None;
+                        *desk.project = Project::read(&desk.home.session);
+                        desk.home.chosen = None;
                         "erased".to_string()
                     }
                     Err(why) => why.to_string(),
                 });
-                work.home.erasing = false;
+                desk.home.erasing = false;
             }
             if ui.button("No").clicked() {
-                work.home.erasing = false;
+                desk.home.erasing = false;
             }
         });
     }
@@ -1034,7 +1053,7 @@ fn duplicated(entry: &Entry) -> Result<PathBuf, String> {
 }
 
 /// A file named anew; a decor, in the films set there too if asked; the open ones follow.
-fn renamed(work: &mut Work, entry: &Entry, name: &str, in_films: bool) -> Result<String, String> {
+fn renamed(desk: &mut Desk, entry: &Entry, name: &str, in_films: bool) -> Result<String, String> {
     let stem = film::words::plain(&name.trim().replace([' ', '-'], "_"));
     let old = entry.path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
     if stem.is_empty() || stem == old {
@@ -1048,7 +1067,7 @@ fn renamed(work: &mut Work, entry: &Entry, name: &str, in_films: bool) -> Result
     std::fs::rename(&entry.path, &to).map_err(|why| why.to_string())?;
     let mut changed = 0;
     if entry.kind == Kind::Decor && in_films {
-        for film in work.project.films.iter().filter(|film| film.places.iter().any(|place| film::words::plain(place) == film::words::plain(&old))) {
+        for film in desk.project.films.iter().filter(|film| film.places.iter().any(|place| film::words::plain(place) == film::words::plain(&old))) {
             let made: String = film
                 .text
                 .split_inclusive('\n')
@@ -1064,15 +1083,9 @@ fn renamed(work: &mut Work, entry: &Entry, name: &str, in_films: bool) -> Result
             }
         }
     }
-    if work.film.as_ref() == Some(&entry.path) {
-        work.film = Some(to.clone());
-    }
-    if work.decor.as_ref() == Some(&entry.path) {
-        work.decor = Some(to.clone());
-        work.decors.open(&to);
-    }
-    work.project = Project::read(&work.session);
-    work.chosen = Some(to);
+    desk.home.session.ask(Ask::Moved { from: entry.path.clone(), to: Some(to.clone()) });
+    *desk.project = Project::read(&desk.home.session);
+    desk.home.chosen = Some(to);
     Ok(format!("renamed \"{stem}\"{}", if changed > 0 { format!(", and in {changed} film{}", if changed > 1 { "s" } else { "" }) } else { String::new() }))
 }
 

@@ -7,7 +7,7 @@ A checklist. The window is `workshop/src/app.rs`. The parts are the `workshop_*`
 - **A panel of an existing space**: put it in that space's crate. For example, a Decor panel goes in `workshop_decor/src/panels/`, a Film panel in `workshop_film/src/`, a Resources panel in `workshop_resources/src/`.
 - **A new part** (a space, or a large tool): make it a crate of its own, `workshop_<part>/`.
   - Its `Cargo.toml` takes the workspace's fields and `[lints] workspace = true` (copy `workshop_picture/Cargo.toml`).
-  - Add it to `members` in the root `Cargo.toml` and as a dependency of `workshop/Cargo.toml`.
+  - Add it to `members` in the root `Cargo.toml`, with a `[profile.dev.package.workshop_<part>]` of its own there (`opt-level = 3`, `debug-assertions = false`, as the other parts: the Workshop is drawn each frame), and as a dependency of `workshop/Cargo.toml`.
   - Add its rows to the two crate tables of `ARCHITECTURE.md`: what it holds, and what it uses. `sh tools/rule.sh` fails until those tables and the manifests agree.
   - A part uses `workshop_base` and the parts below it, never `workshop`.
   - Say what it holds in its `lib.rs` doc, and add it to the tree and the table of `workshop/README.md`, "The code".
@@ -47,6 +47,7 @@ things.session.ask(Ask::Film { path, line });   // a film at a line (0: where it
 things.session.ask(Ask::Decor { path, line: 0 });
 things.session.ask(Ask::Dungeon(OpenDungeon::NewFight));
 things.session.ask(Ask::PlayFrom(line));
+things.session.ask(Ask::Moved { from, to: Some(to) });   // a file renamed: the one open follows
 things.session.ask(Ask::Go(Space::Assets));
 things.session.ask(Ask::Say("saved".to_string()));
 ```

@@ -175,7 +175,7 @@ The whole Decor space (Scene, Hierarchy, Inspector, Library, terrains, walls, wa
 
 ## Home
 
-The project at a glance (`workshop/src/home.rs`).
+The project at a glance (`workshop_home/`).
 - **The Project** (on the left): Recent, ★ Favourites, Films, Decors, Drawn Objects (a click: in the Resources), Shared Recipes (`uses`, `include`), Bin; how many of each.
 - **The Files** (in the middle):
   - **Open…**: all the films and decors, by their title; **Search the project** (Ctrl+K): the titles, the files, the places, those who play in them, and the words of their text;
@@ -367,7 +367,8 @@ The Workshop's **settings** (`workshop_emulator/src/settings.rs`) are a small `k
 The Workshop is several crates, a part each, so that a change to one part builds only that part and the window over it. In each, a module a subject; a big one is a folder, its `mod.rs` (or the crate's `lib.rs`) holding its state and what its files share. Each crate's `lib.rs` says what it holds and what it uses; `tools/rule.sh` (the building-block rule) lists the crates each may use.
 
 ```text
-workshop                       the window: menus, spaces, Home, Tools
+workshop                       the window: menus, spaces, Tools
+├── workshop_home              the Home
 ├── workshop_emulator          the Emulator space
 │   └── workshop_first         the first launch, the programs beside the Workshop
 ├── workshop_game              the Game space
@@ -388,7 +389,7 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 | Crate, module | What it holds |
 |---|---|
 | `workshop/`: `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state |
-| `workshop/`: `home.rs` | the Home |
+| `workshop_home/` | the Home: its shelves, the files as a table or a grid, the Preview and what is done with a file there (`open` asks the window for its space) |
 | `workshop_first/` | the first launch: the user's copy of the game checked (`check_rom`), the resources extracted step by step (`Phase`, `Event`), what goes wrong said for a person; the programs beside the Workshop (`program_beside`) |
 | `workshop_game/` | the Game space: `lib.rs` (the game open, its three columns), `game.rs` (a `.game` file as the space reads and writes it: its card, its chapters as boxes) |
 | `workshop/`: `spritecollab.rs`, `quant_tool.rs` | the Tools: SpriteCollab, an image converted |
@@ -397,7 +398,7 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 | `workshop_base/`: `session.rs`, `launch.rs` | what every space works with (`Session`: the library, the data, what is read of them and kept, `reload`), how the Workshop was launched (`LaunchOptions`) |
 | `workshop_base/`: `theme.rs`, `icons.rs` | the look: colours, sizes, icons drawn with lines |
 | `workshop_base/`: `project.rs`, `safe.rs`, `pick.rs` | the project's files (and the kinds of places, the library's films by their words), safe saves, the system's dialogs |
-| `workshop_base/`: `ask.rs` | the spaces, and what a part asks of the window (`Ask`: a file opened in its space, the film played from a line, a space, a window, a word said), pushed with `Session::ask` and done by `App::answer` once a frame |
+| `workshop_base/`: `ask.rs` | the spaces, and what a part asks of the window (`Ask`: a file opened in its space, the film played (from a line), a file moved, the things drawn shown, a space, a window, a word said), pushed with `Session::ask` and done by `App::answer` once a frame |
 | `workshop_base/`: `example.rs`, `tool_run.rs`, `own_sounds.rs`, `done.rs` | a line played as an example, a long piece of work on its thread, the own sounds read as samples, what a making asks of the Resources |
 | `workshop_script/` | the Film's Script: `lib.rs` (the film open, its state, the language's thread), `body.rs` (the text drawn and typed in, part after part), `head.rs` (the tabs, the head, the story view), `keys.rs` (the keys taken before the editor), `margin.rs` (the margin, the ends of lines, the ruler), `offers.rs` (what is offered as one types), `popups.rs` (the small windows over the text), `problems.rs` (the problems, the line's box, the status), `highlight.rs` (each piece in its colour), `completion.rs` (what may be typed), `knowledge.rs` (what is known of a word, portraits), `cast.rs` (who is in a scene), `text.rs` and `edits.rs` (where things are, the text changed), `plan.rs` (the film's plan), `wiki.rs` (the Wiki beside the text), `windows.rs` (the project's windows), `editor.rs` (laid out), `heard.rs` (sounds named); beside it `story.rs` (the film as a story), `typography.rs` (what is well written), `workspace.rs` (the whole project's films), `debug.rs` (a film looked into) |
 | `workshop_wiki/` | the Wiki's pages, a word each: `lib.rs` (a page made of a word and what is written of it, the words it goes with, a recipe's source), `written.rs` (the pages written by hand, `workshop_wiki/wiki/*.txt`: what a word does, its example), `made.rs` (a form as an author reads it, its parts, an example made from it), `search.rs` (the pages found, the best first), `catalogue.rs` (the words by family) |

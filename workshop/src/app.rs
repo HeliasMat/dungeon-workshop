@@ -109,9 +109,8 @@ pub struct Work {
     /// What every space works with (the library, the data, what is read of them).
     pub session: Arc<Session>,
     pub project: Project,
-    /// The Home's own; the file chosen there.
-    pub home: crate::home::Home,
-    pub chosen: Option<PathBuf>,
+    /// The Home's own (the file chosen there with it).
+    pub home: workshop_home::Home,
     /// The film and the decor open.
     pub film: Option<PathBuf>,
     pub decor: Option<PathBuf>,
@@ -130,24 +129,6 @@ pub struct Work {
     pub games: workshop_game::Games,
     /// The Emulator space's own.
     pub emulate: workshop_emulator::Emulate,
-}
-
-impl Work {
-    /// A file opened at once (the Home plays a film just opened), its space looked at.
-    pub fn open(&mut self, entry: &Entry) {
-        match entry.kind {
-            Kind::Film => self.film = Some(entry.path.clone()),
-            Kind::Decor => {
-                self.decor = Some(entry.path.clone());
-                self.decors.open(&entry.path);
-            }
-        }
-        self.session.ask(Ask::Go(match entry.kind {
-            Kind::Film => Space::Film,
-            Kind::Decor => Space::Decor,
-        }));
-        self.said = format!("opened: {}", entry.title);
-    }
 }
 
 /// The window.
@@ -169,8 +150,7 @@ impl App {
         theme::apply(context);
         let work = Work {
             project: Project::read(&session),
-            home: crate::home::Home::new(&session, context),
-            chosen: None,
+            home: workshop_home::Home::new(&session, context),
             film: None,
             decor: None,
             said: String::new(),
@@ -227,7 +207,7 @@ impl App {
                 cast: Vec::new(),
                 places: Vec::new(),
             });
-            app.work.open(&entry);
+            workshop_home::open(&app.work.session, &entry);
             app.answer();
         }
         // (`WORKSHOP_FOLDED="Transform,Resident"`: those components of the Inspector folded, for a picture.)
@@ -268,7 +248,7 @@ impl App {
                     let recent: Vec<Entry> = self.work.project.recent().into_iter().take(10).cloned().collect();
                     for entry in recent {
                         if ui.button(format!("{} — {}", entry.title, entry.kind.word())).clicked() {
-                            self.work.open(&entry);
+                            workshop_home::open(&self.work.session, &entry);
                         }
                     }
                 });
@@ -462,6 +442,25 @@ impl App {
                 Ask::PlayFrom(line) => {
                     self.work.films.go_to_line(line);
                     self.work.films.playing = true;
+                }
+                Ask::Play => {
+                    self.work.films.go(0);
+                    self.work.films.playing = true;
+                }
+                Ask::Moved { from, to } => {
+                    if self.work.film.as_ref() == Some(&from) {
+                        self.work.film.clone_from(&to);
+                    }
+                    if self.work.decor.as_ref() == Some(&from) {
+                        if let Some(to) = &to {
+                            self.work.decors.open(to);
+                        }
+                        self.work.decor = to;
+                    }
+                }
+                Ask::Drawn => {
+                    self.work.resources.show_drawn();
+                    self.space = Space::Assets;
                 }
                 Ask::SpriteCollab(dex) => self.spritecollab = Some(crate::spritecollab::Browser::new(&self.work.session, dex)),
                 Ask::Say(said) => self.work.said = said,
@@ -699,7 +698,7 @@ impl App {
             let file = match self.space {
                 Space::Film => self.work.film.clone(),
                 Space::Decor => self.work.decor.clone(),
-                _ => self.work.chosen.clone(),
+                _ => self.work.home.chosen.clone(),
             };
             let mark = if self.unsaved(self.space) && matches!(self.space, Space::Film | Space::Decor) { " •" } else { "" };
             ui.label(white(file.map_or("library".to_string(), |path| format!("{}{mark}", path.display()))));
@@ -750,7 +749,7 @@ impl App {
                 Ok(path) => {
                     self.work.project = Project::read(&self.work.session);
                     if let Some(entry) = self.work.project.films.iter().chain(&self.work.project.decors).find(|entry| entry.path == path).cloned() {
-                        self.work.open(&entry);
+                        workshop_home::open(&self.work.session, &entry);
                     }
                 }
                 Err(why) => self.work.said = why,
@@ -853,9 +852,9 @@ impl egui_dock::TabViewer for Panels<'_> {
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Panel) {
         match tab {
-            Panel::Project => crate::home::project(ui, self.work),
-            Panel::List => crate::home::list(ui, self.work),
-            Panel::Preview => crate::home::preview(ui, self.work),
+            Panel::Project => workshop_home::project(ui, &mut self.work.home, &mut self.work.project),
+            Panel::List => workshop_home::list(ui, &mut self.work.home, &mut self.work.project),
+            Panel::Preview => workshop_home::preview(ui, &mut self.work.home, &mut self.work.project),
             Panel::DecorScene => workshop_decor::scene::scene(ui, &mut self.work.decors),
             Panel::Hierarchy => workshop_decor::panels::hierarchy(ui, &mut self.work.decors),
             Panel::History => workshop_decor::panels::history(ui, &mut self.work.decors),

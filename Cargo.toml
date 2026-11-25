@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "engine", "film_core", "film_acting", "film_moving", "film_dungeon", "film_fights", "film_fishing", "film_view", "film_speech", "film", "language", "dive", "scene_player", "ds_export", "preview", "game", "workshop", "workshop_resources", "workshop_film", "workshop_decor", "workshop_script", "workshop_wiki", "workshop_dungeon", "workshop_music", "workshop_sound", "workshop_picture", "workshop_base", "workshop_game", "workshop_first", "workshop_emulator", "decor", "rom_formats", "media", "shell", "spritecollab", "stage_view", "dungeon_lsp", "emulator"]
+members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "engine", "film_core", "film_acting", "film_moving", "film_dungeon", "film_fights", "film_fishing", "film_view", "film_speech", "film", "language", "dive", "scene_player", "ds_export", "preview", "game", "workshop", "workshop_resources", "workshop_film", "workshop_decor", "workshop_script", "workshop_wiki", "workshop_dungeon", "workshop_music", "workshop_sound", "workshop_picture", "workshop_base", "workshop_game", "workshop_first", "workshop_emulator", "workshop_home", "decor", "rom_formats", "media", "shell", "spritecollab", "stage_view", "dungeon_lsp", "emulator"]
 
 # What every crate's manifest says alike (each takes it with `x.workspace = true`).
 [workspace.package]
@@ -213,5 +213,9 @@ opt-level = 3
 debug-assertions = false
 
 [profile.dev.package.workshop_emulator]
+opt-level = 3
+debug-assertions = false
+
+[profile.dev.package.workshop_home]
 opt-level = 3
 debug-assertions = false

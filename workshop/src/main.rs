@@ -24,7 +24,6 @@
 mod app;
 mod bug;
 mod capture;
-mod home;
 mod quant_tool;
 mod spritecollab;
 

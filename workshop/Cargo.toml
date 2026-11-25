@@ -28,6 +28,7 @@ workshop_emulator = { path = "../workshop_emulator" }
 workshop_film = { path = "../workshop_film" }
 workshop_first = { path = "../workshop_first" }
 workshop_game = { path = "../workshop_game" }
+workshop_home = { path = "../workshop_home" }
 workshop_resources = { path = "../workshop_resources" }
 workshop_script = { path = "../workshop_script" }
 eframe = { version = "0.32", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }

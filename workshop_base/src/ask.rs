@@ -1,8 +1,9 @@
 //! What a part of the Workshop asks of the window: a space looked at, a file
-//! opened in its space, the film played from a line, a window opened, a word
-//! said in the bar of state. A part pushes an `Ask` with `Session::ask`; the
-//! window (`workshop/src/app.rs`, `App::answer`) takes them all once a frame
-//! and does each. A part never reaches into another's state.
+//! opened in its space, the film played (from a line), a file moved, the
+//! things drawn shown, a window opened, a word said in the bar of state. A
+//! part pushes an `Ask` with `Session::ask`; the window
+//! (`workshop/src/app.rs`, `App::answer`) takes them all once a frame and
+//! does each. A part never reaches into another's state.
 
 use std::path::PathBuf;
 use std::sync::{Mutex, PoisonError};
@@ -81,6 +82,12 @@ pub enum Ask {
     Dungeon(OpenDungeon),
     /// The film open played from that line (1 the first).
     PlayFrom(usize),
+    /// The film open played from its start.
+    Play,
+    /// A file moved (renamed, or put in the bin: `None`): the film or the decor open follows it.
+    Moved { from: PathBuf, to: Option<PathBuf> },
+    /// The Resources looked at, on the things drawn.
+    Drawn,
     /// The SpriteCollab window, on a Pokédex number or not.
     SpriteCollab(Option<u32>),
     /// Said in the bar of state.

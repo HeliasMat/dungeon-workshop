@@ -4358,6 +4358,7 @@ dependencies = [
  "workshop_film",
  "workshop_first",
  "workshop_game",
+ "workshop_home",
  "workshop_resources",
  "workshop_script",
 ]
@@ -4457,6 +4458,17 @@ dependencies = [
  "eframe",
  "engine",
  "game",
+ "workshop_base",
+ "workshop_decor",
+]
+
+[[package]]
+name = "workshop_home"
+version = "0.2.0"
+dependencies = [
+ "decor",
+ "eframe",
+ "film",
  "workshop_base",
  "workshop_decor",
 ]
