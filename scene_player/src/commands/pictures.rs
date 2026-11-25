@@ -382,7 +382,7 @@ pub fn pack(piece: &Piece, context: &Arc<Context>) -> Result<(), String> {
     let dist = context.root().join("dist");
     let out = dist.join(&piece.name);
     _ = std::fs::remove_dir_all(&out);
-    crate::pack::pack(piece, data, &out.to_string_lossy(), &piece.art()?)?;
+    crate::pack::pack(&piece.path, &piece.tables, data, &out.to_string_lossy(), &piece.art()?)?;
     let zip = dist.join(format!("{}.zip", piece.name));
     let done = Process::new("tar").arg("-a").arg("-cf").arg(&zip).arg("-C").arg(&dist).arg(&piece.name).status();
     match done {

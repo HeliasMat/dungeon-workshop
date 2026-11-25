@@ -5,6 +5,9 @@
 use scenes::vocabulary::POKEMON;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+use ::film::tables::Tables;
 
 use engine::Who;
 
@@ -51,10 +54,9 @@ fn numbered(name: &str, numbers: &BTreeSet<u16>) -> bool {
     name.split(['_', '.']).next().and_then(|number| number.parse().ok()).is_some_and(|number| numbers.contains(&number))
 }
 
-/// The film of that piece in the folder `out`, ready to send.
-pub fn pack(piece: &crate::commands::Piece, data: &str, out: &str, art: &Art) -> Result<(), String> {
-    let path = piece.path.as_str();
-    let (lines, problems) = ::film::lines_of(Path::new(path), &POKEMON, piece.tables.clone())?;
+/// The film at `path`, compiled with those tables, in the folder `out`, ready to send.
+pub fn pack(path: &str, tables: &Arc<Tables>, data: &str, out: &str, art: &Art) -> Result<(), String> {
+    let (lines, problems) = ::film::lines_of(Path::new(path), &POKEMON, tables.clone())?;
     if let Some(problem) = problems.iter().find(|problem| !problem.is_remark()) {
         return Err(format!("{path}: {problem}"));
     }
@@ -119,7 +121,7 @@ pub fn pack(piece: &crate::commands::Piece, data: &str, out: &str, art: &Art) ->
     }
     size += folder_of(&layers, "props", |name| numbered(name, &things))?;
     for file in drawings {
-        let from = shell::art::ours(data, &piece.tables.project, &file);
+        let from = shell::art::ours(data, &tables.project, &file);
         size += copy(&from, &out.join("data/hand").join(&file))?;
         // (What it shows when it is read, if it has one.)
         let large = from.with_file_name(file.replace(".png", "_grand.png"));
@@ -128,7 +130,7 @@ pub fn pack(piece: &crate::commands::Piece, data: &str, out: &str, art: &Art) ->
         }
     }
     for name in sounds {
-        let from = shell::own_sounds::path(data, &piece.tables.project, &name);
+        let from = shell::own_sounds::path(data, &tables.project, &name);
         size += copy(&from, &out.join("data/hand/sounds").join(format!("{name}.wav")))?;
     }
     for folder in OF_PLACES {
