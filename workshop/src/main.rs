@@ -24,10 +24,8 @@
 mod app;
 mod bug;
 mod capture;
-mod emulate;
 mod home;
 mod quant_tool;
-mod settings;
 mod spritecollab;
 
 fn main() -> eframe::Result {

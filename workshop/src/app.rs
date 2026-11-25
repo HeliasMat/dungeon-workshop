@@ -129,7 +129,7 @@ pub struct Work {
     /// The Game space's own.
     pub games: workshop_game::Games,
     /// The Emulator space's own.
-    pub emulate: crate::emulate::Emulate,
+    pub emulate: workshop_emulator::Emulate,
 }
 
 impl Work {
@@ -181,7 +181,7 @@ impl App {
             resources: workshop_resources::Resources::new(&session, context),
             dungeons: workshop_dungeon::dungeons::Dungeons::new(&session),
             games: workshop_game::Games::new(&session),
-            emulate: crate::emulate::Emulate::new(&session),
+            emulate: workshop_emulator::Emulate::new(&session),
             session,
         };
         // (`WORKSHOP_SPACE=game|film|decor|dungeon|resources`: that space first, for a picture.)
@@ -365,7 +365,7 @@ impl App {
             Space::Film => self.film_tools(ui),
             Space::Dungeon => workshop_dungeon::dungeons::tabs(ui, &mut self.work.dungeons),
             Space::Game => workshop_game::tools(ui, &mut self.work.games),
-            Space::Emulator => crate::emulate::tools(ui, &mut self.work.emulate, self.work.film.as_deref()),
+            Space::Emulator => workshop_emulator::tools(ui, &mut self.work.emulate, self.work.film.as_deref()),
             Space::Assets if self.work.resources.creating() => workshop_resources::making_tabs(ui, &mut self.work.resources),
             space => {
                 let open = match space {
@@ -1001,7 +1001,7 @@ impl eframe::App for App {
             });
         } else if self.space == Space::Emulator {
             egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::PANEL).inner_margin(egui::Margin::symmetric(4, 4))).show(context, |ui| {
-                crate::emulate::page(ui, &mut self.work.emulate);
+                workshop_emulator::page(ui, &mut self.work.emulate);
             });
             if !self.work.emulate.said.is_empty() {
                 self.work.said = std::mem::take(&mut self.work.emulate.said);

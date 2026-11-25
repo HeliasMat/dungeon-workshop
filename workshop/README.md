@@ -353,22 +353,23 @@ Everywhere, a click goes back to the line in the text.
 
 ## Emulator
 
-A DS game run inside the Workshop, to see a film as the real game plays it (`workshop/src/emulate.rs`, the `emulator` crate). It needs a **libretro core**, the emulator itself as a small library, which the Workshop never comes with: get the melonDS core (or DeSmuME's) from libretro's site (buildbot.libretro.com, nightly, your system, latest: `melonds_libretro`), unzip it anywhere of yours, then **Choose a Core…** in the space (or set `WORKSHOP_LIBRETRO_CORE`). melonDS needs no BIOS or firmware: it uses its own FreeBIOS. See `docs/DS.md`.
+A DS game run inside the Workshop, to see a film as the real game plays it (`workshop_emulator/`, the `emulator` crate). It needs a **libretro core**, the emulator itself as a small library, which the Workshop never comes with: get the melonDS core (or DeSmuME's) from libretro's site (buildbot.libretro.com, nightly, your system, latest: `melonds_libretro`), unzip it anywhere of yours, then **Choose a Core…** in the space (or set `WORKSHOP_LIBRETRO_CORE`). melonDS needs no BIOS or firmware: it uses its own FreeBIOS. See `docs/DS.md`.
 
 - **Load ROM…**: a `.nds` of yours. Both screens are drawn one above the other, crisp, as big as fits; the sound plays at 1×.
 - **Keys**: by default the arrows are the D-pad, X the A button, Z the B button, S the X button, A the Y button, Q/W L/R, Enter Start, Backspace (or Shift) Select; the mouse held on the bottom screen is the stylus. **Keys…** opens a window where each DS button gets another key: click it, press the key you want (Escape keeps it); **Back to the Defaults** undoes them all. The keys are kept in the settings (`key_a = K`…).
 - **Pause/Play**, **Reset**, **Step** (one frame, paused), **1× 2× 4×**, **Save State** / **Load State** (one slot a game), **Screenshot** (a PNG): the states and pictures go in the settings folder's `emulator/`.
 - **Play This Film on DS**: the film open in the Film space exported (`scene_player export-ds --partial`) and put in a copy of your Explorers of Sky (`tools/ds/patch_rom.py --boot --more-actors`, Python with `skytemple_files`) as `target/ds/workshop_play.nds`, then played from power on, A pressed by itself through the title until the film starts (about 25 s). The ROM and armips are asked the first time and remembered; what the steps say, and why one failed, is shown under the screens.
 
-The Workshop's **settings** (`settings.rs`) are a small `key = value` file of the user's own: `%APPDATA%\dungeon_workshop\settings.txt` (`~/.config/dungeon_workshop/` elsewhere, or `WORKSHOP_SETTINGS`), holding the core (`libretro_core`), the ROM (`ds_rom`) and armips (`armips`); the emulator's saves, states and screenshots sit beside it in `emulator/`. Nothing of them goes in the project.
+The Workshop's **settings** (`workshop_emulator/src/settings.rs`) are a small `key = value` file of the user's own: `%APPDATA%\dungeon_workshop\settings.txt` (`~/.config/dungeon_workshop/` elsewhere, or `WORKSHOP_SETTINGS`), holding the core (`libretro_core`), the ROM (`ds_rom`) and armips (`armips`); the emulator's saves, states and screenshots sit beside it in `emulator/`. Nothing of them goes in the project.
 
 ## The code
 
 The Workshop is several crates, a part each, so that a change to one part builds only that part and the window over it. In each, a module a subject; a big one is a folder, its `mod.rs` (or the crate's `lib.rs`) holding its state and what its files share. Each crate's `lib.rs` says what it holds and what it uses; `tools/rule.sh` (the building-block rule) lists the crates each may use.
 
 ```text
-workshop                       the window: menus, spaces, Home, Emulator, Tools
-├── workshop_first             the first launch
+workshop                       the window: menus, spaces, Home, Tools
+├── workshop_emulator          the Emulator space
+│   └── workshop_first         the first launch, the programs beside the Workshop
 ├── workshop_game              the Game space
 ├── workshop_resources         the Resources space and its makings
 │   ├── workshop_picture       the painter
@@ -391,7 +392,7 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 | `workshop_first/` | the first launch: the user's copy of the game checked (`check_rom`), the resources extracted step by step (`Phase`, `Event`), what goes wrong said for a person; the programs beside the Workshop (`program_beside`) |
 | `workshop_game/` | the Game space: `lib.rs` (the game open, its three columns), `game.rs` (a `.game` file as the space reads and writes it: its card, its chapters as boxes) |
 | `workshop/`: `spritecollab.rs`, `quant_tool.rs` | the Tools: SpriteCollab, an image converted |
-| `workshop/`: `emulate.rs`, `settings.rs` | the Emulator space (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), the Workshop's own settings |
+| `workshop_emulator/` | the Emulator space: `lib.rs` (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), `settings.rs` (the Workshop's own settings) |
 | `workshop/`: `capture.rs`, `bug.rs` | a picture of the window without a mouse; a panic told as a bug |
 | `workshop_base/`: `session.rs`, `launch.rs` | what every space works with (`Session`: the library, the data, what is read of them and kept, `reload`), how the Workshop was launched (`LaunchOptions`) |
 | `workshop_base/`: `theme.rs`, `icons.rs` | the look: colours, sizes, icons drawn with lines |

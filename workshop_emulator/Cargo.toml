@@ -1,0 +1,19 @@
+[package]
+name = "workshop_emulator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Dungeon Workshop's Emulator space: a DS game run by a libretro core the user chose, a film played on DS"
+publish.workspace = true
+
+[dependencies]
+emulator = { path = "../emulator" }
+shell = { path = "../shell" }
+workshop_base = { path = "../workshop_base" }
+workshop_first = { path = "../workshop_first" }
+eframe = { version = "0.32", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+
+[lints]
+workspace = true

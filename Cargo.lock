@@ -4344,7 +4344,6 @@ dependencies = [
  "decor",
  "eframe",
  "egui_dock",
- "emulator",
  "engine",
  "film",
  "game",
@@ -4355,6 +4354,7 @@ dependencies = [
  "workshop_base",
  "workshop_decor",
  "workshop_dungeon",
+ "workshop_emulator",
  "workshop_film",
  "workshop_first",
  "workshop_game",
@@ -4407,6 +4407,17 @@ dependencies = [
  "rules",
  "shell",
  "workshop_base",
+]
+
+[[package]]
+name = "workshop_emulator"
+version = "0.2.0"
+dependencies = [
+ "eframe",
+ "emulator",
+ "shell",
+ "workshop_base",
+ "workshop_first",
 ]
 
 [[package]]

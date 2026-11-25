@@ -8,6 +8,8 @@
 //! The core, the ROM and armips are the user's own paths, kept in the
 //! Workshop's settings (`settings`), never in the project.
 
+mod settings;
+
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Instant;
@@ -15,7 +17,7 @@ use std::time::Instant;
 use eframe::egui::{self, RichText};
 use emulator::{Button, Core, Input};
 
-use crate::settings::{self, Settings};
+use settings::Settings;
 use workshop_base::session::Session;
 use workshop_base::theme;
 

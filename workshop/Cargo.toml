@@ -15,7 +15,6 @@ publish.workspace = true
 [dependencies]
 assets = { path = "../assets" }
 decor = { path = "../decor" }
-emulator = { path = "../emulator" }
 engine = { path = "../engine" }
 film = { path = "../film" }
 game = { path = "../game" }
@@ -25,6 +24,7 @@ spritecollab = { path = "../spritecollab" }
 workshop_base = { path = "../workshop_base" }
 workshop_decor = { path = "../workshop_decor" }
 workshop_dungeon = { path = "../workshop_dungeon" }
+workshop_emulator = { path = "../workshop_emulator" }
 workshop_film = { path = "../workshop_film" }
 workshop_first = { path = "../workshop_first" }
 workshop_game = { path = "../workshop_game" }
