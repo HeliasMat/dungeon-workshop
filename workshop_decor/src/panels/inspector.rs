@@ -172,7 +172,7 @@ pub(super) fn many(ui: &mut egui::Ui, decors: &mut Decors, selection: &[(usize, 
     let text = decors.open.as_ref().map(|open| open.text.clone()).unwrap_or_default();
     let items = edit::items(&text);
     let chosen: Vec<&Item> = selection.iter().filter_map(|key| items.iter().find(|one| (one.line, one.at) == *key)).collect();
-    let boxes: Vec<((usize, usize), egui::Rect, [f32; 2])> = chosen.iter().map(|one| ((one.line, one.at), decors.item_box(one), one.corner)).collect();
+    let boxes: Vec<Boxed> = chosen.iter().map(|one| ((one.line, one.at), decors.item_box(one), one.corner)).collect();
     let numbers: Vec<usize> = {
         let mut numbers: Vec<usize> = selection.iter().map(|(line, _)| *line).collect();
         numbers.sort_unstable();
@@ -181,83 +181,126 @@ pub(super) fn many(ui: &mut egui::Ui, decors: &mut Decors, selection: &[(usize, 
     };
     head(ui, None, ("×", theme::DECOR, ""), &format!("{} elements", selection.len()), &format!("{} lines · the first chosen is the reference", numbers.len()));
     remarks(ui, decors, &numbers);
-    let mut made: Option<String> = None;
-    let mut chose: Option<Vec<(usize, usize)>> = None;
     // (What they have alike: a box half ticked when some have it.)
     let poses: Vec<(usize, Pose)> =
         numbers.iter().filter_map(|number| Some((*number, Pose::read(text.lines().nth(number - 1)?)?))).filter(|(_, pose)| pose.word != "resident").collect();
-    if !poses.is_empty() {
-        component(ui, decors, "Shared Properties", |ui, _| {
-            let all = |test: &dyn Fn(&Pose) -> bool| (poses.iter().all(|(_, pose)| test(pose)), poses.iter().any(|(_, pose)| test(pose)));
-            let set_all = |change: &dyn Fn(&mut Pose)| -> String {
-                let lines: Vec<(usize, String)> = poses
-                    .iter()
-                    .map(|(number, pose)| {
-                        let mut pose = pose.clone();
-                        change(&mut pose);
-                        (*number, pose.line())
-                    })
-                    .collect();
-                edit::with_lines(&text, &lines)
-            };
-            prop(ui, "Layer", |ui| {
-                for (word, name) in [("ground", "Ground"), ("objects", "Objects"), ("over", "Over")] {
-                    let layer_of = |pose: &Pose| match pose.layer.as_deref() {
-                        Some("ground") => "ground",
-                        Some("over") => "over",
-                        _ => "objects",
-                    };
-                    let (every, some) = all(&|pose| layer_of(pose) == word);
-                    let label = if some && !every { format!("{name} ·") } else { name.to_string() };
-                    if ui.selectable_label(every, label).clicked() {
-                        made = Some(set_all(&|pose| pose.layer = (word != "objects").then(|| word.to_string())));
-                    }
-                }
-            });
-            for (label, test, change) in [
-                ("Flipped", (|pose: &Pose| pose.turned) as fn(&Pose) -> bool, (|pose: &mut Pose, on: bool| pose.turned = on) as fn(&mut Pose, bool)),
-                ("Shadow", |pose| !pose.shadowless, |pose, on| pose.shadowless = !on),
-                ("Locked", |pose| pose.locked, |pose, on| pose.locked = on),
-                ("Hidden", |pose| pose.hidden, |pose, on| pose.hidden = on),
-            ] {
-                let (every, some) = all(&test);
-                let mut ticked = every;
-                if prop(ui, label, |ui| ui.add(egui::Checkbox::without_text(&mut ticked).indeterminate(some && !every)).changed()) {
-                    made = Some(set_all(&|pose| change(pose, !every)));
+    let mut made = shared_properties(ui, decors, &text, &poses);
+    made = align_and_distribute(ui, decors, &text, &boxes).or(made);
+    let (grouped, mut chose) = group_and_model(ui, decors, &text, &numbers, selection);
+    made = grouped.or(made);
+    ui.add_space(8.0);
+    let (changed, now) = duplicate_or_remove(ui, &text, &boxes, selection);
+    (made, chose) = (changed.or(made), now.or(chose));
+    if let Some(open) = &mut decors.open {
+        if let Some(made) = made {
+            open.change(made);
+        }
+        if let Some(chose) = chose {
+            open.choose(chose);
+        }
+    }
+}
+
+/// A chosen element's key, its box and its corner.
+type Boxed = ((usize, usize), egui::Rect, [f32; 2]);
+
+/// What the chosen poses have alike (their layer, flipped, shadow, locked,
+/// hidden), changed for all: the text so changed, if it is.
+fn shared_properties(ui: &mut egui::Ui, decors: &mut Decors, text: &str, poses: &[(usize, Pose)]) -> Option<String> {
+    let mut made = None;
+    if poses.is_empty() {
+        return made;
+    }
+    component(ui, decors, "Shared Properties", |ui, _| {
+        let all = |test: &dyn Fn(&Pose) -> bool| (poses.iter().all(|(_, pose)| test(pose)), poses.iter().any(|(_, pose)| test(pose)));
+        let set_all = |change: &dyn Fn(&mut Pose)| -> String {
+            let lines: Vec<(usize, String)> = poses
+                .iter()
+                .map(|(number, pose)| {
+                    let mut pose = pose.clone();
+                    change(&mut pose);
+                    (*number, pose.line())
+                })
+                .collect();
+            edit::with_lines(text, &lines)
+        };
+        prop(ui, "Layer", |ui| {
+            for (word, name) in [("ground", "Ground"), ("objects", "Objects"), ("over", "Over")] {
+                let layer_of = |pose: &Pose| match pose.layer.as_deref() {
+                    Some("ground") => "ground",
+                    Some("over") => "over",
+                    _ => "objects",
+                };
+                let (every, some) = all(&|pose| layer_of(pose) == word);
+                let label = if some && !every { format!("{name} ·") } else { name.to_string() };
+                if ui.selectable_label(every, label).clicked() {
+                    made = Some(set_all(&|pose| pose.layer = (word != "objects").then(|| word.to_string())));
                 }
             }
         });
-    }
+        for (label, test, change) in [
+            ("Flipped", (|pose: &Pose| pose.turned) as fn(&Pose) -> bool, (|pose: &mut Pose, on: bool| pose.turned = on) as fn(&mut Pose, bool)),
+            ("Shadow", |pose| !pose.shadowless, |pose, on| pose.shadowless = !on),
+            ("Locked", |pose| pose.locked, |pose, on| pose.locked = on),
+            ("Hidden", |pose| pose.hidden, |pose, on| pose.hidden = on),
+        ] {
+            let (every, some) = all(&test);
+            let mut ticked = every;
+            if prop(ui, label, |ui| ui.add(egui::Checkbox::without_text(&mut ticked).indeterminate(some && !every)).changed()) {
+                made = Some(set_all(&|pose| change(pose, !every)));
+            }
+        }
+    });
+    made
+}
+
+/// The chosen lined up by an edge or their middles, or spread with equal
+/// gaps: the text so changed, if it is.
+fn align_and_distribute(ui: &mut egui::Ui, decors: &mut Decors, text: &str, boxes: &[Boxed]) -> Option<String> {
+    let mut made = None;
     component(ui, decors, "Align and Distribute", |ui, _| {
         prop(ui, "Align", |ui| {
             for (how, word) in [(edit::Line::Left, "Left"), (edit::Line::Centre, "Centre"), (edit::Line::Right, "Right")] {
                 if ui.button(word).clicked() {
-                    made = Some(edit::lined_up(&text, &boxes, how));
+                    made = Some(edit::lined_up(text, boxes, how));
                 }
             }
         });
         prop(ui, "", |ui| {
             for (how, word) in [(edit::Line::Top, "Top"), (edit::Line::Middle, "Middle"), (edit::Line::Bottom, "Bottom")] {
                 if ui.button(word).clicked() {
-                    made = Some(edit::lined_up(&text, &boxes, how));
+                    made = Some(edit::lined_up(text, boxes, how));
                 }
             }
         });
         prop(ui, "Distribute", |ui| {
             let enough = boxes.len() >= 3;
             if ui.add_enabled(enough, egui::Button::new("Horizontally")).on_hover_text("equal gaps from left to right (three at least)").clicked() {
-                made = Some(edit::spread(&text, &boxes, true));
+                made = Some(edit::spread(text, boxes, true));
             }
             if ui.add_enabled(enough, egui::Button::new("Vertically")).clicked() {
-                made = Some(edit::spread(&text, &boxes, false));
+                made = Some(edit::spread(text, boxes, false));
             }
         });
     });
+    made
+}
+
+/// The chosen lines grouped in a folder, or saved as a model: the text so
+/// changed and the choice then, if they are.
+fn group_and_model(
+    ui: &mut egui::Ui,
+    decors: &mut Decors,
+    text: &str,
+    numbers: &[usize],
+    selection: &[(usize, usize)],
+) -> (Option<String>, Option<Vec<(usize, usize)>>) {
+    let (mut made, mut chose) = (None, None);
     component(ui, decors, "Group and Model", |ui, decors| {
         prop(ui, "Group", |ui| {
             ui.add(egui::TextEdit::singleline(&mut decors.group_name).hint_text("name").desired_width(110.0));
             if ui.button("Group").on_hover_text("their lines together, in a folder of the Hierarchy").clicked() {
-                match edit::grouped(&text, &numbers, &decors.group_name) {
+                match edit::grouped(text, numbers, &decors.group_name) {
                     Ok(grouped) => {
                         made = Some(grouped);
                         chose = Some(Vec::new());
@@ -269,7 +312,7 @@ pub(super) fn many(ui: &mut egui::Ui, decors: &mut Decors, selection: &[(usize, 
         prop(ui, "Model", |ui| {
             ui.add(egui::TextEdit::singleline(&mut decors.model_name).hint_text("name").desired_width(110.0));
             if ui.button("Save").on_hover_text("put again elsewhere from the Library › Models").clicked() {
-                decors.model_said = Some(match edit::save_model(decors.session.library(), &decors.model_name, &edit::copied(&text, selection)) {
+                decors.model_said = Some(match edit::save_model(decors.session.library(), &decors.model_name, &edit::copied(text, selection)) {
                     Ok(path) => format!("model written: {}", path.display()),
                     Err(why) => why,
                 });
@@ -280,29 +323,28 @@ pub(super) fn many(ui: &mut egui::Ui, decors: &mut Decors, selection: &[(usize, 
             ui.label(theme::text(said, theme::SMALL, theme::WEAK));
         }
     });
-    ui.add_space(8.0);
+    (made, chose)
+}
+
+/// The chosen duplicated beside them, or taken out: the text so changed and
+/// the choice then, if they are.
+fn duplicate_or_remove(ui: &mut egui::Ui, text: &str, boxes: &[Boxed], selection: &[(usize, usize)]) -> (Option<String>, Option<Vec<(usize, usize)>>) {
+    let (mut made, mut chose) = (None, None);
     ui.horizontal_wrapped(|ui| {
         if ui.button("Duplicate").on_hover_text("Ctrl+D").clicked() {
             let area = boxes.iter().map(|(_, rect, _)| *rect).reduce(|a, b| a.union(b));
             if let Some(area) = area {
-                let (pasted, now) = edit::pasted(&text, &edit::copied(&text, selection), [area.min.x + area.width(), area.min.y]);
+                let (pasted, now) = edit::pasted(text, &edit::copied(text, selection), [area.min.x + area.width(), area.min.y]);
                 made = Some(pasted);
                 chose = Some(now);
             }
         }
         if ui.button(RichText::new("Remove").color(theme::WRONG)).on_hover_text("Suppr").clicked() {
-            made = Some(edit::removed(&text, selection));
+            made = Some(edit::removed(text, selection));
             chose = Some(Vec::new());
         }
     });
-    if let Some(open) = &mut decors.open {
-        if let Some(made) = made {
-            open.change(made);
-        }
-        if let Some(chose) = chose {
-            open.choose(chose);
-        }
-    }
+    (made, chose)
 }
 
 /// Nothing chosen: the decor itself (its name, size, grid, number, music,
