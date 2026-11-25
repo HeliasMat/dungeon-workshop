@@ -1,31 +1,19 @@
 //! Dungeon Workshop: one window, seven spaces (Home, Game, Film, Decor,
-//! Dungeon, Resources, Emulator), each its panels docked as in a studio, under a bar of menus
-//! and over a bar of state.
+//! Dungeon, Resources, Emulator), each its panels docked as in a studio,
+//! under a bar of menus and over a bar of state. Each space, the first
+//! launch and the Tools' windows are crates of their own (`workshop_*`);
+//! this program only ties them:
 //!
-//! - `first`: the first launch: the user's own copy of the game asked
-//!   for, its resources extracted, before anything else.
-//! - `theme`: its colours and fonts, in one place.
-//! - `project`: the project's files, read from their folders.
-//! - `app`: the window: the spaces, their panels, the bars.
-//! - `home`: the Home's panels.
-//! - `decors`: the Decor space: the decor open, its panels.
-//! - `script`: the Film space's Script, an editor of the film's text.
-//! - `films`: the film played: the Film space's Scene, Timeline, Inspector.
-//! - `scene`, `panels`: the Decor's Scene; its Hierarchy and Inspector.
-//! - `edit`: the decor's text changed by what is done on the scene.
-//! - `terrains`: the Decor's brushes: terrains painted, pieces strewn, walls.
-//! - `walk`: a Pokémon walked in the decor, to try its walls.
-//! - `workshop`: the decors' tool at work, on a thread of its own.
-//! - `icons`: small icons drawn with lines.
-//! - `library`: the Library, a browser of the pieces.
-//! - `dungeons`: the Dungeon space: the dungeons and boss fights, their editors.
-//! - `capture`: a picture of the window, asked by the environment.
+//! - `main`: the session made once, the first launch (`workshop_first`)
+//!   until the game's data is there, then the Workshop;
+//! - `app`: the window: the menus, the spaces' docks, the bars, and what
+//!   the parts ask of it, done once a frame (`App::answer`);
+//! - `capture`: a picture of the window, asked by the environment;
+//! - `bug`: a panic told as a bug.
 
 mod app;
 mod bug;
 mod capture;
-mod quant_tool;
-mod spritecollab;
 
 fn main() -> eframe::Result {
     bug::told_as_bugs();

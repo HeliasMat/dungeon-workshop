@@ -4344,13 +4344,8 @@ dependencies = [
  "decor",
  "eframe",
  "egui_dock",
- "engine",
  "film",
- "game",
  "image",
- "media",
- "shell",
- "spritecollab",
  "workshop_base",
  "workshop_decor",
  "workshop_dungeon",
@@ -4361,6 +4356,7 @@ dependencies = [
  "workshop_home",
  "workshop_resources",
  "workshop_script",
+ "workshop_tools",
 ]
 
 [[package]]
@@ -4541,6 +4537,20 @@ dependencies = [
  "film",
  "rules",
  "shell",
+ "workshop_base",
+]
+
+[[package]]
+name = "workshop_tools"
+version = "0.2.0"
+dependencies = [
+ "assets",
+ "decor",
+ "eframe",
+ "film",
+ "image",
+ "media",
+ "spritecollab",
  "workshop_base",
 ]
 

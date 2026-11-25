@@ -138,9 +138,9 @@ pub struct App {
     work: Work,
     capture: Option<crate::capture::Capture>,
     /// Tools › Convert an Image (Tilequant), while open.
-    quant: Option<crate::quant_tool::QuantTool>,
+    quant: Option<workshop_tools::tilequant::QuantTool>,
     /// Tools › SpriteCollab, while open.
-    spritecollab: Option<crate::spritecollab::Browser>,
+    spritecollab: Option<workshop_tools::sprites::Browser>,
     /// The "what to try first" panel, shown once the first launch is done.
     welcome: bool,
 }
@@ -180,7 +180,7 @@ impl App {
             docks: Space::ALL.map(layout),
             work,
             capture: crate::capture::Capture::asked(&launch),
-            quant: crate::quant_tool::QuantTool::asked(context, &launch),
+            quant: workshop_tools::tilequant::QuantTool::asked(context, &launch),
             spritecollab: None,
             welcome: launch.welcome,
         };
@@ -189,7 +189,7 @@ impl App {
         }
         // (`WORKSHOP_SPRITECOLLAB=25`: that window open on that number, for a picture.)
         if let Some(dex) = &launch.spritecollab {
-            app.spritecollab = Some(crate::spritecollab::Browser::new(&app.work.session, dex.parse().ok()));
+            app.spritecollab = Some(workshop_tools::sprites::Browser::new(&app.work.session, dex.parse().ok()));
         }
         // (A file named on the command line: opened in its space.)
         if let Some(path) = launch.file.clone() {
@@ -294,11 +294,11 @@ impl App {
                     .on_hover_text("a picture to the console's rules: tiles of 8, 16 colours each; <name>_quant.png beside it")
                     .clicked()
                 {
-                    self.quant = Some(crate::quant_tool::QuantTool::new());
+                    self.quant = Some(workshop_tools::tilequant::QuantTool::new());
                 }
                 if ui.button("SpriteCollab…").on_hover_text("the PMDCollab community's sprites and portraits: search, look, import into data/extra").clicked()
                 {
-                    self.spritecollab = Some(crate::spritecollab::Browser::new(&self.work.session, None));
+                    self.spritecollab = Some(workshop_tools::sprites::Browser::new(&self.work.session, None));
                 }
             });
             ui.menu_button("Help", |ui| {
@@ -462,7 +462,7 @@ impl App {
                     self.work.resources.show_drawn();
                     self.space = Space::Assets;
                 }
-                Ask::SpriteCollab(dex) => self.spritecollab = Some(crate::spritecollab::Browser::new(&self.work.session, dex)),
+                Ask::SpriteCollab(dex) => self.spritecollab = Some(workshop_tools::sprites::Browser::new(&self.work.session, dex)),
                 Ask::Say(said) => self.work.said = said,
             }
         }
@@ -1023,9 +1023,9 @@ impl eframe::App for App {
         self.making(context);
         self.welcome(context);
         self.restore(context);
-        crate::quant_tool::show(context, &mut self.quant);
+        workshop_tools::tilequant::show(context, &mut self.quant);
         self.answer();
-        crate::spritecollab::show(context, &mut self.spritecollab);
+        workshop_tools::sprites::show(context, &mut self.spritecollab);
         if let Some(browser) = &mut self.spritecollab
             && std::mem::take(&mut browser.fresh)
         {

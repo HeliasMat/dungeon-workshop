@@ -367,7 +367,8 @@ The Workshop's **settings** (`workshop_emulator/src/settings.rs`) are a small `k
 The Workshop is several crates, a part each, so that a change to one part builds only that part and the window over it. In each, a module a subject; a big one is a folder, its `mod.rs` (or the crate's `lib.rs`) holding its state and what its files share. Each crate's `lib.rs` says what it holds and what it uses; `tools/rule.sh` (the building-block rule) lists the crates each may use.
 
 ```text
-workshop                       the window: menus, spaces, Tools
+workshop                       the window: its menus, the spaces' docks, what the parts ask
+├── workshop_tools             the Tools' windows: SpriteCollab, an image converted
 ├── workshop_home              the Home
 ├── workshop_emulator          the Emulator space
 │   └── workshop_first         the first launch, the programs beside the Workshop
@@ -392,7 +393,7 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 | `workshop_home/` | the Home: its shelves, the files as a table or a grid, the Preview and what is done with a file there (`open` asks the window for its space) |
 | `workshop_first/` | the first launch: the user's copy of the game checked (`check_rom`), the resources extracted step by step (`Phase`, `Event`), what goes wrong said for a person; the programs beside the Workshop (`program_beside`) |
 | `workshop_game/` | the Game space: `lib.rs` (the game open, its three columns), `game.rs` (a `.game` file as the space reads and writes it: its card, its chapters as boxes) |
-| `workshop/`: `spritecollab.rs`, `quant_tool.rs` | the Tools: SpriteCollab, an image converted |
+| `workshop_tools/` | the Tools' windows: `sprites.rs` (SpriteCollab looked through, imported), `tilequant.rs` (an image converted to the console's rules) |
 | `workshop_emulator/` | the Emulator space: `lib.rs` (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), `settings.rs` (the Workshop's own settings) |
 | `workshop/`: `capture.rs`, `bug.rs` | a picture of the window without a mouse; a panic told as a bug |
 | `workshop_base/`: `session.rs`, `launch.rs` | what every space works with (`Session`: the library, the data, what is read of them and kept, `reload`), how the Workshop was launched (`LaunchOptions`) |

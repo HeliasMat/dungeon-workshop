@@ -1,0 +1,22 @@
+[package]
+name = "workshop_tools"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Dungeon Workshop's Tools: the SpriteCollab window, an image converted to the console's rules"
+publish.workspace = true
+
+[dependencies]
+assets = { path = "../assets" }
+decor = { path = "../decor" }
+film = { path = "../film" }
+media = { path = "../media" }
+spritecollab = { path = "../spritecollab" }
+workshop_base = { path = "../workshop_base" }
+eframe = { version = "0.32", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+image.workspace = true
+
+[lints]
+workspace = true

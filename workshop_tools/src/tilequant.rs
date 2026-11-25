@@ -9,7 +9,7 @@ use workshop_base::theme;
 
 /// The tool's window: the picture's path, what is asked, what it became.
 pub struct QuantTool {
-    pub(crate) path: String,
+    path: String,
     palettes: usize,
     dither: bool,
     said: String,
@@ -30,7 +30,7 @@ impl QuantTool {
         Some(tool)
     }
 
-    pub(crate) fn convert(&mut self, context: &egui::Context) {
+    fn convert(&mut self, context: &egui::Context) {
         let source = std::path::PathBuf::from(self.path.trim());
         let asked = media::quant::Asked { palettes: self.palettes, dither: self.dither };
         match decor::tilesets::convert_file(&source, asked) {
