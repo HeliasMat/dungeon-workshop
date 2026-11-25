@@ -3007,6 +3007,7 @@ dependencies = [
  "scenes",
  "serde_json",
  "shell",
+ "spritecollab",
  "stage_view",
 ]
 
@@ -4442,6 +4443,7 @@ dependencies = [
  "decor",
  "eframe",
  "game",
+ "spritecollab",
  "workshop_base",
 ]
 

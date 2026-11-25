@@ -25,6 +25,9 @@
 //!   `kao/sprite_bot_sheet.py`, GPL-3). A folder or a zip of one; as a
 //!   monster's, or as a variant of its own, numbered from 5000.
 //!
+//! - **All at once** ([`fetch_all`], [`update`], [`import_all`]): the whole
+//!   repository, then every Pokémon and form (`scene_player spritecollab`).
+//!
 //! The sprites are under CC BY-NC 4.0 (non-commercial use, credit given):
 //! the credits of every monster imported are written to
 //! `data/extra/spritecollab_credits.txt`.
@@ -33,6 +36,9 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use image::RgbaImage;
+
+mod bulk;
+pub use bulk::{Totals, fetch_all, import_all, update};
 
 /// Where the community's sprites are fetched from.
 pub const REPOSITORY: &str = "https://github.com/PMDCollab/SpriteCollab";
@@ -144,6 +150,20 @@ pub fn no_window(command: &mut std::process::Command) {
 #[cfg(not(windows))]
 pub fn no_window(_: &mut std::process::Command) {}
 
+/// Whether the clone has only some folders (a sparse checkout, [`fetch`]'s).
+fn sparse(clone: &Path) -> bool {
+    git_said(clone, &["config", "--bool", "core.sparseCheckout"]).is_ok_and(|said| said.trim() == "true")
+}
+
+/// What git run in the clone writes out.
+fn git_said(clone: &Path, arguments: &[&str]) -> Result<String, String> {
+    let mut command = std::process::Command::new("git");
+    command.arg("-C").arg(clone).args(arguments);
+    no_window(&mut command);
+    let out = command.output().map_err(|why| format!("git not found ({why}): install git to fetch from SpriteCollab"))?;
+    if out.status.success() { Ok(String::from_utf8_lossy(&out.stdout).into_owned()) } else { Err(failed(&String::from_utf8_lossy(&out.stderr))) }
+}
+
 /// Why git failed, plainly: the network first.
 fn failed(stderr: &str) -> String {
     let all = stderr.to_lowercase();
@@ -161,6 +181,10 @@ fn failed(stderr: &str) -> String {
 /// `tracker.json`, too).
 pub fn fetch(places: &Places, dexes: &[u32], tracker: bool) -> Result<(), String> {
     let clone = &places.clone;
+    // (A whole clone, [`fetch_all`]'s, has every folder already.)
+    if clone.join(".git").is_dir() && !sparse(clone) {
+        return Ok(());
+    }
     if !clone.join(".git").is_dir() {
         if let Some(parent) = clone.parent() {
             std::fs::create_dir_all(parent).map_err(|why| said(parent, why))?;
@@ -325,19 +349,48 @@ fn lines_kept(places: &Places, file: &str, numbers: &HashSet<String>) -> Vec<Str
     extra_lines(places, file).into_iter().filter(|line| !line.trim().is_empty() && !numbers.contains(line.split('\t').next().unwrap_or_default())).collect()
 }
 
-/// The sheets the game has (every layer), and those of data/extra, by monster and animation.
+/// What an import writes over: nothing there already, only what the tools
+/// added in data/extra (never the game's own, `rom/` and `hand/`), or all.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Over {
+    Nothing,
+    Ours,
+    All,
+}
+
+impl Over {
+    /// `replace` as the Workshop asks it: all, or nothing there already.
+    pub fn of(replace: bool) -> Over {
+        if replace { Over::All } else { Over::Nothing }
+    }
+}
+
+/// The game's own layers, those an import never writes over unless asked.
+const OWN: [&str; 2] = ["rom", "hand"];
+
+/// The (monster, animation) of a sprites.txt's lines.
+fn sheet_keys(text: &str) -> impl Iterator<Item = (u32, u32)> + '_ {
+    text.lines().filter_map(|line| {
+        let fields: Vec<&str> = line.split('\t').collect();
+        (fields.len() >= 7).then(|| Some((fields[0].parse().ok()?, fields[1].parse().ok()?)))?
+    })
+}
+
+/// The sheets the game has (every layer), the game's own (`rom/`, `hand/`),
+/// and those of data/extra, by monster and animation.
 struct Sheets {
     known: HashSet<(u32, u32)>,
+    own: HashSet<(u32, u32)>,
     ours: BTreeMap<(u32, u32), Vec<String>>,
 }
 
 impl Sheets {
     fn read(places: &Places) -> Sheets {
-        let known = assets::data::text(&places.data, "sprites.txt")
-            .lines()
-            .filter_map(|line| {
-                let fields: Vec<&str> = line.split('\t').collect();
-                (fields.len() >= 7).then(|| Some((fields[0].parse().ok()?, fields[1].parse().ok()?)))?
+        let known = sheet_keys(&assets::data::text(&places.data, "sprites.txt")).collect();
+        let own = OWN
+            .iter()
+            .flat_map(|layer| {
+                sheet_keys(&std::fs::read_to_string(Path::new(&places.data).join(layer).join("sprites.txt")).unwrap_or_default()).collect::<Vec<_>>()
             })
             .collect();
         let ours = extra_lines(places, "sprites.txt")
@@ -347,7 +400,16 @@ impl Sheets {
                 (fields.len() >= 7).then(|| Some(((fields[0].parse().ok()?, fields[1].parse().ok()?), fields.clone())))?
             })
             .collect();
-        Sheets { known, ours }
+        Sheets { known, own, ours }
+    }
+
+    /// Whether an import that writes `over` leaves that sheet as it is.
+    fn kept(&self, key: (u32, u32), over: Over) -> bool {
+        match over {
+            Over::Nothing => self.known.contains(&key),
+            Over::Ours => self.own.contains(&key),
+            Over::All => false,
+        }
     }
 
     fn write(&self, places: &Places) -> Result<(), String> {
@@ -357,18 +419,19 @@ impl Sheets {
 }
 
 /// A sprite folder's animations (SpriteCollab's layout) as a monster's, in
-/// data/extra/sprites: those it lacks, or all (`replace`). How many.
-fn add_animations(places: &Places, monster: u32, folder: &Path, replace: bool, sheets: &mut Sheets) -> Result<usize, String> {
+/// data/extra/sprites: those it lacks, or more as `over` says. How many.
+fn add_animations(places: &Places, monster: u32, folder: &Path, over: Over, sheets: &mut Sheets) -> Result<usize, String> {
     let mut added = 0;
     for anim in animations(folder).values() {
         let dungeon = DUNGEON.iter().find(|(group, _)| *group == anim.group).map(|(_, index)| *index);
-        for index in std::iter::once(SCENE + anim.group).chain(dungeon) {
-            if sheets.known.contains(&(monster, index)) && !replace {
-                continue;
-            }
-            let Ok((picture, shadow)) = convert(folder, anim) else {
-                continue;
-            };
+        let indexes: Vec<u32> = std::iter::once(SCENE + anim.group).chain(dungeon).filter(|index| !sheets.kept((monster, *index), over)).collect();
+        if indexes.is_empty() {
+            continue;
+        }
+        let Ok((picture, shadow)) = convert(folder, anim) else {
+            continue;
+        };
+        for index in indexes {
             save(&picture, &places.extra.join("sprites").join(format!("{monster}_{index}.png")))?;
             sheets.known.insert((monster, index));
             let durations: Vec<String> = anim.durations.iter().map(u32::to_string).collect();
@@ -391,13 +454,18 @@ fn add_animations(places: &Places, monster: u32, folder: &Path, replace: bool, s
 }
 
 /// A portrait folder's faces (`Normal.png`...) as a monster's, those the
-/// game lacks or all (`replace`). How many.
-fn add_faces(places: &Places, monster: u32, folder: &Path, replace: bool) -> Result<usize, String> {
+/// game lacks, or more as `over` says. How many.
+fn add_faces(places: &Places, monster: u32, folder: &Path, over: Over) -> Result<usize, String> {
     let mut faces = 0;
     for (face, name) in FACES.iter().enumerate() {
         let source = folder.join(format!("{name}.png"));
         let file = format!("portraits/{monster}_{face}.png");
-        if !source.is_file() || (!replace && places.game_file(&file).is_file()) {
+        let kept = match over {
+            Over::Nothing => places.game_file(&file).is_file(),
+            Over::Ours => OWN.iter().any(|layer| Path::new(&places.data).join(layer).join(&file).is_file()),
+            Over::All => false,
+        };
+        if !source.is_file() || kept {
             continue;
         }
         let portrait = open(&source)?;
@@ -431,10 +499,26 @@ fn write_credits(places: &Places) -> Result<(), String> {
     dexes.sort();
     for dex in dexes {
         for kind in ["sprite", "portrait"] {
-            let credit = places.clone.join(kind).join(&dex).join("credits.txt");
-            if let Ok(text) = std::fs::read_to_string(&credit) {
-                let said: Vec<&str> = text.lines().map(str::trim).filter(|line| !line.is_empty()).collect();
-                lines.push(format!("#{dex} {kind}: {}", said.join("; ")));
+            // (The species', then each of its forms'.)
+            let folder = places.clone.join(kind).join(&dex);
+            let mut forms: Vec<String> = std::fs::read_dir(&folder)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .filter(|entry| entry.path().is_dir())
+                .map(|entry| entry.file_name().to_string_lossy().into_owned())
+                .filter(|form| form.len() == 4 && form != "0000" && form.bytes().all(|byte| byte.is_ascii_digit()))
+                .collect();
+            forms.sort();
+            for form in std::iter::once(None).chain(forms.iter().map(Some)) {
+                let (credit, who) = match form {
+                    Some(form) => (folder.join(form).join("credits.txt"), format!("{dex}/{form}")),
+                    None => (folder.join("credits.txt"), dex.clone()),
+                };
+                if let Ok(text) = std::fs::read_to_string(&credit) {
+                    let said: Vec<&str> = text.lines().map(str::trim).filter(|line| !line.is_empty()).collect();
+                    lines.push(format!("#{who} {kind}: {}", said.join("; ")));
+                }
             }
         }
     }
@@ -460,8 +544,8 @@ pub fn import_monsters(places: &Places, monsters: &[u32], replace: bool) -> Resu
         let Some(dex) = dex_of.get(monster).copied().or_else(|| monster.checked_sub(NEW)).filter(|dex| *dex > 0) else {
             continue;
         };
-        added += add_animations(places, *monster, &places.sprite_folder(dex), replace, &mut sheets)?;
-        faces += add_faces(places, *monster, &places.portrait_folder(dex), replace)?;
+        added += add_animations(places, *monster, &places.sprite_folder(dex), Over::of(replace), &mut sheets)?;
+        faces += add_faces(places, *monster, &places.portrait_folder(dex), Over::of(replace))?;
     }
     sheets.write(places)?;
     write_credits(places)?;
@@ -504,8 +588,8 @@ pub fn import_new(places: &Places, dexes: &[u32]) -> Result<String, String> {
     let mut sheets = Sheets::read(places);
     let (mut added, mut faces) = (0, 0);
     for (monster, dex) in monsters.iter().zip(&wanted) {
-        added += add_animations(places, *monster, &places.sprite_folder(*dex), true, &mut sheets)?;
-        faces += add_faces(places, *monster, &places.portrait_folder(*dex), true)?;
+        added += add_animations(places, *monster, &places.sprite_folder(*dex), Over::All, &mut sheets)?;
+        faces += add_faces(places, *monster, &places.portrait_folder(*dex), Over::All)?;
     }
     sheets.write(places)?;
     write_credits(places)?;
@@ -764,14 +848,14 @@ pub fn import_from(places: &Places, source: &Path, into: Target) -> Result<Strin
         let added = match &sprites {
             Some(sprites) => {
                 let mut sheets = Sheets::read(places);
-                let added = add_animations(places, monster, sprites, true, &mut sheets)?;
+                let added = add_animations(places, monster, sprites, Over::All, &mut sheets)?;
                 sheets.write(places)?;
                 added
             }
             None => 0,
         };
         let mut faces = match &portraits {
-            Some(portraits) => add_faces(places, monster, portraits, true)?,
+            Some(portraits) => add_faces(places, monster, portraits, Over::All)?,
             None => 0,
         };
         if faces == 0

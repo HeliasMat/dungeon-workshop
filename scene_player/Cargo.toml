@@ -18,6 +18,7 @@ language = { path = "../language" }
 rules = { path = "../rules" }
 scenes = { path = "../scenes" }
 shell = { path = "../shell" }
+spritecollab = { path = "../spritecollab" }
 stage_view = { path = "../stage_view" }
 preview = { path = "../preview" }
 game = { path = "../game" }

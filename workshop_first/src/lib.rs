@@ -6,7 +6,8 @@
 //! each shown as it goes: the cartridge read by the `extractor` program
 //! beside the Workshop, then (in the Workshop itself) the dungeons' floors,
 //! the pieces of the game's places, and every place of the library and of
-//! the games built. Once done, the Workshop opens on an example game.
+//! the games built; then, if ticked, the community's sprites (SpriteCollab).
+//! Once done, the Workshop opens on an example game.
 //!
 //! What it goes through is a small state machine of its own (`Phase`,
 //! `Event`), and what can go wrong is said for a person (`Wrong`,
@@ -130,10 +131,12 @@ enum Step {
     Pieces,
     /// Every place of the library and of the games built (`decor all`).
     Places,
+    /// The PMDCollab community's sprites and faces, if asked (`scene_player spritecollab all`).
+    Community,
 }
 
 impl Step {
-    pub const ALL: [Step; 4] = [Step::Extract, Step::Dungeons, Step::Pieces, Step::Places];
+    pub const ALL: [Step; 5] = [Step::Extract, Step::Dungeons, Step::Pieces, Step::Places, Step::Community];
 
     /// What it does, as shown.
     pub fn doing(self) -> &'static str {
@@ -142,6 +145,7 @@ impl Step {
             Step::Dungeons => "Getting the dungeons' floors ready",
             Step::Pieces => "Finding the pieces of the game's places",
             Step::Places => "Building the places of the films and of the example games",
+            Step::Community => "Adding the community's sprites from GitHub (SpriteCollab: a few GB, long)",
         }
     }
 
@@ -265,11 +269,22 @@ pub struct First {
     /// How long each step done took, in seconds; when the one running began.
     took: Vec<(Step, u64)>,
     step_since: Instant,
+    /// Whether the community's sprites are added too (SpriteCollab; off unless ticked).
+    community: bool,
 }
 
 impl First {
     pub fn new(session: Arc<Session>) -> First {
-        First { session, rom: String::new(), phase: Phase::Choosing(None), chosen: None, run: None, took: Vec::new(), step_since: Instant::now() }
+        First {
+            session,
+            rom: String::new(),
+            phase: Phase::Choosing(None),
+            chosen: None,
+            run: None,
+            took: Vec::new(),
+            step_since: Instant::now(),
+            community: false,
+        }
     }
 
     /// The phase after that event.
@@ -291,7 +306,8 @@ impl First {
         let (tell, events) = channel();
         let session = self.session.clone();
         self.chosen = Some(rom.clone());
-        std::thread::spawn(move || run_steps(&session, &rom, &tell));
+        let community = self.community;
+        std::thread::spawn(move || run_steps(&session, &rom, community, &tell));
         (self.run, self.took, self.step_since) = (Some((events, Instant::now())), Vec::new(), Instant::now());
         self.happen(Event::Started(Step::Extract));
     }
@@ -401,6 +417,8 @@ impl First {
             Phase::Failed { rom, .. } => rom.clone(),
             _ => None,
         };
+        ui.checkbox(&mut self.community, "Also add the community's sprites (SpriteCollab, CC BY-NC: non-commercial use, a few GB from GitHub)");
+        ui.add_space(4.0);
         let label = if matches!(phase, Phase::Failed { .. }) { "Try Again" } else { "Extract the Resources" };
         if ui.add_enabled(rom.is_some(), egui::Button::new(RichText::new(label).strong().color(theme::ASSETS))).clicked()
             && let Some(rom) = rom
@@ -419,11 +437,17 @@ impl First {
         }
     }
 
+    /// The steps shown: the community's sprites only if asked.
+    fn steps(&self) -> Vec<Step> {
+        Step::ALL.into_iter().filter(|step| *step != Step::Community || self.community).collect()
+    }
+
     /// The steps: done (how long), running (what it says), to come.
     fn progress(&self, ui: &mut egui::Ui, now: Step, said: &[String]) {
         ui.label(theme::text("Extracting… keep this window open.", theme::TITLE, theme::STRONG));
         ui.add_space(8.0);
-        for step in Step::ALL {
+        let steps: Vec<Step> = self.steps();
+        for step in steps.iter().copied() {
             let done = self.took.iter().find(|(one, _)| *one == step);
             ui.horizontal(|ui| match (done, step == now) {
                 (Some((_, seconds)), _) => {
@@ -440,9 +464,9 @@ impl First {
                 }
             });
         }
-        let at = Step::ALL.iter().position(|step| *step == now).unwrap_or(0);
+        let at = steps.iter().position(|step| *step == now).unwrap_or(0);
         ui.add_space(6.0);
-        ui.add(egui::ProgressBar::new(at as f32 / Step::ALL.len() as f32).desired_width(660.0).text(format!("step {} of {}", at + 1, Step::ALL.len())));
+        ui.add(egui::ProgressBar::new(at as f32 / steps.len() as f32).desired_width(660.0).text(format!("step {} of {}", at + 1, steps.len())));
         ui.add_space(8.0);
         egui::Frame::new().fill(theme::GROUND).corner_radius(4).inner_margin(10).show(ui, |ui| {
             ui.set_width(ui.available_width());
@@ -466,8 +490,10 @@ pub fn program_beside(program: &str) -> Result<PathBuf, String> {
     if path.is_file() { Ok(path) } else { Err(missing_program(&path)) }
 }
 
-/// The steps, one after the other, each told (started, its lines, done or why not).
-fn run_steps(session: &Session, rom: &Path, tell: &Sender<Event>) {
+/// The steps, one after the other, each told (started, its lines, done or
+/// why not); `community`: the community's sprites added too (else that step
+/// ends at once).
+fn run_steps(session: &Session, rom: &Path, community: bool, tell: &Sender<Event>) {
     let (root, data) = (session.root().to_path_buf(), session.data().to_string());
     let library = session.library().clone();
     let said = |line: String| _ = tell.send(Event::Said(line));
@@ -487,6 +513,11 @@ fn run_steps(session: &Session, rom: &Path, tell: &Sender<Event>) {
                     said(format!("{} place(s) not built: {}", failed.len(), failed.join(", ")));
                 }
             }),
+            Step::Community if community => {
+                add_community(session, &said);
+                Ok(())
+            }
+            Step::Community => Ok(()),
         };
         match done {
             Ok(()) => _ = tell.send(Event::Finished(step)),
@@ -536,6 +567,24 @@ fn extract(root: &Path, data: &str, rom: &Path, said: &dyn Fn(String)) -> Result
         true => Ok(()),
         false if errors.trim().is_empty() => Err(format!("extractor stopped ({status})")),
         false => Err(errors.trim().to_string()),
+    }
+}
+
+/// The community's sprites fetched and imported (`scene_player spritecollab
+/// all`); what goes wrong (the network) said, never stopping the Workshop
+/// from opening: it can be done again later.
+fn add_community(session: &Session, said: &dyn Fn(String)) {
+    let places = spritecollab::Places::new(session.data(), &session.spritecollab);
+    let mut tell = |line: &str| said(line.to_string());
+    let done = spritecollab::fetch_all(&places, &mut tell).and_then(|()| spritecollab::import_all(&places, spritecollab::Over::Ours, &mut tell));
+    match done {
+        Ok(totals) => said(totals.to_string()),
+        Err(why) => {
+            for line in why.lines() {
+                said(line.to_string());
+            }
+            said("The community's sprites were not all added: run scene_player spritecollab all later, it goes on where it stopped.".to_string());
+        }
     }
 }
 
@@ -616,7 +665,7 @@ mod tests {
         // (A step failed: why, and the cartridge kept to try again.)
         let failed = phase.clone().next(Event::Failed(Step::Dungeons, "(os error 112)".into()), Some(&rom));
         assert!(matches!(&failed, Phase::Failed { rom: Some(kept), said } if *kept == rom && said.starts_with("Not enough space")), "{failed:?}");
-        for step in [Step::Dungeons, Step::Pieces, Step::Places] {
+        for step in [Step::Dungeons, Step::Pieces, Step::Places, Step::Community] {
             phase = phase.next(Event::Finished(step), Some(&rom));
         }
         assert_eq!(phase, Phase::Done);

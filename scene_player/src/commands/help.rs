@@ -21,7 +21,7 @@ const fn command(word: &'static str, takes: &'static str, least: usize, says: &'
     Command { word, takes, least, flags: &[], values: &[], says, more }
 }
 
-pub const COMMANDS: [Command; 37] = [
+pub const COMMANDS: [Command; 38] = [
     command("search", "<words>", 1, "Pokémon and places", "scene_player search krabby beach"),
     command("place", "<place>", 1, "a place: its size, its spots", "scene_player place beach"),
     command("illustrations", "[category]", 0, "the game's illustrations, by category (for scene: <image>)", "scene_player illustrations sea"),
@@ -33,6 +33,18 @@ pub const COMMANDS: [Command; 37] = [
         "Writes data/extra/dungeon_floors.txt (for decor, its dungeon rooms) and data/hand/stairs.png, trap_<word>.png.
 scene_player dungeons",
     ),
+    Command {
+        flags: &["--replace"],
+        ..command(
+            "spritecollab",
+            "<all|update>",
+            1,
+            "the PMDCollab community's sprites and faces, all of them: fetched from GitHub (a few GB) and added to data/extra",
+            "all: the whole repository cloned into sources/spritecollab (DUNGEON_SPRITECOLLAB: elsewhere), then every species and form imported: the game's Pokémon get the animations and faces they lack, the later ones 2000 + their Pokédex number, the forms variants from 5000 (vulpix_alola). update: only what changed on GitHub since. Cut short, run it again: it goes on where it stopped (data/extra/spritecollab_done.txt). --replace: over the game's own sheets too, every folder again.
+CC BY-NC 4.0: non-commercial use, credit given (data/extra/spritecollab_credits.txt).
+scene_player spritecollab all",
+        )
+    },
     command(
         "songs",
         "[word]",

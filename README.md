@@ -80,6 +80,10 @@ The workshop starts empty: no game, no film, no place, only the tools and their 
    target/release/decor inventory
    target/release/decor all
    ```
+   To have many more Pokémon, animations and portraits, those of the [PMDCollab community](https://github.com/PMDCollab/SpriteCollab) (CC BY-NC 4.0: non-commercial use, credits written to `data/extra/spritecollab_credits.txt`), tick **Also add the community's sprites** on the first launch, or later (git and a few GB from GitHub; run again, it goes on where it stopped):
+   ```sh
+   target/release/scene_player spritecollab all       # everything; then: spritecollab update
+   ```
 3. **Make a game** ([the tutorial](docs/TUTORIAL.md)), then **play it**:
    ```sh
    target/release/scene_player play my_game

@@ -19,6 +19,7 @@ mod renaming;
 mod resources;
 mod server;
 mod sounds;
+mod sprites;
 
 use std::path::{Path, PathBuf};
 
@@ -205,6 +206,7 @@ pub fn run(word: &str, rest: &[String], context: &Arc<Context>, debug: &preview:
         "listen" => sounds::listen(asked.first(), context),
         "items" => objects::list(asked.words.first().map_or("", |word| word.as_str()), context),
         "dungeons" => dungeons::prepare(context),
+        "spritecollab" => sprites::spritecollab(context, asked.first(), asked.has("--replace")),
         "grid" => places::grid(context, asked.first()),
         "ground" => places::ground(context, asked.first()),
         "check" if asked.has("--json") => checking::check_json(&asked.words, context, !asked.has("--no-play")),

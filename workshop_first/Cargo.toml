@@ -12,6 +12,7 @@ publish.workspace = true
 assets = { path = "../assets" }
 decor = { path = "../decor" }
 game = { path = "../game" }
+spritecollab = { path = "../spritecollab" }
 workshop_base = { path = "../workshop_base" }
 eframe = { version = "0.32", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
 

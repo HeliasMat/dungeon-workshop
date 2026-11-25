@@ -19,6 +19,10 @@ Dungeon Workshop is free software, under the **GPL-3.0 or later** license (see [
 
 The rules of fights and dungeons (damage, accuracy, statuses, abilities, weather, AI, spawns) are written by this project. They are inspired by the known behaviour of the games of the genre, without taking anyone's code.
 
+## Sprites of the community
+
+`scene_player spritecollab all` (or the first launch's box, or Tools › SpriteCollab…) fetches the sprites and portraits of [SpriteCollab](https://github.com/PMDCollab/SpriteCollab), by the PMDCollab community, under **CC BY-NC 4.0**: non-commercial use only, credit given. Nothing of them is in this repository; their credits are written to `data/extra/spritecollab_credits.txt` on import.
+
 ## What is not here
 
 This repository contains **no game data**: no pictures, sounds, music, dialogue or scripts from any published game. The tool reads them from **your own copy** of the cartridge, after the extraction done on your own machine (see the [README](README.md)). The pictures, sounds and music in the `library` folder are made by the project's own tools.
