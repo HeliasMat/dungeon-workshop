@@ -368,3 +368,44 @@ fn the_fog_over_lanternport_is_solved_by_its_zones_its_map_and_a_fight_lost_then
     _ = std::fs::remove_dir_all(&saves);
     Ok(())
 }
+
+/// How much of the screen as the game draws it now is lit (0 to 100).
+fn lit(game: &mut Game) -> usize {
+    let (mut canvas, mut world) = (stage_view::ui::Canvas::default(), shell::Screen::new(1));
+    game.draw(&mut canvas, &mut world);
+    let lit = world.rgba.chunks(4).filter(|pixel| pixel[..3].iter().any(|value| *value > 8)).count();
+    lit * 100 / (world.rgba.len() / 4).max(1)
+}
+
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn a_place_comes_back_seen_and_walked_after_a_talk_s_film_and_its_choice() -> Result<(), String> {
+    let data = data().expect("the extracted data/");
+    let saves = folder("back_seen");
+    let mut game = opened(&game_named("test_mystery"), &data, &saves);
+    let mut driver = Driver::new(&mut game);
+    driver.press("enter");
+    driver.read_to_roaming(30_000)?;
+    // (Sableye's film: its choice, the first option, the film over.)
+    driver.talk_to("sableye", 3_000)?;
+    driver.read_until(20_000, |game| game.film().is_some_and(preview::film::Film::asking))?;
+    driver.wait(10);
+    driver.press("enter");
+    driver.read_until(20_000, film_ended("the_choice"))?;
+    driver.read_to_roaming(10_000)?;
+    assert!(driver.game.story.flags.contains("accused_sableye"), "{:?}", driver.game.story.flags);
+    // (The harbour again: seen, not left on the film's dark, and walked.)
+    driver.wait(30);
+    let fade = driver.game.film().map(|film| film.play().sim.stage.light.fade.level);
+    assert_eq!(fade, Some(0.0), "{}", driver.lost("the place left faded"));
+    let seen = lit(driver.game);
+    assert!(seen > 20, "{}", driver.lost(&format!("the place drawn dark: {seen}% lit")));
+    let from = driver.game.walked_at().ok_or_else(|| driver.lost("no one walked"))?;
+    driver.hold("left", 30);
+    let to = driver.game.walked_at().ok_or_else(|| driver.lost("no one walked"))?;
+    driver.hold("right", 30);
+    let back = driver.game.walked_at().ok_or_else(|| driver.lost("no one walked"))?;
+    assert!(to != from || back != to, "{}", driver.lost("the leader did not move"));
+    _ = std::fs::remove_dir_all(&saves);
+    Ok(())
+}

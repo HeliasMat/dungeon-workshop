@@ -382,7 +382,9 @@ impl Film {
         match scene.transition.as_str() {
             "white" | "boss" => self.beat(emit::fade(false, true, FADE as f32)),
             "iris" => self.beat(emit::iris(true, FADE as f32, None)),
-            "cut" => self.wait(1),
+            // (Seen at once: a scene that opens on the dark (a film's first, a
+            // place come back to after a film) shown in a frame, not left dark.)
+            "cut" => self.beat(emit::fade(false, false, 1.0)),
             "wipe" => self.beat(emit::wipe(false, 1, WIPE as f32)),
             _ => self.beat(emit::fade(false, false, FADE as f32)),
         }
