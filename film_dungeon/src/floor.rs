@@ -140,7 +140,14 @@ pub(super) fn trapped(film: &mut Film, line: &Line) {
     let name = film.called(who);
     logged(film, &format!("{name} stepped on a {called_trap}!"));
     film.wait(30);
-    match kind.as_str() {
+    trap_does(film, who, &name, &kind);
+    film.wait_frames(60, line.wait);
+}
+
+/// What a trap of that kind does to who stepped on it, as the log tells it:
+/// one arm a kind.
+fn trap_does(film: &mut Film, who: &str, name: &str, kind: &str) {
+    match kind {
         "slumber" => {
             film.on(who, |who| emit::particles(engine::ParticleKind::Dust, Cam::Who(who), 20, Some(emit::colour(engine::Colour::Green))));
             film.on(who, |who| emit::pose(who, Pose::Sleep));
@@ -161,7 +168,7 @@ pub(super) fn trapped(film: &mut Film, line: &Line) {
             let colour = emit::colour(if kind == "mud" { engine::Colour::Brown } else { engine::Colour::Grey });
             film.on(who, |who| emit::particles(engine::ParticleKind::Dust, Cam::Who(who), 14, Some(colour)));
             film.on(who, |who| emit::status(who, emit::status_icon("lowered")));
-            let said = match kind.as_str() {
+            let said = match kind {
                 "slow" => "its Speed fell!",
                 "mud" => "its Attack fell!",
                 "pp_zero" => "its moves lost their PP!",
@@ -210,7 +217,7 @@ pub(super) fn trapped(film: &mut Film, line: &Line) {
         }
         "sticky" | "grimy" | "trip" => {
             film.emote(who, "sweat", Some(40.0));
-            let said = match kind.as_str() {
+            let said = match kind {
                 "sticky" => "an item in the bag became sticky!",
                 "grimy" => "the food in the bag became grimy!",
                 _ => "it tripped!",
@@ -222,5 +229,4 @@ pub(super) fn trapped(film: &mut Film, line: &Line) {
             logged(film, "Nothing happened...");
         }
     }
-    film.wait_frames(60, line.wait);
 }

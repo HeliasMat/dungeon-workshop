@@ -145,53 +145,11 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
     shadow_dives(film, &who);
     let heavy = line.args.has("heavy");
     let slips = line.args.has("unhooks");
-    // (By chance: the same for the same line of the same film.)
     let word = line.args.word("catch").map(plain).and_then(|word| match word.as_str() {
-        "random" => {
-            // (What bites by chance: by his bait, if he put one on.)
-            let bait = film.kept::<FishingState>().bait.get(&who).map(|bait| plain(bait)).unwrap_or_default();
-            let table: &[&str] = BAITED.iter().find(|(kind, _)| bait.contains(kind)).map_or(&CATCHES, |(_, table)| table);
-            let drawn = table[(line.number * 7 + film.kept::<FishingState>().bait.len() * 3) % table.len()];
-            film.remark(line.number, format!("{who} fishes at random: {}", if drawn == "-" { "nothing" } else { drawn }));
-            (drawn != "-").then(|| drawn.to_string())
-        }
+        "random" => bites_by_chance(film, line, &who),
         _ => Some(word),
     });
-    let fought = if heavy { HEAVY } else { FOUGHT };
-    film.anim(&who, "Pull", false);
-    let strength = if heavy { 2.0 } else { 1.0 };
-    film.on(&who, |who| emit::tremble(who, fought as f32, strength));
-    // (The bobber shaken on the water, what is under fighting.)
-    film.on(&code, |code| emit::tremble(code, fought as f32, 2.0));
-    film.sound("hop");
-    drops(film, &code, engine::ParticleKind::Rings, 2, None);
-    if heavy {
-        // (A heavy one: the ground shakes, he sweats, the water boils twice.)
-        film.beat(emit::quake(3.0, fought as f32));
-        film.emote(&who, "sweat", Some(60.0));
-        let (bubbles, splash) = ((engine::ParticleKind::Bubbles, None), (engine::ParticleKind::Drops, Some(emit::colour(engine::Colour::Blue))));
-        film.on(&code, |code| emit::after((fought / 3) as f32, 0.0, emit::particles(bubbles.0, Cam::Who(code), 10, bubbles.1)));
-        film.on(&code, |code| emit::after((fought * 2 / 3) as f32, 0.0, emit::particles(splash.0, Cam::Who(code), 20, splash.1)));
-        // (Riding, the fish tows his mount out toward it, by the water.)
-        if let Some(mount) = film.staging.mounts.get(&who).cloned() {
-            let from = film.kept::<FishingState>().swum.get(&mount).copied();
-            for at in 1..=3 {
-                let when = (fought * at / 4) as f32;
-                if let Some((x, y)) = from {
-                    film.on(&mount, |mount| emit::after(when, 0.0, emit::go(mount, x as f32, (y - TOWED * at) as f32, 12.0, true)));
-                }
-                film.on(&mount, |mount| emit::after(when, 0.0, emit::particles(splash.0, Cam::Who(mount), 12, splash.1)));
-            }
-            if let Some((x, y)) = from {
-                film.kept::<FishingState>().swum.insert(mount.clone(), (x, y - TOWED * 3));
-            }
-            floating(film, &mount, engine::Colour::White, "It's pulling us!");
-        }
-    }
-    film.wait(i64::from(fought / 2));
-    drops(film, &code, engine::ParticleKind::Drops, 14, Some(engine::Colour::Blue));
-    drops(film, &code, engine::ParticleKind::Rings, 2, None);
-    film.wait(i64::from(fought / 2));
+    fights(film, &who, &code, heavy);
     // (The splash of what comes out.)
     drops(film, &code, engine::ParticleKind::Drops, 40, Some(engine::Colour::Blue));
     drops(film, &code, engine::ParticleKind::Bubbles, 12, None);
@@ -205,63 +163,8 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
     film.on(&who, |who| emit::pose(who, Pose::Idle));
     let water = at.as_ref().and_then(|(x, y)| Some((x.parse::<i32>().ok()?, y.parse::<i32>().ok()?)));
     match held {
-        // (Off the hook in the air: it falls back into the water, by where it
-        // came out, and is gone.)
-        Some((caught, _)) if slips => {
-            let (x, y) = water.unwrap_or((0, 0));
-            let (x, y) = (x + 14, y + 4);
-            with_other(film, &who, &caught, |who, caught| emit::fishline(who, Some(caught), None, false));
-            film.on(&caught, |caught| emit::hop(caught, x as f32, y as f32, (CATCH_HEIGHT / 2) as f32, CATCH_FRAMES as f32));
-            film.on(&caught, |caught| emit::tremble(caught, CATCH_FRAMES as f32, 3.0));
-            film.wait(i64::from(CATCH_FRAMES / 3));
-            film.on(&who, |who| emit::fishline(who, None, None, true));
-            film.emote(&who, "shock", Some(50.0));
-            film.wait(i64::from(CATCH_FRAMES * 2 / 3));
-            film.beat(drops_at(x, y, engine::ParticleKind::Drops, 24, Some(engine::Colour::Blue)));
-            film.beat(drops_at(x, y, engine::ParticleKind::Rings, 3, None));
-            film.sound("click");
-            film.on(&caught, emit::gone);
-            floating(film, &who, engine::Colour::White, "It got away...");
-            cheer(film, false);
-            if water.is_none() {
-                film.remark(line.number, format!("haul {who} ... unhooks: throw {who} line x y, for the catch to fall back there"));
-            }
-        }
-        Some((caught, lands)) => {
-            let (word, pokemon) = caught_word(film, &caught);
-            film.kept::<FishingState>().catches.entry(who.clone()).or_default().push(Caught {
-                code: caught.clone(),
-                word,
-                pokemon,
-                kept: false,
-                released: false,
-                water,
-            });
-            cheer(film, true);
-            // (The line tied to it where it comes out, not cast: it flies
-            // from the water to beside him.)
-            with_other(film, &who, &caught, |who, caught| emit::fishline(who, Some(caught), None, false));
-            let on_back = film.staging.mounts.get(&who).cloned().filter(|_| point_of(line).is_none());
-            match (&on_back, written(&lands)) {
-                // (Riding, and no point told: onto the back he rides, behind him.)
-                (Some(mount), _) => with_other(film, &caught, mount, |caught, mount| emit::throw(caught, mount, CATCH_HEIGHT as f32, CATCH_FRAMES as f32)),
-                (None, Some((x, y))) => film.on(&caught, |caught| emit::hop(caught, x, y, CATCH_HEIGHT as f32, CATCH_FRAMES as f32)),
-                (None, None) => film.on_at(&caught, lands.clone(), |who, at| emit::hop_point(who, at, CATCH_HEIGHT as f32, CATCH_FRAMES as f32)),
-            }
-            // (It wriggles on the line as it flies.)
-            film.on(&caught, |caught| emit::tremble(caught, CATCH_FRAMES as f32, 2.0));
-            // (The line let go just before it lands: never lying on the ground.)
-            film.wait(i64::from(CATCH_FRAMES - 4));
-            film.on(&who, |who| emit::fishline(who, None, None, true));
-            film.wait(4);
-            if let Some(mount) = &on_back {
-                with_other(film, &caught, mount, |caught, mount| emit::ride(caught, Some(mount), BACK_CATCH_HIGH as f32, BACK_CATCH_SIDE as f32));
-            }
-            film.sound("shock");
-            // (It drips a while.)
-            let dripping = emit::frames_read("2s").map(|frames| frames as f32);
-            film.on(&caught, |caught| emit::emitter(engine::ParticleKind::Drops, caught, 6.0, Some(emit::colour(engine::Colour::Blue)), dripping));
-        }
+        Some((caught, _)) if slips => gets_away(film, line, &who, &caught, water),
+        Some((caught, lands)) => landed(film, line, &who, caught, lands, water),
         None => {
             film.on(&who, |who| emit::fishline(who, None, None, true));
             // (His bait gone with what ate it.)
@@ -272,6 +175,121 @@ pub(super) fn pulled(film: &mut Film, line: &Line) {
     }
     free_to_turn(film, &who);
     film.wait_frames(20, line.wait);
+}
+
+/// What bites by chance, by his bait if he put one on: the same for the
+/// same line of the same film; none for `-`.
+fn bites_by_chance(film: &mut Film, line: &Line, who: &str) -> Option<String> {
+    let bait = film.kept::<FishingState>().bait.get(who).map(|bait| plain(bait)).unwrap_or_default();
+    let table: &[&str] = BAITED.iter().find(|(kind, _)| bait.contains(kind)).map_or(&CATCHES, |(_, table)| table);
+    let drawn = table[(line.number * 7 + film.kept::<FishingState>().bait.len() * 3) % table.len()];
+    film.remark(line.number, format!("{who} fishes at random: {}", if drawn == "-" { "nothing" } else { drawn }));
+    (drawn != "-").then(|| drawn.to_string())
+}
+
+/// The fight: the rod bent in his pull, the bobber shaken on the water;
+/// a heavy one shakes the ground and tows his mount.
+fn fights(film: &mut Film, who: &str, code: &str, heavy: bool) {
+    let fought = if heavy { HEAVY } else { FOUGHT };
+    film.anim(who, "Pull", false);
+    let strength = if heavy { 2.0 } else { 1.0 };
+    film.on(who, |who| emit::tremble(who, fought as f32, strength));
+    // (The bobber shaken on the water, what is under fighting.)
+    film.on(code, |code| emit::tremble(code, fought as f32, 2.0));
+    film.sound("hop");
+    drops(film, code, engine::ParticleKind::Rings, 2, None);
+    if heavy {
+        pulls_hard(film, who, code, fought);
+    }
+    film.wait(i64::from(fought / 2));
+    drops(film, code, engine::ParticleKind::Drops, 14, Some(engine::Colour::Blue));
+    drops(film, code, engine::ParticleKind::Rings, 2, None);
+    film.wait(i64::from(fought / 2));
+}
+
+/// A heavy one: the ground shakes, he sweats, the water boils twice; riding,
+/// the fish tows his mount out toward it, by the water.
+fn pulls_hard(film: &mut Film, who: &str, code: &str, fought: i32) {
+    film.beat(emit::quake(3.0, fought as f32));
+    film.emote(who, "sweat", Some(60.0));
+    let (bubbles, splash) = ((engine::ParticleKind::Bubbles, None), (engine::ParticleKind::Drops, Some(emit::colour(engine::Colour::Blue))));
+    film.on(code, |code| emit::after((fought / 3) as f32, 0.0, emit::particles(bubbles.0, Cam::Who(code), 10, bubbles.1)));
+    film.on(code, |code| emit::after((fought * 2 / 3) as f32, 0.0, emit::particles(splash.0, Cam::Who(code), 20, splash.1)));
+    if let Some(mount) = film.staging.mounts.get(who).cloned() {
+        let from = film.kept::<FishingState>().swum.get(&mount).copied();
+        for at in 1..=3 {
+            let when = (fought * at / 4) as f32;
+            if let Some((x, y)) = from {
+                film.on(&mount, |mount| emit::after(when, 0.0, emit::go(mount, x as f32, (y - TOWED * at) as f32, 12.0, true)));
+            }
+            film.on(&mount, |mount| emit::after(when, 0.0, emit::particles(splash.0, Cam::Who(mount), 12, splash.1)));
+        }
+        if let Some((x, y)) = from {
+            film.kept::<FishingState>().swum.insert(mount.clone(), (x, y - TOWED * 3));
+        }
+        floating(film, &mount, engine::Colour::White, "It's pulling us!");
+    }
+}
+
+/// Off the hook in the air: it falls back into the water, by where it came
+/// out, and is gone.
+fn gets_away(film: &mut Film, line: &Line, who: &str, caught: &str, water: Option<(i32, i32)>) {
+    let (x, y) = water.unwrap_or((0, 0));
+    let (x, y) = (x + 14, y + 4);
+    with_other(film, who, caught, |who, caught| emit::fishline(who, Some(caught), None, false));
+    film.on(caught, |caught| emit::hop(caught, x as f32, y as f32, (CATCH_HEIGHT / 2) as f32, CATCH_FRAMES as f32));
+    film.on(caught, |caught| emit::tremble(caught, CATCH_FRAMES as f32, 3.0));
+    film.wait(i64::from(CATCH_FRAMES / 3));
+    film.on(who, |who| emit::fishline(who, None, None, true));
+    film.emote(who, "shock", Some(50.0));
+    film.wait(i64::from(CATCH_FRAMES * 2 / 3));
+    film.beat(drops_at(x, y, engine::ParticleKind::Drops, 24, Some(engine::Colour::Blue)));
+    film.beat(drops_at(x, y, engine::ParticleKind::Rings, 3, None));
+    film.sound("click");
+    film.on(caught, emit::gone);
+    floating(film, who, engine::Colour::White, "It got away...");
+    cheer(film, false);
+    if water.is_none() {
+        film.remark(line.number, format!("haul {who} ... unhooks: throw {who} line x y, for the catch to fall back there"));
+    }
+}
+
+/// Caught: kept with his catches, it flies on the line from the water to
+/// beside him, or onto the back he rides, and drips a while.
+fn landed(film: &mut Film, line: &Line, who: &str, caught: String, lands: Point, water: Option<(i32, i32)>) {
+    let (word, pokemon) = caught_word(film, &caught);
+    film.kept::<FishingState>().catches.entry(who.to_string()).or_default().push(Caught {
+        code: caught.clone(),
+        word,
+        pokemon,
+        kept: false,
+        released: false,
+        water,
+    });
+    cheer(film, true);
+    // (The line tied to it where it comes out, not cast: it flies
+    // from the water to beside him.)
+    with_other(film, who, &caught, |who, caught| emit::fishline(who, Some(caught), None, false));
+    let on_back = film.staging.mounts.get(who).cloned().filter(|_| point_of(line).is_none());
+    match (&on_back, written(&lands)) {
+        // (Riding, and no point told: onto the back he rides, behind him.)
+        (Some(mount), _) => with_other(film, &caught, mount, |caught, mount| emit::throw(caught, mount, CATCH_HEIGHT as f32, CATCH_FRAMES as f32)),
+        (None, Some((x, y))) => film.on(&caught, |caught| emit::hop(caught, x, y, CATCH_HEIGHT as f32, CATCH_FRAMES as f32)),
+        (None, None) => film.on_at(&caught, lands.clone(), |who, at| emit::hop_point(who, at, CATCH_HEIGHT as f32, CATCH_FRAMES as f32)),
+    }
+    // (It wriggles on the line as it flies.)
+    film.on(&caught, |caught| emit::tremble(caught, CATCH_FRAMES as f32, 2.0));
+    // (The line let go just before it lands: never lying on the ground.)
+    film.wait(i64::from(CATCH_FRAMES - 4));
+    film.on(who, |who| emit::fishline(who, None, None, true));
+    film.wait(4);
+    if let Some(mount) = &on_back {
+        with_other(film, &caught, mount, |caught, mount| emit::ride(caught, Some(mount), BACK_CATCH_HIGH as f32, BACK_CATCH_SIDE as f32));
+    }
+    film.sound("shock");
+    // (It drips a while.)
+    let dripping = emit::frames_read("2s").map(|frames| frames as f32);
+    film.on(&caught, |caught| emit::emitter(engine::ParticleKind::Drops, caught, 6.0, Some(emit::colour(engine::Colour::Blue)), dripping));
 }
 
 /// What bites by chance on each bait: an apple, the fish that like it; a
