@@ -230,9 +230,7 @@ pub const REPLACED: &[(&str, &str)] = &[
     ("greet", "who hop happy"),
     ("bravo", "who cheer"),
     ("clap", "who cheer"),
-    ("dance", "who pose spin"),
     ("pant", "who pose breathe"),
-    ("yawn", "who pose breathe"),
     // Emotions
     ("joy", "who react joy"),
     ("surprise", "who react surprise"),

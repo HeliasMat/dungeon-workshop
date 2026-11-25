@@ -1,12 +1,163 @@
 # The Wiki's pages: the Body family, what the body does where it stands (workshop_wiki/src/written.rs).
 
 == pose
-> Someone plays one of their sprite's animations, by a clear name: sit, lie, cringe, stagger, look_up, proud, breathe, attack, charge, doze… once (then standing again), loop (again and again) or hold (staying on its last picture); each has its own default. pose off: standing again.
+> Someone plays one of their sprite's animations, by a clear name: sit, lie, cringe, stagger, look_up, proud, breathe, attack, charge, doze, and the community's own (dance, twirl, show_off, wave, withdraw, hover, punch, kick, bite, tiptoe, knocked_out…): once (then standing again), loop (again and again) or hold (staying on its last picture); each has its own default. pose off: standing again.
 scene: beach pikachu piplup
 pikachu pose sit
 piplup: Tired?
 pikachu (happy): A little.
 pikachu pose off
+
+== sit
+> Someone sits down and stays sitting, with their sprite's Sit animation (lying down if their sprite has none, else asleep). Like every gesture word: once, loop or hold to play it otherwise; pose off, or any move, stands them again.
+scene: beach pikachu piplup
+pikachu sit
+piplup: Tired already?
+pikachu (happy): Just resting.
+pikachu pose off
+
+== lie_down
+> Someone lies down and stays there, with their sprite's Laying animation (asleep if it has none).
+scene: beach pikachu piplup
+pikachu lie_down
+piplup: The sun is nice, huh?
+pikachu (happy): Mm-hm.
+
+== headbutt
+> A butt of the head, with their sprite's Head animation (their Attack if it has none).
+scene: beach pikachu piplup
+piplup face pikachu
+piplup headbutt
+pikachu (surprised): Hey!
+
+== stagger
+> Someone loses their balance and stays unsteady, with their sprite's LostBalance animation (Pain, else Hurt, if it has none).
+scene: beach pikachu piplup
+pikachu stagger
+pikachu (pain): Whoa...
+piplup (worried): Careful!
+
+== bow
+> A bow, with their sprite's Bow animation; few sprites have one: the others nod.
+scene: beach pikachu piplup
+pikachu bow
+pikachu: Thank you for coming.
+piplup (happy): My pleasure!
+
+== dance
+> A little dance, with their sprite's Dance animation (a twirl, a spin, else a hop, if it has none); leaves dance about a grass kind.
+scene: beach clefairy piplup
+clefairy dance
+piplup (happy): Again!
+clefairy dance loop
+wait 2s
+clefairy pose off
+
+== twirl
+> Someone twirls round, with their sprite's Twirl animation (a spin if it has none).
+scene: beach oddish piplup
+oddish twirl
+piplup: You're in a good mood.
+oddish (happy): The best!
+
+== show_off
+> A showy pose, as to an audience, with their sprite's Appeal animation (their proud pose, else a hop, if it has none).
+scene: beach pichu piplup
+pichu show_off
+pichu (happy): Ta-da!
+piplup: Very nice.
+
+== withdraw
+> Someone hides in their shell or curls up, and stays so, with their sprite's Withdraw animation (a cringe, Pain, else Hurt, if it has none); pose off brings them out.
+scene: beach squirtle piplup
+piplup (angry): Who ate my berries?
+squirtle withdraw
+wait 1s
+squirtle pose off
+squirtle (worried): Not me...
+
+== shake_off
+> Someone shakes their whole body, as to shake off water or dust, with their sprite's Shake animation (a wiggle, else a hop, if it has none).
+scene: beach bulbasaur piplup
+bulbasaur shake_off
+bulbasaur (happy): That's better.
+
+== rear_up
+> Someone rears up, with their sprite's RearUp animation (their proud pose, else a charge, if it has none).
+scene: beach ponyta piplup
+ponyta rear_up
+ponyta (determined): Let's race!
+
+== hover
+> Someone hovers in place, again and again, with their sprite's Hover animation (floating if it has none, else standing); pose off stops it.
+scene: beach beedrill piplup
+beedrill hover
+piplup (worried): Don't come closer...
+beedrill pose off
+
+== flap
+> Someone flaps about, with their sprite's FlapAround animation (hovering, floating, else a hop, if it has none).
+scene: beach pidgey piplup
+pidgey flap
+pidgey (angry): My nest!
+
+== swell
+> Someone swells up, puffed, with their sprite's Swell animation (a deep breath, else a charge, if it has none).
+scene: beach pineco piplup
+piplup: Boo!
+pineco swell
+pineco (angry): Don't do that!
+
+== sing
+> Someone sings, with their sprite's Sing animation (their cry, a deep breath, a nod, else a charge, if it has none).
+scene: beach jigglypuff piplup
+jigglypuff sing
+piplup (happy): Lovely.
+
+== yawn
+> A yawn, with their sprite's Yawn animation (a deep breath, a nod, else a charge, if it has none).
+scene: beach pikachu piplup
+pikachu yawn
+pikachu: Is it morning already?
+
+== stand_up
+> Someone gets up from lying or sitting, with their sprite's StandingUp animation (waking, else a hop, if it has none).
+scene: beach pikachu piplup
+pikachu lie_down
+piplup: Let's go!
+pikachu stand_up
+pikachu (happy): Coming!
+
+== punch
+> A punch, with their sprite's Punch animation (a jab, else their Attack, if it has none).
+scene: beach machamp piplup
+machamp punch
+machamp: Training never stops.
+
+== stomp
+> Someone stamps the ground, with their sprite's Stomp animation (a rumble, a landing, else a hop, if it has none).
+scene: beach rhyhorn piplup
+rhyhorn stomp
+rhyhorn (angry): Out of my way!
+
+== tail_whip
+> Someone wags their tail at someone, with their sprite's TailWhip animation (their Attack if it has none).
+scene: beach eevee piplup
+eevee face piplup
+eevee tail_whip
+eevee (happy): Catch me!
+
+== lick
+> A lick, with their sprite's Lick animation (eating, else their Attack, if it has none).
+scene: beach lickitung piplup
+lickitung lick
+piplup (surprised): Yuck!
+
+== focus
+> Someone gathers their power, a special attack's stance, with their sprite's SpAttack animation (a charge if it has none).
+scene: beach kadabra piplup
+kadabra focus
+kadabra: I see... a storm coming.
 
 == sleep
 > Someone falls asleep, lying down with the game's Z's, until sleep off (their Wake animation).

@@ -137,8 +137,8 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `dive` | `rules`, `scenes`, `shell`, `stage_view` |
 | `extractor` | `engine`, `rom_formats`, `rules`, `shell`, `stage_view` |
 | `game` | `assets`, `decor`, `dive`, `engine`, `film`, `language`, `preview`, `rules`, `scenes`, `shell`, `stage_view` |
-| `ds_export` | `engine`, `film`, `game`, `preview`, `rules`, `scenes` |
-| `scene_player` | `ds_export`, `engine`, `film`, `game`, `language`, `preview`, `rules`, `scenes`, `shell`, `stage_view` |
+| `ds_export` | `assets`, `engine`, `film`, `game`, `preview`, `rules`, `scenes` |
+| `scene_player` | `ds_export`, `engine`, `film`, `game`, `language`, `preview`, `rules`, `scenes`, `shell`, `spritecollab`, `stage_view` |
 | `emulator` | nothing |
 | `dungeon_lsp` | `assets`, `decor`, `film`, `game`, `language` |
 | `workshop_base` | `assets`, `decor`, `film`, `preview`, `shell`, `spritecollab`, `stage_view` |
@@ -152,7 +152,7 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `workshop_sound` | `film`, `rules`, `shell`, `workshop_base` |
 | `workshop_wiki` | `engine`, `film`, `preview`, `workshop_base` |
 | `workshop_game` | `assets`, `decor`, `engine`, `game`, `workshop_base`, `workshop_decor` |
-| `workshop_first` | `assets`, `decor`, `game`, `workshop_base` |
+| `workshop_first` | `assets`, `decor`, `game`, `spritecollab`, `workshop_base` |
 | `workshop_emulator` | `emulator`, `shell`, `workshop_base`, `workshop_first` |
 | `workshop_home` | `decor`, `film`, `workshop_base`, `workshop_decor` |
 | `workshop_tools` | `assets`, `decor`, `film`, `media`, `spritecollab`, `workshop_base` |

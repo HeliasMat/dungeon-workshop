@@ -72,6 +72,29 @@ pub const WORDS: &[Word] = &[
         "one of his sprite's animations by a clear name: once, again and again, or held at its end; off: standing",
     ).family("Body").ds_direct("SetAnimation<actor>(n): the group of that species' own sprite showing it (ds_animations.txt: Dusknoir lies with its 27), through Sky's table (once or looped); off: 2")
     .maybe(posed),
+    // (Gestures said in a word of their own: the pose of that name, `POSES`.)
+    Word::new("sit", GESTURE_FORMS, "sits down and stays sitting: his Sit animation (else lying, else asleep); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
+    Word::new("lie_down", GESTURE_FORMS, "lies down and stays there: his Laying animation (else asleep); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
+    Word::new("headbutt", GESTURE_FORMS, "a butt of the head: his Head animation (else his Attack); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
+    Word::new("stagger", GESTURE_FORMS, "loses his balance and stays unsteady: his LostBalance animation (else Pain, else Hurt); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
+    Word::new("bow", GESTURE_FORMS, "a bow: his Bow animation (else a nod); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("dance", GESTURE_FORMS, "a little dance: his Dance animation (else a twirl, a spin, a hop); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("twirl", GESTURE_FORMS, "twirls round: his Twirl animation (else a spin); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("show_off", GESTURE_FORMS, "a showy pose, as to an audience: his Appeal animation (else his proud pose, a hop); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("withdraw", GESTURE_FORMS, "hides in his shell or curls up, and stays so: his Withdraw animation (else a cringe, Pain, Hurt); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("shake_off", GESTURE_FORMS, "shakes his whole body, as to shake off water or dust: his Shake animation (else a wiggle, a hop); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("rear_up", GESTURE_FORMS, "rears up: his RearUp animation (else his proud pose, a charge); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("hover", GESTURE_FORMS, "hovers in place, again and again: his Hover animation (else floating, standing); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("flap", GESTURE_FORMS, "flaps about: his FlapAround animation (else hovering, floating, a hop); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("swell", GESTURE_FORMS, "swells up, puffed: his Swell animation (else a deep breath, a charge); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("sing", GESTURE_FORMS, "sings: his Sing animation (else his cry, a deep breath, a nod); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("yawn", GESTURE_FORMS, "a yawn: his Yawn animation (else a deep breath, a nod); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("stand_up", GESTURE_FORMS, "gets up from lying or sitting: his StandingUp animation (else waking, a hop); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("punch", GESTURE_FORMS, "a punch: his Punch animation (else a jab, his Attack); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("stomp", GESTURE_FORMS, "stamps the ground: his Stomp animation (else a rumble, a landing, a hop); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("tail_whip", GESTURE_FORMS, "wags his tail at someone: his TailWhip animation (else his Attack); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("lick", GESTURE_FORMS, "a lick: his Lick animation (else eating, his Attack); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
+    Word::new("focus", GESTURE_FORMS, "gathers his power, a special attack's stance: his SpAttack animation (else a charge); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
     Word::new("sleep", &["who:pokemon off"], "awake: his Wake animation, the sleep's mark gone").family("Body").ds_direct("SetAnimation(62), as Sky's INIT_SLEEP; off: its waking, once (63)").maybe(read_woke),
     Word::new("hurt", &["who:pokemon [hard] [back n:number]"], "his Pain animation, knocked back the way he looks; hard: further, the view shaking").family("Body").ds_close("its pain animation, once; no knock back", "no knock back")
         .maybe(read_hurt),
@@ -89,6 +112,13 @@ pub const WORDS: &[Word] = &[
 
 /// Its words, a group of the language (`Lexicon`).
 pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("acting", WORDS);
+
+/// The forms of a gesture said in a word of its own (`pikachu sit`).
+const GESTURE_FORMS: &[&str] = &["who:pokemon [once|loop|hold]"];
+/// On the DS, a gesture of Sky's own groups, and one of the community's (and what is lost).
+const GESTURE_DS: &str = "SetAnimation<actor>(n): the group of that species' own sprite showing it (ds_animations.txt), through Sky's table";
+const COMMUNITY_DS: &str = "SetAnimation<actor>(n): the species' own Sky group of that name where it has one (Bow, Yawn...), else the nearest Sky's sprites share";
+const COMMUNITY_LOST: &str = "Sky's sprites lack most of the community's animations: the nearest it has";
 
 /// The game's emote balloons by their names in the films: the effect, its sound
 /// (as the game's scripts play them beside it most), if any.
@@ -113,8 +143,9 @@ const GATHERING: u16 = 638;
 const GATHERING_SOUND: &str = "6920";
 
 /// The sprites' animations by clear names, each played once, held at its
-/// end, or looped when nothing is said.
-pub const POSES: [(&str, &str, Plays); 33] = [
+/// end, or looped when nothing is said. Those of a word of their own
+/// (`pikachu sit`) have its name.
+pub const POSES: [(&str, &str, Plays); 82] = [
     ("walk", "Walk", Plays::Loop),
     ("attack", "Attack", Plays::Once),
     ("sleep", "Sleep", Plays::Loop),
@@ -148,6 +179,56 @@ pub const POSES: [(&str, &str, Plays); 33] = [
     ("faint", "Faint", Plays::Hold),
     ("land", "HitGround", Plays::Once),
     ("shoot", "Shoot", Plays::Once),
+    // (The community's own, past Sky's groups.)
+    ("lie_down", "Laying", Plays::Hold),
+    ("bow", "Bow", Plays::Once),
+    ("dance", "Dance", Plays::Once),
+    ("twirl", "Twirl", Plays::Once),
+    ("show_off", "Appeal", Plays::Once),
+    ("appeal", "Appeal", Plays::Once),
+    ("wave", "Wave", Plays::Once),
+    ("withdraw", "Withdraw", Plays::Hold),
+    ("shake_off", "Shake", Plays::Once),
+    ("rear_up", "RearUp", Plays::Once),
+    ("hover", "Hover", Plays::Loop),
+    ("flap", "FlapAround", Plays::Once),
+    ("swell", "Swell", Plays::Once),
+    ("sing", "Sing", Plays::Once),
+    ("cry_out", "Sound", Plays::Once),
+    ("yawn", "Yawn", Plays::Once),
+    ("stand_up", "StandingUp", Plays::Once),
+    ("punch", "Punch", Plays::Once),
+    ("jab", "Jab", Plays::Once),
+    ("uppercut", "Uppercut", Plays::Once),
+    ("stomp", "Stomp", Plays::Once),
+    ("rumble", "Rumble", Plays::Once),
+    ("tail_whip", "TailWhip", Plays::Once),
+    ("lick", "Lick", Plays::Once),
+    ("focus", "SpAttack", Plays::Once),
+    ("emit", "Emit", Plays::Once),
+    ("shock", "Shock", Plays::Once),
+    ("gas", "Gas", Plays::Once),
+    ("kick", "Kick", Plays::Once),
+    ("strike", "Strike", Plays::Once),
+    ("quick_strike", "QuickStrike", Plays::Once),
+    ("multi_strike", "MultiStrike", Plays::Once),
+    ("slam", "Slam", Plays::Once),
+    ("bite", "Bite", Plays::Once),
+    ("scratch", "Scratch", Plays::Once),
+    ("multi_scratch", "MultiScratch", Plays::Once),
+    ("slice", "Slice", Plays::Once),
+    ("chop", "Chop", Plays::Once),
+    ("slap", "Slap", Plays::Once),
+    ("ricochet", "Ricochet", Plays::Once),
+    ("roar", "Roar", Plays::Once),
+    ("cry", "Cry", Plays::Once),
+    ("knocked_out", "Fainted", Plays::Hold),
+    ("injured", "Injured", Plays::Hold),
+    ("raise_arms", "RaiseArms", Plays::Once),
+    ("tiptoe", "CarefulWalk", Plays::Loop),
+    ("wiggle", "Wiggle", Plays::Once),
+    ("dig_in", "DigIn", Plays::Once),
+    ("dig_out", "DigOut", Plays::Once),
 ];
 
 /// How an animation plays: once then standing, held at its end, again and again.
@@ -508,7 +589,29 @@ fn posed(film: &mut Film, line: &Line) -> bool {
         return true;
     }
     let name = plain(line.args.word("name").unwrap_or_default());
-    if matches!(name.as_str(), "spin" | "dance") {
+    played(film, line, &who, &name).is_some()
+}
+
+/// `pikachu sit [once|loop|hold]`: the pose of that name (`POSES`).
+fn gestured(film: &mut Film, line: &Line) -> bool {
+    if !line.args.has("who") {
+        return false;
+    }
+    let who = film_core::verbs::who_said(line);
+    // (Played once or held, the film waits for it, as for a nod.)
+    let Some(frames) = played(film, line, &who, &line.verb) else {
+        return false;
+    };
+    film.wait_frames(frames, line.wait);
+    true
+}
+
+/// The pose of that name, played as the line says (once, looped, held) or
+/// as it plays by default; on each one of them, the nearest his sprite has.
+/// How long the longest of them lasts (none looped); none: no such pose.
+fn played(film: &mut Film, line: &Line, who: &str, name: &str) -> Option<i64> {
+    let name = name.to_string();
+    if matches!(name.as_str(), "spin" | "dance" | "twirl") {
         film_core::groups::aura::moved(film, &who, film_core::groups::aura::Mood::Dancing);
     }
     // (`pose a sleep`, said with no way of playing it: the engine's own pose, lying asleep.)
@@ -522,34 +625,44 @@ fn posed(film: &mut Film, line: &Line) -> bool {
     };
     if let Some(pose) = own.filter(|_| !said_how) {
         film.on(&who, |one| emit::pose(one, pose));
-        return true;
+        return Some(0);
     }
-    let Some((group, by_default)) = pose_named(&name) else {
-        return false;
-    };
+    let (group, by_default) = pose_named(&name)?;
     let hold = match () {
         _ if line.args.has("once") => Plays::Once,
         _ if line.args.has("loop") => Plays::Loop,
         _ if line.args.has("hold") => Plays::Hold,
         _ => by_default,
     };
+    let mut lasts = 0;
     for one in film.members(&who) {
         // (An animation his sprite lacks: the nearest it has, else he stands, told.)
         let Some(group) = animation_had(film, &one, group, line.number) else {
             continue;
         };
+        if hold != Plays::Loop {
+            lasts = lasts.max(animation_frames(film, &one, group));
+        }
         film.on(&one, |one| match hold {
             Plays::Once => emit::anim_times(one, group, 1),
             Plays::Hold => emit::anim(one, group, false, false),
             Plays::Loop => emit::anim(one, group, true, false),
         });
     }
-    true
+    Some(lasts)
+}
+
+/// How many frames that animation of his sprite lasts (none known: 0).
+fn animation_frames(film: &mut Film, who: &str, group: AnimId) -> i64 {
+    let number = film.actor(who).and_then(|code| film_core::names::species(&code)?.parse::<u16>().ok());
+    let index = u8::try_from(usize::from(group.0) + 5).ok();
+    let ticks = number.zip(index).and_then(|key| film.tables.sheet_ticks.get(&key));
+    ticks.map_or(0, |ticks| ticks.iter().map(|&tick| i64::from(tick)).sum())
 }
 
 /// For an animation a sprite may lack, the nearest ones to play instead,
 /// in turn (most sprites have Hurt, Hop, Charge and Attack).
-const NEAREST: [(&str, &[&str]); 18] = [
+const NEAREST: [(&str, &[&str]); 65] = [
     ("Sit", &["Laying", "Sleep"]),
     ("Laying", &["Sleep"]),
     ("LookUp", &["Charge"]),
@@ -568,6 +681,54 @@ const NEAREST: [(&str, &[&str]); 18] = [
     ("Head", &["Attack"]),
     ("Pull", &["Charge"]),
     ("Wake", &["Hop"]),
+    // (The community's own, past Sky's groups: each ends with one every sprite has.)
+    ("Bow", &["Nod", "Hop"]),
+    ("Dance", &["Twirl", "Rotate", "Hop"]),
+    ("Twirl", &["Rotate", "Hop"]),
+    ("Appeal", &["Pose", "Hop"]),
+    ("Wave", &["Appeal", "Pose", "Hop"]),
+    ("RaiseArms", &["Appeal", "Pose", "Hop"]),
+    ("Withdraw", &["Cringe", "Pain", "Hurt"]),
+    ("Shake", &["Wiggle", "Hop"]),
+    ("Wiggle", &["Shake", "Hop"]),
+    ("RearUp", &["Pose", "Charge"]),
+    ("Hover", &["Float", "Idle"]),
+    ("FlapAround", &["Hover", "Float", "Hop"]),
+    ("Swell", &["DeepBreath", "Charge"]),
+    ("Sing", &["Sound", "DeepBreath", "Nod", "Charge"]),
+    ("Sound", &["Sing", "DeepBreath", "Charge"]),
+    ("Yawn", &["DeepBreath", "Nod", "Charge"]),
+    ("StandingUp", &["Wake", "Hop"]),
+    ("Punch", &["Jab", "Attack"]),
+    ("Jab", &["Punch", "Attack"]),
+    ("Uppercut", &["Punch", "Attack"]),
+    ("Stomp", &["Rumble", "HitGround", "Hop"]),
+    ("Rumble", &["Stomp", "Charge"]),
+    ("TailWhip", &["Attack"]),
+    ("Lick", &["Eat", "Attack"]),
+    ("SpAttack", &["Charge"]),
+    ("Emit", &["SpAttack", "Charge"]),
+    ("Shock", &["SpAttack", "Charge"]),
+    ("Gas", &["Shoot", "Charge"]),
+    ("Kick", &["Attack"]),
+    ("Strike", &["Attack"]),
+    ("QuickStrike", &["Kick", "Attack"]),
+    ("MultiStrike", &["Double", "Attack"]),
+    ("Slam", &["Attack"]),
+    ("Bite", &["Attack"]),
+    ("Scratch", &["MultiScratch", "Attack"]),
+    ("MultiScratch", &["Scratch", "Attack"]),
+    ("Slice", &["Swing", "Attack"]),
+    ("Chop", &["Swing", "Attack"]),
+    ("Slap", &["Swing", "Attack"]),
+    ("Ricochet", &["Attack"]),
+    ("Roar", &["Charge"]),
+    ("Cry", &["Pain", "Hurt"]),
+    ("Fainted", &["Faint", "Laying", "Sleep"]),
+    ("Injured", &["Pain", "Hurt"]),
+    ("CarefulWalk", &["Walk"]),
+    ("DigIn", &["Sink", "Hurt"]),
+    ("DigOut", &["HitGround", "Hop"]),
 ];
 
 /// The animation someone plays for that one: itself if his sprite has it
@@ -745,4 +906,32 @@ read_by_its_form! {
     read_trembled => trembled,
     read_fell => fell,
     read_fainted => fainted,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every gesture word is a pose of its name, of an animation the table names.
+    #[test]
+    fn each_gesture_word_is_a_pose() {
+        let gestures: Vec<&str> = WORDS.iter().filter(|word| word.forms == GESTURE_FORMS).map(|word| word.word).collect();
+        assert!(gestures.len() >= 20, "{gestures:?}");
+        for word in gestures {
+            assert!(pose_named(word).is_some(), "{word}: no pose of that name, or no animation of its");
+        }
+    }
+
+    /// The nearest of each of the community's animations ends with one every sprite has, so a gesture never stays standing.
+    #[test]
+    fn the_community_s_animations_fall_back_on_a_shared_one() {
+        // (assets::tables::NAMED_GROUPS: the first of the community's own.)
+        const COMMUNITY: u16 = 60;
+        let shared = ["Walk", "Attack", "Sleep", "Hurt", "Idle", "Hop", "Charge"];
+        for (_, anim, _) in POSES.iter().filter(|(_, anim, _)| emit::anim_of(anim).is_some_and(|group| group.0 >= COMMUNITY)) {
+            let nearest = NEAREST.iter().find(|(name, _)| name == anim).map_or(&[][..], |(_, nearest)| *nearest);
+            assert!(nearest.last().is_some_and(|last| shared.contains(last)), "{anim}: {nearest:?}");
+            assert!(nearest.iter().all(|name| emit::anim_of(name).is_some()), "{anim}: {nearest:?}");
+        }
+    }
 }

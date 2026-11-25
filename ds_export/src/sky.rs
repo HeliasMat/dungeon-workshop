@@ -150,6 +150,19 @@ fn instead(name: &str) -> &'static [&'static str] {
         "Laying" => &["Fainted", "Sleep"],
         // (Their own "Faint" may rise again, as Dusknoir's 25: their lying one, held, reads better.)
         "Sink" | "Faint" | "HitGround" => &["Fainted", "Laying", "Sleep"],
+        // (The community's own, past Sky's groups.)
+        "Bow" => &["Nod", "Hop"],
+        "Yawn" | "Swell" | "Sing" | "Sound" => &["DeepBreath", "Charge"],
+        "Dance" | "Twirl" | "Appeal" | "Wave" | "RaiseArms" | "Shake" | "Wiggle" | "RearUp" | "FlapAround" | "Hover" => &["Pose", "Hop"],
+        "Withdraw" | "Injured" | "Cry" => &["Cringe", "Pain", "Hurt"],
+        "StandingUp" => &["Wake", "Hop"],
+        "SpAttack" | "Emit" | "Shock" | "Gas" | "Roar" | "Rumble" => &["Charge"],
+        "Stomp" | "DigOut" => &["HitGround", "Hop"],
+        "DigIn" => &["Sink", "Hurt"],
+        "Fainted" => &["Laying", "Sleep"],
+        "CarefulWalk" => &["Walk"],
+        "Punch" | "Jab" | "Uppercut" | "TailWhip" | "Lick" | "Kick" | "Strike" | "QuickStrike" | "MultiStrike" | "Slam" | "Bite" | "Scratch"
+        | "MultiScratch" | "Slice" | "Chop" | "Slap" | "Ricochet" => &["Attack"],
         _ => &["Idle"],
     }
 }
@@ -197,6 +210,14 @@ pub(crate) fn own_named(species: u16, name: &str) -> Option<u16> {
 
 pub(crate) fn own_group(species: u16, group: u16) -> Option<u16> {
     let table = own_groups();
+    // (One of the community's own, past Sky's groups: the species' own group
+    // of that name where it has one, else the nearest Sky's sprites share.)
+    if usize::from(group) >= assets::tables::NAMED_GROUPS {
+        let name = scenes::vocabulary::POKEMON.animations.iter().find(|(_, at)| *at == usize::from(group)).map_or("", |(name, _)| *name);
+        let own = table.get(&species).filter(|_| species != 0);
+        let named = |name: &str| own.and_then(|own| own.iter().find(|(at, own)| *own == name && *at <= 34).map(|(at, _)| *at));
+        return named(name).or_else(|| instead(name).iter().find_map(|name| common_group(name).or_else(|| named(name)))).filter(|at| *at != 7);
+    }
     let Some(own) = table.get(&species).filter(|_| species != 0) else { return Some(group) };
     let Some(name) = group.checked_sub(13).and_then(|at| SHARED.split(' ').nth(usize::from(at))) else { return Some(group) };
     // (Sky's table reaches groups 0 to 34 only.)
@@ -379,6 +400,15 @@ mod tests {
         // A group with no looped entry plays once.
         assert_eq!(animation(33, true), Some(81));
         assert_eq!(animation(12, false), None);
+    }
+
+    /// One of the community's own animations, which Sky's sprites lack: the nearest they share.
+    #[test]
+    fn the_community_s_animations_play_the_nearest_sky_has() {
+        let group = |name: &str| scenes::vocabulary::POKEMON.animations.iter().find(|(one, _)| *one == name).map(|(_, at)| *at as u16).unwrap();
+        assert_eq!(own_group(0, group("Bow")), Some(10));
+        assert_eq!(own_group(0, group("Punch")), Some(1));
+        assert_eq!(own_group(0, group("Swell")), Some(11));
     }
 
     #[test]

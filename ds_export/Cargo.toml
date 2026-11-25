@@ -11,6 +11,7 @@ publish.workspace = true
 
 # What a film plays, read as Sky's operations; its fights by their rules.
 [dependencies]
+assets = { path = "../assets" }
 engine = { path = "../engine" }
 film = { path = "../film" }
 game = { path = "../game" }
