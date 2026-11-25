@@ -55,6 +55,18 @@ pub struct Field<'a> {
     pub secret_power: u8,
     /// The tokens of Destiny Bond given so far.
     pub bonds: &'a mut u32,
+    /// What the two have of their teammates and species.
+    pub sides: Sides,
+}
+
+/// What the two in an attack have of their teammates and their species,
+/// for the abilities that ask: the user's, then the victim's.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Sides {
+    /// Bits of `ability::allied`.
+    pub allies: (u8, u8),
+    /// Their species entries' genders (1 male, 2 female; else neither).
+    pub genders: (u8, u8),
 }
 
 /// A move about to land.
@@ -168,6 +180,22 @@ pub enum Happened {
     Grudge,
     /// The victim's Pass Scarf sent the effect on to someone next to it.
     Passed(MoveEffect),
+    /// Color Change: the victim took the type of the move that hit it.
+    ColorChanged(u8),
+    /// Trace: the victim copied one of the user's abilities.
+    Traced,
+    /// Synchronize: the one given that status problem shares it with the
+    /// foes around it.
+    Synchronized {
+        on: Role,
+        effect: MoveEffect,
+    },
+    /// Leaf Guard kept the effect off, in the sun.
+    LeafGuarded(Role),
+    /// The victim's Stench terrified the user.
+    Stench,
+    /// The victim's Aftermath: it blows up as it faints.
+    Burst,
 }
 
 /// All an attack did.
@@ -205,15 +233,35 @@ impl Play<'_, '_> {
         self.happened.push(happened);
     }
 
-    /// An effect on one of the two, told.
+    /// An effect on one of the two, told. (Synchronize shares the status
+    /// problems it is given.)
     fn affects(&mut self, effect: MoveEffect, party: &mut Party, on: Role) -> bool {
+        use crate::dungeon::ability;
+        if ability::leaf_guards(party.stats, effect, self.field.weather) {
+            self.says(Happened::LeafGuarded(on));
+            return false;
+        }
         let applied = self.apply(effect, party);
         self.says(Happened::Effect { on, effect, applied });
+        if applied && ability::synchronizes(party.stats, effect) {
+            self.says(Happened::Synchronized { on, effect });
+        }
         applied
     }
 
+    /// An effect on one of them; Leaf Guard keeps the status problems off
+    /// in the sun.
     fn apply(&mut self, effect: MoveEffect, party: &mut Party) -> bool {
+        if crate::dungeon::ability::leaf_guards(party.stats, effect, self.field.weather) {
+            return false;
+        }
         apply_effect(effect, self.field.rng, self.field.constants, party.stats, party.status)
+    }
+
+    /// Forewarn on the victim: now and then a blow aimed at it misses.
+    fn forewarned(&mut self, user: &Party, victim: &Party) -> bool {
+        use crate::dungeon::ability;
+        ability::shields(user.stats, victim.stats, ability::FOREWARN) && self.rolled(ability::FOREWARN_CHANCE)
     }
 
     fn rolled(&mut self, chance: i32) -> bool {
@@ -231,10 +279,22 @@ impl Play<'_, '_> {
             self.says(Happened::Deaf);
             return true;
         }
-        match attack.effect {
+        let landed = match attack.effect {
             Some(effect) => self.status_move(user, victim, attack, effect),
             None => self.blows(user, victim, attack),
+        };
+        // Trace: a move aimed at it, it copies one of its user's abilities
+        // in its place.
+        if victim.alive()
+            && ability::has(victim.stats, ability::TRACE)
+            && let Some(copied) = ability::traced(self.field.rng, user.stats)
+        {
+            victim.status.remember_identity(victim.stats);
+            let slot = victim.stats.abilities.iter().position(|&ability| ability == ability::TRACE).unwrap_or(0);
+            victim.stats.abilities[slot] = copied;
+            self.says(Happened::Traced);
         }
+        landed
     }
 }
 

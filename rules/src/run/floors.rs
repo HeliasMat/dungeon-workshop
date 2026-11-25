@@ -4,7 +4,7 @@
 use crate::dungeon::exclusive::effect::EXP_BOOST;
 use crate::dungeon::minimap::Explored;
 use crate::dungeon::status::item;
-use crate::dungeon::{MoveSlot, Pos, Statuses, ai, defeat_exp, held, iq, pick_weighted, random_tile, stack};
+use crate::dungeon::{MoveSlot, Pos, Statuses, ability, ai, defeat_exp, held, iq, pick_weighted, random_tile, stack};
 use crate::tables::{Fixed, Placed};
 
 use super::attack::chebyshev;
@@ -13,7 +13,7 @@ use super::shops::piled;
 use super::spawning::{KECLEON, hunter_stats, spawn_enemy, wild_monster};
 use super::team::earn;
 use super::watch::watched;
-use super::{Input, Monster, MonsterId, Recruit, Run, Side, Sight};
+use super::{Dungeon, Input, Monster, MonsterId, Recruit, Run, Side, Sight};
 
 const STAIRS_DOWN: u16 = 0x1309;
 const STAIRS_UP: u16 = 0x130A;
@@ -27,6 +27,12 @@ const PLAIN_SEED: u16 = 85;
 /// The piles of Poké a Dough Seed adds to the next floor (this project's
 /// own figure).
 const DOUGH_SEED_POKE: usize = 4;
+/// Chances in 100 that Pickup finds an item as a floor begins, and that
+/// Honey Gather makes a beaten foe drop Nectar (this project's own
+/// figures: the game has Nectar in Treasure Boxes, which foes here do not
+/// drop).
+const PICKUP_CHANCE: i32 = 30;
+const HONEY_GATHER_CHANCE: i32 = 10;
 
 impl Run {
     /// On to the next floor; past the last one the dungeon is cleared. (A
@@ -121,6 +127,7 @@ impl Run {
         if let Some(fixed) = spec.and_then(|floor| floor.fixed.as_ref()) {
             self.place_fixed(fixed);
         }
+        self.slow_start();
         let dungeon = self.here();
         // The jobs of a dungeon the team chose.
         if dungeon.jobs {
@@ -165,6 +172,41 @@ impl Run {
             if let Some(kind) = pick_weighted(&mut dungeon.rng, spec.traps.iter().copied().enumerate()) {
                 dungeon.traps.push(FloorTrap { at: tile, kind, seen: false, team: false });
             }
+        }
+        // Pickup: a team member holding nothing may come with something of
+        // the floor's.
+        let pickers: Vec<MonsterId> = dungeon
+            .monsters
+            .iter()
+            .filter(|monster| monster.team() && monster.stats.held == 0 && ability::has(&monster.stats, ability::PICKUP))
+            .map(|monster| monster.id)
+            .collect();
+        for who in pickers {
+            let dungeon = self.here();
+            if dungeon.rng.rand_int(100) >= PICKUP_CHANCE {
+                continue;
+            }
+            let Some(kind) = spec.items.pick(&mut dungeon.rng).filter(|&kind| stack::id(kind) != item::POKE) else {
+                continue;
+            };
+            let Some(monster) = dungeon.monster_mut(who) else {
+                continue;
+            };
+            monster.stats.held = kind;
+            let (name, item_name) = (monster.name.clone(), book.item_name(kind));
+            let said = book.phrase(crate::strings::log_text::PICKED_UP, &[("string:0", &name), ("item:0", &item_name)]);
+            self.log.push(said.unwrap_or_else(|| format!("{name} picked up {item_name}.")));
+        }
+    }
+
+    /// Slow Start: as a floor begins, those who have it are slowed.
+    fn slow_start(&mut self) {
+        let book = self.book.clone();
+        let dungeon = self.dungeon.as_mut().expect("a dungeon");
+        let Dungeon { rng, monsters, .. } = dungeon;
+        for monster in monsters.iter_mut().filter(|monster| monster.alive() && ability::has(&monster.stats, ability::SLOW_START)) {
+            monster.status.lower_speed(rng, &book.tables.constants);
+            self.log.push(format!("{} is a slow starter!", monster.name));
         }
     }
 
@@ -240,6 +282,8 @@ impl Run {
         }
         dungeon.spawn_turn = dungeon.turn;
         dungeon.spawn_count += 1;
+        // (Illuminate hit: one comes now, whatever the count.)
+        let illuminated = std::mem::take(&mut dungeon.illuminated);
         let floor = &dungeon.floor;
         let wild = dungeon.monsters.iter().filter(|monster| monster.side == Side::Foe && monster.alive() && !floor.in_monster_house(monster.at)).count() as i32;
         let cap = if floor.monster_house.is_some() { constants.spawn_cap_monster_house } else { constants.spawn_cap };
@@ -248,11 +292,11 @@ impl Run {
             (false, true) => constants.spawn_cooldown / 2,
             (false, false) => constants.spawn_cooldown,
         };
-        if wait <= 0 || dungeon.spawn_count < wait {
+        if !illuminated && (wait <= 0 || dungeon.spawn_count < wait) {
             return;
         }
         dungeon.spawn_count = 0;
-        if wild >= cap && !dungeon.thief_alert {
+        if wild >= cap && !dungeon.thief_alert && !illuminated {
             return;
         }
         let alive = dungeon.monsters.iter().filter(|monster| monster.alive()).map(|monster| monster.at);
@@ -310,6 +354,13 @@ impl Run {
         if enemy.stats.held != 0 {
             self.here().items.push(FloorItem { at: enemy.at, item: enemy.stats.held, price: None });
             self.log.push(format!("{} dropped {}.", enemy.name, book.item_name(enemy.stats.held)));
+        }
+        // Honey Gather in the team: now and then Nectar falls instead.
+        let dungeon = self.here();
+        let gatherer = dungeon.monsters.iter().any(|monster| monster.team() && monster.alive() && ability::has(&monster.stats, ability::HONEY_GATHER));
+        if enemy.status.struck_by_team && enemy.stats.held == 0 && gatherer && dungeon.rng.rand_int(100) < HONEY_GATHER_CHANCE {
+            dungeon.items.push(FloorItem { at: enemy.at, item: item::NECTAR, price: None });
+            self.log.push(format!("{} dropped {}.", enemy.name, book.item_name(item::NECTAR)));
         }
         if !enemy.status.struck_by_team {
             return;

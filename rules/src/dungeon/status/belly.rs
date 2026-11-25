@@ -67,6 +67,11 @@ impl Belly {
             true => lost * 3 / 4,
             false => lost,
         };
+        // (Gluttony: one step up, five quarters.)
+        let lost = match crate::dungeon::ability::has(stats, crate::dungeon::ability::GLUTTONY) {
+            true => lost * 5 / 4,
+            false => lost,
+        };
         self.value = (self.value - lost).max(0);
         if self.value == 0 {
             stats.hp -= 1;

@@ -1,15 +1,15 @@
 //! A blow on the floor: `attack::resolve` plays it out, and what happened
 //! is told, shown and left on the floor here.
 
-use crate::attack::{self, Attack, Field, Happened, Outcome, Party, Role, Tuning};
-use crate::dungeon::{MoveEffect, held};
+use crate::attack::{self, Attack, Field, Happened, Outcome, Party, Role, Sides, Tuning};
+use crate::dungeon::{MoveEffect, REGULAR_ATTACK_ID, ability, held, matchup, type_name};
 
 use super::attack::Arena;
 use super::dungeon::Shove;
 use super::monster::Side;
 use super::team::earn;
 use super::words::{effect_message, log_aftermath, log_damage};
-use super::{Monster, Sight};
+use super::{Monster, MonsterId, Sight};
 
 /// What of its striker's worth a Joy Ribbon's holder earns when hurt (a
 /// tenth: this project's own figure).
@@ -20,12 +20,32 @@ const JOY_RIBBON_SHARE: i32 = 10;
 pub(crate) const BLOW_LANDS: u32 = 10;
 
 fn party(monster: &mut Monster) -> Party<'_> {
-    Party { team: monster.team(), leader: monster.side == Side::Leader, at: monster.at, id: monster.id.0, stats: &mut monster.stats, status: &mut monster.status }
+    Party {
+        team: monster.team(),
+        leader: monster.side == Side::Leader,
+        at: monster.at,
+        id: monster.id.0,
+        stats: &mut monster.stats,
+        status: &mut monster.status,
+    }
 }
 
 impl Arena<'_> {
+    /// What the two have of their teammates and species, for the
+    /// abilities that ask (all the floor's monsters in hand).
+    pub(crate) fn sides(&self, monsters: &[Monster], user: MonsterId, victim: MonsterId) -> Sides {
+        let of = |who: MonsterId| monsters.iter().find(|monster| monster.id == who);
+        let allies = |who: MonsterId| {
+            let team = of(who).is_some_and(|monster| monster.team());
+            ability::allied(monsters.iter().filter(|monster| monster.id != who && monster.alive() && monster.team() == team).map(|monster| &monster.stats))
+        };
+        let gender =
+            |who: MonsterId| of(who).and_then(|monster| monster.species).and_then(|species| self.book.species(species)).map_or(0, |species| species.gender);
+        Sides { allies: (allies(user), allies(victim)), genders: (gender(user), gender(victim)) }
+    }
+
     /// Lands an attack. Whether it did not miss.
-    pub(crate) fn land(&mut self, user: &mut Monster, victim: &mut Monster, attack: &Attack) -> bool {
+    pub(crate) fn land(&mut self, user: &mut Monster, victim: &mut Monster, attack: &Attack, sides: Sides) -> bool {
         let book = self.book;
         let dungeon = &mut *self.dungeon;
         let secret_power = dungeon.spec(book).map_or(9, |floor| floor.secret_power);
@@ -40,12 +60,49 @@ impl Arena<'_> {
             water_sport: dungeon.water_sport > 0,
             secret_power,
             bonds: &mut dungeon.bonds,
+            sides,
         };
         let Outcome { landed, happened } = attack::resolve(&mut party(user), &mut party(victim), attack, Tuning::default(), &mut field);
         for happened in happened {
             self.tell(happened, user, victim);
         }
+        if landed {
+            self.after_landing(user, victim, attack);
+        }
         landed
+    }
+
+    /// The abilities a landed move wakes on the floor: Pressure spends a
+    /// PP more of a foe's move; Frisk and Anticipation tell what the foe a
+    /// team member strikes holds or knows; Illuminate calls a wild monster.
+    fn after_landing(&mut self, user: &mut Monster, victim: &Monster, attack: &Attack) {
+        let book = self.book;
+        let regular = attack.slot.id == REGULAR_ATTACK_ID;
+        let foes = user.team() != victim.team();
+        if !regular && foes && !user.status.pressured && ability::shields(&user.stats, &victim.stats, ability::PRESSURE) {
+            let used = user.status.last_move;
+            if let Some(slot) = user.moves.iter_mut().find(|slot| Some(slot.id) == used && slot.pp > 0) {
+                slot.pp -= 1;
+                user.status.pressured = true;
+            }
+        }
+        let (one, other) = (&user.name, &victim.name);
+        if regular && user.team() && foes && victim.alive() {
+            if ability::has(&user.stats, ability::FRISK) && victim.stats.held != 0 {
+                self.log.push(format!("{other} was frisked! It's holding one {}!", book.item_name(victim.stats.held)));
+            }
+            let chart = book.tables.types.as_ref();
+            let dreaded = victim
+                .moves
+                .iter()
+                .any(|slot| slot.power > 0 && chart.is_some_and(|chart| chart.overall(slot.type_id, &user.stats) == matchup::SUPER_EFFECTIVE));
+            if ability::has(&user.stats, ability::ANTICIPATION) && dreaded {
+                self.log.push(format!("{one}'s Anticipation: {other} knows a super-effective move!"));
+            }
+        }
+        if ability::has(&victim.stats, ability::ILLUMINATE) {
+            self.dungeon.illuminated = true;
+        }
     }
 
     /// What happened, in the log, in sights and on the floor.
@@ -112,6 +169,23 @@ impl Arena<'_> {
             Passed(effect) => {
                 self.dungeon.passed.push((victim.at, effect));
                 format!("{other} passed the effect on with its Pass Scarf!")
+            }
+            ColorChanged(kind) => format!("{other}'s Color Change made it the {} type!", type_name(kind)),
+            Traced => format!("{other} traced and copied the target's ability!"),
+            Synchronized { on, effect } => {
+                let bearer = if on == Role::User { &*user } else { &*victim };
+                self.dungeon.synchronized.push((bearer.at, bearer.team(), effect));
+                format!("{}'s Synchronize took effect!", bearer.name)
+            }
+            LeafGuarded(on) => format!("{} is protected by its Leaf Guard!", if on == Role::User { one } else { other }),
+            Stench => format!("A horrid stench billowed out! {one} became terrified!"),
+            Burst => {
+                if self.dungeon.weather.damp {
+                    "But the damp prevents the explosion!".to_string()
+                } else {
+                    self.dungeon.blasts.push((victim.at, 1, Some(victim.at)));
+                    format!("{other} exploded with its Aftermath!")
+                }
             }
         };
         self.log.push(said);

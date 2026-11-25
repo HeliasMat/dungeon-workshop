@@ -243,10 +243,9 @@ fn eaten_elsewhere(item: u16) -> Option<ItemUse> {
 /// weakened.
 fn grimy_food(rng: &mut DungeonRng, constants: &Constants, stats: &mut Stats, statuses: &mut Statuses, belly: &mut Belly) {
     const SURVIVALIST: u8 = 37;
-    const GLUTTONY: u8 = 89;
     const ILLS: [MoveEffect; 4] = [MoveEffect::Poison, MoveEffect::Paralyze, MoveEffect::Burn, MoveEffect::TargetAttack(-2)];
     belly.eat(25);
-    let spared = crate::dungeon::iq::has(stats, SURVIVALIST) || crate::dungeon::ability::has(stats, GLUTTONY);
+    let spared = crate::dungeon::iq::has(stats, SURVIVALIST) || crate::dungeon::ability::has(stats, crate::dungeon::ability::GLUTTONY);
     if !spared && rng.rand_int(100) < constants.grimy_food_chance {
         let ill = ILLS[rng.rand_int(ILLS.len() as i32) as usize];
         apply_effect(ill, rng, constants, stats, statuses);

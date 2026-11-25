@@ -1,7 +1,7 @@
 //! Wonder orbs: what each does, on the foes of the room, the team, the
 //! floor.
 
-use crate::dungeon::{FIXED_ONE, FLOOR_HEIGHT, FLOOR_WIDTH, Floor, MoveEffect, Pos, Tile, ai, apply_effect, pick_weighted, stack, status};
+use crate::dungeon::{FIXED_ONE, FLOOR_HEIGHT, FLOOR_WIDTH, Floor, MoveEffect, Pos, Tile, ability, ai, apply_effect, pick_weighted, stack, status};
 
 use super::attack::{Attack, chebyshev};
 use super::dungeon::{FloorItem, FloorTrap, Outcome, Shove, weather_name};
@@ -363,6 +363,21 @@ impl Run {
         };
         let name = self.name_of(foe);
         let front = Pos::new(scene.here.x + scene.facing.0, scene.here.y + scene.facing.1);
+        // (Suction Cups: neither is moved.)
+        let anchored = |run: &Self, who: MonsterId| {
+            run.dungeon.as_ref().and_then(|dungeon| dungeon.monster(who)).is_some_and(|monster| ability::has(&monster.stats, ability::SUCTION_CUPS))
+        };
+        let stuck = match orb {
+            Orb::Blowback if anchored(self, foe) => Some((foe, "be blown away")),
+            Orb::Switcher if anchored(self, foe) => Some((foe, "switch places")),
+            Orb::Switcher if anchored(self, scene.me) => Some((scene.me, "switch places")),
+            _ => None,
+        };
+        if let Some((who, what)) = stuck {
+            let name = self.name_of(who);
+            self.log.push(format!("{name} is anchored! It can't {what}!"));
+            return;
+        }
         match orb {
             Orb::Blowback => {
                 // Up to ten tiles, until something stops it.
@@ -504,6 +519,11 @@ impl Run {
                 }
             }
             Orb::Rollcall => self.rollcall(scene),
+            Orb::Pounce
+                if self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(me)).is_some_and(|monster| ability::has(&monster.stats, ability::SUCTION_CUPS)) =>
+            {
+                self.log.push(format!("{} is anchored! It can't leap!", scene.name));
+            }
             Orb::Pounce => {
                 let at = self.furthest(here, scene.facing, FLOOR_WIDTH, &scene.busy);
                 self.send(me, at);

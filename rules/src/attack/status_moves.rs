@@ -76,6 +76,7 @@ impl Play<'_, '_> {
                 self.says(Happened::Bounced);
                 self.affects(effect, user, Role::User);
             }
+            _ if ability::leaf_guards(victim.stats, effect, weather) => self.says(Happened::LeafGuarded(Role::Victim)),
             _ => {
                 let applied = self.apply(effect, victim);
                 // Wrap holds its user as long as its target.
@@ -86,6 +87,9 @@ impl Play<'_, '_> {
                     victim.status.leech_sower = Some(user.id);
                 }
                 self.says(Happened::Effect { on: Role::Victim, effect, applied });
+                if applied && ability::synchronizes(victim.stats, effect) {
+                    self.says(Happened::Synchronized { on: Role::Victim, effect });
+                }
             }
         }
         true

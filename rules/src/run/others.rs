@@ -168,8 +168,32 @@ impl Run {
         }
         self.weather_turn();
         self.held_items_turn();
+        self.bad_dreams_turn();
         // At half speed the others get two rounds for each of the leader's.
         Some(Phase { rounds: if speed == 0 { 2 } else { 1 }, previous, ..Phase::default() })
+    }
+
+    /// Bad Dreams: each turn, the foes of its bearer asleep where it sees
+    /// them lose HP.
+    fn bad_dreams_turn(&mut self) {
+        let dungeon = self.dungeon.as_mut().expect("a dungeon");
+        let dreamers: Vec<(Pos, bool)> = dungeon
+            .monsters
+            .iter()
+            .filter(|monster| monster.alive() && monster.side != Side::Keeper && ability::has(&monster.stats, ability::BAD_DREAMS))
+            .map(|monster| (monster.at, monster.team()))
+            .collect();
+        for (from, team) in dreamers {
+            let floor = &dungeon.floor;
+            for monster in dungeon.monsters.iter_mut() {
+                let tormented = monster.alive() && monster.side != Side::Keeper && monster.team() != team && monster.status.asleep();
+                if !tormented || monster.at == from || !ai::can_see(floor, from, monster.at) {
+                    continue;
+                }
+                watched(monster, &mut self.sights, |monster| monster.stats.hp -= ability::BAD_DREAMS_DAMAGE);
+                self.log.push(format!("{} is tormented by Bad Dreams and lost {} HP!", monster.name, ability::BAD_DREAMS_DAMAGE));
+            }
+        }
     }
 
     /// Held items that act as turns pass: a Warp Scarf now and then warps
@@ -283,10 +307,13 @@ impl Run {
         // some keep away from fights, at low HP or always; one waits for a
         // foe to come close.
         let tactic = tactics.get(&me.name).copied().unwrap_or(tactic::TOGETHER);
+        // (Run Away: below half its HP it flees, whatever its tactic; Stall:
+        // its moves only on a foe next to it.)
         let low = me.stats.hp * 2 <= me.stats.max_hp;
-        let flees = tactic == tactic::GET_AWAY || (tactic == tactic::AVOID_TROUBLE && low);
+        let flees = tactic == tactic::GET_AWAY || (tactic == tactic::AVOID_TROUBLE && low) || ability::runs_away(&me.stats, false);
         let close_foe = foes.iter().any(|&foe| chebyshev(at, foe) <= 1);
-        let holds_back = flees || tactic == tactic::KEEP_DISTANCE || (tactic == tactic::AVOID_FIRST_HIT && !close_foe);
+        let holds_back =
+            flees || tactic == tactic::KEEP_DISTANCE || (tactic == tactic::AVOID_FIRST_HIT && !close_foe) || ability::stalls(&me.stats, false, close_foe);
         let choice = if let Some(slot) = sleep_use {
             Some(AiChoice { slot: Some(slot), direction })
         } else if me.status.cannot_attack() || holds_back {
@@ -405,10 +432,13 @@ impl Run {
         let occupied = |tile: Pos| tile == at || foes.contains(&tile) || kin.contains(&tile) || Some(tile) == keeper;
         // The attack comes first; a monster without one in reach walks.
         let direction = facing_index(me.facing);
-        let terrified = me.status.terrified_turns > 0;
+        // (Run Away: below half its HP it flees as the terrified do; Stall:
+        // its moves only on a foe next to it, its blows otherwise.)
+        let terrified = me.status.terrified_turns > 0 || ability::runs_away(&me.stats, false);
+        let stalls = ability::stalls(&me.stats, false, foes.iter().any(|&foe| chebyshev(at, foe) <= 1));
         let choice = if let Some(slot) = me.status.sleep_move(&me.moves) {
             Some(AiChoice { slot: Some(slot), direction })
-        } else if me.status.cannot_attack() || terrified {
+        } else if me.status.cannot_attack() || terrified || stalls {
             None
         } else if me.status.charging.is_some() {
             // A charged move goes off where its user faces.
@@ -586,7 +616,7 @@ fn foe_action(
     walks: Mobility,
 ) -> Action {
     let at = me.at;
-    let terrified = me.status.terrified_turns > 0;
+    let terrified = me.status.terrified_turns > 0 || ability::runs_away(&me.stats, false);
     let action = match choice {
         Some(choice) => {
             let (dx, dy) = ai::DIRECTIONS[choice.direction];

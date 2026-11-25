@@ -5,7 +5,9 @@
 //! why not. Orbs are in `orbs`.
 
 use crate::dungeon::status::{ItemUse, fussy_eaters, item as kind};
-use crate::dungeon::{Belly, Damage, DungeonRng, FIXED_ONE, FLOOR_WIDTH, Floor, MoveSlot, Pos, eat_item, exclusive, held, iq, matchup, move_hits, stack};
+use crate::dungeon::{
+    Belly, Damage, DungeonRng, FIXED_ONE, FLOOR_WIDTH, Floor, MoveSlot, Pos, ability, eat_item, exclusive, held, iq, matchup, move_hits, stack,
+};
 
 use super::attack::Attack;
 use super::monster::Side;
@@ -427,6 +429,10 @@ impl Run {
         let Some(dungeon) = self.dungeon.as_mut() else {
             return;
         };
+        if dungeon.monster(who).is_some_and(|monster| ability::has(&monster.stats, ability::SUCTION_CUPS)) {
+            self.log.push(format!("{name} is anchored! It won't warp!"));
+            return;
+        }
         if let Some(tile) = dungeon.warp_tile(taken)
             && let Some(monster) = dungeon.monster_mut(who)
         {

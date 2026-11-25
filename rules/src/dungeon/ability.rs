@@ -3,7 +3,7 @@
 //! project's own reading of the well-known rules of the games, kept simple.
 //! Those that change the damage are applied in [`super::combat`].
 
-use super::combat::Stats;
+use super::combat::{Fighter, Stats};
 use super::rng::DungeonRng;
 use super::status::MoveEffect;
 use super::weather;
@@ -105,6 +105,34 @@ pub(crate) const FILTER: u8 = 110;
 pub(crate) const SNOW_CLOAK: u8 = 119;
 pub(crate) const SNOW_WARNING: u8 = 120;
 
+pub(crate) const STENCH: u8 = 1;
+pub(crate) const ROCK_HEAD: u8 = 7;
+pub(crate) const SUCTION_CUPS: u8 = 14;
+pub(crate) const NATURAL_CURE: u8 = 20;
+pub(crate) const MAGNET_PULL: u8 = 23;
+pub(crate) const SYNCHRONIZE: u8 = 25;
+pub(crate) const FORECAST: u8 = 37;
+pub(crate) const TRACE: u8 = 40;
+pub(crate) const RUN_AWAY: u8 = 43;
+pub(crate) const ILLUMINATE: u8 = 46;
+pub(crate) const PLUS: u8 = 56;
+pub(crate) const PRESSURE: u8 = 57;
+pub(crate) const COLOR_CHANGE: u8 = 59;
+pub(crate) const MINUS: u8 = 63;
+pub(crate) const PICKUP: u8 = 71;
+pub(crate) const STALL: u8 = 78;
+pub(crate) const FRISK: u8 = 82;
+pub(crate) const ANTICIPATION: u8 = 86;
+pub(crate) const GLUTTONY: u8 = 89;
+pub(crate) const SLOW_START: u8 = 94;
+pub(crate) const RIVALRY: u8 = 104;
+pub(crate) const BAD_DREAMS: u8 = 105;
+pub(crate) const FLOWER_GIFT: u8 = 113;
+pub(crate) const HONEY_GATHER: u8 = 117;
+pub(crate) const AFTERMATH: u8 = 118;
+pub(crate) const FOREWARN: u8 = 121;
+pub(crate) const LEAF_GUARD: u8 = 123;
+
 /// The sound moves, the moves that hurt their user, the punches (by move
 /// number).
 pub(crate) const SOUND_MOVES: [u16; 13] = [217, 284, 83, 34, 84, 171, 293, 27, 241, 25, 26, 530, 446];
@@ -126,6 +154,35 @@ pub(crate) const TINTED_LENS_BOOST: f64 = 1.5;
 const FAVOURED_MOVE_BOOST: f64 = 1.25;
 /// The share of the damage Rough Skin sends back, in quarters.
 const ROUGH_SKIN_QUARTERS: i32 = 1;
+/// Chances out of 100, the game's (read from its overlay 10): Magnet Pull
+/// holds a Steel attacker, Stench terrifies an attacker, Forewarn makes a
+/// blow miss, Aftermath goes off.
+pub(crate) const MAGNET_PULL_CHANCE: i32 = 12;
+pub(crate) const STENCH_CHANCE: i32 = 12;
+pub(crate) const FOREWARN_CHANCE: i32 = 20;
+pub(crate) const AFTERMATH_CHANCE: i32 = 50;
+/// How long Stench terrifies (Rescue Team's figure).
+pub(crate) const STENCH_TURNS: i32 = 3;
+/// The HP Bad Dreams takes from each sleeper it torments (the game's).
+pub(crate) const BAD_DREAMS_DAMAGE: i32 = 15;
+/// The longest a status problem lasts under Natural Cure, in turns (the
+/// game's); those that last until cured are left alone.
+const NATURAL_CURE_TURNS: i32 = 5;
+const LASTING: i32 = 100;
+/// What Plus and Minus multiply the special attack by.
+const PLUS_MINUS_BOOST: i32 = 3;
+
+/// Bits of the abilities a monster's teammates have, for those that help
+/// the side (Plus and Minus, Flower Gift): see [`allied`].
+pub const ALLY_PLUS: u8 = 1;
+pub const ALLY_MINUS: u8 = 2;
+pub const ALLY_FLOWER_GIFT: u8 = 4;
+
+/// Genders of species entries (`monster.md`): Rivalry's.
+const MALE: u8 = 1;
+const FEMALE: u8 = 2;
+const TYPE_ICE: u8 = 6;
+const TYPE_STEEL: u8 = 17;
 
 const TYPE_NORMAL: u8 = 1;
 const TYPE_FIRE: u8 = 2;
@@ -339,6 +396,103 @@ pub(crate) fn cures(rng: &mut DungeonRng, stats: &Stats, weather: u8) -> bool {
     has(stats, SHED_SKIN) && rng.rand_int(100) < SHED_SKIN_CHANCE
 }
 
+/// Whether Magnet Pull on the defender holds this attacker: a Steel type.
+pub(crate) fn magnet_pulls(attacker: &Stats, defender: &Stats) -> bool {
+    let steel = attacker.types.0 == TYPE_STEEL || attacker.types.1 == TYPE_STEEL;
+    steel && shields(attacker, defender, MAGNET_PULL)
+}
+
+/// The status problems Synchronize shares with the foes around: burns,
+/// poison, paralysis.
+pub(crate) fn synchronizes(stats: &Stats, effect: MoveEffect) -> bool {
+    matches!(effect, MoveEffect::Burn | MoveEffect::Poison | MoveEffect::BadlyPoison | MoveEffect::Paralyze) && has(stats, SYNCHRONIZE)
+}
+
+/// Whether Leaf Guard keeps this status problem off in the sun.
+pub(crate) fn leaf_guards(stats: &Stats, effect: MoveEffect, weather: u8) -> bool {
+    use MoveEffect::*;
+    let problem = matches!(effect, Sleep | Yawn | Nightmare | Poison | BadlyPoison | Burn | Paralyze | Freeze | Confuse | TriAttack);
+    problem && weather == weather::SUNNY && has(stats, LEAF_GUARD)
+}
+
+/// Natural Cure: a status problem lasts five turns at most (`extra` the
+/// turn it starts on, for those that count it).
+pub(crate) fn cure_sooner(stats: &Stats, turns: &mut i32, extra: i32) {
+    if has(stats, NATURAL_CURE) && *turns < LASTING && *turns > NATURAL_CURE_TURNS + extra {
+        *turns = NATURAL_CURE_TURNS + extra;
+    }
+}
+
+/// Run Away: below half its HP, any but the leader flees.
+pub(crate) fn runs_away(stats: &Stats, leader: bool) -> bool {
+    !leader && has(stats, RUN_AWAY) && stats.hp * 2 < stats.max_hp
+}
+
+/// Stall: any but the leader uses its moves only on a foe next to it.
+pub(crate) fn stalls(stats: &Stats, leader: bool, foe_beside: bool) -> bool {
+    !leader && !foe_beside && has(stats, STALL)
+}
+
+/// The ability Trace takes from the one it copies: one of its two at
+/// random (none to take, or nothing but Trace, nothing).
+pub(crate) fn traced(rng: &mut DungeonRng, copied: &Stats) -> Option<u8> {
+    let taken: Vec<u8> = copied.abilities.iter().copied().filter(|&ability| ability != 0 && ability != TRACE).collect();
+    match taken.len() {
+        0 => None,
+        count => Some(taken[rng.rand_int(count as i32) as usize]),
+    }
+}
+
+/// The bits of [`ALLY_PLUS`] and its like for one monster, from its
+/// teammates (itself left out).
+pub fn allied<'a>(teammates: impl IntoIterator<Item = &'a Stats>) -> u8 {
+    let bits = [(PLUS, ALLY_PLUS), (MINUS, ALLY_MINUS), (FLOWER_GIFT, ALLY_FLOWER_GIFT)];
+    teammates.into_iter().fold(0, |all, stats| bits.iter().filter(|&&(ability, _)| has(stats, ability)).fold(all, |all, &(_, bit)| all | bit))
+}
+
+/// What the abilities that answer the other side's or the team's make of
+/// the stages of a blow: Rivalry (a stage more against the same gender, one
+/// less against the other), Flower Gift on either side in the sun (a stage
+/// of attack, of special defense), Plus beside a Minus and the other way
+/// round (half again the special attack). `allies` and `genders`: the
+/// attacker's, then the defender's.
+pub(crate) fn cheer(attacker: &mut Fighter, defender: &mut Fighter, special: bool, weather: u8, allies: (u8, u8), genders: (u8, u8)) {
+    let sunny = weather == weather::SUNNY;
+    let blooming = |fighter: &Fighter, allies: u8| sunny && (has(&fighter.stats, FLOWER_GIFT) || allies & ALLY_FLOWER_GIFT != 0);
+    if special {
+        if blooming(defender, allies.1) {
+            defender.sp_defense_stage += 1;
+        }
+        let cheered = (has(&attacker.stats, PLUS) && allies.0 & ALLY_MINUS != 0) || (has(&attacker.stats, MINUS) && allies.0 & ALLY_PLUS != 0);
+        if cheered {
+            attacker.sp_attack_multiplier = attacker.sp_attack_multiplier * PLUS_MINUS_BOOST / 2;
+        }
+        return;
+    }
+    if has(&attacker.stats, RIVALRY) {
+        let gendered = |gender: u8| matches!(gender, MALE | FEMALE);
+        match genders {
+            (one, other) if gendered(one) && one == other => attacker.attack_stage += 1,
+            (one, other) if gendered(one) && gendered(other) => attacker.attack_stage -= 1,
+            _ => {}
+        }
+    }
+    if blooming(attacker, allies.0) {
+        attacker.attack_stage += 1;
+    }
+}
+
+/// Forecast's type in this weather: Fire in the sun, Water in the rain,
+/// Ice in hail; none, its own.
+pub(crate) fn forecast(weather: u8) -> Option<u8> {
+    match weather {
+        weather::SUNNY => Some(TYPE_FIRE),
+        weather::RAIN => Some(TYPE_WATER),
+        weather::HAIL | weather::SNOW => Some(TYPE_ICE),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -392,5 +546,67 @@ mod tests {
         assert_eq!(power_boost(&with([IRON_FIST, 0]), RECOIL_MOVES[0]), 0x100);
         let hurt = Stats { hp: 10, ..with([0, 0]) };
         assert!(in_a_pinch(&hurt) && !in_a_pinch(&with([0, 0])));
+    }
+
+    fn fighter(abilities: [u8; 2]) -> Fighter {
+        crate::dungeon::Statuses::default().fighter(&with(abilities), true)
+    }
+
+    #[test]
+    fn the_side_cheers_its_blows() {
+        // Rivalry: a stage more against the same gender, one less against
+        // the other, nothing against the genderless.
+        let (mut rival, mut target) = (fighter([RIVALRY, 0]), fighter([0, 0]));
+        let stage = rival.attack_stage;
+        cheer(&mut rival, &mut target, false, weather::CLEAR, (0, 0), (MALE, MALE));
+        assert_eq!(rival.attack_stage, stage + 1);
+        let mut rival = fighter([RIVALRY, 0]);
+        cheer(&mut rival, &mut target, false, weather::CLEAR, (0, 0), (MALE, FEMALE));
+        assert_eq!(rival.attack_stage, stage - 1);
+        let mut rival = fighter([RIVALRY, 0]);
+        cheer(&mut rival, &mut target, false, weather::CLEAR, (0, 0), (MALE, 3));
+        assert_eq!(rival.attack_stage, stage);
+        // Flower Gift in the sun, of a teammate: attack, special defense.
+        let (mut plain, mut blooming) = (fighter([0, 0]), fighter([0, 0]));
+        cheer(&mut plain, &mut blooming, false, weather::SUNNY, (ALLY_FLOWER_GIFT, 0), (0, 0));
+        assert_eq!(plain.attack_stage, stage + 1);
+        cheer(&mut plain, &mut blooming, true, weather::SUNNY, (0, ALLY_FLOWER_GIFT), (0, 0));
+        assert_eq!(blooming.sp_defense_stage, stage + 1);
+        // Plus beside a Minus: special attack half again; alone, nothing.
+        let mut plus = fighter([PLUS, 0]);
+        let multiplier = plus.sp_attack_multiplier;
+        cheer(&mut plus, &mut target, true, weather::CLEAR, (ALLY_PLUS, 0), (0, 0));
+        assert_eq!(plus.sp_attack_multiplier, multiplier);
+        cheer(&mut plus, &mut target, true, weather::CLEAR, (ALLY_MINUS, 0), (0, 0));
+        assert_eq!(plus.sp_attack_multiplier, multiplier * 3 / 2);
+        assert_eq!(allied([&with([MINUS, 0]), &with([FLOWER_GIFT, 0])]), ALLY_MINUS | ALLY_FLOWER_GIFT);
+    }
+
+    #[test]
+    fn abilities_of_status_problems_and_moving() {
+        // Natural Cure: five turns at most, the lasting ones left alone.
+        let curer = with([NATURAL_CURE, 0]);
+        let (mut long, mut lasting, mut short) = (9, 127, 3);
+        cure_sooner(&curer, &mut long, 0);
+        cure_sooner(&curer, &mut lasting, 0);
+        cure_sooner(&curer, &mut short, 0);
+        assert_eq!((long, lasting, short), (5, 127, 3));
+        // Leaf Guard in the sun only; Synchronize shares the lasting ones.
+        assert!(leaf_guards(&with([LEAF_GUARD, 0]), MoveEffect::Sleep, weather::SUNNY));
+        assert!(!leaf_guards(&with([LEAF_GUARD, 0]), MoveEffect::Sleep, weather::RAIN));
+        assert!(synchronizes(&with([SYNCHRONIZE, 0]), MoveEffect::Burn) && !synchronizes(&with([SYNCHRONIZE, 0]), MoveEffect::Sleep));
+        // Magnet Pull holds Steel types alone.
+        let steel = Stats { types: (TYPE_STEEL, 0), ..with([0, 0]) };
+        assert!(magnet_pulls(&steel, &with([MAGNET_PULL, 0])) && !magnet_pulls(&with([0, 0]), &with([MAGNET_PULL, 0])));
+        // Run Away below half its HP, never the leader; Stall, not beside a
+        // foe.
+        let hurt = Stats { hp: 10, ..with([RUN_AWAY, STALL]) };
+        assert!(runs_away(&hurt, false) && !runs_away(&hurt, true) && !runs_away(&with([RUN_AWAY, 0]), false));
+        assert!(stalls(&hurt, false, false) && !stalls(&hurt, false, true));
+        // Trace takes one that is not Trace; Forecast follows the weather.
+        let mut rng = DungeonRng::new(1);
+        assert_eq!(traced(&mut rng, &with([TRACE, KEEN_EYE])), Some(KEEN_EYE));
+        assert_eq!(traced(&mut rng, &with([TRACE, 0])), None);
+        assert_eq!((forecast(weather::RAIN), forecast(weather::CLEAR)), (Some(TYPE_WATER), None));
     }
 }

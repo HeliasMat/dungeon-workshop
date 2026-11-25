@@ -164,6 +164,8 @@ pub struct Statuses {
     /// Turns counted by a Warp Scarf and a No-Slip Cap it holds.
     pub(crate) warp_scarf_count: i32,
     pub(crate) no_slip_count: i32,
+    /// The move it is using spent a PP more already (Pressure).
+    pub(crate) pressured: bool,
     /// Multipliers of attack and defense, in 8-bit fixed point.
     pub attack_multiplier: i32,
     pub defense_multiplier: i32,
@@ -281,6 +283,7 @@ impl Default for Statuses {
             dropeye: false,
             warp_scarf_count: 0,
             no_slip_count: 0,
+            pressured: false,
             attack_multiplier: 0x100,
             defense_multiplier: 0x100,
             sp_attack_stage: NEUTRAL_STAGE,

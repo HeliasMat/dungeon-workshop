@@ -212,6 +212,15 @@ fn inflict(effect: MoveEffect, rng: &mut DungeonRng, constants: &Constants, stat
         Infatuate => statuses.infatuated_turns = Statuses::duration(rng, constants.infatuated_turns),
         _ => {}
     }
+    // Natural Cure: none of it lasts long.
+    if matches!(effect, Sleep | Nightmare | Burn | Paralyze | Freeze | Confuse | Swagger | Flatter | TriAttack) {
+        if statuses.sleep_turns != DEEP_SLEEP {
+            ability::cure_sooner(stats, &mut statuses.sleep_turns, 0);
+        }
+        for turns in [&mut statuses.burn_turns, &mut statuses.paralysis_turns, &mut statuses.frozen_turns, &mut statuses.confused_turns] {
+            ability::cure_sooner(stats, turns, 1);
+        }
+    }
     true
 }
 

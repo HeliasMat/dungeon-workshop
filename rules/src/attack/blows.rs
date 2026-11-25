@@ -85,6 +85,7 @@ impl Play<'_, '_> {
             }
             let (aimed, accuracy, evasion) = self.aim(slot, user, victim);
             let hit = !shielded && move_hits(self.field.rng, constants, &aimed, (accuracy, evasion), weather, (user.stats.female, victim.stats.female));
+            let hit = hit && !self.forewarned(user, victim);
             if !hit {
                 self.says(Happened::Missed);
                 // Jump Kick, Hi Jump Kick: missing, the kicker comes down
@@ -121,12 +122,15 @@ impl Play<'_, '_> {
                 }
                 Some(amount) => Damage { amount, matchup: matchup::NEUTRAL, critical: false },
                 None => {
-                    let target = victim.status.fighter(&if gravity { grounded(victim.stats) } else { *victim.stats }, victim.team);
+                    let mut target = victim.status.fighter(&if gravity { grounded(victim.stats) } else { *victim.stats }, victim.team);
+                    let mut fighter = user.fighter();
+                    let sides = self.field.sides;
+                    ability::cheer(&mut fighter, &mut target, slot.category != 0, weather, sides.allies, sides.genders);
                     calc_damage_with(
                         self.field.rng,
                         constants,
                         chart,
-                        &user.fighter(),
+                        &fighter,
                         &target,
                         type_id,
                         slot.power,

@@ -59,6 +59,7 @@ impl Battle {
             water_sport: false,
             secret_power: 9,
             bonds: &mut bonds,
+            sides: Default::default(),
         };
         attack::resolve(&mut mine.bodies[me.1].party(me.0 == 0), &mut theirs.bodies[foe.1].party(foe.0 == 0), &attack, tuning, &mut field)
     }

@@ -206,6 +206,11 @@ pub struct Dungeon {
     pub dough_seed: bool,
     /// Effects a Pass Scarf sent on, from where its holder stands.
     pub passed: Vec<(Pos, MoveEffect)>,
+    /// Status problems Synchronize shares: from where its bearer stands,
+    /// whether of the team, and which.
+    pub synchronized: Vec<(Pos, bool, MoveEffect)>,
+    /// A monster with Illuminate was hit: a wild monster comes at once.
+    pub illuminated: bool,
     /// Where the monster now attacking faces (for Me First).
     pub aimed_at: Option<Pos>,
     /// The HP of those bound by Destiny Bond, a frame ago.
@@ -304,6 +309,8 @@ impl Dungeon {
             recycle: false,
             dough_seed: false,
             passed: Vec::new(),
+            synchronized: Vec::new(),
+            illuminated: false,
             aimed_at: None,
             bond_hp: Vec::new(),
             identity_floor: 0,

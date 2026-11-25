@@ -12,6 +12,23 @@ use super::watch::watched;
 use super::words::effect_message;
 use super::{Monster, Run, Sight};
 
+/// Castform and Cherrim, by the weather: their form's entry (the female
+/// entries are 600 further).
+fn weather_form(species: u16, weather: u8) -> Option<u16> {
+    use crate::dungeon::weather;
+    const CASTFORM: u16 = 379;
+    const CHERRIM: u16 = 460;
+    let base = species % 600;
+    let shift = match (base, weather) {
+        (CASTFORM, weather::SUNNY) => 1,
+        (CASTFORM, weather::RAIN) => 2,
+        (CASTFORM, weather::HAIL | weather::SNOW) => 3,
+        (CHERRIM, weather::SUNNY) => 1,
+        _ => return None,
+    };
+    Some(species + shift)
+}
+
 /// Of that side? (Kecleon keeping its shop is of none.)
 fn of_side(monster: &Monster, team: bool) -> bool {
     monster.side != Side::Keeper && monster.team() == team
@@ -27,6 +44,7 @@ impl Run {
         arena.dungeon.identity_floor = arena.dungeon.generation;
         arena.spread_effects();
         arena.pass_effects();
+        arena.synchronize();
         arena.blasts();
         arena.shoves();
         arena.spite_moves();
@@ -103,6 +121,23 @@ impl Arena<'_> {
                 let applied = crate::dungeon::apply_effect(effect, rng, constants, &mut monster.stats, &mut monster.status);
                 self.log.push(effect_message(book, effect, &monster.name, applied));
             });
+        }
+    }
+
+    /// What Synchronize shares: the status problem its bearer was given
+    /// goes to each foe of its next to it.
+    fn synchronize(&mut self) {
+        let book = self.book;
+        let constants = &book.tables.constants;
+        for (from, team, effect) in std::mem::take(&mut self.dungeon.synchronized) {
+            let dungeon = &mut *self.dungeon;
+            let rng = &mut dungeon.rng;
+            for monster in dungeon.monsters.iter_mut().filter(|monster| monster.alive() && chebyshev(monster.at, from) == 1 && of_side(monster, !team)) {
+                watched(monster, self.sights, |monster| {
+                    let applied = crate::dungeon::apply_effect(effect, rng, constants, &mut monster.stats, &mut monster.status);
+                    self.log.push(effect_message(book, effect, &monster.name, applied));
+                });
+            }
         }
     }
 
@@ -195,6 +230,13 @@ impl Arena<'_> {
             self.log.push("But there is nobody in front.".to_string());
             return;
         };
+        // (Suction Cups: it stays where it is.)
+        if let Some(anchored) =
+            dungeon.monsters.iter().find(|monster| monster.at == front && monster.alive() && ability::has(&monster.stats, ability::SUCTION_CUPS))
+        {
+            self.log.push(format!("{} is anchored! It can't be thrown!", anchored.name));
+            return;
+        }
         const REACH: i32 = 10;
         let aimed = taken
             .iter()
@@ -438,14 +480,28 @@ impl Arena<'_> {
     }
 
     /// Transform: the transformed look like the floor's monster they drew,
-    /// until it wears off (or the floor is left).
+    /// until it wears off (or the floor is left). Forecast turns Castform
+    /// to the weather's type and form; Cherrim blooms in the sun.
     fn show_disguise(&mut self) {
         let spec = self.dungeon.spec(self.book);
+        let weather = self.dungeon.weather.apparent();
         for monster in &mut self.dungeon.monsters {
             if monster.status.disguise.is_some() && monster.status.disguise_turns == 0 {
                 monster.status.disguise = None;
             }
             monster.looks_like = monster.status.disguise.and_then(|index| Some(spec?.enemies.get(index as usize)?.species));
+            if ability::has(&monster.stats, ability::FORECAST) {
+                let own = monster.status.identity.map_or(monster.stats.types, |(_, types)| types);
+                let kind = ability::forecast(weather);
+                let types = kind.map_or(own, |kind| (kind, 0));
+                if monster.stats.types != types {
+                    monster.status.remember_identity(&monster.stats);
+                    monster.stats.types = types;
+                }
+            }
+            if monster.looks_like.is_none() {
+                monster.looks_like = monster.species.and_then(|species| weather_form(species, weather));
+            }
         }
     }
 

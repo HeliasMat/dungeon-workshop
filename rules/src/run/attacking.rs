@@ -3,7 +3,7 @@
 //! monster picks its move is its turn's.
 
 use crate::dungeon::exclusive::effect::NO_FRIENDLY_FIRE;
-use crate::dungeon::{MoveEffect, Pos, targets_in_range};
+use crate::dungeon::{MoveEffect, Pos, ability, targets_in_range};
 
 use super::attack::{link_chain, unlink_spent};
 use super::dungeon::ATTACK_WAIT;
@@ -167,6 +167,12 @@ impl Run {
         let Some(monster) = dungeon.monster_mut(victim) else {
             return;
         };
+        // (Suction Cups: it stays where it is.)
+        if ability::has(&monster.stats, ability::SUCTION_CUPS) {
+            let name = monster.name.clone();
+            self.log.push(format!("{name} is anchored! It can't be blown away!"));
+            return;
+        }
         monster.at = at;
         if crashed {
             let name = monster.name.clone();

@@ -84,6 +84,14 @@ impl Play<'_, '_> {
             user.status.leech_sower = None;
             self.says(Happened::SpunFree);
         }
+        // Color Change: hit, it takes the type of the move.
+        let kind = ability::attack_type(user.stats, type_id);
+        let changes = kind != 0 && victim.stats.types.0 != kind && victim.stats.types.1 != kind;
+        if changes && damage.amount > 0 && victim.alive() && ability::has(victim.stats, ability::COLOR_CHANGE) {
+            victim.status.remember_identity(victim.stats);
+            victim.stats.types = (kind, 0);
+            self.says(Happened::ColorChanged(kind));
+        }
         // Conversion 2: hit by a move, the monster turns to a type that
         // stands up to it (the type data says which; none, it stays).
         let resisting = constants.conversion2_types.get(type_id as usize).copied().unwrap_or(0);
@@ -119,9 +127,15 @@ impl Play<'_, '_> {
                 && user.status.levitating_turns == 0
                 && !ability::has(user.stats, ability::LEVITATE);
             let holds = (ability::shields(user.stats, victim.stats, ability::ARENA_TRAP) && grounded && self.rolled(constants.arena_trap_chance))
-                || (ability::shields(user.stats, victim.stats, ability::SHADOW_TAG) && self.rolled(constants.shadow_tag_chance));
+                || (ability::shields(user.stats, victim.stats, ability::SHADOW_TAG) && self.rolled(constants.shadow_tag_chance))
+                || (ability::magnet_pulls(user.stats, victim.stats) && self.rolled(ability::MAGNET_PULL_CHANCE));
             if holds {
                 self.affects(MoveEffect::Immobilize, user, Role::User);
+            }
+            // Stench: the striker may be terrified.
+            if ability::shields(user.stats, victim.stats, ability::STENCH) && self.rolled(ability::STENCH_CHANCE) {
+                user.status.terrified_turns = user.status.terrified_turns.max(ability::STENCH_TURNS);
+                self.says(Happened::Stench);
             }
         }
         // Exclusive items answer blows: on the striker, or on the one
@@ -152,12 +166,14 @@ impl Play<'_, '_> {
             self.affects(effect, victim, Role::Victim);
         }
         if let Some(aftermath) = id.and_then(aftermath) {
-            // (Liquid Ooze: what is drained hurts; Magic Guard: no recoil.)
+            // (Liquid Ooze: what is drained hurts; Magic Guard and Rock Head:
+            // no recoil.)
+            let guarded = ability::has(user.stats, ability::MAGIC_GUARD) || ability::has(user.stats, ability::ROCK_HEAD);
             if aftermath == Aftermath::Drain && ability::shields(user.stats, victim.stats, ability::LIQUID_OOZE) {
                 let lost = (damage.amount / 2).max(1);
                 user.stats.hp -= lost;
                 self.says(Happened::Ooze(lost));
-            } else if !(aftermath == Aftermath::Recoil && ability::has(user.stats, ability::MAGIC_GUARD)) {
+            } else if !(aftermath == Aftermath::Recoil && guarded) {
                 let lost = aftermath.apply(user.stats, damage.amount);
                 self.says(Happened::Aftermath(lost));
             }
@@ -174,6 +190,10 @@ impl Play<'_, '_> {
                 user.stats.hp -= back;
                 self.says(Happened::Countered(back));
             }
+        }
+        // Aftermath: knocked out, it may blow up around itself.
+        if !victim.alive() && felt && ability::shields(user.stats, victim.stats, ability::AFTERMATH) && self.rolled(ability::AFTERMATH_CHANCE) {
+            self.says(Happened::Burst);
         }
         // A Grudge: who knocked it out loses that move's PP.
         if !victim.alive() && std::mem::take(&mut victim.status.grudge) {

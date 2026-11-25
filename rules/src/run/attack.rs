@@ -177,6 +177,7 @@ impl Arena<'_> {
                 .unwrap_or_else(|| format!("{name} used {move_name}!")),
         );
         user.status.last_move = Some(id);
+        user.status.pressured = false;
         let slot = user.moves[index];
         let mut using = Using { id, slot, used: slot, damage_mult };
         if let Err(said) = self.turn_into(before, user, after, &known, &mut using) {
@@ -424,9 +425,10 @@ impl Arena<'_> {
     pub(crate) fn strike(&mut self, user: MonsterId, victim: MonsterId, attack: &Attack) -> bool {
         let mut monsters = std::mem::take(&mut self.dungeon.monsters);
         let mut landed = false;
+        let sides = self.sides(&monsters, user, victim);
         if let Some((user, victim)) = pair(&mut monsters, user, victim) {
             let (watch_user, watch_victim) = (Watch::of(user), Watch::of(victim));
-            landed = self.land(user, victim, attack);
+            landed = self.land(user, victim, attack, sides);
             watch_user.show(user, self.sights);
             watch_victim.show(victim, self.sights);
         }
