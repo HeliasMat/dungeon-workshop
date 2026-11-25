@@ -346,3 +346,34 @@ fn a_job_done_and_left_is_no_loss_and_plays_its_on_job_done() {
     assert!(!game.log.iter().any(|line| line == "dungeon lost"), "{:?}", game.log);
     assert!(berries(&game) > before, "its `on job done rescue` gave a berry: {:?}", game.log);
 }
+
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn back_in_the_evening_the_team_sleeps_and_wakes_to_a_new_day_and_its_on_morning() {
+    let data = data().expect("the extracted data/");
+    let rescue = crate::testing::root().join("tests/games/test_rescue/test_rescue.game");
+    let mut game = Game::open(&crate::testing::context_on(&data), &rescue, None).expect("the game opens");
+    (game.title, game.story.chapter) = (None, 2);
+    game.enter("test_square", super::roam::Arrival::Entrance(None), true);
+    standing(&mut game);
+    let berries = |game: &Game| {
+        let carried = game.playthrough.as_ref().map(crate::playthrough::Playthrough::carried).unwrap_or_default();
+        carried.items.iter().filter(|(name, _)| name == "Oran Berry").map(|(_, count)| u32::from(*count)).sum::<u32>()
+    };
+    game.make_team();
+    game.sync_team();
+    assert_eq!((game.story.value("day"), game.story.value("evening")), (1.0, 0.0), "the first day, in the morning");
+
+    game.dive_told(crate::dive::DiveEnd::Retreated, String::new(), &[]);
+    standing(&mut game);
+    assert_eq!((game.story.value("day"), game.story.value("evening")), (1.0, 1.0), "back in the evening");
+    assert!(game.place.as_ref().is_some_and(|place| place.text.contains("daytime evening")), "the evening's light");
+
+    let before = berries(&game);
+    game.push(vec![super::game_file::Action::Sleep { save: false }]);
+    standing(&mut game);
+    assert_eq!((game.story.value("day"), game.story.value("evening")), (2.0, 0.0), "{:?}", game.log);
+    assert!(in_order(&game.log, &["sleep", "day 2"]), "{:?}", game.log);
+    assert_eq!(berries(&game), before + 1, "its `on night` then its `on morning` played: {:?}", game.log);
+    assert!(game.place.as_ref().is_some_and(|place| !place.text.contains("daytime")), "daylight again");
+}

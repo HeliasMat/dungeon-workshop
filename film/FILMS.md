@@ -380,21 +380,33 @@ end
 ```
 
 - **The head**: `title:`, `author:`, `team:` (two Pokémon), `home:` (a place and maybe an entrance),
-  `guild_cut: yes` (optional: the guild keeps nine tenths of every job's reward, as in the original, until the story does `set graduated`; without it the team gets the whole reward).
+  `guild_cut: yes` (optional: the guild keeps nine tenths of every job's reward, as in the original, until the story does `set graduated`; without it the team gets the whole reward),
+  `autosave: yes` (optional: the game is saved each time the team is back from a dungeon, once what its return plays has played; never headless).
 - **A chapter** opens at the start of a line, `chapter 2 "Its name"`, and closes with `end`.
   What it says plays when it starts, in order; a film, a dungeon or a screen is waited for.
   `chapter 3` *indented* is the action that goes on to chapter 3.
 - **The actions** (in a chapter, in a rule, in a place's `on … end`): `play <film>`,
   `set <flag>`, `clear <flag>`, `add <counter> <n>`, `chapter <n>`, `go <place> [entrance]`,
   `dungeon <name>` and `fight <name>` (then `if won`), `open <place|dungeon>` (on the map),
-  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare>` (`jobs`: the job board, eight random jobs in the dungeons the story has opened, all of the game's if it never opens one, new ones after each dungeon; Enter reads a job in full, its client, objective, place, difficulty and reward, then takes it; `outlaws`: the outlaw board, the same with outlaws to arrest; `joblist`: the jobs taken, eight at most, each read and maybe given up; a job is done in its dungeon and paid on the way out, its client thanking the team first; `daycare`: Chansey's Day Care, where the Eggs some clients give wait (two explorations, any way out of a dungeon counting), each hatched there once ready, the Pokémon born joining the recruits; `appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
-  `map` (the world map of what was opened; `map dungeons`: the dungeons only, as at a crossroads; the one chosen is gone into), `finish` (the game's end card, “The End” and its title, until Enter goes back to the
+  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed>` (`jobs`: the job board, eight random jobs in the dungeons the story has opened, all of the game's if it never opens one, new ones each day; Enter reads a job in full, its client, objective, place, difficulty and reward, then takes it; `outlaws`: the outlaw board, the same with outlaws to arrest; `joblist`: the jobs taken, eight at most, each read and maybe given up; a job is done in its dungeon and paid on the way out, its client thanking the team first; `daycare`: Chansey's Day Care, where the Eggs some clients give wait (two days), each hatched there once ready, the Pokémon born joining the recruits; `bed`: “Go to sleep?”, then “Save your adventure?”, and the team sleeps as `sleep` does; `appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
+  `map` (the world map of what was opened; `map dungeons`: the dungeons only, as at a crossroads; the one chosen is gone into),
+  `sleep` (the team goes to bed: the `on night` rules, a new day, the `on morning` rules; see **Days**), `finish` (the game's end card, “The End” and its title, until Enter goes back to the
   title screen; the same once the last chapter has nothing left to play; headless, `the end`);
   and `if … else if … else … end`, tests as in films:
   `if chapter >= 2 and not met_kecleon`. Besides the flags and counters, a test reads the game's own numbers
   (never set): `chapter`, `won` (the last dungeon cleared), `jobs_done` (the jobs paid so far), `rank` (the
-  exploration rank as a number: 1 Normal, 2 Bronze, 3 Silver…), `money` (in the bag), `recruits` (how many joined):
-  `if jobs_done >= 3 and rank >= 2`.
+  exploration rank as a number: 1 Normal, 2 Bronze, 3 Silver…), `money` (in the bag), `recruits` (how many joined),
+  `day` (1 the first day), `evening` (1 once back from a dungeon, till the team sleeps):
+  `if jobs_done >= 3 and rank >= 2`, `if day >= 2 and not evening`.
+- **Days**, as in the original: a day ends when the team sleeps (`sleep`, or the bed of a place: `talk bed` under
+  a resident, or `shop bed` in an `on zone bed`). Back from a dungeon, however it ended, it is evening: the
+  places show the evening's light (`daytime evening`), the boards and the shops keep the day's jobs and wares.
+  Sleeping plays the `on night` rules (the guild's dinner), then a new day begins (new jobs on both boards, new
+  wares at Kecleon's, the Day Care's Eggs a day nearer, daylight again), then the `on morning` rules (the guild's
+  morning briefing). The bed asks “Go to sleep?”, then “Save your adventure?” (saved as the day begins). A game
+  without a bed still has its days: the team going off again the evening it came back, a new day begins first
+  (without `on night` nor `on morning`). The day is kept in the save. Headless, a bed is slept in when its
+  resident is talked to or its zone walked into.
 - **How a dungeon ends**, for the story: *won* (out by its last stairs, its boss beaten: `if won`, `on won`);
   *lost* (the team fainted, was blown out, gave up, or the client it escorted fainted: half the money and about
   half the bag lost, the jobs taken there undone, home, `on lost`); *escaped* (an Escape Orb: the bag and the money
@@ -403,7 +415,7 @@ end
   dungeon not cleared). However it ends, the jobs done there are paid on the way out (but when lost), each
   client's thanks said before the reward.
 - **The rules**: `on talk <resident>`, `on enter`, `on zone <name>`, `on won <dungeon>`, `on lost <dungeon>`,
-  `on job done [kind|dungeon]`,
+  `on job done [kind|dungeon]`, `on night`, `on morning`,
   each maybe `if <test>`, then actions, then `end`. Those of the place where the team is play first, then the chapter's.
   `on won <dungeon>` plays once that dungeon (or fight) is cleared, however the team went in: a `dungeon` line
   (before what follows it) or the map; `on lost <dungeon>` once it fell there and was taken home.

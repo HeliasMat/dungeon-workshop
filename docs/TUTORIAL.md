@@ -285,7 +285,34 @@ scene_player play my_first_game.dwpack
   A job done, the dungeon asks whether to leave: yes is a success (no `on lost`), the client thanks the team and the reward is paid;
   `on job done … end` in a chapter or a place plays a thank-you film, gives a gift or opens a new dungeon (`open cave`),
   and `if jobs_done >= 3`, `if rank >= 2`, `if money >= 500`, `if recruits >= 1` test how far the team has come.
-  Some clients give an Egg: `talk daycare` under a resident (Chansey) hatches it after two explorations.
+  Some clients give an Egg: `talk daycare` under a resident (Chansey) hatches it after two days.
+- **A day at the guild**, as in the original: a morning briefing, a job chosen, the dungeon, back in the
+  evening (the places in the evening's light), dinner, bed. The day turns when the team sleeps: `talk bed`
+  under a resident, or a zone on the bed of your place (`zone bed 497 256 38 22` in its `[life]`), asks
+  “Go to sleep?” then “Save your adventure?”; the boards then have new jobs, the shop new wares.
+
+  ```text
+  chapter 2 "Guild Days"
+    on zone bed
+      shop bed                     # "Go to sleep?", "Save your adventure?"
+    end
+    on night
+      play dinner                  # the evening meal, before the night
+    end
+    on morning if day >= 2
+      play morning_briefing        # the guildmaster's words, the team's cheer
+    end
+    on talk pelipper
+      shop jobs                    # choose a job; its dungeon from the map, as before
+    end
+    on talk loudred if evening
+      sleep                        # someone may send the team to bed too
+    end
+  end
+  ```
+
+  `if day >= 5`, `if evening` test the day and the hour; `autosave: yes` in the head saves the game each time
+  the team is back from a dungeon.
 - Bigger fights: `fight: <word>` and a `.fight` file made in the **Dungeon** space (+ New Boss Fight).
 - How a game's folder is laid out: [games/README.md](../games/README.md).
 - Every word of a film, a game, a dungeon: [film/FILMS.md](../film/FILMS.md); of a decor:

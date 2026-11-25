@@ -82,6 +82,8 @@ pub struct Making<'a> {
     pub told: &'a [String],
     /// Come back to where it stood (after a film): no fade.
     pub cut: bool,
+    /// Back from a dungeon, not slept since: the evening's light (`daytime evening`).
+    pub evening: bool,
 }
 
 /// The scene's text: the place, who lives there, the team, the player at the keys.
@@ -101,6 +103,10 @@ pub fn scene_text(place: &str, decor: &Decor, making: &Making) -> String {
     }
     let names: Vec<String> = std::iter::once(hero.clone()).chain(partner.clone()).chain(residents.iter().map(|one| one.name.clone())).collect();
     text.push_str(&format!("scene: {place} {}\n", names.join(" ")));
+    // (At once: the place opens in it, nobody waits for the light to turn.)
+    if making.evening {
+        text.push_str("daytime evening 1f\n");
+    }
     for resident in &residents {
         text.push_str(&format!("{} put {} {} facing {}\n", resident.name, resident.x, resident.y, resident.facing));
     }

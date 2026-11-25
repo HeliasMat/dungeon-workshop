@@ -186,6 +186,8 @@ pub struct Game {
     dived: Option<String>,
     /// The words of the ways the map open now shows, in its order.
     map_ways: Vec<String>,
+    /// Back from a dungeon in a game that says `autosave: yes`: saved once what the return plays has played.
+    autosave_due: bool,
     /// Nothing changed since the place was last made as the story has it.
     settled: bool,
     /// Nobody at the keys, and nothing left to do in the place: the game rests there.
@@ -235,6 +237,7 @@ impl Game {
             zoned: BTreeSet::new(),
             dived: None,
             map_ways: Vec::new(),
+            autosave_due: false,
             settled: false,
             rested: false,
             saves: PathBuf::from("saves"),
@@ -401,7 +404,13 @@ impl Game {
                 *said = Some(told);
             }
             match left {
-                true => self.screen_left(screen.chosen()),
+                true => {
+                    self.screen_left(screen.chosen());
+                    // (The bed told to: the night.)
+                    if let Some(slept) = screen.slept() {
+                        self.push(vec![Action::Sleep { save: slept.save }]);
+                    }
+                }
                 false => self.screen = Some((screen, shown)),
             }
             return;
@@ -722,6 +731,12 @@ impl Game {
         self.settled = false;
         self.story.won = end == DiveEnd::Won;
         self.story.jobs_done += paid.len() as u32;
+        // (Back in the evening, however it ended: the rules' own return says
+        // so too, when the dungeon was gone through.)
+        if let Some(run) = self.playthrough.as_mut().and_then(Playthrough::run_mut) {
+            run.evening();
+        }
+        self.autosave_due = !self.nobody && self.project.as_ref().is_some_and(|project| project.autosave);
         self.sync_team();
         let how = match end {
             DiveEnd::Won => "won",
@@ -753,15 +768,43 @@ impl Game {
         }
     }
 
-    /// The team as the tests read it (`rank`, `money`, `recruits`), from the
-    /// game's rules while it has them (not while lent to a dungeon).
+    /// The team as the tests read it (`rank`, `money`, `recruits`, `day`,
+    /// `evening`), from the game's rules while it has them (not while lent
+    /// to a dungeon).
     fn sync_team(&mut self) {
         let Some(run) = self.playthrough.as_ref().and_then(Playthrough::run) else {
             return;
         };
         let progress = &run.team().progress;
         let rank = run.book.tables.jobs.rank_number(progress.rank);
-        self.story.team = story::TeamNumbers { rank, money: run.bag().money, recruits: progress.recruits.len() as u32 };
+        let (day, evening) = run.day();
+        self.story.team = story::TeamNumbers { rank, money: run.bag().money, recruits: progress.recruits.len() as u32, day, evening };
+    }
+
+    /// The team goes to bed: the night's rules (`on night`: the guild's
+    /// dinner), then it wakes (`Action::Wake`).
+    fn sleep(&mut self, save: bool) {
+        self.log.push("sleep".to_string());
+        self.push(vec![Action::Wake { save }]);
+        self.rules_of(&When::Night);
+    }
+
+    /// The night over: a new day (new jobs, new wares), the game saved if the
+    /// bed was asked to, then the morning's rules (`on morning`: the guild's
+    /// briefing).
+    fn wake(&mut self, save: bool) {
+        if let Some(run) = self.playthrough_mut().and_then(Playthrough::run_mut) {
+            run.next_day();
+        }
+        self.sync_team();
+        self.log.push(format!("day {}", self.story.team.day));
+        if save && !self.nobody {
+            self.said = Some(match self.save() {
+                Ok(_) => "Your adventure was saved.".to_string(),
+                Err(why) => why.to_string(),
+            });
+        }
+        self.rules_of(&When::Morning);
     }
 
     /// K.O.: back to the game's home (else the place it was in), what was lost said.
@@ -787,6 +830,11 @@ impl Game {
     fn open_screen(&mut self, word: &str, ways: Vec<String>) {
         let mut draw = self.draw;
         let jobs_in = self.job_dungeons();
+        // (Nobody at the keys, at a bed: the team sleeps.)
+        if self.nobody && word == "bed" {
+            self.screen_left(0);
+            return self.push(vec![Action::Sleep { save: false }]);
+        }
         let opened = match self.nobody {
             true => None,
             false => self.playthrough_mut().and_then(|playthrough| GameScreen::open(word, ways, playthrough, &mut draw, jobs_in.as_ref())),
@@ -904,7 +952,14 @@ impl Game {
         if self.waiting() || self.over {
             return;
         }
-        // (Nothing left to play: the place, as the story has it now.)
+        // (Nothing left to play: the place, as the story has it now; back
+        // from a dungeon, saved there if the game says `autosave: yes`.)
+        if std::mem::take(&mut self.autosave_due) && self.place.is_some() {
+            match self.save() {
+                Ok(_) => self.log.push("autosaved".to_string()),
+                Err(why) => self.said = Some(why.to_string()),
+            }
+        }
         match &self.place {
             Some(_) if !std::mem::replace(&mut self.settled, true) => self.place_goes_on(),
             Some(_) => {}
@@ -957,7 +1012,7 @@ impl Game {
         self.running.clear();
         self.talked.clear();
         (self.walked, self.seen, self.zoned) = (BTreeSet::new(), BTreeSet::new(), BTreeSet::new());
-        (self.dived, self.map_ways) = (None, Vec::new());
+        (self.dived, self.map_ways, self.autosave_due) = (None, Vec::new(), false);
         self.log.push("title".to_string());
     }
 
@@ -1013,6 +1068,8 @@ impl Game {
             Action::Shop(word) => self.open_screen(&word, Vec::new()),
             Action::Map { dungeons_only } => self.open_map(dungeons_only),
             Action::Finish => self.finished(),
+            Action::Sleep { save } => self.sleep(save),
+            Action::Wake { save } => self.wake(save),
             Action::If(branches) => {
                 self.sync_team();
                 let story = &self.story;
@@ -1255,7 +1312,8 @@ impl Game {
         let holds =
             |test: Option<&str>| test.is_none_or(|test| game_file::test_of(test).is_ok_and(|test| game_file::value(&test, &|name| story.value(name)) != 0.0));
         let told = self.place.as_ref().map(|place| place.told.clone()).unwrap_or_default();
-        let making = roam::Making { team: &project.team, arrival: arrival.clone(), talking: &talking, holds: &holds, told: &told, cut: back };
+        let evening = story.team.evening;
+        let making = roam::Making { team: &project.team, arrival: arrival.clone(), talking: &talking, holds: &holds, told: &told, cut: back, evening };
         Ok(roam::scene_text(word, &decor, &making))
     }
 

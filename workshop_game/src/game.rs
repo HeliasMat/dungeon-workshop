@@ -138,6 +138,8 @@ fn rule_head(rule: &Rule) -> String {
         When::Lost(name) => format!("on lost {name}"),
         When::JobDone(None) => "on job done".to_string(),
         When::JobDone(Some(which)) => format!("on job done {which}"),
+        When::Night => "on night".to_string(),
+        When::Morning => "on morning".to_string(),
     };
 
     if rule.test.is_some() { format!("{when} if …") } else { when }

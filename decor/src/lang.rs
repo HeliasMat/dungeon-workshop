@@ -49,12 +49,12 @@ pub const COMMANDS: [(&str, &str); 33] = [
     ),
     (
         "talk",
-        "talk film <film> | talk shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare: talking to the resident above plays that film of the game, or opens that screen, after what it says",
+        "talk film <film> | talk shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed: talking to the resident above plays that film of the game, or opens that screen, after what it says (`talk bed`: “Go to sleep?”, a new day)",
     ),
     ("zone", "zone name x y width height: a zone of the place; walking into it plays the game's `on zone name`"),
     (
         "on",
-        "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> | on job done [kind|dungeon] [if test] … end: what the game does then (play, set, chapter, go, dungeon…: the actions of a .game)",
+        "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> | on job done [kind|dungeon] | on night | on morning [if test] … end: what the game does then (play, set, chapter, go, dungeon…: the actions of a .game)",
     ),
     ("music", "music n: the number of the place's music in the game"),
     (
@@ -768,7 +768,7 @@ impl Parsing<'_> {
             "layout" => self.planning = true,
             "on" => {
                 let head = raw.split('#').next().unwrap_or_default().trim().to_string();
-                if !matches!(rest.first().map(String::as_str), Some("enter" | "talk" | "zone" | "won" | "lost" | "job")) {
+                if !matches!(rest.first().map(String::as_str), Some("enter" | "talk" | "zone" | "won" | "lost" | "job" | "night" | "morning")) {
                     return Err(told.usage());
                 }
                 self.rule = Some((LifeRule { head, body: String::new(), line: number }, 1));
@@ -901,4 +901,4 @@ pub struct LifeRule {
 }
 
 /// The screens and what a resident may do when talked to (`talk …`).
-pub const TALKS: [&str; 12] = ["film", "shop", "market", "bank", "storage", "jobs", "outlaws", "joblist", "recruits", "appraise", "cafe", "daycare"];
+pub const TALKS: [&str; 13] = ["film", "shop", "market", "bank", "storage", "jobs", "outlaws", "joblist", "recruits", "appraise", "cafe", "daycare", "bed"];

@@ -22,8 +22,10 @@ const JOBS_DONE: &str = "jobs_done";
 
 /// The names a test reads that are the game's own, never a flag or a
 /// counter: the chapter, how the last dungeon ended, the jobs done; the
-/// team's exploration rank (1 the first, Normal), its money, its recruits.
-pub const OWN_NAMES: [&str; 6] = ["chapter", WON, JOBS_DONE, "rank", "money", "recruits"];
+/// team's exploration rank (1 the first, Normal), its money, its recruits;
+/// the day (1 the first) and whether it is evening (1: back from a dungeon,
+/// not slept since).
+pub const OWN_NAMES: [&str; 8] = ["chapter", WON, JOBS_DONE, "rank", "money", "recruits", "day", "evening"];
 
 /// What the team is now, as tests read it (not saved: the rules' game is).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -31,6 +33,8 @@ pub struct TeamNumbers {
     pub rank: u32,
     pub money: i32,
     pub recruits: u32,
+    pub day: u32,
+    pub evening: bool,
 }
 
 /// Where the story stands.
@@ -66,6 +70,8 @@ impl Story {
             "rank" => f64::from(self.team.rank),
             "money" => f64::from(self.team.money),
             "recruits" => f64::from(self.team.recruits),
+            "day" => f64::from(self.team.day),
+            "evening" => f64::from(u8::from(self.team.evening)),
             name if self.flags.contains(name) => 1.0,
             name => self.counters.get(name).map_or(0.0, |count| f64::from(*count)),
         }
@@ -202,7 +208,8 @@ mod tests {
         assert_eq!(Story::read(&story.written_alone()), story);
         assert_eq!(Story::of_place(&story.place_saved()), story);
         assert_eq!((story.value("chapter"), story.value("met_kecleon"), story.value("apples"), story.value("nothing")), (2.0, 1.0, 3.0, 0.0));
-        story.team = TeamNumbers { rank: 2, money: 350, recruits: 1 };
+        story.team = TeamNumbers { rank: 2, money: 350, recruits: 1, day: 3, evening: true };
         assert_eq!([story.value("jobs_done"), story.value("rank"), story.value("money"), story.value("recruits")], [4.0, 2.0, 350.0, 1.0]);
+        assert_eq!([story.value("day"), story.value("evening")], [3.0, 1.0]);
     }
 }

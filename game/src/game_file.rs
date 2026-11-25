@@ -32,9 +32,13 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
     (
         "shop",
-        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `daycare`: the eggs hatched)",
+        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `daycare`: the eggs hatched; `bed`: “Go to sleep?”, then “Save your adventure?”, and `sleep`)",
     ),
     ("map", "map [dungeons]: the world map, the places and dungeons opened (`map dungeons`: the dungeons only); the one chosen is gone to"),
+    (
+        "sleep",
+        "sleep: the team goes to bed: the `on night` rules play, a new day begins (new jobs on the boards, new wares in the shops), then the `on morning` rules",
+    ),
     ("finish", "finish: the game ends (The End)"),
 ];
 
@@ -56,6 +60,11 @@ pub enum When {
     /// that dungeon (`on job done forest`). Once a return, whatever the
     /// number of jobs.
     JobDone(Option<String>),
+    /// The team goes to bed (`sleep`, the bed's "Go to sleep?"): the day
+    /// ends (the guild's dinner), before the night.
+    Night,
+    /// A new day has begun, the team awake (the guild's morning briefing).
+    Morning,
 }
 
 /// `on talk kecleon [if …]` … `end`: what plays when that happens.
@@ -87,6 +96,16 @@ pub enum Action {
         dungeons_only: bool,
     },
     Finish,
+    /// `sleep`: the `on night` rules, then `Wake`; saved first if it says
+    /// (the bed's "Save your adventure?").
+    Sleep {
+        save: bool,
+    },
+    /// The night over (never written: `sleep` plays it): a new day, the
+    /// game saved if the bed was asked to, the `on morning` rules.
+    Wake {
+        save: bool,
+    },
     /// `if … else if … else … end`: each test and what it plays (none: `else`).
     If(Vec<(Option<Expr>, Vec<Action>)>),
 }
@@ -117,6 +136,9 @@ pub struct GameFile {
     /// as in the original, till the flag `graduated` is up; else the team
     /// gets them whole.
     pub guild_cut: bool,
+    /// `autosave: yes`: the game is saved each time the team is back from
+    /// a dungeon, once what its return plays has played.
+    pub autosave: bool,
     pub chapters: Vec<Chapter>,
     /// What does not read, a line each (`line n: …`).
     pub problems: Vec<Diagnostic>,
@@ -181,13 +203,14 @@ impl GameFile {
                     "author" => game.author = value,
                     "team" => game.team = value.split_whitespace().map(str::to_string).collect(),
                     "home" => game.home = place_said(&value),
-                    "guild_cut" => match value.as_str() {
-                        "yes" | "no" => game.guild_cut = value == "yes",
-                        _ => game.problems.push(Diagnostic::at(line_of(text, stmt.span.start), "guild_cut: yes|no")),
+                    "guild_cut" | "autosave" => match value.as_str() {
+                        "yes" | "no" if key == "guild_cut" => game.guild_cut = value == "yes",
+                        "yes" | "no" => game.autosave = value == "yes",
+                        _ => game.problems.push(Diagnostic::at(line_of(text, stmt.span.start), format!("{key}: yes|no"))),
                     },
                     _ => game.problems.push(Diagnostic::at(
                         line_of(text, stmt.span.start),
-                        format!("“{key}:” is not a line of a game's head (title, author, team, home, guild_cut)"),
+                        format!("“{key}:” is not a line of a game's head (title, author, team, home, guild_cut, autosave)"),
                     )),
                 }
                 continue;
@@ -216,7 +239,7 @@ impl GameFile {
                 }
                 _ => game.problems.push(Diagnostic::at(
                     line_of(text, stmt.span.start),
-                    "before the chapters, only the head (title:, author:, team:, home:, guild_cut:); then “chapter 1” … “end”",
+                    "before the chapters, only the head (title:, author:, team:, home:, guild_cut:, autosave:); then “chapter 1” … “end”",
                 )),
             }
         }
@@ -404,7 +427,11 @@ fn branches(text: &str, block: &Block, problems: &mut Vec<Diagnostic>) -> Vec<(O
     said
 }
 
-/// `on enter`, `on talk kecleon`, `on zone pier`, `on won forest`, `on lost forest`, `on job done [kind|dungeon]` (`if …` after) … `end`.
+/// How the rules are written.
+const RULE_HEADS: &str =
+    "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> | on job done [kind|dungeon] | on night | on morning [if …] … end";
+
+/// `on enter`, `on talk kecleon`, `on zone pier`, `on won forest`, `on lost forest`, `on job done [kind|dungeon]`, `on night`, `on morning` (`if …` after) … `end`.
 fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) -> Result<Rule, String> {
     let written = &text[block.opening_span.start..block.opening_span.end.min(text.len())];
     let (head, test) = match written.split_once(" if ") {
@@ -420,11 +447,9 @@ fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) 
         ["lost", dungeon] => When::Lost(dungeon.to_string()),
         ["job", "done"] => When::JobDone(None),
         ["job", "done", which] => When::JobDone(Some(which.to_string())),
-        _ => {
-            return Err(
-                "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> | on job done [kind|dungeon] [if …] … end".to_string()
-            );
-        }
+        ["night"] => When::Night,
+        ["morning"] => When::Morning,
+        _ => return Err(RULE_HEADS.to_string()),
     };
     let _ = stmt;
     let (actions, inner) = read_body(text, &block.body, problems);
@@ -481,6 +506,7 @@ fn action(call: &language::ast::Call) -> Result<Action, String> {
             Some(_) => return Err(usage(word)),
         },
         "finish" => Action::Finish,
+        "sleep" => Action::Sleep { save: false },
         _ => {
             let known: Vec<&str> = ACTIONS.iter().map(|(word, _)| *word).collect();
             return Err(format!("“{word}” is not an action of a game ({})", known.join(", ")));
@@ -602,6 +628,21 @@ mod tests {
         assert_eq!(whens, [&When::JobDone(None), &When::JobDone(Some("rescue".into())), &When::JobDone(Some("forest".into()))]);
         assert_eq!(game.names().into_iter().collect::<Vec<_>>(), ["lucky"]);
         assert!(!GameFile::read("title: X\nchapter 1\n  on job finished\n  end\nend\n").problems.is_empty());
+    }
+
+    #[test]
+    fn the_guild_s_day_has_its_night_its_morning_its_bed_and_its_save() {
+        let game = GameFile::read(
+            "title: X\nautosave: yes\nchapter 1\n  on night\n    play dinner\n  end\n  on morning if day > 1 and not evening\n    play briefing\n  end\n  on zone bed\n    shop bed\n  end\n  on talk chatot if evening\n    sleep\n  end\nend\n",
+        );
+        assert!(game.problems.is_empty(), "{:?}", game.problems);
+        assert!(game.autosave);
+        let rules = &game.chapter(1).expect("chapter 1").rules;
+        let whens: Vec<&When> = rules.iter().map(|rule| &rule.when).collect();
+        assert_eq!(whens, [&When::Night, &When::Morning, &When::Zone("bed".into()), &When::Talk("chatot".into())]);
+        assert!(matches!(rules[3].actions.as_slice(), [Action::Sleep { save: false }]), "{:?}", rules[3].actions);
+        assert!(game.names().is_empty(), "day and evening are the game's own: {:?}", game.names());
+        assert!(!GameFile::read("title: X\nautosave: often\n").problems.is_empty());
     }
 
     #[test]

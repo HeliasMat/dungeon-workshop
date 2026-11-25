@@ -3,7 +3,7 @@
 //! the bank, the storage, the boards of jobs and of outlaws, the Job List
 //! (the jobs taken, to give up), the recruits who come along,
 //! Xatu's appraisal of the treasure boxes, the café's Gummi juice, Chansey's
-//! Day Care (the eggs hatched), the world map's ways. What they do is the rules' (`rules::services`,
+//! Day Care (the eggs hatched), the bed (a new day), the world map's ways. What they do is the rules' (`rules::services`,
 //! `rules::jobs`, the `Run` of the film's game, `Playthrough`); here, a key at
 //! a time and what the box shows.
 
@@ -39,14 +39,23 @@ pub enum GameScreen {
     /// partner: the Gummi chosen (its place in the bag), then who drinks; what it did told.
     Cafe { cursor: ListCursor, gummi: Option<usize>, said: Option<String> },
     /// Chansey's Day Care: the eggs the jobs' clients gave, each hatched
-    /// once it has waited its explorations, the one born joining the
+    /// once it has waited its days, the one born joining the
     /// recruits; what it did told.
     DayCare { cursor: ListCursor, said: Option<String> },
+    /// The bed: "Go to sleep?", then "Save your adventure?" (as the
+    /// original asks before the night); what was answered once left.
+    Bed { cursor: ListCursor, sleeps: bool, answer: Option<Slept> },
     /// The world map's ways, by their names; the one chosen once left (from 1; 0: none).
     Map { ways: Vec<String>, cursor: ListCursor, chosen: usize },
     /// The game's menu, M or X in a place: the team, the bag, a save, closed;
     /// what it tells shown; a save asked for (the game writes it).
     Menu { cursor: ListCursor, said: Option<String>, save: bool },
+}
+
+/// What the bed was told: to sleep, the game saved first or not.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Slept {
+    pub save: bool,
 }
 
 impl GameScreen {
@@ -78,6 +87,7 @@ impl GameScreen {
             "recruits" => GameScreen::Recruits { cursor: ListCursor::default() },
             "daycare" => GameScreen::DayCare { cursor: ListCursor::default(), said: None },
             "appraise" => GameScreen::Appraise { cursor: ListCursor::default(), said: None, draw: Draw(draw.below(usize::MAX >> 1) as u32) },
+            "bed" => GameScreen::Bed { cursor: ListCursor::default(), sleeps: false, answer: None },
             "map" => GameScreen::Map { ways, cursor: ListCursor::default(), chosen: 0 },
             "menu" => GameScreen::Menu { cursor: ListCursor::default(), said: None, save: false },
             _ => return None,
@@ -239,6 +249,24 @@ impl GameScreen {
                 let (message, options) = day_care(run.eggs());
                 (left, Words::of_menu(message, options, cursor.at))
             }
+            GameScreen::Bed { cursor, sleeps, answer } => {
+                let left = match cursor.press(pressed, 2) {
+                    // (Yes to the night: then the save asked.)
+                    Picked::Chosen(0) if !*sleeps => {
+                        (*sleeps, *cursor) = (true, ListCursor::default());
+                        false
+                    }
+                    Picked::Chosen(row) if *sleeps => {
+                        *answer = Some(Slept { save: row == 0 });
+                        true
+                    }
+                    Picked::Chosen(_) | Picked::Left => true,
+                    _ => false,
+                };
+                let (message, evening) = (bed_question(*sleeps), run.day().1);
+                let message = if !*sleeps && evening { format!("It's getting late. {message}") } else { message.to_string() };
+                (left, Words::of_menu(message, vec!["Yes".to_string(), "No".to_string()], cursor.at))
+            }
             GameScreen::Map { ways, cursor, chosen } => {
                 let left = match cursor.press(pressed, ways.len() + 1) {
                     Picked::Chosen(row) => {
@@ -311,6 +339,14 @@ impl GameScreen {
         }
     }
 
+    /// What the bed was told, once left: to sleep (saved first or not); none: not now.
+    pub fn slept(&self) -> Option<Slept> {
+        match self {
+            GameScreen::Bed { answer, .. } => *answer,
+            _ => None,
+        }
+    }
+
     /// The way chosen on the map (from 1; 0: none).
     pub fn chosen(&self) -> usize {
         match self {
@@ -320,13 +356,21 @@ impl GameScreen {
     }
 }
 
+/// What the bed asks: to sleep, then (yes) to save first.
+fn bed_question(sleeps: bool) -> &'static str {
+    match sleeps {
+        false => "Go to sleep? A new day begins in the morning.",
+        true => "Save your adventure before sleeping?",
+    }
+}
+
 /// What Chansey's Day Care says and offers: each egg (what hatches from it,
-/// the explorations it still needs), then Done.
+/// the days it still needs), then Done.
 fn day_care(eggs: &[(u16, u8)]) -> (String, Vec<String>) {
-    let egg = |&(_, trips): &(u16, u8)| match trips {
+    let egg = |&(_, days): &(u16, u8)| match days {
         0 => "Egg: ready to hatch!".to_string(),
-        1 => "Egg: one more exploration".to_string(),
-        trips => format!("Egg: {trips} more explorations"),
+        1 => "Egg: one more day".to_string(),
+        days => format!("Egg: {days} more days"),
     };
     let message = match eggs.is_empty() {
         true => "Chansey: Welcome to the Day Care! No Egg is waiting here. A client may give you one for a job well done.",
@@ -341,7 +385,7 @@ mod tests {
     fn the_day_care_shows_each_egg_and_what_it_still_needs() {
         let (message, options) = super::day_care(&[(25, 0), (1, 2)]);
         assert!(message.starts_with("Chansey:"));
-        assert_eq!(options, ["Egg: ready to hatch!", "Egg: 2 more explorations", "Done"]);
+        assert_eq!(options, ["Egg: ready to hatch!", "Egg: 2 more days", "Done"]);
         assert!(super::day_care(&[]).0.contains("No Egg"));
     }
 }

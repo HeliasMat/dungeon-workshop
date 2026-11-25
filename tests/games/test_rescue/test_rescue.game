@@ -30,6 +30,14 @@ chapter 2 "Chapter 2"
   on talk bibarel
     shop jobs
   end
+  # The guild's day: dinner, then the morning's berry.
+  on night
+    set dined
+  end
+  on morning if dined and day >= 2
+    give Oran Berry
+    clear dined
+  end
   on job done rescue
     give Oran Berry
   end
