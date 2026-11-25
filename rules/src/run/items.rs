@@ -517,6 +517,25 @@ impl Run {
         self.log.push(format!("{name}{verb}{}.", self.book.item_name(item)));
     }
 
+    /// The Key at that place of the bag opens a key door next to the
+    /// leader, and is used up. Whether there was one.
+    fn open_door(&mut self, index: usize, item: u16) -> bool {
+        let Some(dungeon) = self.dungeon.as_mut() else {
+            return false;
+        };
+        let at = dungeon.leader().at;
+        let Some(door) = dungeon.key_doors.iter().position(|&(door, _)| super::attack::chebyshev(door, at) == 1) else {
+            self.log.push("There is no door here to open.".to_string());
+            return false;
+        };
+        let (door, room) = dungeon.key_doors.remove(door);
+        dungeon.floor.set(door, crate::dungeon::Tile::Floor { room });
+        dungeon.repaints += 1;
+        self.spend(index, item, " used ");
+        self.log.push("The door opened!".to_string());
+        true
+    }
+
     /// A TM teaches its move to the leader, if its species can learn it,
     /// and leaves a Used TM; an HM stays.
     fn teach(&mut self, index: usize, item: u16) -> bool {
@@ -582,11 +601,9 @@ impl Run {
         let Some(me) = self.dungeon.as_ref().map(|dungeon| dungeon.leader().id) else {
             return false;
         };
-        // (The locked doors of the rooms laid out by hand are not on the
-        // floors yet: a Key finds none.)
+        // A Key opens a door of a vault next to the leader.
         if item == kind::KEY {
-            self.log.push("There is no door here to open.".to_string());
-            return false;
+            return self.open_door(index, item);
         }
         let used = self.work(me, |leader, rng, book, _| {
             let Monster { stats, status, belly, moves, .. } = leader;

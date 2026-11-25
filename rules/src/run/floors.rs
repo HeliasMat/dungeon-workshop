@@ -85,6 +85,12 @@ impl Run {
         let fixed = self.fixed_room().cloned();
         let dungeon = self.here();
         dungeon.enter_floor(dungeon.spec(&book), fixed.as_ref());
+        // A vault behind a key door, where the floor has one (`vault`).
+        let vault = dungeon.id.and_then(|id| book.floor_extras(id, dungeon.floor_number)).and_then(|extras| extras.vault.as_ref());
+        let vault = vault.filter(|_| fixed.is_none()).and_then(|vault| super::vault::set_vault(&mut dungeon.floor, vault));
+        if let Some(vault) = &vault {
+            dungeon.key_doors = vault.doors.clone();
+        }
         // Hidden stairs, now and then, on a floor of the generator's with at
         // least two floors left (`secret`).
         let floors = dungeon.id.and_then(|id| book.tables.dungeons.get(id as usize)).map_or(0, |table| table.floors.len());
@@ -93,8 +99,19 @@ impl Run {
             use crate::dungeon::exclusive::effect::MORE_HIDDEN_STAIRS;
             let boosted = dungeon.monsters.iter().any(|monster| monster.team() && monster.status.exclusive.has(MORE_HIDDEN_STAIRS));
             dungeon.hidden_stairs = super::secret::hidden_stairs(&dungeon.floor, dungeon.floor_seed, extras, boosted);
+            // (Not inside the vault.)
+            let shut = |at: Pos| vault.as_ref().is_some_and(|vault| vault.items.iter().any(|item| chebyshev(item.0, at) <= 2));
+            dungeon.hidden_stairs = dungeon.hidden_stairs.filter(|hidden| !shut(hidden.at));
         }
         self.build_floor();
+        if let Some(vault) = vault {
+            let dungeon = self.here();
+            dungeon.items.extend(vault.items.into_iter().filter(|&(_, item)| (item as usize) < book.tables.items.len()).map(|(at, item)| FloorItem {
+                at,
+                item,
+                price: None,
+            }));
+        }
         // A new floor plays its own song (the shop's own aside).
         let dungeon = self.here();
         if let Some(song) = dungeon.spec(&book).and_then(|floor| floor.music)

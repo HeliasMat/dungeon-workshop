@@ -275,6 +275,8 @@ pub struct Dungeon {
     pub secret: Option<super::secret::Secret>,
     pub take_hidden: bool,
     pub spa_used: bool,
+    /// The doors the Key opens (`vault`), with the room each opens onto.
+    pub key_doors: Vec<(Pos, Option<u8>)>,
 }
 
 impl Dungeon {
@@ -356,6 +358,7 @@ impl Dungeon {
             secret: None,
             take_hidden: false,
             spa_used: false,
+            key_doors: Vec::new(),
         }
     }
 
@@ -409,6 +412,7 @@ impl Dungeon {
             props.kecleon_shop_chance = props.kecleon_shop_chance * KECLEON_SHOP_BOOST / 256;
         }
         self.hidden_stairs = None;
+        self.key_doors = fixed.map(crate::tables::Fixed::key_doors).unwrap_or_default();
         self.floor = match fixed {
             Some(fixed) => fixed.floor(),
             None => generate_floor(&mut self.rng, &props),

@@ -39,6 +39,7 @@ pub mod strike;
 pub mod team;
 pub mod town;
 pub mod treasure;
+pub mod vault;
 pub mod watch;
 pub mod words;
 
