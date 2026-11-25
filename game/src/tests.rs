@@ -211,7 +211,7 @@ fn a_team_ko_in_a_dungeon_comes_back_home_told_what_it_lost() {
     (game.title, game.story.chapter) = (None, 1);
     game.enter("test_harbour", super::roam::Arrival::Entrance(None), true);
     standing(&mut game);
-    game.dive_told(false, String::new());
+    game.dive_told(crate::dive::DiveEnd::Lost, String::new(), &[]);
     standing(&mut game);
     assert_eq!((game.story.place.as_deref(), game.story.won), (Some("test_market"), false), "home, as the game's file says");
     let text = game.place.as_ref().map(|place| place.text.clone()).unwrap_or_default();
@@ -320,4 +320,29 @@ fn a_place_not_built_yet_is_built_on_demand_into_a_cache() {
     assert!(listed.lines().any(|line| line.starts_with(&format!("dw_never_built\t{level}\t"))), "{listed}");
     assert!(cache.join("grounds/pictures").join(format!("{level}_f0.png")).is_file(), "its picture");
     _ = std::fs::remove_dir_all(&folder);
+}
+
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn a_job_done_and_left_is_no_loss_and_plays_its_on_job_done() {
+    let data = data().expect("the extracted data/");
+    let rescue = crate::testing::root().join("tests/games/test_rescue/test_rescue.game");
+    let mut game = Game::open(&crate::testing::context_on(&data), &rescue, None).expect("the game opens");
+    (game.title, game.story.chapter) = (None, 2);
+    game.enter("test_square", super::roam::Arrival::Entrance(None), true);
+    standing(&mut game);
+    let berries = |game: &Game| {
+        let carried = game.playthrough.as_ref().map(crate::playthrough::Playthrough::carried).unwrap_or_default();
+        carried.items.iter().filter(|(name, _)| name == "Oran Berry").map(|(_, count)| u32::from(*count)).sum::<u32>()
+    };
+
+    let before = berries(&game);
+    game.dived = Some("test_woods".to_string());
+    let job = rules::jobs::Job { kind: rules::jobs::Kind::Rescue, ..rules::jobs::Job::default() };
+    game.dive_told(crate::dive::DiveEnd::JobDone, "Thank you!".to_string(), &[job]);
+    standing(&mut game);
+    assert_eq!((game.story.place.as_deref(), game.story.won, game.story.jobs_done), (Some("test_square"), false, 1), "{:?}", game.log);
+    assert!(in_order(&game.log, &["dungeon left, job done", "job done rescue"]), "{:?}", game.log);
+    assert!(!game.log.iter().any(|line| line == "dungeon lost"), "{:?}", game.log);
+    assert!(berries(&game) > before, "its `on job done rescue` gave a berry: {:?}", game.log);
 }

@@ -282,6 +282,10 @@ scene_player play my_first_game.dwpack
   your own (`decor import <level> <name>`; `scene_player search <word>` finds places and Pokémon).
   `exit x y width height to <place> <entrance>` in a `[life]` leads from one place to another.
 - A shop, a bank, a job board: `talk shop` under a resident, or `shop jobs` in a rule (`outlaws`: the outlaw board; `joblist`: the jobs taken). The boards offer jobs in the dungeons your story has opened; `rank: C` in a `.dungeon` sets how hard they are there.
+  A job done, the dungeon asks whether to leave: yes is a success (no `on lost`), the client thanks the team and the reward is paid;
+  `on job done … end` in a chapter or a place plays a thank-you film, gives a gift or opens a new dungeon (`open cave`),
+  and `if jobs_done >= 3`, `if rank >= 2`, `if money >= 500`, `if recruits >= 1` test how far the team has come.
+  Some clients give an Egg: `talk daycare` under a resident (Chansey) hatches it after two explorations.
 - Bigger fights: `fight: <word>` and a `.fight` file made in the **Dungeon** space (+ New Boss Fight).
 - How a game's folder is laid out: [games/README.md](../games/README.md).
 - Every word of a film, a game, a dungeon: [film/FILMS.md](../film/FILMS.md); of a decor:

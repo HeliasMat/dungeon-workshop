@@ -243,9 +243,17 @@ pub(super) fn view(ui: &mut egui::Ui, making: &mut DungeonMaking, audio: &mut Op
     ui.allocate_rect(Rect::from_min_max(room.min, pos2(room.max.x, below.min_rect().max.y)), Sense::hover());
     let ended = trial.diving.ended;
     ui.ctx().request_repaint();
-    if let Some(cleared) = ended {
+    if let Some(end) = ended {
         making.stop(audio);
-        making.said = Some(if cleared { "over: out by the last floor's stairs".to_string() } else { "over: K.O. or given up".to_string() });
+        making.said = Some(
+            match end {
+                game::dive::DiveEnd::Won => "over: out by the last floor's stairs",
+                game::dive::DiveEnd::Lost => "over: K.O. or given up",
+                game::dive::DiveEnd::Retreated => "over: escaped (an Escape Orb)",
+                game::dive::DiveEnd::JobDone => "over: left, a job done",
+            }
+            .to_string(),
+        );
     }
 }
 

@@ -30,6 +30,7 @@ use std::collections::HashMap;
 
 use glam::Vec2;
 use rules::dungeon::Pos;
+use rules::jobs::Job;
 use rules::run::dungeon::Outcome;
 use rules::run::{MonsterId, Options};
 use shell::Keys;
@@ -112,8 +113,9 @@ pub struct Turn<'a, M> {
 pub enum Done {
     /// Left by the pause menu's way to the title.
     ToTitle,
-    /// Left: cleared, fainted, abandoned…, and what is said of it.
-    Left { outcome: Outcome, message: String },
+    /// Left: cleared, fainted, abandoned…, what is said of it, and the
+    /// jobs done there that were paid on the way out.
+    Left { outcome: Outcome, message: String, paid: Vec<Job> },
 }
 
 /// One tile of a floor, in pixels of the game.
@@ -199,9 +201,12 @@ fn leave(game: &mut Turn<'_, Dive>) {
     let left = game.run.leave_dungeon();
     let (outcome, mut message) = left.map_or((Outcome::Abandoned, String::new()), |left| (left.outcome, left.message));
     // (Items as scenes name them, `{item:12}`: whoever tells it knows.)
-    if chosen && let Some(paid) = game.run.pay_jobs() {
+    let done: Vec<Job> = game.run.team().progress.jobs.iter().filter(|job| job.done).copied().collect();
+    let mut paid = Vec::new();
+    if chosen && let Some(told) = game.run.pay_jobs() {
         message.push('\n');
-        message.push_str(&paid);
+        message.push_str(&told);
+        paid = done;
     }
-    *game.next = Some(Done::Left { outcome, message });
+    *game.next = Some(Done::Left { outcome, message, paid });
 }

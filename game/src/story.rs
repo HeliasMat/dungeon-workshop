@@ -17,6 +17,21 @@ use rules::run::saves::Place;
 const FLAG: &str = "flag.";
 /// How the last dungeon's end is kept.
 const WON: &str = "won";
+/// How the jobs done are counted (`if jobs_done >= 3`).
+const JOBS_DONE: &str = "jobs_done";
+
+/// The names a test reads that are the game's own, never a flag or a
+/// counter: the chapter, how the last dungeon ended, the jobs done; the
+/// team's exploration rank (1 the first, Normal), its money, its recruits.
+pub const OWN_NAMES: [&str; 6] = ["chapter", WON, JOBS_DONE, "rank", "money", "recruits"];
+
+/// What the team is now, as tests read it (not saved: the rules' game is).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct TeamNumbers {
+    pub rank: u32,
+    pub money: i32,
+    pub recruits: u32,
+}
 
 /// Where the story stands.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -33,15 +48,24 @@ pub struct Story {
     pub opened: BTreeSet<String>,
     /// How the last dungeon or fight ended (`if won`).
     pub won: bool,
+    /// The jobs paid so far.
+    pub jobs_done: u32,
+    /// The team, as the rules' game has it now.
+    pub team: TeamNumbers,
 }
 
 impl Story {
     /// What a name of a test reads: the chapter, how the last dungeon
-    /// ended, a flag (1 up, 0 down), a counter; any other, 0.
+    /// ended, the jobs done, the team's rank, money and recruits, a flag
+    /// (1 up, 0 down), a counter; any other, 0.
     pub fn value(&self, name: &str) -> f64 {
         match name {
             "chapter" => f64::from(self.chapter),
             WON => f64::from(u8::from(self.won)),
+            JOBS_DONE => f64::from(self.jobs_done),
+            "rank" => f64::from(self.team.rank),
+            "money" => f64::from(self.team.money),
+            "recruits" => f64::from(self.team.recruits),
             name if self.flags.contains(name) => 1.0,
             name => self.counters.get(name).map_or(0.0, |count| f64::from(*count)),
         }
@@ -79,6 +103,7 @@ impl Story {
         let mut numbers: BTreeMap<String, f64> = self.counters.iter().map(|(name, count)| (name.clone(), f64::from(*count))).collect();
         numbers.extend(self.flags.iter().map(|flag| (format!("{FLAG}{flag}"), 1.0)));
         numbers.insert(WON.to_string(), f64::from(u8::from(self.won)));
+        numbers.insert(JOBS_DONE.to_string(), f64::from(self.jobs_done));
         let mut texts = BTreeMap::new();
         let list = |set: &BTreeSet<String>| set.iter().cloned().collect::<Vec<_>>().join(",");
         if let Some(place) = &self.place {
@@ -118,6 +143,7 @@ impl Story {
                 }
                 Some(_) => {}
                 None if name == WON => story.won = *number != 0.0,
+                None if name == JOBS_DONE => story.jobs_done = number.max(0.0).round() as u32,
                 None => {
                     story.counters.insert(name.clone(), number.round() as i32);
                 }
@@ -172,8 +198,11 @@ mod tests {
         story.counters.insert("apples".to_string(), 3);
         story.finished_dungeons.insert("test_forest".to_string());
         story.opened.insert("beach".to_string());
+        story.jobs_done = 4;
         assert_eq!(Story::read(&story.written_alone()), story);
         assert_eq!(Story::of_place(&story.place_saved()), story);
         assert_eq!((story.value("chapter"), story.value("met_kecleon"), story.value("apples"), story.value("nothing")), (2.0, 1.0, 3.0, 0.0));
+        story.team = TeamNumbers { rank: 2, money: 350, recruits: 1 };
+        assert_eq!([story.value("jobs_done"), story.value("rank"), story.value("money"), story.value("recruits")], [4.0, 2.0, 350.0, 1.0]);
     }
 }

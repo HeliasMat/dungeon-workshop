@@ -30,6 +30,9 @@ chapter 2 "Chapter 2"
   on talk bibarel
     shop jobs
   end
+  on job done rescue
+    give Oran Berry
+  end
   on talk marill if not thanked
     play client_thanks
     give 3 Oran Berry

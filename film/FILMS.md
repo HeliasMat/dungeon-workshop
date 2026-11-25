@@ -387,15 +387,29 @@ end
 - **The actions** (in a chapter, in a rule, in a place's `on … end`): `play <film>`,
   `set <flag>`, `clear <flag>`, `add <counter> <n>`, `chapter <n>`, `go <place> [entrance]`,
   `dungeon <name>` and `fight <name>` (then `if won`), `open <place|dungeon>` (on the map),
-  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe>` (`jobs`: the job board, eight random jobs in the dungeons the story has opened, all of the game's if it never opens one, new ones after each dungeon; Enter reads a job in full, its client, objective, place, difficulty and reward, then takes it; `outlaws`: the outlaw board, the same with outlaws to arrest; `joblist`: the jobs taken, eight at most, each read and maybe given up; a job is done in its dungeon and paid on the way out; `appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
+  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare>` (`jobs`: the job board, eight random jobs in the dungeons the story has opened, all of the game's if it never opens one, new ones after each dungeon; Enter reads a job in full, its client, objective, place, difficulty and reward, then takes it; `outlaws`: the outlaw board, the same with outlaws to arrest; `joblist`: the jobs taken, eight at most, each read and maybe given up; a job is done in its dungeon and paid on the way out, its client thanking the team first; `daycare`: Chansey's Day Care, where the Eggs some clients give wait (two explorations, any way out of a dungeon counting), each hatched there once ready, the Pokémon born joining the recruits; `appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
   `map` (the world map of what was opened; `map dungeons`: the dungeons only, as at a crossroads; the one chosen is gone into), `finish` (the game's end card, “The End” and its title, until Enter goes back to the
   title screen; the same once the last chapter has nothing left to play; headless, `the end`);
   and `if … else if … else … end`, tests as in films:
-  `if chapter >= 2 and not met_kecleon`.
+  `if chapter >= 2 and not met_kecleon`. Besides the flags and counters, a test reads the game's own numbers
+  (never set): `chapter`, `won` (the last dungeon cleared), `jobs_done` (the jobs paid so far), `rank` (the
+  exploration rank as a number: 1 Normal, 2 Bronze, 3 Silver…), `money` (in the bag), `recruits` (how many joined):
+  `if jobs_done >= 3 and rank >= 2`.
+- **How a dungeon ends**, for the story: *won* (out by its last stairs, its boss beaten: `if won`, `on won`);
+  *lost* (the team fainted, was blown out, gave up, or the client it escorted fainted: half the money and about
+  half the bag lost, the jobs taken there undone, home, `on lost`); *escaped* (an Escape Orb: the bag and the money
+  kept, back where it went in from, neither `on won` nor `on lost`); *left, a job done* (the “leave the dungeon?”
+  asked when a job is done, answered yes: a success, back where it went in from, the jobs paid; not won, the
+  dungeon not cleared). However it ends, the jobs done there are paid on the way out (but when lost), each
+  client's thanks said before the reward.
 - **The rules**: `on talk <resident>`, `on enter`, `on zone <name>`, `on won <dungeon>`, `on lost <dungeon>`,
+  `on job done [kind|dungeon]`,
   each maybe `if <test>`, then actions, then `end`. Those of the place where the team is play first, then the chapter's.
   `on won <dungeon>` plays once that dungeon (or fight) is cleared, however the team went in: a `dungeon` line
-  (before what follows it) or the map; `on lost <dungeon>` once it fell there and was taken home. A dungeon
+  (before what follows it) or the map; `on lost <dungeon>` once it fell there and was taken home.
+  `on job done` plays once the team is back with jobs paid (once a return, after the `on won`): any job, of one kind
+  (`rescue`, `deliver`, `escort`, `explore`, `find`, `outlaw`, `stolen`), or done in that dungeon (`on job done
+  forest`): a thank-you film, a gift, and, as a job may in the original, a new dungeon (`open cave`). A dungeon
   menu at a crossroads: `open` each dungeon, a zone of the place whose `on zone` says `map dungeons`, and an
   `on won` per dungeon for what it does to the story. Headless, each zone with an `on zone` is walked into once
   a chapter, and the map chooses the way whose `on won` moves the story on (a chapter, `finish`), else one

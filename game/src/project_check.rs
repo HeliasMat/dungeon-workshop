@@ -602,6 +602,7 @@ impl Check<'_> {
             When::Zone(zone) => vec![Some("on"), Some("zone"), Some(zone.as_str())],
             When::Won(dungeon) => vec![Some("on"), Some("won"), Some(dungeon.as_str())],
             When::Lost(dungeon) => vec![Some("on"), Some("lost"), Some(dungeon.as_str())],
+            When::JobDone(which) => vec![Some("on"), Some("job"), Some("done"), which.as_deref()],
         };
         let line = locate(within.text, within.from, &head);
         let site = Site { file: within.file.to_path_buf(), line };
@@ -625,6 +626,8 @@ impl Check<'_> {
                 }
             }
             (When::Won(dungeon) | When::Lost(dungeon), _) => self.name_dungeon(dungeon, site.clone(), false),
+            (When::JobDone(Some(which)), _) if rules::jobs::Kind::named(which).is_none() => self.name_dungeon(which, site.clone(), false),
+            (When::JobDone(_), _) => {}
             (When::Enter, _) => {}
         }
         let inner = Within { from: line, ..within.clone() };
@@ -707,7 +710,7 @@ impl Check<'_> {
                             "no screen",
                             screen,
                             decor::lang::TALKS[1..].iter().copied(),
-                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe",
+                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare",
                         ),
                     );
                 }
@@ -987,9 +990,11 @@ impl Check<'_> {
             }
         }
         // --- The flags ---
-        let given = ["chapter", "won"];
+        let given = crate::story::OWN_NAMES;
         for (name, site) in self.sets.clone() {
-            if !self.reads.contains_key(&name) && !self.film_reads.contains(&name) {
+            if given.contains(&name.as_str()) {
+                self.say(&site, format!("“{name}” is the game's own, read only (the chapter, won, jobs_done, rank, money, recruits): set another name"));
+            } else if !self.reads.contains_key(&name) && !self.film_reads.contains(&name) {
                 self.say(&site, format!("“{name}” is set but never read (by a test of the game, of a place, or of a film)"));
             }
         }

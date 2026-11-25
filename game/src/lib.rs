@@ -61,11 +61,12 @@ use shell::{Keys, Screen};
 use stage_view::ui::message::Words;
 use stage_view::ui::{Align, Canvas, ListCursor, Picked, color};
 
-use crate::dive::Diving;
+use crate::dive::{DiveEnd, Diving};
 use crate::game_screens::GameScreen;
 use crate::playthrough::Playthrough;
 use game_file::{Action, GameFile, Rule, When};
 use roam::Arrival;
+use rules::jobs::Job;
 use story::Story;
 
 pub use assets::project::Project;
@@ -642,7 +643,7 @@ impl Game {
         self.dived = Some(word.to_string());
         // (Nobody at the keys: passed, as cleared, to see what follows.)
         if self.nobody {
-            self.dive_told(true, String::new());
+            self.dive_told(DiveEnd::Won, String::new(), &[]);
             return;
         }
         // (The game is always the one that goes in: what the team becomes there is kept.)
@@ -650,7 +651,7 @@ impl Game {
         let guild_cut = self.project.as_ref().is_some_and(|project| game_file::guild_cuts(project, &self.story.flags));
         let Some(playthrough) = self.playthrough_mut() else {
             self.said = Some("no data: the dungeons cannot be gone through".to_string());
-            self.dive_told(false, String::new());
+            self.dive_told(DiveEnd::Lost, String::new(), &[]);
             return;
         };
         let at = playthrough.dungeon_id(word);
@@ -660,7 +661,7 @@ impl Game {
         }
         let Some(run) = playthrough.lend() else {
             self.said = Some("the game's team is already in a dungeon".to_string());
-            self.dive_told(false, String::new());
+            self.dive_told(DiveEnd::Lost, String::new(), &[]);
             return;
         };
         let audio = self.take_audio();
@@ -676,7 +677,7 @@ impl Game {
                     playthrough.put_back(*run);
                 }
                 self.said = Some(why);
-                self.dive_told(false, String::new());
+                self.dive_told(DiveEnd::Lost, String::new(), &[]);
             }
         }
     }
@@ -694,38 +695,73 @@ impl Game {
             return;
         };
         let audio = diving.frame.audio.take();
-        let cleared = diving.ended.unwrap_or(false);
-        let left_said = diving.left_said.clone();
+        let end = diving.ended.unwrap_or(DiveEnd::Lost);
+        let (left_said, paid) = (diving.left_said.clone(), std::mem::take(&mut diving.paid));
         // (The game back: what the team has become, its recruits, its bag, its money.)
         if let (Some(run), Some(playthrough)) = (diving.give_back(), self.playthrough.as_mut()) {
             playthrough.put_back(run);
         }
         self.give_audio(audio);
         self.tell_film();
-        self.dive_told(cleared, left_said);
+        self.dive_told(end, left_said, &paid);
         if let Some(film) = self.film_mut() {
             film.music_again();
         }
     }
 
-    /// How the dungeon ended, told to the story.
-    fn dive_told(&mut self, cleared: bool, left_said: String) {
-        let told = match (cleared, left_said.trim()) {
-            (false, "") => "The team fainted: it goes home.".to_string(),
+    /// How the dungeon ended, told to the story: lost, the team goes home
+    /// (`on lost <it>`); won (`on won <it>`); out by an Escape Orb or after
+    /// a job done, it is back where it went in from, neither won nor lost.
+    /// The jobs paid on the way out are counted (`jobs_done`) and their
+    /// `on job done` played, after the `on won`.
+    fn dive_told(&mut self, end: DiveEnd, left_said: String, paid: &[Job]) {
+        let told = match (end, left_said.trim()) {
+            (DiveEnd::Lost, "") => "The team fainted: it goes home.".to_string(),
             (_, said) => said.to_string(),
         };
         self.settled = false;
-        self.story.won = cleared;
-        self.log.push(format!("dungeon {}", if cleared { "won" } else { "lost" }));
-        if !cleared {
+        self.story.won = end == DiveEnd::Won;
+        self.story.jobs_done += paid.len() as u32;
+        self.sync_team();
+        let how = match end {
+            DiveEnd::Won => "won",
+            DiveEnd::Lost => "lost",
+            DiveEnd::Retreated => "escaped",
+            DiveEnd::JobDone => "left, job done",
+        };
+        self.log.push(format!("dungeon {how}"));
+        self.log.extend(paid.iter().map(|job| format!("job done {}", job.kind.word())));
+        if end == DiveEnd::Lost {
             self.home(told);
         } else if !told.is_empty() {
             self.said = Some(told);
         }
-        // (Its `on won <it>` / `on lost <it>`, played before what follows the `dungeon` that went in, if one did.)
-        if let Some(word) = self.dived.take() {
-            self.rules_of(&if cleared { When::Won(word) } else { When::Lost(word) });
+        // (Its `on won <it>` / `on lost <it>`, then its `on job done`, played before what follows the `dungeon` that went in, if one did.)
+        let word = self.dived.take();
+        if !paid.is_empty() {
+            let kinds: BTreeSet<&str> = paid.iter().map(|job| job.kind.word()).collect();
+            let there = word.clone();
+            self.rules_where(&|when| match when {
+                When::JobDone(which) => which.as_deref().is_none_or(|which| kinds.contains(which) || there.as_deref() == Some(which)),
+                _ => false,
+            });
         }
+        match (word, end) {
+            (Some(word), DiveEnd::Won) => self.rules_of(&When::Won(word)),
+            (Some(word), DiveEnd::Lost) => self.rules_of(&When::Lost(word)),
+            _ => {}
+        }
+    }
+
+    /// The team as the tests read it (`rank`, `money`, `recruits`), from the
+    /// game's rules while it has them (not while lent to a dungeon).
+    fn sync_team(&mut self) {
+        let Some(run) = self.playthrough.as_ref().and_then(Playthrough::run) else {
+            return;
+        };
+        let progress = &run.team().progress;
+        let rank = run.book.tables.jobs.rank_number(progress.rank);
+        self.story.team = story::TeamNumbers { rank, money: run.bag().money, recruits: progress.recruits.len() as u32 };
     }
 
     /// K.O.: back to the game's home (else the place it was in), what was lost said.
@@ -853,6 +889,7 @@ impl Game {
         if self.project.is_none() || self.over {
             return;
         }
+        self.sync_team();
         while !self.waiting() && !self.over {
             let Some(top) = self.running.last_mut() else {
                 break;
@@ -977,6 +1014,7 @@ impl Game {
             Action::Map { dungeons_only } => self.open_map(dungeons_only),
             Action::Finish => self.finished(),
             Action::If(branches) => {
+                self.sync_team();
                 let story = &self.story;
                 let chosen = branches.into_iter().find(|(test, _)| test.as_ref().is_none_or(|test| game_file::value(test, &|name| story.value(name)) != 0.0));
                 if let Some((_, actions)) = chosen {
@@ -1260,9 +1298,15 @@ impl Game {
 
     /// The rules of that moment whose test holds, played (the place's first, then the chapter's).
     fn rules_of(&mut self, when: &When) {
+        self.rules_where(&|said| said == when);
+    }
+
+    /// The rules of the moments that fit whose test holds, played (the place's first, then the chapter's).
+    fn rules_where(&mut self, fits: &dyn Fn(&When) -> bool) {
+        self.sync_team();
         let story = &self.story;
         let holds = |rule: &Rule| rule.test.as_ref().is_none_or(|test| game_file::value(test, &|name| story.value(name)) != 0.0);
-        let chosen: Vec<Rule> = self.rules_now().into_iter().filter(|rule| rule.when == *when && holds(rule)).collect();
+        let chosen: Vec<Rule> = self.rules_now().into_iter().filter(|rule| fits(&rule.when) && holds(rule)).collect();
         for rule in chosen.into_iter().rev() {
             self.push(rule.actions);
         }

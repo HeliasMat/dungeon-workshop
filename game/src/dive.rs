@@ -30,6 +30,33 @@ pub struct Carried {
     pub money: i32,
 }
 
+/// How a dungeon (or a fight) ended, as the story takes it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DiveEnd {
+    /// Cleared (out by the last floor's stairs, the boss beaten): `if won`, `on won <it>`.
+    Won,
+    /// Fainted, blown out, given up (the client escorted fainted too): home, `on lost <it>`.
+    Lost,
+    /// An Escape Orb (or Shedinja's secret path): back where it went in
+    /// from, the bag and the money kept; neither won nor lost.
+    Retreated,
+    /// Left at the "leave the dungeon?" a job done asks: a success, the
+    /// jobs paid (`on job done`), back where it went in from; not cleared.
+    JobDone,
+}
+
+impl DiveEnd {
+    /// As the rules' end has it (none: left for the title, as lost).
+    pub fn of(outcome: Option<Outcome>) -> DiveEnd {
+        match outcome {
+            Some(Outcome::Cleared) => DiveEnd::Won,
+            Some(Outcome::Escaped) => DiveEnd::Retreated,
+            Some(Outcome::JobDone) => DiveEnd::JobDone,
+            Some(Outcome::Fainted | Outcome::BlownOut | Outcome::Abandoned) | None => DiveEnd::Lost,
+        }
+    }
+}
+
 /// Why a game lent to a dungeon could not go in, and the game given back.
 pub type Refused = (String, Box<Run>);
 
@@ -45,9 +72,11 @@ pub struct Diving {
     /// The screens it draws on (its sound: the film's, lent while it lasts).
     pub frame: Frame,
     dive: Dive,
-    /// Over: cleared or not; what the rules said of it as it was left (what fainting cost, the jobs paid).
-    pub ended: Option<bool>,
+    /// Over: how; what the rules said of it as it was left (what fainting
+    /// cost, the jobs paid), the jobs paid.
+    pub ended: Option<DiveEnd>,
     pub left_said: String,
+    pub paid: Vec<rules::jobs::Job>,
     /// How many floors it has; the last one reached.
     floors: usize,
     pub reached: usize,
@@ -62,7 +91,7 @@ pub struct Diving {
     banner: Option<(String, String, u32)>,
     flash: u32,
     shake: u32,
-    held_end: Option<(bool, u32)>,
+    held_end: Option<(DiveEnd, u32)>,
     pending: Option<Keys>,
 }
 
@@ -310,6 +339,7 @@ impl Diving {
             dive,
             ended: None,
             left_said: String::new(),
+            paid: Vec::new(),
             floors,
             reached: 1,
             boss,
@@ -364,10 +394,10 @@ impl Diving {
             *left = left.saturating_sub(1);
         }
         // (The victory shown a moment before the film goes on: the last picture kept.)
-        if let Some((cleared, left)) = &mut self.held_end {
+        if let Some((end, left)) = &mut self.held_end {
             *left = left.saturating_sub(1);
             if *left == 0 {
-                self.ended = Some(*cleared);
+                self.ended = Some(*end);
             }
             return;
         }
@@ -385,17 +415,17 @@ impl Diving {
         }
         self.boss_fight();
         let ended = match done {
-            Some(Done::Left { outcome, message }) => {
-                self.left_said = message;
-                Some(outcome == Outcome::Cleared)
+            Some(Done::Left { outcome, message, paid }) => {
+                (self.left_said, self.paid) = (message, paid);
+                Some(DiveEnd::of(Some(outcome)))
             }
-            Some(Done::ToTitle) => Some(false),
+            Some(Done::ToTitle) => Some(DiveEnd::Lost),
             None => None,
         };
         match ended {
             // (The boss beaten: “VICTORY!”, the victory tune, then on.)
-            Some(true) if self.beaten => {
-                self.held_end = Some((true, 200));
+            Some(DiveEnd::Won) if self.beaten => {
+                self.held_end = Some((DiveEnd::Won, 200));
                 let name = self.boss.as_ref().map_or_else(String::new, |fight| fight.says.name.clone());
                 self.banner = Some(("VICTORY!".to_string(), format!("{name} is defeated"), 200));
                 self.flash = 16;

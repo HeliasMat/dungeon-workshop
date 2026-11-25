@@ -32,7 +32,7 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
     (
         "shop",
-        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken)",
+        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `daycare`: the eggs hatched)",
     ),
     ("map", "map [dungeons]: the world map, the places and dungeons opened (`map dungeons`: the dungeons only); the one chosen is gone to"),
     ("finish", "finish: the game ends (The End)"),
@@ -51,6 +51,11 @@ pub enum When {
     Won(String),
     /// The team fell in that dungeon (or fight), and was taken home.
     Lost(String),
+    /// Back from a dungeon with jobs done, paid: any (`on job done`), of
+    /// that kind (`on job done rescue`: `rules::jobs::Kind::WORDS`), or in
+    /// that dungeon (`on job done forest`). Once a return, whatever the
+    /// number of jobs.
+    JobDone(Option<String>),
 }
 
 /// `on talk kecleon [if …]` … `end`: what plays when that happens.
@@ -324,7 +329,7 @@ pub fn names_of(actions: &[Action], names: &mut BTreeSet<String>) {
 /// The names a test reads.
 pub fn expr_names(expr: &Expr, names: &mut BTreeSet<String>) {
     match &expr.kind {
-        ExprKind::Name(name) if !["chapter", "won"].contains(&name.as_str()) => {
+        ExprKind::Name(name) if !crate::story::OWN_NAMES.contains(&name.as_str()) => {
             names.insert(name.clone());
         }
         ExprKind::Unary(_, inner) => expr_names(inner, names),
@@ -399,7 +404,7 @@ fn branches(text: &str, block: &Block, problems: &mut Vec<Diagnostic>) -> Vec<(O
     said
 }
 
-/// `on enter`, `on talk kecleon`, `on zone pier`, `on won forest`, `on lost forest` (`if …` after) … `end`.
+/// `on enter`, `on talk kecleon`, `on zone pier`, `on won forest`, `on lost forest`, `on job done [kind|dungeon]` (`if …` after) … `end`.
 fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) -> Result<Rule, String> {
     let written = &text[block.opening_span.start..block.opening_span.end.min(text.len())];
     let (head, test) = match written.split_once(" if ") {
@@ -413,7 +418,13 @@ fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) 
         ["zone", name] => When::Zone(name.to_string()),
         ["won", dungeon] => When::Won(dungeon.to_string()),
         ["lost", dungeon] => When::Lost(dungeon.to_string()),
-        _ => return Err("on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> [if …] … end".to_string()),
+        ["job", "done"] => When::JobDone(None),
+        ["job", "done", which] => When::JobDone(Some(which.to_string())),
+        _ => {
+            return Err(
+                "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> | on job done [kind|dungeon] [if …] … end".to_string()
+            );
+        }
     };
     let _ = stmt;
     let (actions, inner) = read_body(text, &block.body, problems);
@@ -579,6 +590,18 @@ mod tests {
         assert!(matches!(rules[2].actions.as_slice(), [Action::Map { dungeons_only: false }]), "{:?}", rules[2].actions);
         assert!(rules[1].test.is_some());
         assert!(!GameFile::read("title: X\nchapter 1\n  map everywhere\nend\n").problems.is_empty());
+    }
+
+    #[test]
+    fn a_job_done_has_its_rules_and_the_game_s_own_numbers_are_never_flags() {
+        let game = GameFile::read(
+            "title: X\nchapter 1\n  on job done\n    play thanks\n  end\n  on job done rescue if rank >= 2\n    open cave\n  end\n  on job done forest\n    money 100\n  end\n  if jobs_done > 2 and money > 0 and recruits > 0\n    set lucky\n  end\nend\n",
+        );
+        assert!(game.problems.is_empty(), "{:?}", game.problems);
+        let whens: Vec<&When> = game.chapter(1).expect("chapter 1").rules.iter().map(|rule| &rule.when).collect();
+        assert_eq!(whens, [&When::JobDone(None), &When::JobDone(Some("rescue".into())), &When::JobDone(Some("forest".into()))]);
+        assert_eq!(game.names().into_iter().collect::<Vec<_>>(), ["lucky"]);
+        assert!(!GameFile::read("title: X\nchapter 1\n  on job finished\n  end\nend\n").problems.is_empty());
     }
 
     #[test]
