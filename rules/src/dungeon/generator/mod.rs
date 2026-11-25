@@ -3,8 +3,10 @@
 //! generator. It is kept close to that reference on purpose, quirks and
 //! bugs of the original included, so that a seed gives the same floor.
 //!
-//! Left out, as in the reference: fixed rooms. Left out here only: hidden
-//! stairs (they use a second random generator) and rescue floors.
+//! Left out, as in the reference: fixed rooms (the vaults set inside a
+//! floor: `run::vault`). Left out here: hidden stairs, which use a second
+//! random generator (`run::secret` draws them after, with its own), and
+//! rescue floors.
 
 mod features;
 mod finish;
