@@ -38,6 +38,9 @@ pub fn command(film: &mut Film, item: &Instr) {
     }
 }
 
+/// The forms of its word a line fits, by group, with what each read.
+type Fitting = Vec<(&'static str, crate::grammar::Bound)>;
+
 fn command_here(film: &mut Film, item: &Instr) {
     // (A beat the language made itself, typed: a test, a number, a loop, a wait.)
     if let Shape::Beat(beat) = &item.shape {
@@ -53,28 +56,9 @@ fn command_here(film: &mut Film, item: &Instr) {
         return;
     }
     let text = item.text.trim_end_matches([' ', '&']).to_string();
-    // (A word: its word and its words as read once; a line anchored or a
-    // fight's moment: by its first word, what it is kept with it.)
-    let (verb, rest, wait) = match &item.shape {
-        Shape::Word { verb, words, wait } => (verb.clone(), words.clone(), *wait),
-        Shape::Blank => return,
-        _ => {
-            let words: Vec<String> = text.split_whitespace().map(str::to_string).collect();
-            (plain(&words[0]), words[1..].to_vec(), !item.text.ends_with(" &"))
-        }
-    };
     // (Its first word as written: the engine's command, by the name the line gives it.)
     let first = text.split_whitespace().next().unwrap_or_default().to_string();
-    let line = Line {
-        verb,
-        rest,
-        text,
-        number: item.number,
-        wait,
-        block: item.inner.clone().unwrap_or_default(),
-        args: Default::default(),
-        shape: item.shape.clone(),
-    };
+    let Some(line) = line_of(item, text) else { return };
     // (`end`: what was opened last is closed, as it was told to be.)
     if line.verb == "end" && line.rest.is_empty() {
         match film.timing.opened.pop() {
@@ -83,25 +67,83 @@ fn command_here(film: &mut Film, item: &Instr) {
         }
         return;
     }
-    // (A word of the old vocabulary, or the library's own, in the film's own
-    // text: refused, the form now its fix.)
-    if item.from.0.is_none() && item.span.is_some() {
-        let written = film.here.1.clone();
-        // (Who first, `pikachu nap`: the old word second.)
-        let second = written.get(1).map(|(said, _)| plain(said)).filter(|_| !film.lexicon.is_word(&line.verb, &film.source));
-        let old = std::iter::once(line.verb.clone()).chain(second).find(|word| film.lexicon.replaced(word).is_some()).unwrap_or_default();
-        if crate::text::written::told_replaced(film, line.number, &written, &old) {
-            return;
-        }
-        if internal(&line.verb) && written.first().is_some_and(|(said, _)| plain(said) == line.verb) {
-            film.unknown(line.number, "unknown word", &first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
-            return;
-        }
+    if item.from.0.is_none() && item.span.is_some() && refused_as_written(film, &line, &first) {
+        return;
     }
     // (The line must fit one of its word's forms; the groups
     // whose form fits play it first; one that only the engine's form fits
     // goes to the engine.)
     let (fitting, why) = fitting_forms(film, &line);
+    told_as_read(film, item, &line, &fitting);
+    let mut line = line;
+    let (fitting, why) = spots_as_points(film, &mut line, fitting, why);
+    let fitting_groups: Vec<&str> = fitting.iter().map(|(group, _)| *group).collect();
+    if fitting_groups.is_empty() && !why.is_empty() {
+        film.wrong(line.number, format!("“{}”: {}", line.text, why.join("; ")));
+        return;
+    }
+    if played_by_a_group(film, &mut line, &fitting, &fitting_groups) {
+        return;
+    }
+    if !engine_word(&first) && !engine_word(&line.verb) {
+        film.unknown(line.number, "unknown word", &first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
+    } else if line.verb == "else" && line.rest.is_empty() {
+        film.beat(crate::emit::otherwise());
+    } else if fitting_groups.is_empty() {
+        // (Only the words the language has a form for: `engine.rs`.)
+        film.wrong(
+            line.number,
+            format!("“{}”: a command of the engine the language does not know (its form in film_core/src/verbs/engine.rs, or `>` to debug)", line.text),
+        );
+    } else {
+        engine_plays(film, &line, &first, &fitting);
+    }
+}
+
+/// A word: its word and its words as read once; a line anchored or a
+/// fight's moment: by its first word, what it is kept with it. None for a
+/// blank line.
+fn line_of(item: &Instr, text: String) -> Option<Line> {
+    let (verb, rest, wait) = match &item.shape {
+        Shape::Word { verb, words, wait } => (verb.clone(), words.clone(), *wait),
+        Shape::Blank => return None,
+        _ => {
+            let words: Vec<String> = text.split_whitespace().map(str::to_string).collect();
+            (plain(&words[0]), words[1..].to_vec(), !item.text.ends_with(" &"))
+        }
+    };
+    Some(Line {
+        verb,
+        rest,
+        text,
+        number: item.number,
+        wait,
+        block: item.inner.clone().unwrap_or_default(),
+        args: Default::default(),
+        shape: item.shape.clone(),
+    })
+}
+
+/// A word of the old vocabulary, or the library's own, in the film's own
+/// text: refused, the form now its fix.
+fn refused_as_written(film: &mut Film, line: &Line, first: &str) -> bool {
+    let written = film.here.1.clone();
+    // (Who first, `pikachu nap`: the old word second.)
+    let second = written.get(1).map(|(said, _)| plain(said)).filter(|_| !film.lexicon.is_word(&line.verb, &film.source));
+    let old = std::iter::once(line.verb.clone()).chain(second).find(|word| film.lexicon.replaced(word).is_some()).unwrap_or_default();
+    if crate::text::written::told_replaced(film, line.number, &written, &old) {
+        return true;
+    }
+    if internal(&line.verb) && written.first().is_some_and(|(said, _)| plain(said) == line.verb) {
+        film.unknown(line.number, "unknown word", first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
+        return true;
+    }
+    false
+}
+
+/// What a line of the text tells as written: the library its word asks
+/// for, who comes first, and what it was read as.
+fn told_as_read(film: &mut Film, item: &Instr, line: &Line, fitting: &Fitting) {
     // (A word of an optional family: its library taken in, `uses fishing`.)
     if item.from.0.is_none() && item.span.is_some() && !fitting.is_empty() {
         crate::text::written::asks_its_library(film, line.number, &line.verb);
@@ -122,11 +164,13 @@ fn command_here(film: &mut Film, item: &Instr) {
         let read = crate::film::ReadAs { word: line.verb.clone(), group, values: bound.values.clone() };
         film.read_as.entry(line.number).or_insert(read);
     }
-    // (A place said in numbers where the place has a name for it: its name
-    // reads better, and holds if the place changes. A place said by its name,
-    // a spot of the place's or of the film's: its point, for the words that
-    // reckon with numbers, `crystal a b`.)
-    let mut line = line;
+}
+
+/// A place said in numbers where the place has a name for it: its name
+/// reads better, and holds if the place changes (remarked). A place said by
+/// its name, a spot of the place's or of the film's: its point, for the
+/// words that reckon with numbers, `crystal a b`; the forms fitted again.
+fn spots_as_points(film: &mut Film, line: &mut Line, fitting: Fitting, why: Vec<String>) -> (Fitting, Vec<String>) {
     let places: Vec<(usize, usize)> = fitting.first().map(|(_, bound)| bound.places().collect()).unwrap_or_default();
     let mut said: Vec<(i32, i32)> = places
         .iter()
@@ -141,7 +185,7 @@ fn command_here(film: &mut Film, item: &Instr) {
             spliced = true;
         }
     }
-    let (mut fitting, mut why) = if spliced { fitting_forms(film, &line) } else { (fitting, why) };
+    let (mut fitting, mut why) = if spliced { fitting_forms(film, line) } else { (fitting, why) };
     // (No form fits: a named spot where a form wants numbers, `release a b
     // offshore`, is its point too.)
     if fitting.is_empty() {
@@ -162,22 +206,23 @@ fn command_here(film: &mut Film, item: &Instr) {
             }
         }
     }
-    let fitting_groups: Vec<&str> = fitting.iter().map(|(group, _)| *group).collect();
     for (x, y) in said {
         if let Some((name, at_x, at_y)) = named_near(film, x, y) {
             film.remark(line.number, format!("{x} {y} is the place's spot “{name}” ({at_x}, {at_y}): write {name}"));
         }
     }
-    if fitting_groups.is_empty() && !why.is_empty() {
-        film.wrong(line.number, format!("“{}”: {}", line.text, why.join("; ")));
-        return;
-    }
-    let has = |group: &Group| group.words.iter().any(|word| word.word == line.verb);
+    (fitting, why)
+}
+
+/// The groups that have the word, those whose form fits first, each given
+/// what its own form read: true once one plays it. When the engine's form
+/// fits too, the groups whose form does not are not asked: what the fitting
+/// ones let go is the engine's, `anim krabby DeepBreath` a game animation
+/// once no character has it.
+fn played_by_a_group(film: &mut Film, line: &mut Line, fitting: &Fitting, fitting_groups: &[&str]) -> bool {
+    let verb = line.verb.clone();
+    let has = |group: &Group| group.words.iter().any(|word| word.word == verb);
     let by_the_engine_only = !fitting_groups.is_empty() && fitting_groups.iter().all(|group| crate::verbs::ENGINE_GROUPS.contains(group));
-    // (Each group is given what its own form read in the line. When the
-    // engine's form fits too, the groups whose form does not are not
-    // asked: what the fitting ones let go is the engine's, `anim krabby
-    // DeepBreath` a game animation once no character has it.)
     let engine_fits = fitting_groups.iter().any(|group| crate::verbs::ENGINE_GROUPS.contains(group));
     let ordered = film
         .lexicon
@@ -187,46 +232,39 @@ fn command_here(film: &mut Film, item: &Instr) {
         .chain(film.lexicon.groups().iter().filter(|group| !engine_fits && !fitting_groups.contains(&group.name)));
     for group in ordered.into_iter().filter(|group| !by_the_engine_only && has(group)) {
         line.args = fitting.iter().find(|(from, _)| *from == group.name).map(|(_, bound)| bound.clone()).unwrap_or_default();
-        if group.plays(film, &line) {
-            return;
+        if group.plays(film, line) {
+            return true;
         }
     }
-    if !engine_word(&first) && !engine_word(&line.verb) {
-        film.unknown(line.number, "unknown word", &first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
-    } else if line.verb == "else" && line.rest.is_empty() {
-        film.beat(crate::emit::otherwise());
-    } else if fitting_groups.is_empty() {
-        // (Only the words the language has a form for: `engine.rs`.)
-        film.wrong(
-            line.number,
-            format!("“{}”: a command of the engine the language does not know (its form in film_core/src/verbs/engine.rs, or `>` to debug)", line.text),
-        );
-    } else {
-        // (How long it lasts, as the registry says of the word: its `d`, or
-        // until its `who` gets there; the film waits for it unless `&`.)
-        let (time, bound) = engine_time(film.lexicon, &line.verb, &fitting).unwrap_or((crate::time::WordTime::Instant, Default::default()));
-        // (A time without its unit: frames, as written before.)
-        let said_time = bound.values.iter().filter(|value| value.kind == crate::grammar::Kind::Time).filter_map(|value| value.words.first());
-        if let Some(said) = said_time.clone().find(|said| crate::words::digits(said) && *said != "0") {
-            film.remark(line.number, format!("“{}”: a duration without its unit, in frames; write {}", line.text, crate::words::in_seconds_said(said)));
-        }
-        let lasting = bound.word("d").map(|said| in_frames(film, said)).and_then(|frames| frames.parse::<i32>().ok()).filter(|frames| *frames > 0);
-        let lasts = lasting.filter(|_| time == crate::time::WordTime::Lasts);
-        // (Instant, but lasting so long beside the film: its line's end.)
-        if let Some(frames) = lasting.filter(|_| time == crate::time::WordTime::Instant) {
-            film.plan.handle(crate::time::Length::Known(frames));
-        }
-        let walker = (time == crate::time::WordTime::Until).then(|| bound.word("who").or(line.rest.first().map(String::as_str)).map(plain)).flatten();
-        // (Its words typed by what its form read them as, made into its beat.)
-        film.engine_command(&first, &line.rest, Some(&bound));
-        // (A move waits for its end, unless the line ends with `&`; a sound,
-        // sparks, a shake, a face go on by themselves.)
-        if let Some(frames) = lasts {
-            film.wait_frames(frames, line.wait);
-        }
-        if let Some(who) = walker {
-            film.wait_for(&who, line.wait);
-        }
+    false
+}
+
+/// The engine's own command: its beat, and how long the film waits for it,
+/// as the registry says of the word (its `d`, or until its `who` gets
+/// there), unless `&`.
+fn engine_plays(film: &mut Film, line: &Line, first: &str, fitting: &Fitting) {
+    let (time, bound) = engine_time(film.lexicon, &line.verb, fitting).unwrap_or((crate::time::WordTime::Instant, Default::default()));
+    // (A time without its unit: frames, as written before.)
+    let said_time = bound.values.iter().filter(|value| value.kind == crate::grammar::Kind::Time).filter_map(|value| value.words.first());
+    if let Some(said) = said_time.clone().find(|said| crate::words::digits(said) && *said != "0") {
+        film.remark(line.number, format!("“{}”: a duration without its unit, in frames; write {}", line.text, crate::words::in_seconds_said(said)));
+    }
+    let lasting = bound.word("d").map(|said| in_frames(film, said)).and_then(|frames| frames.parse::<i32>().ok()).filter(|frames| *frames > 0);
+    let lasts = lasting.filter(|_| time == crate::time::WordTime::Lasts);
+    // (Instant, but lasting so long beside the film: its line's end.)
+    if let Some(frames) = lasting.filter(|_| time == crate::time::WordTime::Instant) {
+        film.plan.handle(crate::time::Length::Known(frames));
+    }
+    let walker = (time == crate::time::WordTime::Until).then(|| bound.word("who").or(line.rest.first().map(String::as_str)).map(plain)).flatten();
+    // (Its words typed by what its form read them as, made into its beat.)
+    film.engine_command(first, &line.rest, Some(&bound));
+    // (A move waits for its end, unless the line ends with `&`; a sound,
+    // sparks, a shake, a face go on by themselves.)
+    if let Some(frames) = lasts {
+        film.wait_frames(frames, line.wait);
+    }
+    if let Some(who) = walker {
+        film.wait_for(&who, line.wait);
     }
 }
 

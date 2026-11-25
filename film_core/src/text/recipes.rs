@@ -404,197 +404,244 @@ const MOST_LINES: usize = 200_000;
 
 fn play(lines: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, out: &mut Vec<Instr>) {
     for instr in lines.iter().filter(|instr| instr.shape != Shape::Blank) {
-        let number = instr.number;
-        // (`define …`: the film's own recipe, from here on, checked once
-        // with the others; one of a file taken in, told of that file.)
-        if let Shape::Recipe(written) = &instr.shape {
-            let mut recipe = recipe(film.lexicon, written, "film");
-            if let (_, Some((name, _))) = told_line(&film.included, written.number) {
-                recipe.file = format!("{name}.film");
-            }
-            if !film.defined.iter().any(|known| Arc::ptr_eq(&known.recipe.text, written)) {
-                film.defined.push(Defined { recipe: recipe.clone(), uses: None });
-            }
-            recipes.entry(recipe.name.clone()).or_default().insert(0, recipe);
-            continue;
+        play_line(instr, depth, recipes, film, out);
+    }
+}
+
+/// One line played: a recipe defined, a block, a word of the film's, or a
+/// recipe called.
+fn play_line(instr: &Instr, depth: usize, recipes: &mut Recipes, film: &mut Film, out: &mut Vec<Instr>) {
+    let number = instr.number;
+    if let Shape::Recipe(written) = &instr.shape {
+        define(written, recipes, film);
+        return;
+    }
+    if let Some(inner) = &instr.inner {
+        play_block(instr, inner, depth, recipes, film, out);
+        return;
+    }
+    let Shape::Word { verb, words, wait } = &instr.shape else {
+        out.push(read_on(film, instr));
+        return;
+    };
+    // (Who first, a recipe of a file taken in, `krabby reunion piplup`:
+    // read as its word first, as the language's own are.)
+    let swapped: (String, Vec<String>);
+    let (verb, words) = match words.first() {
+        Some(second)
+            if !recipes.contains_key(verb.as_str())
+                && film.actor(verb).is_some()
+                && recipes.get(&plain(second)).is_some_and(|known| known.iter().any(Recipe::said_of_someone)) =>
+        {
+            swapped = (plain(second), std::iter::once(verb.clone()).chain(words[1..].iter().cloned()).collect());
+            (&swapped.0, &swapped.1)
         }
-        if let Some(inner) = &instr.inner {
-            match instr.verb() {
-                Some("repeat") => {
-                    let count: usize = instr.words().first().and_then(|count| count.parse().ok()).unwrap_or(1);
-                    if count > MOST_REPEATS {
-                        film.wrong(number, format!("“{}”: {count} times, at most {MOST_REPEATS}", instr.text));
-                        continue;
-                    }
-                    for _ in 0..count {
-                        play(inner, depth + 1, recipes, film, out);
-                        if out.len() > MOST_LINES {
-                            film.wrong(number, format!("“{}”: the film would be more than {MOST_LINES} lines", instr.text));
-                            break;
-                        }
-                    }
-                }
-                // (A track's keys: lines of their own, no recipe's.)
-                Some("keys") => {
-                    let mut block = read_on(film, instr);
-                    block.inner = Some(inner.clone());
-                    out.push(block);
-                }
-                // (Another block: its opening read on (`there`, `team`), its
-                // lines played in it.)
-                _ => {
-                    let mut block = read_on(film, instr);
-                    let mut held = Vec::new();
-                    play(inner, depth, recipes, film, &mut held);
-                    block.inner = Some(held);
-                    out.push(block);
-                }
+        _ => (verb, words),
+    };
+    // (`for ds`: what the film is written for, told once it is read.)
+    if verb == "for" && words.first().is_some_and(|word| word == "ds") {
+        film.for_ds = Some(crate::ds::Mode { boot: words.len() == 1, line: number });
+        return;
+    }
+    if let ("uses" | "include", [name]) = (verb.as_str(), words.as_slice()) {
+        take_in(instr, verb, name, depth, recipes, film, out);
+        return;
+    }
+    play_word(instr, verb, words, *wait, depth, recipes, film, out);
+}
+
+/// `define …`: the film's own recipe, from here on, checked once with the
+/// others; one of a file taken in, told of that file.
+fn define(written: &Arc<RecipeText>, recipes: &mut Recipes, film: &mut Film) {
+    let mut recipe = recipe(film.lexicon, written, "film");
+    if let (_, Some((name, _))) = told_line(&film.included, written.number) {
+        recipe.file = format!("{name}.film");
+    }
+    if !film.defined.iter().any(|known| Arc::ptr_eq(&known.recipe.text, written)) {
+        film.defined.push(Defined { recipe: recipe.clone(), uses: None });
+    }
+    recipes.entry(recipe.name.clone()).or_default().insert(0, recipe);
+}
+
+/// A block's line: `repeat`'s lines played so many times, a track's keys
+/// kept as they are, another block's lines played in it.
+fn play_block(instr: &Instr, inner: &[Instr], depth: usize, recipes: &mut Recipes, film: &mut Film, out: &mut Vec<Instr>) {
+    let number = instr.number;
+    match instr.verb() {
+        Some("repeat") => {
+            let count: usize = instr.words().first().and_then(|count| count.parse().ok()).unwrap_or(1);
+            if count > MOST_REPEATS {
+                film.wrong(number, format!("“{}”: {count} times, at most {MOST_REPEATS}", instr.text));
+                return;
             }
-            continue;
-        }
-        let Shape::Word { verb, words, wait } = &instr.shape else {
-            out.push(read_on(film, instr));
-            continue;
-        };
-        // (Who first, a recipe of a file taken in, `krabby reunion piplup`:
-        // read as its word first, as the language's own are.)
-        let swapped: (String, Vec<String>);
-        let (verb, words) = match words.first() {
-            Some(second)
-                if !recipes.contains_key(verb.as_str())
-                    && film.actor(verb).is_some()
-                    && recipes.get(&plain(second)).is_some_and(|known| known.iter().any(Recipe::said_of_someone)) =>
-            {
-                swapped = (plain(second), std::iter::once(verb.clone()).chain(words[1..].iter().cloned()).collect());
-                (&swapped.0, &swapped.1)
-            }
-            _ => (verb, words),
-        };
-        // (`for ds`: what the film is written for, told once it is read.)
-        if verb == "for" && words.first().is_some_and(|word| word == "ds") {
-            film.for_ds = Some(crate::ds::Mode { boot: words.len() == 1, line: number });
-            continue;
-        }
-        // (`uses fishing`: the recipes of a file; `include intro`: all its
-        // lines, here, as if written on this one.)
-        if let ("uses" | "include", [name]) = (verb.as_str(), words.as_slice()) {
-            match shared_text(film.lexicon, &film.tables.project.clone(), name) {
-                Err(told) => film.wrong(number, told),
-                Ok(_) if depth > 8 => film.wrong(number, format!("“{}”: files that include each other without end", instr.text)),
-                Ok(text) if verb == "uses" => {
-                    film.uses.push(plain(name));
-                    for recipe in recipes_of(film.lexicon, &text, name) {
-                        if !film.defined.iter().any(|known| known.recipe.file == recipe.file && known.recipe.text.number == recipe.text.number) {
-                            film.defined.push(Defined { recipe: recipe.clone(), uses: Some(number) });
-                        }
-                        recipes.entry(recipe.name.clone()).or_default().insert(0, recipe);
-                    }
-                }
-                Ok(text) => {
-                    // (Its lines by their own numbers, in a range of their own: what
-                    // is wrong in them is told of the file and its line.)
-                    film.included.push((number, name.to_string()));
-                    let base = INCLUDED * film.included.len();
-                    let lines = read(film, &text, base);
-                    play(&lines, depth + 1, recipes, film, out);
-                }
-            }
-            continue;
-        }
-        // (Words said, kept as they are; a recipe of that word still plays them.)
-        let line = word_line(instr, verb, words, *wait);
-        let said = said_word(verb, &line);
-        let known = recipes.get(verb).filter(|_| depth < DEEPEST).cloned();
-        if said && !recipes.contains_key(verb) {
-            out.push(instr.clone());
-            continue;
-        }
-        let mut written = if said { line.clone() } else { shortened(film, number, &line) };
-        let name = named_beside(&mut written);
-        let meanwhile = name.is_some() || written.last().is_some_and(|last| last == "&");
-        match known {
-            Some(known) => {
-                if written.last().is_some_and(|last| last == "&") {
-                    written.pop();
-                }
-                let mut why = Vec::new();
-                let mut fits = None;
-                for recipe in &known {
-                    match given(film, recipe, &written[1..]) {
-                        Ok(given) => {
-                            fits = Some((recipe.clone(), given));
-                            break;
-                        }
-                        Err(reason) => why.push(format!("“{}”: {reason}", recipe.shape())),
-                    }
-                }
-                match fits {
-                    Some((recipe, given)) => {
-                        // (A recipe called by a line of the text, as written:
-                        // its fields are what the recipe is given.)
-                        let as_in_the_text = instr.span.is_some() && written.iter().eq(line.iter().filter(|word| *word != "&"));
-                        // (Written the word first, said of someone: who first now, `pikachu hug piplup`.)
-                        let one_first = match recipe.form.first() {
-                            Some(Piece::Team(name)) => given.iter().find(|one| one.name == *name).is_some_and(|one| one.words.len() == 1),
-                            _ => recipe.said_of_someone(),
-                        };
-                        if as_in_the_text && instr.from.0.is_none() {
-                            crate::text::written::asks_its_library(film, number, verb);
-                        }
-                        if as_in_the_text && instr.from.0.is_none() && one_first {
-                            let words = film.written_words(instr);
-                            crate::text::written::told_who_first(film, number, &words, verb);
-                        }
-                        if let Some(bound) = as_in_the_text.then(|| grammar::bind(film, &recipe.form, &written[1..]).ok()).flatten() {
-                            let read = crate::film::ReadAs { word: verb.clone(), group: "recipe", values: bound.values };
-                            film.read_as.entry(number).or_insert(read);
-                        }
-                        // (Its places given in two numbers, to be told if they have a name.)
-                        for one in given.iter().filter(|one| one.kind == Kind::Place) {
-                            if let [x, y] = one.words.as_slice()
-                                && let (Ok(x), Ok(y)) = (x.parse::<f32>(), y.parse::<f32>())
-                            {
-                                film.points_said.entry(number).or_default().push((x as i32, y as i32));
-                            }
-                        }
-                        // (A recipe of a team: those it is called with, all.)
-                        if recipe.of_a_team() {
-                            let named: Vec<String> = written[1..].iter().map(|word| plain(word)).take_while(|word| film.actor(word).is_some()).collect();
-                            if named.len() > 1 {
-                                film.last_team = named;
-                            }
-                        }
-                        let lines = cooked(film, &recipe, &given, number);
-                        // (With `&`: all of it beside the film, a block of its own.)
-                        if meanwhile {
-                            let mut held = Vec::new();
-                            play(&lines, depth + 1, recipes, film, &mut held);
-                            out.push(beside_block(number, &name, held));
-                        } else {
-                            play(&lines, depth + 1, recipes, film, out);
-                        }
-                    }
-                    // (No recipe of that name fits, but a word of the language does: the word's.)
-                    None if film.lexicon.is_word(verb, "") && crate::text::checked::wrong_form(film, verb, verb, &written[1..], &instr.text).is_none() => {
-                        out.push(if written == line { instr.clone() } else { as_word(instr, written) });
-                    }
-                    None => {
-                        let from = instr.from.0.as_ref().map_or(String::new(), |from| format!(" ({})", from.told()));
-                        film.wrong(number, format!("“{}”: {}{from}", instr.text, why.join("; ")));
-                    }
-                }
-            }
-            None => {
-                named_team(film, &written);
-                remembered(film, &written);
-                let made = if written == line { instr.clone() } else { as_word(instr, written) };
-                if name.is_some() {
-                    out.push(beside_block(number, &name, vec![made]));
-                } else {
-                    out.push(made);
+            for _ in 0..count {
+                play(inner, depth + 1, recipes, film, out);
+                if out.len() > MOST_LINES {
+                    film.wrong(number, format!("“{}”: the film would be more than {MOST_LINES} lines", instr.text));
+                    break;
                 }
             }
         }
+        // (A track's keys: lines of their own, no recipe's.)
+        Some("keys") => {
+            let mut block = read_on(film, instr);
+            block.inner = Some(inner.to_vec());
+            out.push(block);
+        }
+        // (Another block: its opening read on (`there`, `team`), its
+        // lines played in it.)
+        _ => {
+            let mut block = read_on(film, instr);
+            let mut held = Vec::new();
+            play(inner, depth, recipes, film, &mut held);
+            block.inner = Some(held);
+            out.push(block);
+        }
+    }
+}
+
+/// `uses fishing`: the recipes of a file; `include intro`: all its lines,
+/// here, as if written on this one.
+fn take_in(instr: &Instr, verb: &str, name: &str, depth: usize, recipes: &mut Recipes, film: &mut Film, out: &mut Vec<Instr>) {
+    let number = instr.number;
+    match shared_text(film.lexicon, &film.tables.project.clone(), name) {
+        Err(told) => film.wrong(number, told),
+        Ok(_) if depth > 8 => film.wrong(number, format!("“{}”: files that include each other without end", instr.text)),
+        Ok(text) if verb == "uses" => {
+            film.uses.push(plain(name));
+            for recipe in recipes_of(film.lexicon, &text, name) {
+                if !film.defined.iter().any(|known| known.recipe.file == recipe.file && known.recipe.text.number == recipe.text.number) {
+                    film.defined.push(Defined { recipe: recipe.clone(), uses: Some(number) });
+                }
+                recipes.entry(recipe.name.clone()).or_default().insert(0, recipe);
+            }
+        }
+        Ok(text) => {
+            // (Its lines by their own numbers, in a range of their own: what
+            // is wrong in them is told of the file and its line.)
+            film.included.push((number, name.to_string()));
+            let base = INCLUDED * film.included.len();
+            let lines = read(film, &text, base);
+            play(&lines, depth + 1, recipes, film, out);
+        }
+    }
+}
+
+/// A word's line: kept as it is, or the recipe of that word that fits
+/// played in its place.
+fn play_word(instr: &Instr, verb: &String, words: &[String], wait: bool, depth: usize, recipes: &mut Recipes, film: &mut Film, out: &mut Vec<Instr>) {
+    let number = instr.number;
+    // (Words said, kept as they are; a recipe of that word still plays them.)
+    let line = word_line(instr, verb, words, wait);
+    let said = said_word(verb, &line);
+    let known = recipes.get(verb).filter(|_| depth < DEEPEST).cloned();
+    if said && !recipes.contains_key(verb) {
+        out.push(instr.clone());
+        return;
+    }
+    let mut written = if said { line.clone() } else { shortened(film, number, &line) };
+    let name = named_beside(&mut written);
+    let meanwhile = name.is_some() || written.last().is_some_and(|last| last == "&");
+    let Some(known) = known else {
+        named_team(film, &written);
+        remembered(film, &written);
+        let made = if written == line { instr.clone() } else { as_word(instr, written) };
+        if name.is_some() {
+            out.push(beside_block(number, &name, vec![made]));
+        } else {
+            out.push(made);
+        }
+        return;
+    };
+    if written.last().is_some_and(|last| last == "&") {
+        written.pop();
+    }
+    let mut why = Vec::new();
+    let mut fits = None;
+    for recipe in &known {
+        match given(film, recipe, &written[1..]) {
+            Ok(given) => {
+                fits = Some((recipe.clone(), given));
+                break;
+            }
+            Err(reason) => why.push(format!("“{}”: {reason}", recipe.shape())),
+        }
+    }
+    match fits {
+        Some((recipe, given)) => {
+            let call = Called { instr, verb, line: &line, written: &written, name: &name, meanwhile };
+            play_recipe(&call, &recipe, &given, depth, recipes, film, out);
+        }
+        // (No recipe of that name fits, but a word of the language does: the word's.)
+        None if film.lexicon.is_word(verb, "") && crate::text::checked::wrong_form(film, verb, verb, &written[1..], &instr.text).is_none() => {
+            out.push(if written == line { instr.clone() } else { as_word(instr, written) });
+        }
+        None => {
+            let from = instr.from.0.as_ref().map_or(String::new(), |from| format!(" ({})", from.told()));
+            film.wrong(number, format!("“{}”: {}{from}", instr.text, why.join("; ")));
+        }
+    }
+}
+
+/// A line that calls a recipe: as written, and as its words are once read.
+struct Called<'a> {
+    instr: &'a Instr,
+    verb: &'a String,
+    /// Its words, as written (`&` at the end if beside the film).
+    line: &'a [String],
+    /// Its words once shortened, its name beside the film and `&` taken off.
+    written: &'a [String],
+    name: &'a Option<String>,
+    meanwhile: bool,
+}
+
+/// A recipe that fits its call: what the call tells the film, then its
+/// lines played, beside the film with `&`.
+fn play_recipe(call: &Called, recipe: &Recipe, given: &[Given], depth: usize, recipes: &mut Recipes, film: &mut Film, out: &mut Vec<Instr>) {
+    let Called { instr, verb, line, written, name, meanwhile } = *call;
+    let number = instr.number;
+    // (A recipe called by a line of the text, as written:
+    // its fields are what the recipe is given.)
+    let as_in_the_text = instr.span.is_some() && written.iter().eq(line.iter().filter(|word| *word != "&"));
+    // (Written the word first, said of someone: who first now, `pikachu hug piplup`.)
+    let one_first = match recipe.form.first() {
+        Some(Piece::Team(name)) => given.iter().find(|one| one.name == *name).is_some_and(|one| one.words.len() == 1),
+        _ => recipe.said_of_someone(),
+    };
+    if as_in_the_text && instr.from.0.is_none() {
+        crate::text::written::asks_its_library(film, number, verb);
+    }
+    if as_in_the_text && instr.from.0.is_none() && one_first {
+        let words = film.written_words(instr);
+        crate::text::written::told_who_first(film, number, &words, verb);
+    }
+    if let Some(bound) = as_in_the_text.then(|| grammar::bind(film, &recipe.form, &written[1..]).ok()).flatten() {
+        let read = crate::film::ReadAs { word: verb.clone(), group: "recipe", values: bound.values };
+        film.read_as.entry(number).or_insert(read);
+    }
+    // (Its places given in two numbers, to be told if they have a name.)
+    for one in given.iter().filter(|one| one.kind == Kind::Place) {
+        if let [x, y] = one.words.as_slice()
+            && let (Ok(x), Ok(y)) = (x.parse::<f32>(), y.parse::<f32>())
+        {
+            film.points_said.entry(number).or_default().push((x as i32, y as i32));
+        }
+    }
+    // (A recipe of a team: those it is called with, all.)
+    if recipe.of_a_team() {
+        let named: Vec<String> = written[1..].iter().map(|word| plain(word)).take_while(|word| film.actor(word).is_some()).collect();
+        if named.len() > 1 {
+            film.last_team = named;
+        }
+    }
+    let lines = cooked(film, recipe, given, number);
+    // (With `&`: all of it beside the film, a block of its own.)
+    if meanwhile {
+        let mut held = Vec::new();
+        play(&lines, depth + 1, recipes, film, &mut held);
+        out.push(beside_block(number, name, held));
+    } else {
+        play(&lines, depth + 1, recipes, film, out);
     }
 }
 
