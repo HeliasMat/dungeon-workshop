@@ -1,7 +1,7 @@
 //! A status move on its target.
 
 use crate::dungeon::status::{StatSwap, Statuses};
-use crate::dungeon::{FIXED_ONE, MoveEffect, ability, move_hits};
+use crate::dungeon::{FIXED_ONE, MoveEffect, ability, held, move_hits};
 
 use super::{Attack, Happened, Party, Play, Role};
 
@@ -70,6 +70,8 @@ impl Play<'_, '_> {
                 (user.status.accuracy_stage, user.status.evasion_stage) = (from.accuracy_stage, from.evasion_stage);
                 self.says(Happened::StatsCopied);
             }
+            // A Pass Scarf shrugs the effect off onto someone next to it.
+            _ if held::holds(victim.stats, held::PASS_SCARF) => self.says(Happened::Passed(effect)),
             _ if victim.status.bouncing_turns > 0 => {
                 self.says(Happened::Bounced);
                 self.affects(effect, user, Role::User);

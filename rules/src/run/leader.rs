@@ -3,7 +3,7 @@
 //! how it picks them.
 
 use crate::dungeon::status::item;
-use crate::dungeon::{Floor, Mobility, MoveSlot, Pos, Statuses, Tile, TrapOutcome, ai, spring_trap, stack, weather};
+use crate::dungeon::{Floor, Mobility, MoveSlot, Pos, Stats, Statuses, Tile, TrapOutcome, ai, held, spring_trap, stack, weather};
 
 use super::dungeon::{DIRECTIONS, FloorItem, Outcome, STEP_FRAMES, ShopTalk};
 use super::spawning::{spawn_enemy, spawn_enemy_holding};
@@ -13,9 +13,10 @@ use super::{Input, MonsterId, Run, Side, Sight};
 /// A trap sprung.
 const TRAP_SOUND: u16 = 0x11C;
 
-/// How a monster moves on a floor with that secondary terrain.
-pub(crate) fn mobility(status: &Statuses, secondary_kind: u8) -> Mobility {
-    match (status.mobile, status.levitating_turns > 0) {
+/// How a monster moves on a floor with that secondary terrain (a Mobile
+/// Scarf as a Mobile Orb).
+pub(crate) fn mobility(stats: &Stats, status: &Statuses, secondary_kind: u8) -> Mobility {
+    match (status.mobile || held::holds(stats, held::MOBILE_SCARF), status.levitating_turns > 0) {
         (true, _) => Mobility::Intangible,
         (false, true) => Mobility::Hovering,
         // (Slip: water is walked on, as by those that swim.)
@@ -32,7 +33,7 @@ impl super::Dungeon {
         let on = Pos::new(at.x + dx, at.y + dy);
         let ally = self.monsters.iter().find(|monster| monster.side == Side::Ally && monster.at == at)?;
         let free = !self.monsters.iter().any(|monster| monster.at == on && monster.alive());
-        let can = !ally.status.rooted() && self.floor.can_step_as(at, dx, dy, mobility(&ally.status, secondary_kind));
+        let can = !ally.status.rooted() && self.floor.can_step_as(at, dx, dy, mobility(&ally.stats, &ally.status, secondary_kind));
         (self.rules.options.push_allies && free && can).then_some(on)
     }
 }
@@ -97,7 +98,7 @@ impl Run {
         let secondary_kind = dungeon.spec(&book).map_or(0, |floor| floor.secondary_kind);
         let leader = dungeon.leader();
         let (id, name) = (leader.id, leader.name.clone());
-        let walks = mobility(&leader.status, secondary_kind);
+        let walks = mobility(&leader.stats, &leader.status, secondary_kind);
         // Asleep, it snores or talks in its sleep if it can, else its turn
         // is lost.
         let sleep_use = leader.status.sleep_move(&leader.moves);
@@ -231,6 +232,19 @@ impl Run {
         }
     }
 
+    /// An item of the bag, at random, becomes sticky (told). Whether one
+    /// could.
+    pub(crate) fn stick_bag_item(&mut self) -> bool {
+        let clean: Vec<usize> = (0..self.bag.items.len()).filter(|&at| !stack::piles(self.bag.items[at]) && !stack::sticky(self.bag.items[at])).collect();
+        let Some(dungeon) = self.dungeon.as_mut().filter(|_| !clean.is_empty()) else {
+            return false;
+        };
+        let at = clean[dungeon.rng.rand_int(clean.len() as i32) as usize];
+        self.bag.items[at] = stack::stuck(self.bag.items[at], true);
+        self.log.push(format!("{} became sticky!", self.book.item_name(stack::id(self.bag.items[at]))));
+        true
+    }
+
     /// What a trap does around the leader that stepped on it.
     fn trap_outcome(&mut self, outcome: TrapOutcome) {
         let book = self.book.clone();
@@ -255,16 +269,13 @@ impl Run {
                     self.log.push("An explosion went off!".to_string());
                 }
             }
+            TrapOutcome::Sticky if held::holds(&dungeon.leader().stats, held::NO_STICK_CAP) => {
+                self.log.push("The No-Stick Cap prevented items from getting sticky!".to_string());
+            }
             TrapOutcome::Sticky => {
-                let clean: Vec<usize> =
-                    (0..self.bag.items.len()).filter(|&at| !stack::piles(self.bag.items[at]) && !stack::sticky(self.bag.items[at])).collect();
-                if clean.is_empty() {
+                if !self.stick_bag_item() {
                     self.log.push("But nothing happened.".to_string());
-                    return;
                 }
-                let at = clean[self.dungeon.as_mut().expect("a dungeon").rng.rand_int(clean.len() as i32) as usize];
-                self.bag.items[at] = stack::stuck(self.bag.items[at], true);
-                self.log.push(format!("{} became sticky!", book.item_name(stack::id(self.bag.items[at]))));
             }
             TrapOutcome::Trip => {
                 // What it holds falls beside it.
@@ -366,6 +377,8 @@ mod tests {
     use super::super::book::PLAYER_STATS;
     use super::super::{Dungeon, Monster};
     use super::*;
+    use crate::dungeon::DungeonRng;
+    use crate::dungeon::status::tests::monster;
 
     #[test]
     fn an_ally_walked_into_is_pushed_on_with_the_option() {
@@ -387,5 +400,18 @@ mod tests {
         dungeon.monsters[1].at = Pos::new(7, 6);
         dungeon.monsters.push(monster(3, Side::Foe, 8));
         assert_eq!(dungeon.push_spot(Pos::new(7, 6), (1, 0), 0), None);
+    }
+
+    #[test]
+    fn held_items_change_the_way_and_count_turns() {
+        // A Mobile Scarf goes through walls; Slip walks on water, not lava.
+        let (scarf, mut status) = (Stats { held: held::MOBILE_SCARF, ..monster() }, Statuses::default());
+        assert_eq!(mobility(&scarf, &status, 0), Mobility::Intangible);
+        status.slipping = true;
+        assert_eq!((mobility(&monster(), &status, 0), mobility(&monster(), &status, 1)), (Mobility::Secondary, Mobility::Normal));
+        // A Warp Scarf now and then, its count starting again.
+        let (mut rng, mut count) = (DungeonRng::new(7), 0);
+        let acted = (0..400).filter(|_| held::ticks(&mut count, &mut rng)).count();
+        assert!(acted > 0 && acted < 100, "{acted}");
     }
 }

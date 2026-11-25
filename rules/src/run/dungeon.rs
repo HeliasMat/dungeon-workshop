@@ -3,7 +3,7 @@
 
 use crate::dungeon::minimap::Explored;
 use crate::dungeon::weather::{self, Weather};
-use crate::dungeon::{DungeonRng, Floor, MoveEffect, MoveSlot, Pos, generate_floor};
+use crate::dungeon::{DungeonRng, Floor, MoveEffect, MoveSlot, Pos, generate_floor, held};
 use crate::tables::Rules;
 use crate::tables::{DungeonTable, Floor as FloorTable};
 
@@ -204,6 +204,8 @@ pub struct Dungeon {
     pub recycle: bool,
     /// A Dough Seed was eaten: more Poké lie on the next floor.
     pub dough_seed: bool,
+    /// Effects a Pass Scarf sent on, from where its holder stands.
+    pub passed: Vec<(Pos, MoveEffect)>,
     /// Where the monster now attacking faces (for Me First).
     pub aimed_at: Option<Pos>,
     /// The HP of those bound by Destiny Bond, a frame ago.
@@ -301,6 +303,7 @@ impl Dungeon {
             chain_belly: 0,
             recycle: false,
             dough_seed: false,
+            passed: Vec::new(),
             aimed_at: None,
             bond_hp: Vec::new(),
             identity_floor: 0,
@@ -387,6 +390,17 @@ impl Dungeon {
         (self.silence, self.no_orbs) = fixed.map_or((false, false), |fixed| (!fixed.moves_allowed, !fixed.orbs_allowed));
         self.banner = FLOOR_BANNER;
         self.generation += 1;
+    }
+
+    /// What the leader's specs show on the map: every item and foe (X-Ray
+    /// Specs: `Some(true)`), or none at all (Y-Ray Specs: `Some(false)`).
+    pub fn specs_map(&self) -> Option<bool> {
+        let leader = &self.leader().stats;
+        match (held::holds(leader, held::X_RAY_SPECS), held::holds(leader, held::Y_RAY_SPECS)) {
+            (true, _) => Some(true),
+            (false, true) => Some(false),
+            _ => None,
+        }
     }
 
     /// A random free room tile, for a monster that warps.

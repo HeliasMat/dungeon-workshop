@@ -189,7 +189,7 @@ impl Body {
 
     /// Someone in an attack.
     fn party(&mut self, team: bool) -> Party<'_> {
-        Party { stats: &mut self.stats, status: &mut self.statuses, team, at: Pos::new(0, 0), id: 0 }
+        Party { stats: &mut self.stats, status: &mut self.statuses, team, leader: false, at: Pos::new(0, 0), id: 0 }
     }
 
     /// Its life goes up, to its most.

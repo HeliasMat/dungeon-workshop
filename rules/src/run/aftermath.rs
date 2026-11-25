@@ -26,6 +26,7 @@ impl Run {
         let new_floor = arena.dungeon.identity_floor != arena.dungeon.generation;
         arena.dungeon.identity_floor = arena.dungeon.generation;
         arena.spread_effects();
+        arena.pass_effects();
         arena.blasts();
         arena.shoves();
         arena.spite_moves();
@@ -73,6 +74,35 @@ impl Arena<'_> {
                     self.log.push(effect_message(book, spread.effect, &monster.name, applied));
                 });
             }
+        }
+    }
+
+    /// What Pass Scarves sent on: to someone next to the holder, at random
+    /// (no one there, it is gone). The holder's belly pays for it.
+    fn pass_effects(&mut self) {
+        const PASS_SCARF_BELLY: i32 = 5;
+        let book = self.book;
+        let constants = &book.tables.constants;
+        for (from, effect) in std::mem::take(&mut self.dungeon.passed) {
+            let dungeon = &mut *self.dungeon;
+            if let Some(holder) = dungeon.monsters.iter_mut().find(|monster| monster.at == from && monster.alive())
+                && let Some(belly) = &mut holder.belly
+            {
+                // (This project's own figure.)
+                belly.lose(PASS_SCARF_BELLY);
+            }
+            let around: Vec<usize> = (0..dungeon.monsters.len())
+                .filter(|&at| dungeon.monsters[at].alive() && chebyshev(dungeon.monsters[at].at, from) == 1 && dungeon.monsters[at].side != Side::Keeper)
+                .collect();
+            if around.is_empty() {
+                continue;
+            }
+            let pick = around[dungeon.rng.rand_int(around.len() as i32) as usize];
+            let rng = &mut dungeon.rng;
+            watched(&mut dungeon.monsters[pick], self.sights, |monster| {
+                let applied = crate::dungeon::apply_effect(effect, rng, constants, &mut monster.stats, &mut monster.status);
+                self.log.push(effect_message(book, effect, &monster.name, applied));
+            });
         }
     }
 

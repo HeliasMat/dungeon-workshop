@@ -2,19 +2,25 @@
 //! is told, shown and left on the floor here.
 
 use crate::attack::{self, Attack, Field, Happened, Outcome, Party, Role, Tuning};
-use crate::dungeon::MoveEffect;
+use crate::dungeon::{MoveEffect, held};
 
 use super::attack::Arena;
 use super::dungeon::Shove;
+use super::monster::Side;
+use super::team::earn;
 use super::words::{effect_message, log_aftermath, log_damage};
 use super::{Monster, Sight};
+
+/// What of its striker's worth a Joy Ribbon's holder earns when hurt (a
+/// tenth: this project's own figure).
+const JOY_RIBBON_SHARE: i32 = 10;
 
 /// Frames between an attack starting and its blow, by eye. (Each monster's
 /// sprite may know better.)
 pub(crate) const BLOW_LANDS: u32 = 10;
 
 fn party(monster: &mut Monster) -> Party<'_> {
-    Party { team: monster.team(), at: monster.at, id: monster.id.0, stats: &mut monster.stats, status: &mut monster.status }
+    Party { team: monster.team(), leader: monster.side == Side::Leader, at: monster.at, id: monster.id.0, stats: &mut monster.stats, status: &mut monster.status }
 }
 
 impl Arena<'_> {
@@ -80,7 +86,8 @@ impl Arena<'_> {
             Unafraid => format!("{other} is not afraid of the move!"),
             Hurt(damage) => {
                 self.sights.push(Sight::Hurt(victim.id, BLOW_LANDS));
-                return log_damage(book, self.log, other, damage);
+                log_damage(book, self.log, other, damage);
+                return self.joy_ribbon(user, victim, damage.amount);
             }
             AttackTopped => format!("{other}'s Attack is maxed out!"),
             RageGrows => format!("{other}'s rage is building!"),
@@ -102,7 +109,33 @@ impl Arena<'_> {
             Aftermath(lost) => return log_aftermath(self.log, one, lost),
             Countered(back) => format!("{other} struck back: {one} lost {back} HP."),
             Grudge => format!("{other}'s grudge strikes {one}!"),
+            Passed(effect) => {
+                self.dungeon.passed.push((victim.at, effect));
+                format!("{other} passed the effect on with its Pass Scarf!")
+            }
         };
         self.log.push(said);
+    }
+
+    /// A Joy Ribbon: its holder of the team, hurt and standing, earns
+    /// experience from the blow.
+    fn joy_ribbon(&mut self, user: &Monster, victim: &mut Monster, lost: i32) {
+        let ribbon = lost > 0 && victim.alive() && victim.team() && held::holds(&victim.stats, held::JOY_RIBBON);
+        if !ribbon || !self.dungeon.rules.enemies_give_exp {
+            return;
+        }
+        let amount = (user.exp_value / JOY_RIBBON_SHARE).max(1);
+        let Monster { name, stats, moves, experience, id, .. } = victim;
+        let Some(experience) = experience.as_mut() else {
+            return;
+        };
+        let told = amount.to_string();
+        let book = self.book;
+        self.log.push(
+            book.phrase(crate::strings::log_text::GAINED_EXP, &[("string:0", name), ("digits_c:0", &told)])
+                .unwrap_or_else(|| format!("{name} gained {amount} Exp. Points.")),
+        );
+        let asked = earn(book, self.log, name, stats, moves, experience, amount);
+        self.dungeon.learning.extend(asked.into_iter().map(|slot| (*id, slot)));
     }
 }

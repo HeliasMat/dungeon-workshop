@@ -21,6 +21,11 @@ impl Play<'_, '_> {
         let (mut accuracy, mut evasion) =
             ability::hit_stages(user.stats, victim.stats, stages, slot.category == 0, self.field.weather, victim.status.confused());
         accuracy += iq::has(user.stats, iq::CONCENTRATOR) as i32;
+        // (Y-Ray Specs on any but the leader: Blinker, an accuracy drop
+        // here as the Blinker Seed's.)
+        if held::holds(user.stats, held::Y_RAY_SPECS) && !user.leader {
+            accuracy -= 2;
+        }
         evasion -= iq::has(victim.stats, iq::CONCENTRATOR) as i32;
         if iq::has(victim.stats, iq::CLUTCH_PERFORMER) && ability::in_a_pinch(victim.stats) {
             evasion += 2;
@@ -47,6 +52,8 @@ impl Play<'_, '_> {
     /// Whether the last strike did not miss.
     pub(super) fn blows(&mut self, user: &mut Party, victim: &mut Party, attack: &Attack) -> bool {
         let (constants, chart, weather) = (self.field.constants, self.field.chart, self.field.weather);
+        // (A Weather Band: as in clear weather for its holder.)
+        let weather = if held::holds(user.stats, held::WEATHER_BAND) { crate::dungeon::weather::CLEAR } else { weather };
         let slot = attack.slot;
         // Dream Eater only works on a sleeper.
         const DREAM_EATER: u16 = 331;

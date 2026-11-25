@@ -161,6 +161,9 @@ pub struct Statuses {
     /// closes in around it, even in rooms (Dropeye Seed).
     pub slipping: bool,
     pub dropeye: bool,
+    /// Turns counted by a Warp Scarf and a No-Slip Cap it holds.
+    pub(crate) warp_scarf_count: i32,
+    pub(crate) no_slip_count: i32,
     /// Multipliers of attack and defense, in 8-bit fixed point.
     pub attack_multiplier: i32,
     pub defense_multiplier: i32,
@@ -276,6 +279,8 @@ impl Default for Statuses {
             focused: false,
             slipping: false,
             dropeye: false,
+            warp_scarf_count: 0,
+            no_slip_count: 0,
             attack_multiplier: 0x100,
             defense_multiplier: 0x100,
             sp_attack_stage: NEUTRAL_STAGE,

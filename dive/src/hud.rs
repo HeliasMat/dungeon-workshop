@@ -61,7 +61,8 @@ impl Map {
         }
         self.drawn = Some(key);
         let (floor, explored) = (&dungeon.floor, &dungeon.explored);
-        let items = dungeon.items.iter().filter(|item| explored.seen(item.at) && floor.tile(item.at).is_walkable());
+        let specs = dungeon.specs_map();
+        let items = dungeon.items.iter().filter(|item| specs.unwrap_or(explored.seen(item.at)) && floor.tile(item.at).is_walkable());
         let mut dots: Vec<(Pos, [u8; 4])> = items.map(|item| (item.at, ITEM)).collect();
         for monster in dungeon.monsters.iter().filter(|monster| monster.alive()) {
             if monster.team() {
@@ -69,7 +70,7 @@ impl Map {
                 if monster.side != Side::Leader {
                     dots.push((monster.at, TEAM));
                 }
-            } else if dungeon.radar || ai::can_see(floor, leader.at, monster.at) {
+            } else if specs.unwrap_or(dungeon.radar || ai::can_see(floor, leader.at, monster.at)) {
                 dots.push((monster.at, ENEMY));
             }
             if monster.job_target.is_some() && monster.side != Side::Foe && explored.seen(monster.at) {

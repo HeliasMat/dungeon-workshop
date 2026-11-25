@@ -258,21 +258,39 @@ impl Run {
             return;
         };
         let leader = dungeon.leader();
-        let (me, here, facing, name) = (leader.id, leader.at, leader.facing, leader.name.clone());
+        let (me, here, mut facing, name) = (leader.id, leader.at, leader.facing, leader.name.clone());
         let status = &leader.status;
         let reach = if status.long_toss || status.exclusive.has(exclusive::effect::LONG_TOSS) { FLOOR_WIDTH } else { 10 };
-        let pierces = status.piercing || iq::has(&leader.stats, iq::PIERCE_HURLER);
+        let lobbed = kind::ROCKS.contains(&stack::id(item));
+        let holds = |which| held::holds(&leader.stats, which);
+        // (A Pierce Band: through all, but for rocks. A Curve Band: off
+        // the walls, sideways along them, but for a pierce or a rock.)
+        let pierces = status.piercing || iq::has(&leader.stats, iq::PIERCE_HURLER) || (holds(held::PIERCE_BAND) && !lobbed);
+        let curves = holds(held::CURVE_BAND) && !pierces && !lobbed;
+        let (whiffs, aimless) = (holds(held::WHIFF_SPECS), holds(held::NO_AIM_SCOPE));
         let pitcher = if iq::has(&leader.stats, iq::POWER_PITCHER) { constants.power_pitcher } else { 0x100 };
+        // A No-Aim Scope throws any which way.
+        if aimless {
+            let rng = &mut self.dungeon.as_mut().expect("a dungeon").rng;
+            facing = super::dungeon::DIRECTIONS[rng.rand_int(8) as usize];
+        }
+        let Some(dungeon) = self.dungeon.as_ref() else {
+            return;
+        };
         let mut flight = Vec::new();
         let mut at = here;
+        let mut way = facing;
         for _ in 0..reach {
-            if !dungeon.floor.can_step(at, facing.0, facing.1) {
-                break;
+            if !dungeon.floor.can_step(at, way.0, way.1) {
+                let sideways = [(-way.1, way.0), (way.1, -way.0)].into_iter().find(|side| dungeon.floor.can_step(at, side.0, side.1));
+                match sideways.filter(|_| curves) {
+                    Some(side) => way = side,
+                    None => break,
+                }
             }
-            at = Pos::new(at.x + facing.0, at.y + facing.1);
+            at = Pos::new(at.x + way.0, at.y + way.1);
             flight.push(at);
         }
-        let lobbed = kind::ROCKS.contains(&stack::id(item));
         if lobbed {
             at = arc_landing(&dungeon.floor, here, facing, &taken);
             flight = vec![at];
@@ -280,6 +298,10 @@ impl Run {
         let mut hit: Vec<Pos> = flight.iter().copied().filter(|tile| taken.contains(tile)).collect();
         if !pierces {
             hit.truncate(1);
+        }
+        // (Whiff Specs: it hits nobody, and flies on to its end.)
+        if whiffs {
+            hit.clear();
         }
         stack::take_one(&mut self.bag.items, index);
         self.sights.push(Sight::BagDone);
@@ -303,6 +325,20 @@ impl Run {
         let slot = MoveSlot { id: PROJECTILE_MOVE_ID, power, accuracy: constants.thrown_hit_chance, ..book.regular_attack() };
         let mut warped = None;
         for (foe, foe_at) in foes.into_iter().filter(|foe| hit.contains(&foe.1)) {
+            // A Dodge Scarf: nothing thrown hits its holder; a Bounce Band
+            // sends it back.
+            let foe_holds = |which| self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(foe)).is_some_and(|foe| held::holds(&foe.stats, which));
+            let (dodges, bounces) = (foe_holds(held::DODGE_SCARF), foe_holds(held::BOUNCE_BAND));
+            if dodges || bounces {
+                let foe_name = self.name_of(foe);
+                self.log.push(match bounces {
+                    true => format!("{item_name} bounced off {foe_name}!"),
+                    false => format!("{item_name} missed {foe_name}."),
+                });
+                let short = flight.iter().position(|&tile| tile == foe_at).and_then(|tile| tile.checked_sub(1)).map_or(here, |tile| flight[tile]);
+                self.drop_item(if bounces { here } else { short }, item);
+                continue;
+            }
             if projectile && !kind::ROCKS.contains(&item) {
                 let attack = Attack { slot, effect: None, damage_mult: FIXED_ONE, linked: false };
                 self.strike(me, foe, &attack);

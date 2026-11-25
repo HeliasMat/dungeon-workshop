@@ -2,28 +2,47 @@
 //! numbers follow the item list of the extracted data. The stat items, the
 //! Scope Lens and the Patsy Band are this project's own rules (see
 //! `stat_boost`, `CRIT_BOOST`); the others follow the well-known
-//! rules of the games.
+//! rules of the games. (The Gold Ribbon and the Plain Ribbon do nothing,
+//! as in the game: the first sells well.)
 
 use super::combat::Stats;
 use super::status::MoveEffect;
 
+pub(crate) const NO_SLIP_CAP: u16 = 13;
+pub(crate) const Y_RAY_SPECS: u16 = 14;
+pub(crate) const GAGGLE_SPECS: u16 = 15;
+pub(crate) const MOBILE_SCARF: u16 = 16;
 pub(crate) const HEAL_RIBBON: u16 = 17;
 pub(crate) const TWIST_BAND: u16 = 18;
 pub(crate) const SCOPE_LENS: u16 = 19;
 pub(crate) const PATSY_BAND: u16 = 20;
+pub(crate) const NO_STICK_CAP: u16 = 21;
+pub(crate) const PIERCE_BAND: u16 = 22;
+pub(crate) const JOY_RIBBON: u16 = 23;
+pub(crate) const X_RAY_SPECS: u16 = 24;
 pub(crate) const PERSIM_BAND: u16 = 25;
 pub(crate) const POWER_BAND: u16 = 26;
 pub(crate) const PECHA_SCARF: u16 = 27;
 pub(crate) const INSOMNISCOPE: u16 = 28;
+pub(crate) const WARP_SCARF: u16 = 29;
 pub(crate) const TIGHT_BELT: u16 = 30;
+pub(crate) const SNEAK_SCARF: u16 = 31;
 pub(crate) const DIET_RIBBON: u16 = 34;
+pub(crate) const RACKET_BAND: u16 = 36;
 pub(crate) const DEF_SCARF: u16 = 37;
 pub(crate) const STAMINA_BAND: u16 = 38;
 pub(crate) const SPECIAL_BAND: u16 = 40;
 pub(crate) const ZINC_BAND: u16 = 41;
 pub(crate) const DETECT_BAND: u16 = 42;
+pub(crate) const DODGE_SCARF: u16 = 44;
+pub(crate) const BOUNCE_BAND: u16 = 45;
+pub(crate) const CURVE_BAND: u16 = 46;
+pub(crate) const WHIFF_SPECS: u16 = 47;
+pub(crate) const NO_AIM_SCOPE: u16 = 48;
 pub(crate) const LOCKON_SPECS: u16 = 49;
 pub(crate) const MUNCH_BELT: u16 = 50;
+pub(crate) const PASS_SCARF: u16 = 51;
+pub(crate) const WEATHER_BAND: u16 = 52;
 pub(crate) const FRIEND_BOW: u16 = 53;
 
 /// The items that are held rather than eaten or thrown (the No-Slip Cap
@@ -86,6 +105,23 @@ pub(crate) fn belly_quarters(stats: &Stats) -> i32 {
         MUNCH_BELT => 8,
         _ => 4,
     }
+}
+
+/// The turns a Warp Scarf or a No-Slip Cap counts up to; its chance to
+/// act each turn, in 1000ths for each turn counted (this project's own
+/// figures: the game keeps a table of its own).
+const TICK_TOP: i32 = 19;
+const TICK_PER_MILLE: i32 = 5;
+
+/// A turn counted for a Warp Scarf or a No-Slip Cap: whether it acts now
+/// (its count starts again then).
+pub(crate) fn ticks(count: &mut i32, rng: &mut super::DungeonRng) -> bool {
+    *count = (*count + 1).min(TICK_TOP);
+    let acts = rng.rand_int(1000) < *count * TICK_PER_MILLE;
+    if acts {
+        *count = 0;
+    }
+    acts
 }
 
 /// How much faster the holder recovers HP (Heal Ribbon: twice).

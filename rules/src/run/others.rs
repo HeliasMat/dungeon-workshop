@@ -9,7 +9,7 @@
 use crate::dungeon::ai::{self, AiChoice, AiUser, Candidate};
 use crate::dungeon::exclusive::effect::NO_WEATHER_DAMAGE;
 use crate::dungeon::status::DEEP_SLEEP;
-use crate::dungeon::{Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, TrapOutcome, ability, apply_effect, eat_item, enemy_action};
+use crate::dungeon::{Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held};
 
 use super::attack::chebyshev;
 use super::dungeon::{DIRECTIONS, Phase, weather_name};
@@ -167,8 +167,39 @@ impl Run {
             }
         }
         self.weather_turn();
+        self.held_items_turn();
         // At half speed the others get two rounds for each of the leader's.
         Some(Phase { rounds: if speed == 0 { 2 } else { 1 }, previous, ..Phase::default() })
+    }
+
+    /// Held items that act as turns pass: a Warp Scarf now and then warps
+    /// its holder; a team member's No-Slip Cap now and then makes an item
+    /// of the bag sticky.
+    fn held_items_turn(&mut self) {
+        let dungeon = self.here();
+        let holders: Vec<(MonsterId, bool, bool)> = dungeon
+            .monsters
+            .iter()
+            .filter(|monster| monster.alive() && monster.side != Side::Keeper)
+            .map(|monster| (monster.id, held::holds(&monster.stats, held::WARP_SCARF), monster.team() && held::holds(&monster.stats, held::NO_SLIP_CAP)))
+            .filter(|&(_, warp, slip)| warp || slip)
+            .collect();
+        for (who, warp, slip) in holders {
+            let dungeon = self.here();
+            let rng = &mut dungeon.rng;
+            let Some(monster) = dungeon.monsters.iter_mut().find(|monster| monster.id == who) else {
+                continue;
+            };
+            let warps = warp && held::ticks(&mut monster.status.warp_scarf_count, rng);
+            let sticks = slip && held::ticks(&mut monster.status.no_slip_count, rng);
+            if warps {
+                let taken: Vec<Pos> = dungeon.monsters.iter().filter(|monster| monster.alive()).map(|monster| monster.at).collect();
+                self.warp(who, &taken);
+            }
+            if sticks {
+                self.stick_bag_item();
+            }
+        }
     }
 
     /// What the weather does at the end of a turn: a monster's ability may
@@ -192,7 +223,8 @@ impl Run {
         for monster in dungeon.monsters.iter_mut().filter(|monster| monster.side != Side::Keeper) {
             // (An exclusive item may spare a team member.)
             let team = monster.team();
-            let spared = team && (monster.status.exclusive.has(NO_WEATHER_DAMAGE) || ability::has(&monster.stats, ability::MAGIC_GUARD));
+            let banded = held::holds(&monster.stats, held::WEATHER_BAND);
+            let spared = banded || (team && (monster.status.exclusive.has(NO_WEATHER_DAMAGE) || ability::has(&monster.stats, ability::MAGIC_GUARD)));
             if !monster.alive() || spared {
                 continue;
             }
@@ -245,7 +277,7 @@ impl Run {
         let mut beside: Vec<Pos> =
             dungeon.monsters.iter().filter(|monster| monster.side == Side::Ally && monster.id != who && monster.alive()).map(|monster| monster.at).collect();
         beside.extend(dungeon.shop.as_ref().and_then(|shop| shop.keeper));
-        let walks = mobility(&me.status, secondary_kind);
+        let walks = mobility(&me.stats, &me.status, secondary_kind);
         let direction = facing_index(me.facing);
         // Its tactic:
         // some keep away from fights, at low HP or always; one waits for a
@@ -340,9 +372,10 @@ impl Run {
         let decoy = standing().find(|monster| monster.side == Side::Foe && monster.id != who && monster.status.decoy).map(|monster| (monster.id, monster.at));
         const NOWHERE: Pos = Pos::new(-100, -100);
         let nearest = seen_foes.iter().copied().min_by_key(|&foe| chebyshev(at, foe));
-        // A team member under Follow Me, or a decoy (Substitute), in sight,
-        // draws it.
-        let drawing = visible().find(|monster| monster.status.drawing_turns > 0 || monster.status.decoy).map(|monster| monster.at);
+        // A team member under Follow Me, a decoy (Substitute) or one in
+        // Gaggle Specs, in sight, draws it.
+        let draws = |monster: &&Monster| monster.status.drawing_turns > 0 || monster.status.decoy || held::holds(&monster.stats, held::GAGGLE_SPECS);
+        let drawing = visible().find(draws).map(|monster| monster.at);
         let drawn_to = decoy.map(|(_, tile)| tile).or(drawing.filter(|&tile| ai::can_see(&dungeon.floor, at, tile)));
         let target = drawn_to.or(nearest).unwrap_or(NOWHERE);
         // (A decoy is the one foe it goes for.)
@@ -351,8 +384,13 @@ impl Run {
         }
         let keeper = dungeon.shop.as_ref().and_then(|shop| shop.keeper);
         // A monster that appeared asleep wakes once a team member stands
-        // next to it (serebii.net's notes on wild monsters).
-        if me.status.sleep_turns == DEEP_SLEEP && foes.iter().any(|&foe| chebyshev(at, foe) <= 1) {
+        // next to it (serebii.net's notes on wild monsters), unless in a
+        // Sneak Scarf; one with a Racket Band wakes it from where it sees it.
+        let wakes = |monster: &Monster| {
+            let next = chebyshev(at, monster.at) <= 1 && !held::holds(&monster.stats, held::SNEAK_SCARF);
+            next || (held::holds(&monster.stats, held::RACKET_BAND) && ai::can_see(&dungeon.floor, monster.at, at))
+        };
+        if me.status.sleep_turns == DEEP_SLEEP && standing().filter(|monster| monster.team()).any(wakes) {
             if let Some(me) = dungeon.monster_mut(who) {
                 me.status.sleep_turns = 0;
             }
@@ -363,7 +401,7 @@ impl Run {
         if matches!(me.stats.held, ORAN_BERRY | SITRUS_BERRY) && me.stats.hp * 2 <= me.stats.max_hp && me.status.embargo_turns == 0 {
             return self.foe_eats_berry(who, &me.name);
         }
-        let walks = mobility(&me.status, secondary_kind);
+        let walks = mobility(&me.stats, &me.status, secondary_kind);
         let occupied = |tile: Pos| tile == at || foes.contains(&tile) || kin.contains(&tile) || Some(tile) == keeper;
         // The attack comes first; a monster without one in reach walks.
         let direction = facing_index(me.facing);

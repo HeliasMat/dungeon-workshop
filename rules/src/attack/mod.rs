@@ -22,8 +22,9 @@ const FORESEEN_ROLLS: u32 = 4;
 pub struct Party<'a> {
     pub stats: &'a mut Stats,
     pub status: &'a mut Statuses,
-    /// Of the player's team.
+    /// Of the player's team; its leader.
     pub team: bool,
+    pub leader: bool,
     pub at: Pos,
     /// Who it is, for what comes back to it later (0 in a fight on scene).
     pub id: u32,
@@ -165,6 +166,8 @@ pub enum Happened {
     Aftermath(i32),
     Countered(i32),
     Grudge,
+    /// The victim's Pass Scarf sent the effect on to someone next to it.
+    Passed(MoveEffect),
 }
 
 /// All an attack did.
