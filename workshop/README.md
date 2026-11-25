@@ -368,20 +368,20 @@ The Workshop is several crates, a part each, so that a change to one part builds
 
 ```text
 workshop                       the window: its menus, the spaces' docks, what the parts ask
-├── workshop_tools             the Tools' windows: SpriteCollab, an image converted
 ├── workshop_home              the Home
-├── workshop_emulator          the Emulator space
-│   └── workshop_first         the first launch, the programs beside the Workshop
 ├── workshop_game              the Game space
+├── workshop_film              the Film space played
+│   ├── workshop_script        the Script
+│   │   └── workshop_wiki      the Wiki, the words' catalogue
+│   └── workshop_decor         the Decor space
 ├── workshop_resources         the Resources space and its makings
 │   ├── workshop_picture       the painter
 │   ├── workshop_music         the music maker
 │   │   └── workshop_sound     the sound maker, the instruments
 │   └── workshop_dungeon       the dungeon and boss fight editor, the Dungeon space
-├── workshop_film              the Film space played
-│   ├── workshop_script        the Script
-│   │   └── workshop_wiki      the Wiki, the words' catalogue
-│   └── workshop_decor         the Decor space
+├── workshop_emulator          the Emulator space
+│   └── workshop_first         the first launch, the programs beside the Workshop
+├── workshop_tools             the Tools' windows: SpriteCollab, an image converted
 └── workshop_base              what all of them share: the session, the look, the project's files
 ```
 

@@ -17,6 +17,12 @@ pub struct QuantTool {
     shown: Option<(TextureHandle, TextureHandle, (usize, usize))>,
 }
 
+impl Default for QuantTool {
+    fn default() -> QuantTool {
+        QuantTool::new()
+    }
+}
+
 impl QuantTool {
     pub fn new() -> QuantTool {
         QuantTool { path: String::new(), palettes: 16, dither: false, said: String::new(), shown: None }

@@ -524,7 +524,7 @@ fn grid_card(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entry:
     };
     ui.painter().rect_filled(rect, 3.0, fill);
     let picture = Rect::from_min_size(rect.min + vec2(6.0, 6.0), vec2(CARD.x - 12.0, 96.0));
-    paint_picture(ui.painter(), &mut desk.home, context, entry, picture);
+    paint_picture(ui.painter(), desk.home, context, entry, picture);
     if desk.home.favourites.contains(&entry.path) {
         workshop_base::icons::star(ui.painter(), Rect::from_min_size(picture.min + vec2(4.0, 4.0), vec2(12.0, 12.0)), true, theme::FILM);
     }
@@ -604,7 +604,7 @@ fn table_row(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entry:
     painter.rect_filled(rect, 0.0, fill);
     painter.hline(rect.x_range(), rect.bottom() - 0.5, Stroke::new(1.0_f32, theme::TOOLS));
     let picture = Rect::from_min_size(rect.min + vec2(8.0, 4.0), vec2(64.0, 36.0));
-    paint_picture(&painter, &mut desk.home, context, entry, picture);
+    paint_picture(&painter, desk.home, context, entry, picture);
     let font = FontId::proportional(theme::BODY);
     let mut x = rect.left() + 8.0 + 76.0;
     let star = if desk.home.favourites.contains(&entry.path) { "★ " } else { "" };
@@ -729,7 +729,7 @@ pub fn preview(ui: &mut egui::Ui, home: &mut Home, project: &mut Project) {
 fn preview_picture(ui: &mut egui::Ui, desk: &mut Desk, context: &egui::Context, entry: &Entry, binned: bool) {
     let room = Rect::from_min_size(ui.cursor().min + vec2(8.0, 8.0), vec2(ui.available_width() - 16.0, 180.0));
     let picture = ui.allocate_rect(room.expand2(vec2(0.0, 8.0)), Sense::click());
-    paint_picture(ui.painter(), &mut desk.home, context, entry, room);
+    paint_picture(ui.painter(), desk.home, context, entry, room);
     ui.painter().rect_stroke(room, 0.0, Stroke::new(1.0_f32, theme::GAP), StrokeKind::Outside);
     if entry.kind == Kind::Film && !binned {
         let button = Rect::from_center_size(room.center(), vec2(44.0, 44.0));
