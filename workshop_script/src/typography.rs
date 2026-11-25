@@ -30,25 +30,49 @@ fn told(line: usize, from: usize, to: usize, message: String, title: &str, with:
 pub fn checked(text: &str, french_spaces: bool) -> Vec<Diagnostic> {
     let mut found = Vec::new();
     for (number, line) in text.split('\n').enumerate() {
-        let line_number = number + 1;
         let Some(start) = said_from(line) else { continue };
         if line.trim_start().starts_with('#') {
             continue;
         }
         // (The said part as letters, with the column (from 1) of each.)
-        let first_column = line[..start].chars().count() + 1;
-        let said: Vec<char> = line[start..].chars().collect();
-        let column = |at: usize| first_column + at;
-        let mut at = 0;
+        let said = Said { line_number: number + 1, first_column: line[..start].chars().count() + 1, letters: line[start..].chars().collect() };
         // (Its spaces at its start: none of them counts.)
-        while at < said.len() && said[at] == ' ' {
-            at += 1;
-        }
-        let begins = at;
-        if let Some(letter) = said.get(begins).filter(|letter| letter.is_lowercase()) {
+        let begins = said.letters.iter().position(|letter| *letter != ' ').unwrap_or(said.letters.len());
+        if let Some(letter) = said.letters.get(begins).filter(|letter| letter.is_lowercase()) {
             let capital: String = letter.to_uppercase().collect();
-            found.push(told(line_number, column(begins), column(begins) + 1, "a line begins with a capital letter".to_string(), "Capital", capital));
+            found.push(said.told(begins, begins + 1, "a line begins with a capital letter".to_string(), "Capital", capital));
         }
+        said.spacing(begins, french_spaces, &mut found);
+        said.quotes(begins, &mut found);
+        said.doubled_words(&mut found);
+    }
+    found
+}
+
+/// A line's said part, letter by letter, and where it is.
+struct Said {
+    line_number: usize,
+    /// The column (from 1) of its first letter.
+    first_column: usize,
+    letters: Vec<char>,
+}
+
+impl Said {
+    /// The column of a letter.
+    fn column(&self, at: usize) -> usize {
+        self.first_column + at
+    }
+
+    /// A finding from one letter to another.
+    fn told(&self, from: usize, to: usize, message: String, title: &str, with: String) -> Diagnostic {
+        told(self.line_number, self.column(from), self.column(to), message, title, with)
+    }
+
+    /// Spaces and dots: two spaces inside, two dots, a space before a comma,
+    /// none after a comma or a semicolon; French typesetting's space before
+    /// ! ? : ;, if asked.
+    fn spacing(&self, begins: usize, french_spaces: bool, found: &mut Vec<Diagnostic>) {
+        let said = &self.letters;
         let mut index = begins;
         while index < said.len() {
             let letter = said[index];
@@ -56,90 +80,80 @@ pub fn checked(text: &str, french_spaces: bool) -> Vec<Diagnostic> {
             if letter == ' ' && said.get(index + 1) == Some(&' ') {
                 let end = (index..said.len()).find(|at| said[*at] != ' ').unwrap_or(said.len());
                 if end < said.len() {
-                    found.push(told(line_number, column(index), column(end), "two spaces".to_string(), "One space", " ".to_string()));
+                    found.push(self.told(index, end, "two spaces".to_string(), "One space", " ".to_string()));
                 }
                 index = end;
                 continue;
             }
             // (Two dots: three, as dots that trail.)
             if letter == '.' && said.get(index + 1) == Some(&'.') && said.get(index + 2) != Some(&'.') && (index == 0 || said[index - 1] != '.') {
-                found.push(told(line_number, column(index), column(index + 2), "two dots in a row: an ellipsis has three".to_string(), "…", "...".to_string()));
+                found.push(self.told(index, index + 2, "two dots in a row: an ellipsis has three".to_string(), "…", "...".to_string()));
             }
             // (A space before a comma, or before a dot that ends.)
             if letter == ' ' && matches!(said.get(index + 1), Some(',')) {
-                found.push(told(line_number, column(index), column(index + 1), "no space before a comma".to_string(), "No space", String::new()));
+                found.push(self.told(index, index + 1, "no space before a comma".to_string(), "No space", String::new()));
             }
             // (No space after a comma or a semicolon, before a letter.)
             if matches!(letter, ',' | ';') && said.get(index + 1).is_some_and(|next| next.is_alphabetic()) {
-                found.push(told(line_number, column(index + 1), column(index + 1), format!("a space after \"{letter}\""), "One space", " ".to_string()));
+                found.push(self.told(index + 1, index + 1, format!("a space after \"{letter}\""), "One space", " ".to_string()));
             }
             // (French typesetting: a space before ! ? : ;, if asked.)
             if french_spaces && matches!(letter, '!' | '?' | ':' | ';') && index > begins && said[index - 1].is_alphanumeric() {
-                found.push(told(
-                    line_number,
-                    column(index),
-                    column(index),
-                    format!("a space before \"{letter}\" (French typesetting)"),
-                    "One space",
-                    " ".to_string(),
-                ));
+                found.push(self.told(index, index, format!("a space before \"{letter}\" (French typesetting)"), "One space", " ".to_string()));
             }
             index += 1;
         }
-        // (Straight quotes, by pairs: curly ones.)
+    }
+
+    /// Straight quotes, by pairs: curly ones.
+    fn quotes(&self, begins: usize, found: &mut Vec<Diagnostic>) {
+        let said = &self.letters;
         let quotes: Vec<usize> = (begins..said.len()).filter(|at| said[*at] == '"').collect();
         for pair in quotes.chunks(2).filter(|pair| pair.len() == 2) {
             let inner: String = said[pair[0] + 1..pair[1]].iter().collect();
-            found.push(told(
-                line_number,
-                column(pair[0]),
-                column(pair[1] + 1),
-                "curly quotes".to_string(),
-                "\u{201C} \u{201D}",
-                format!("\u{201C}{}\u{201D}", inner.trim()),
-            ));
+            found.push(self.told(pair[0], pair[1] + 1, "curly quotes".to_string(), "\u{201C} \u{201D}", format!("\u{201C}{}\u{201D}", inner.trim())));
         }
-        // (A word twice: "the the".)
-        let words: Vec<(usize, String)> = {
-            let mut words = Vec::new();
-            let mut current = String::new();
-            let mut from = 0;
-            for (at, letter) in said.iter().enumerate() {
-                if letter.is_alphabetic() || *letter == '\'' {
-                    if current.is_empty() {
-                        from = at;
-                    }
-                    current.push(*letter);
-                } else {
-                    if !current.is_empty() {
-                        words.push((from, std::mem::take(&mut current)));
-                    }
-                    if *letter != ' ' {
-                        words.push((at, String::new()));
-                    }
-                }
-            }
-            if !current.is_empty() {
-                words.push((from, current));
-            }
-            words
-        };
+    }
+
+    /// A word twice: "the the".
+    fn doubled_words(&self, found: &mut Vec<Diagnostic>) {
+        let said = &self.letters;
+        let words = self.words();
         for pair in words.windows(2) {
             let ((_, first), (second_at, second)) = (&pair[0], &pair[1]);
             if !first.is_empty() && first.chars().count() > 1 && first.to_lowercase() == second.to_lowercase() {
                 let gone_from = said[..*second_at].iter().rposition(|letter| *letter != ' ').map_or(*second_at, |at| at + 1);
-                found.push(told(
-                    line_number,
-                    column(gone_from),
-                    column(second_at + second.chars().count()),
-                    format!("\"{first}\" twice"),
-                    "Once",
-                    String::new(),
-                ));
+                found.push(self.told(gone_from, second_at + second.chars().count(), format!("\"{first}\" twice"), "Once", String::new()));
             }
         }
     }
-    found
+
+    /// Its words, each from where it starts; a mark other than a space, an
+    /// empty word of its own.
+    fn words(&self) -> Vec<(usize, String)> {
+        let mut words = Vec::new();
+        let mut current = String::new();
+        let mut from = 0;
+        for (at, letter) in self.letters.iter().enumerate() {
+            if letter.is_alphabetic() || *letter == '\'' {
+                if current.is_empty() {
+                    from = at;
+                }
+                current.push(*letter);
+            } else {
+                if !current.is_empty() {
+                    words.push((from, std::mem::take(&mut current)));
+                }
+                if *letter != ' ' {
+                    words.push((at, String::new()));
+                }
+            }
+        }
+        if !current.is_empty() {
+            words.push((from, current));
+        }
+        words
+    }
 }
 
 #[cfg(test)]
