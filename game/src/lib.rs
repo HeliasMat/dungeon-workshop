@@ -1299,6 +1299,8 @@ impl Game {
             (Some(who), _) => {
                 self.talked.insert((self.story.chapter, word, who.clone()));
                 self.talk(&who);
+                // (A talk whose rules do not hold now plays nothing: the place goes on all the same.)
+                self.settled = false;
                 self.advance();
             }
             (None, Some(zone)) => {
