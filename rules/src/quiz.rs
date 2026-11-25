@@ -63,8 +63,9 @@ pub struct QuizData {
 /// The aura's texts before its colours, and its colours.
 const AURA_INTRO: usize = 5;
 pub const AURA_COLOURS: usize = 16;
-/// The aura's text that has the partner confirmed.
-const CONFIRM_TEXT: usize = AURA_INTRO + AURA_COLOURS + 3;
+/// The aura's text that has the partner confirmed (`Is [kind:0] who you
+/// want?`: the next, the farewell, once it is).
+const CONFIRM_TEXT: usize = AURA_INTRO + AURA_COLOURS + 2;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Step {
@@ -259,13 +260,14 @@ impl Quiz {
                 },
                 self.partners.iter().map(|&partner| name(partner)).collect(),
             ),
-            Step::Confirm(partner) => (
-                match data.aura.get(CONFIRM_TEXT) {
-                    Some(text) => strip_waits(text),
-                    None => format!("{}: is this the Pokémon?", self.partners.get(*partner).map_or(String::new(), |&partner| name(partner))),
-                },
-                vec!["Yes".to_string(), "No".to_string()],
-            ),
+            Step::Confirm(partner) => {
+                let partner = self.partners.get(*partner).map_or(String::new(), |&partner| name(partner));
+                let text = match data.aura.get(CONFIRM_TEXT) {
+                    Some(text) => strip_waits(text).replace("[kind:0]", &format!("[CS:N]{partner}[CR]")),
+                    None => format!("{partner}: is this the Pokémon?"),
+                };
+                (text, vec!["Yes".to_string(), "No".to_string()])
+            }
         };
         View { message, options, cursor: self.cursor }
     }
