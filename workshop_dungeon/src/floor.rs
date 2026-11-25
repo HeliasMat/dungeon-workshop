@@ -126,6 +126,22 @@ pub(super) fn floor_preview(ui: &mut egui::Ui, making: &mut DungeonMaking) {
     let Some((_, Some(picture))) = &shown.made else {
         return;
     };
+    floor_picture(ui, picture, spec);
+    floor_legend(ui, &picture.floor);
+    floor_said(ui, form, spec, shown.at);
+}
+
+/// The colours of where things are put on a floor's picture.
+const ITEM: Color32 = Color32::from_rgb(0xF0, 0xD0, 0x40);
+const TRAP: Color32 = Color32::from_rgb(0xD0, 0x60, 0xE0);
+const FOE: Color32 = Color32::from_rgb(0xF0, 0x40, 0x40);
+const TEAM: Color32 = Color32::from_rgb(0x50, 0xE0, 0x70);
+const BURIED: Color32 = Color32::from_rgb(0x9C, 0x74, 0x40);
+const STAIRS: Color32 = Color32::WHITE;
+
+/// The floor's picture, a square on each tile where things are put (the
+/// stairs larger); over a tile, where it is and what it is.
+fn floor_picture(ui: &mut egui::Ui, picture: &Made, spec: &FloorTable) {
     let floor = &picture.floor;
     let wide = ui.available_width();
     let tile = wide / FLOOR_WIDTH as f32;
@@ -143,12 +159,6 @@ pub(super) fn floor_preview(ui: &mut egui::Ui, making: &mut DungeonMaking) {
             egui::StrokeKind::Outside,
         );
     };
-    const ITEM: Color32 = Color32::from_rgb(0xF0, 0xD0, 0x40);
-    const TRAP: Color32 = Color32::from_rgb(0xD0, 0x60, 0xE0);
-    const FOE: Color32 = Color32::from_rgb(0xF0, 0x40, 0x40);
-    const TEAM: Color32 = Color32::from_rgb(0x50, 0xE0, 0x70);
-    const BURIED: Color32 = Color32::from_rgb(0x9C, 0x74, 0x40);
-    const STAIRS: Color32 = Color32::WHITE;
     for at in &floor.buried_item_spawns {
         mark(*at, BURIED, 0.35);
     }
@@ -175,7 +185,11 @@ pub(super) fn floor_preview(ui: &mut egui::Ui, making: &mut DungeonMaking) {
         };
         response.on_hover_text(format!("{}, {}: {what}", at.x, at.y));
     }
-    // --- What is in it ---
+}
+
+/// What is in the floor: its rooms, the colours' key with how many of each,
+/// a Monster House, a shop, a generator that failed.
+fn floor_legend(ui: &mut egui::Ui, floor: &Floor) {
     let rooms: std::collections::BTreeSet<u8> = Floor::positions().filter_map(|at| floor.tile(at).room()).collect();
     ui.horizontal_wrapped(|ui| {
         let key = |ui: &mut egui::Ui, colour: Color32, said: String| {
@@ -202,6 +216,11 @@ pub(super) fn floor_preview(ui: &mut egui::Ui, making: &mut DungeonMaking) {
             ui.label(RichText::new("the generator failed: a single room").size(theme::SMALL).color(theme::WRONG));
         }
     });
+}
+
+/// The look's numbers the floor is made by, and who is met on floor `at`
+/// and what lies there.
+fn floor_said(ui: &mut egui::Ui, form: &Form, spec: &FloorTable, at: usize) {
     let props = &spec.props;
     ui.label(theme::text(
         format!(
@@ -219,7 +238,7 @@ pub(super) fn floor_preview(ui: &mut egui::Ui, making: &mut DungeonMaking) {
         theme::FAINT,
     ));
     // (Who is met on that floor, and what lies there.)
-    let on = |floors: Floors| floors.is_none_or(|(low, high)| low <= shown.at && shown.at <= high);
+    let on = |floors: Floors| floors.is_none_or(|(low, high)| low <= at && at <= high);
     let foes: Vec<String> = form.foes.iter().filter(|foe| on(foe.floors)).map(|foe| format!("{} {}", foe.species, foe.level)).collect();
     let items: Vec<String> = form.items.iter().filter(|lying| on(lying.floors)).map(|lying| lying.item.clone()).collect();
     ui.label(theme::text(format!("met there: {}", if foes.is_empty() { "no one".to_string() } else { foes.join(", ") }), theme::SMALL, theme::WEAK));
