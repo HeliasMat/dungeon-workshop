@@ -32,16 +32,6 @@ pub enum GameScreen {
     Menu { cursor: ListCursor, said: Option<String>, save: bool },
 }
 
-/// The screens by the words a film opens them with.
-pub const SCREENS: &[(&str, &str)] = &[
-    ("shop", "the shop: buy, sell (what it has for sale changes after each dungeon)"),
-    ("market", "the market: other items to buy, to sell"),
-    ("bank", "the bank: deposit money, withdraw it (money deposited is not lost in a dungeon)"),
-    ("storage", "storage: deposit items, take them back (they are not lost in a dungeon)"),
-    ("jobs", "the job board: take one (in a dungeon of one's own), see those taken"),
-    ("recruits", "the recruits: who comes into a dungeon with the team (two at most)"),
-];
-
 impl GameScreen {
     /// The screen of that word (`ways`: the map's), made ready in the film's game; none if there is no such screen.
     pub fn open(word: &str, ways: Vec<String>, playthrough: &mut Playthrough, draw: &mut Draw) -> Option<GameScreen> {

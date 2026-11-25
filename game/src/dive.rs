@@ -564,26 +564,6 @@ impl Diving {
         }
     }
 
-    /// Those standing, as numbers: name, level, life, attack, defense,
-    /// special attack and defense (to see how a fight is balanced).
-    pub fn stats_said(&self) -> String {
-        self.run.dungeon().map_or_else(String::new, |dungeon| {
-            dungeon
-                .monsters
-                .iter()
-                .filter(|monster| monster.alive())
-                .map(|monster| {
-                    let stats = &monster.stats;
-                    format!(
-                        "{} Lv.{} HP {} Atk {} Def {} SpA {} SpD {}",
-                        monster.name, stats.level, stats.max_hp, stats.attack, stats.defense, stats.sp_attack, stats.sp_defense
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
-        })
-    }
-
     /// Who stands where on the floor (tiles of the floor), and where items
     /// and traps lie (to see a room as it was laid out).
     pub fn laid_out(&self) -> LaidOut {

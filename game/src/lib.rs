@@ -324,14 +324,6 @@ impl Game {
         self.cutscene.map(|(film, _)| film)
     }
 
-    /// Another film in place of the one alone (gone to another moment of it).
-    pub fn replace_film(&mut self, mut film: Film) {
-        film.hosted = true;
-        if let Some((old, _)) = &mut self.cutscene {
-            *old = film;
-        }
-    }
-
     /// The film alone, out of the game for a moment (to go elsewhere in it), and put back.
     pub fn take_film(&mut self) -> Option<Film> {
         self.cutscene.take().map(|(film, _)| film)
