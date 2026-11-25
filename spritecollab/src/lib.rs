@@ -231,9 +231,12 @@ fn tag(block: &str, name: &str) -> Option<String> {
 }
 
 /// An animation of a folder: its group, its cells' size, its frames' durations, the name of its file.
+/// One of the community's own past Sky's groups has its name's group, and
+/// the slot its sheet gives it (`also`) kept as well.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Animation {
     pub group: u32,
+    pub also: Option<u32>,
     pub wide: u32,
     pub high: u32,
     pub durations: Vec<u32>,
@@ -250,12 +253,17 @@ pub fn animations(folder: &Path) -> BTreeMap<String, Animation> {
     for block in text.split("<Anim>").skip(1) {
         let block = block.split("</Anim>").next().unwrap_or(block);
         let Some(name) = tag(block, "Name") else { continue };
-        let group = tag(block, "Index")
-            .and_then(|index| index.parse().ok())
-            .or_else(|| GROUPS.iter().find(|(known, _)| *known == name).map(|(_, group)| *group as u32));
-        let Some(group) = group else { continue };
+        let slot: Option<u32> = tag(block, "Index").and_then(|index| index.parse().ok());
+        let known = GROUPS.iter().find(|(known, _)| *known == name).map(|(_, group)| *group as u32);
+        let (group, also) = match known {
+            Some(named) if named as usize >= assets::tables::NAMED_GROUPS => (named, slot.filter(|slot| *slot != named)),
+            _ => match slot.or(known) {
+                Some(group) => (group, None),
+                None => continue,
+            },
+        };
         if let Some(copy) = tag(block, "CopyOf") {
-            copies.push((name, group, copy));
+            copies.push((name, group, also, copy));
             continue;
         }
         let durations: Vec<u32> = block.split("<Duration>").skip(1).filter_map(|rest| rest.split("</Duration>").next()?.trim().parse().ok()).collect();
@@ -264,11 +272,11 @@ pub fn animations(folder: &Path) -> BTreeMap<String, Animation> {
         else {
             continue;
         };
-        found.insert(name.clone(), Animation { group, wide, high, durations, file: name });
+        found.insert(name.clone(), Animation { group, also, wide, high, durations, file: name });
     }
-    for (name, group, copy) in copies {
+    for (name, group, also, copy) in copies {
         if let Some(of) = found.get(&copy).cloned() {
-            found.insert(name, Animation { group, ..of });
+            found.insert(name, Animation { group, also, ..of });
         }
     }
     found
@@ -424,7 +432,7 @@ fn add_animations(places: &Places, monster: u32, folder: &Path, over: Over, shee
     let mut added = 0;
     for anim in animations(folder).values() {
         let dungeon = DUNGEON.iter().find(|(group, _)| *group == anim.group).map(|(_, index)| *index);
-        let indexes: Vec<u32> = std::iter::once(SCENE + anim.group).chain(dungeon).filter(|index| !sheets.kept((monster, *index), over)).collect();
+        let indexes: Vec<u32> = [anim.group].into_iter().chain(anim.also).map(|group| SCENE + group).chain(dungeon).filter(|index| !sheets.kept((monster, *index), over)).collect();
         if indexes.is_empty() {
             continue;
         }
@@ -907,5 +915,30 @@ mod tests {
         assert!(std::fs::read_to_string(data.join("extra").join("variants.txt")).unwrap().contains("5000\t25\tpikachu_hat"));
         assert!(data.join("extra").join("sprites").join("5000_1.png").is_file());
         _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The community's own animations keep their names past Sky's groups: by
+    /// their name, their sheet's slot as well; none dropped for want of a slot.
+    #[test]
+    fn community_animations_kept_by_name() {
+        let folder = std::env::temp_dir().join(format!("spritecollab_named_{}", std::process::id()));
+        std::fs::create_dir_all(&folder).unwrap();
+        let anim = |name: &str, rest: &str| format!("<Anim><Name>{name}</Name>{rest}</Anim>");
+        let cells = "<FrameWidth>16</FrameWidth><FrameHeight>16</FrameHeight><Durations><Duration>4</Duration></Durations>";
+        let xml = [
+            anim("Idle", &format!("<Index>7</Index>{cells}")),
+            anim("Shake", &format!("<Index>4</Index>{cells}")),
+            anim("Dance", "<CopyOf>Shake</CopyOf>"),
+            anim("Appeal", cells),
+        ]
+        .concat();
+        std::fs::write(folder.join("AnimData.xml"), format!("<AnimData><Anims>{xml}</Anims></AnimData>")).unwrap();
+        let read = animations(&folder);
+        let group = |name: &str| assets::tables::ANIMATION_GROUPS.iter().find(|(known, _)| *known == name).map(|(_, group)| *group as u32);
+        assert_eq!((read["Idle"].group, read["Idle"].also), (7, None));
+        assert_eq!((read["Shake"].group, read["Shake"].also), (group("Shake").unwrap(), Some(4)));
+        assert_eq!((read["Dance"].group, read["Dance"].file.as_str()), (group("Dance").unwrap(), "Shake"));
+        assert_eq!(read["Appeal"].group, group("Appeal").unwrap());
+        _ = std::fs::remove_dir_all(&folder);
     }
 }

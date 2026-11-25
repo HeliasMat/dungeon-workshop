@@ -147,11 +147,15 @@ pub struct Sheet {
     pub shadow: (i32, i32),
 }
 
+/// The first group of the community's animations Sky has no group for.
+pub const NAMED_GROUPS: usize = 60;
+
 /// The original game's groups of a sprite's animations, by the names the
 /// PMDCollab community gives them (as its sheets' AnimData.xml writes them;
-/// the sprites added by hand in `data/extra/` use them too). The last two
-/// only variants have, painted by hand.
-pub const ANIMATION_GROUPS: [(&str, usize); 37] = [
+/// the sprites added by hand in `data/extra/` use them too). Vise and
+/// FireRifle only variants have, painted by hand; from [`NAMED_GROUPS`] on,
+/// the community's own (Dance, Appeal, Withdraw...).
+pub const ANIMATION_GROUPS: [(&str, usize); 110] = [
     ("Walk", 0),
     ("Attack", 1),
     ("Kick", 2),
@@ -189,6 +193,82 @@ pub const ANIMATION_GROUPS: [(&str, usize); 37] = [
     ("HitGround", 34),
     ("Vise", 50),
     ("FireRifle", 51),
+    // (From here, the community's animations Sky has no group of its own
+    // for: an import numbers them by their name, whatever slot their sheet
+    // gives them, and keeps that slot too.)
+    ("Twirl", 60),
+    ("SpAttack", 61),
+    ("RearUp", 62),
+    ("Rumble", 63),
+    ("QuickStrike", 64),
+    ("Appeal", 65),
+    ("Hover", 66),
+    ("Withdraw", 67),
+    ("Emit", 68),
+    ("Shake", 69),
+    ("Dance", 70),
+    ("FlapAround", 71),
+    ("MultiStrike", 72),
+    ("TailWhip", 73),
+    ("Slam", 74),
+    ("Bite", 75),
+    ("Fainted", 76),
+    ("Punch", 77),
+    ("Jab", 78),
+    ("Shock", 79),
+    ("MultiScratch", 80),
+    ("Swell", 81),
+    ("StandingUp", 82),
+    ("Sound", 83),
+    ("Stomp", 84),
+    ("Scratch", 85),
+    ("Sing", 86),
+    ("Ricochet", 87),
+    ("Jump", 88),
+    ("Slice", 89),
+    ("Injured", 90),
+    ("Lick", 91),
+    ("Roar", 92),
+    ("DigOut", 93),
+    ("Wiggle", 94),
+    ("DigIn", 95),
+    ("Gas", 96),
+    ("Chop", 97),
+    ("Yawn", 98),
+    ("RaiseArms", 99),
+    ("CarefulWalk", 100),
+    ("Bow", 101),
+    ("Wave", 102),
+    ("Slap", 103),
+    ("Cry", 104),
+    ("Uppercut", 105),
+    ("Special0", 106),
+    ("Special1", 107),
+    ("Special2", 108),
+    ("Special3", 109),
+    ("Special4", 110),
+    ("Special5", 111),
+    ("Special6", 112),
+    ("Special7", 113),
+    ("Special8", 114),
+    ("Special9", 115),
+    ("Special10", 116),
+    ("Special11", 117),
+    ("Special12", 118),
+    ("Special13", 119),
+    ("Special14", 120),
+    ("Special15", 121),
+    ("Special16", 122),
+    ("Special17", 123),
+    ("Special18", 124),
+    ("Special19", 125),
+    ("Special20", 126),
+    ("Special21", 127),
+    ("Special22", 128),
+    ("Special23", 129),
+    ("Special24", 130),
+    ("Special25", 131),
+    ("Special26", 132),
 ];
 
 /// A line of `sprites.txt` or `props.txt`: whose sheet (monster or object),
