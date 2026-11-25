@@ -105,8 +105,9 @@ pub struct MoveSlot {
     /// one turn.
     #[serde(default)]
     pub linked: bool,
-    /// Given Multitalent's PP (see `iq::keep_boosts`).
-    #[serde(default)]
+    /// Given Multitalent's PP (see `iq::keep_boosts`): a monster's, never
+    /// the tables' (skipped, so `dungeons.bin` keeps its shape).
+    #[serde(skip)]
     pub talented: bool,
 }
 
