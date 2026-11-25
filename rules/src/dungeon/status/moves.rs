@@ -56,36 +56,40 @@ pub fn secondary_effects(move_id: u16, constants: &Constants) -> Vec<(i32, MoveE
     effects
 }
 
-/// The extra effects of the damaging moves this engine knows by heart,
-/// in groups: the moves, the chance in percent, the effect.
+/// The extra effects of the damaging moves whose chance the extracted data
+/// does not carry, in groups: the moves (those of one of the game's effect
+/// handlers, `DoMoveDamageBurn10` and its like, as its `ExecuteMoveEffect`
+/// sends them), the chance in percent, the effect. The chances are the
+/// game's, as pmdsky-debug documents the constants the handlers read
+/// (named after each group).
 const EXTRA_EFFECTS: &[(&[u16], i32, MoveEffect)] = &[
-    // Fire moves that may burn.
+    // FLAME_WHEEL_BURN_CHANCE, FLAMETHROWER_BURN_CHANCE.
     (&[52, 53, 157, 230, 262, 292, 519], 10, MoveEffect::Burn),
-    // Electric and body blows that may paralyse: the light ones, the
-    // heavy ones, and those that always do.
-    (&[120, 144, 235, 342], 10, MoveEffect::Paralyze),
-    (&[64, 65, 507, 521], 30, MoveEffect::Paralyze),
+    // LICK_PARALYZE_CHANCE, THUNDER_PARALYZE_CHANCE; Zap Cannon always.
+    (&[120, 144, 235, 342], 15, MoveEffect::Paralyze),
+    (&[64, 65, 507, 521], 20, MoveEffect::Paralyze),
     (&[193], 100, MoveEffect::Paralyze),
-    // Ice moves that may freeze.
-    (&[101, 270, 344, 345], 10, MoveEffect::Freeze),
-    // Poison moves: the common ones, the nastier ones.
-    (&[200, 279, 280], 20, MoveEffect::Poison),
-    (&[147, 459, 485, 495], 30, MoveEffect::Poison),
-    // Confusing blows.
+    // POWDER_SNOW_FREEZE_CHANCE.
+    (&[101, 270, 344, 345], 15, MoveEffect::Freeze),
+    // POISON_STING_POISON_CHANCE, SMOG_POISON_CHANCE.
+    (&[200, 279, 280], 18, MoveEffect::Poison),
+    (&[147, 459, 485, 495], 40, MoveEffect::Poison),
+    // PSYBEAM_CONFUSE_CHANCE, DIZZY_PUNCH_CONFUSE_CHANCE; DynamicPunch
+    // always.
     (&[107, 114, 234, 446, 541], 10, MoveEffect::Confuse),
-    (&[264, 310], 20, MoveEffect::Confuse),
+    (&[264, 310], 30, MoveEffect::Confuse),
     (&[246], 100, MoveEffect::Confuse),
-    // Blows that may make cringe, from the light to the fearsome.
+    // EXTRASENSORY_CRINGE_CHANCE, BITE_CRINGE_CHANCE, ROCK_SLIDE_CRINGE_CHANCE.
     (&[133, 261, 289], 10, MoveEffect::Cringe),
     (&[63, 221, 271, 303], 20, MoveEffect::Cringe),
     (&[30, 46, 431, 436, 442, 473, 498], 30, MoveEffect::Cringe),
-    // Muddy and murky blows that cloud the sight.
-    (&[159, 501, 527], 30, MoveEffect::TargetAccuracy(-1)),
+    // MUDDY_WATER_LOWER_ACCURACY_CHANCE; Mud-Slap always.
+    (&[159, 501, 527], 40, MoveEffect::TargetAccuracy(-1)),
     (&[213], 100, MoveEffect::TargetAccuracy(-1)),
-    // Moves that always slow (Rock Tomb, Icy Wind, Mud Shot), and the
-    // bubbles that may.
+    // Moves that always slow (Rock Tomb, Icy Wind, Mud Shot), and
+    // CONSTRICT_LOWER_SPEED_CHANCE.
     (&[73, 97, 299], 100, MoveEffect::TargetSpeedDown),
-    (&[71, 255], 10, MoveEffect::TargetSpeedDown),
+    (&[71, 255], 20, MoveEffect::TargetSpeedDown),
     // The chances of the three groups below come with the extracted
     // data (see `data_chance`).
     // Mist Ball.

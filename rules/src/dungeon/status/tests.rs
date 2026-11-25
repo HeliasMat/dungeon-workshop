@@ -568,6 +568,9 @@ fn recoil_and_drain_go_by_the_damage_dealt() {
     assert_eq!(Aftermath::Recoil.apply(&mut tiny, 3), 1);
     assert_eq!(aftermath(116), Some(Aftermath::Recoil));
     assert_eq!(secondary_effect(53, &RULES), Some((10, MoveEffect::Burn)));
+    // The game's chances: Lick, Thunder, Smog, Muddy Water, Constrict.
+    let chance = |move_id| secondary_effect(move_id, &RULES).map(|(chance, _)| chance);
+    assert_eq!([chance(120), chance(64), chance(147), chance(159), chance(71)], [Some(15), Some(20), Some(40), Some(40), Some(20)]);
     assert_eq!(secondary_effect(1, &RULES), None);
     // Iron Tail's, and both of Ice Fang's, with the extracted chances.
     assert_eq!(secondary_effects(1, &RULES), vec![(20, MoveEffect::TargetDefense(-1))]);
