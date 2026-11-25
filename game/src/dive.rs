@@ -270,9 +270,10 @@ impl Diving {
             Some(at) => {
                 book.tables.dungeons[at as usize] = own.table;
                 book.tables.dungeon_names[at as usize] = own.name;
+                rules::own::rank_floors(&mut book.tables, at, &own.ranks);
                 at
             }
-            None => rules::own::add(&mut book.tables, own.name, own.table),
+            None => rules::own::add(&mut book.tables, own.name, own.table, &own.ranks),
         };
         // (The types it gives, its own Fairy among them: the tables it is played with.)
         rules::own::retype(&mut book.tables, &own.species_types, &own.move_types);

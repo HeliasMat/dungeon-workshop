@@ -703,7 +703,12 @@ impl Check<'_> {
                     let site = at(&[Some("shop"), Some(screen)]);
                     self.say(
                         &site,
-                        unknown("no screen", screen, decor::lang::TALKS[1..].iter().copied(), "shop|market|bank|storage|jobs|recruits|appraise|cafe"),
+                        unknown(
+                            "no screen",
+                            screen,
+                            decor::lang::TALKS[1..].iter().copied(),
+                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe",
+                        ),
                     );
                 }
             }

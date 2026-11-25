@@ -379,14 +379,15 @@ chapter 2 "The Glowing Market"
 end
 ```
 
-- **The head**: `title:`, `author:`, `team:` (two Pokémon), `home:` (a place and maybe an entrance).
+- **The head**: `title:`, `author:`, `team:` (two Pokémon), `home:` (a place and maybe an entrance),
+  `guild_cut: yes` (optional: the guild keeps nine tenths of every job's reward, as in the original, until the story does `set graduated`; without it the team gets the whole reward).
 - **A chapter** opens at the start of a line, `chapter 2 "Its name"`, and closes with `end`.
   What it says plays when it starts, in order; a film, a dungeon or a screen is waited for.
   `chapter 3` *indented* is the action that goes on to chapter 3.
 - **The actions** (in a chapter, in a rule, in a place's `on … end`): `play <film>`,
   `set <flag>`, `clear <flag>`, `add <counter> <n>`, `chapter <n>`, `go <place> [entrance]`,
   `dungeon <name>` and `fight <name>` (then `if won`), `open <place|dungeon>` (on the map),
-  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|recruits|appraise|cafe>` (`appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
+  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe>` (`jobs`: the job board, eight random jobs in the dungeons the story has opened, all of the game's if it never opens one, new ones after each dungeon; Enter reads a job in full, its client, objective, place, difficulty and reward, then takes it; `outlaws`: the outlaw board, the same with outlaws to arrest; `joblist`: the jobs taken, eight at most, each read and maybe given up; a job is done in its dungeon and paid on the way out; `appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
   `map` (the world map of what was opened; `map dungeons`: the dungeons only, as at a crossroads; the one chosen is gone into), `finish` (the game's end card, “The End” and its title, until Enter goes back to the
   title screen; the same once the last chapter has nothing left to play; headless, `the end`);
   and `if … else if … else … end`, tests as in films:
@@ -418,7 +419,7 @@ end
 
   The game makes a scene of the place (its residents put, the team at the entrance it came by,
   the player at the keys: arrows, Enter to talk, Shift to run, M or X for the menu: Team, Bag,
-  Save, Close), and makes it again when the story changes what it shows.
+  Save, Job List (the jobs taken, each read and maybe given up), Close), and makes it again when the story changes what it shows.
 - **A film reads the game's flags** by `keep`: `keep fireflies_back = false` before its first
   scene, then `if fireflies_back`. The game gives every flag (1 up, 0 down), every counter and
   `chapter` to the film it plays; a `keep` only takes its value when the game gives none.
@@ -482,6 +483,7 @@ level: 5                         # optional: the team's level on the way in
 rules: fairy, push_allies        # optional: rule options, each off otherwise (below)
 pokemon_type: Clefairy fairy     # optional: a species' types there, one or two
 move_type: Charm fairy           # optional: a move's type there
+rank: E floors 1-2, D floor 3    # optional: the jobs' rank there, for the boards (E D C B A S, then 1* to 9*; "rank: C" for every floor); none: from the levels met there
 boss: Butterfree 12              # optional: a boss fight at the end (one more floor)
 boss_guards: Metapod 8, Kakuna 8
 boss_hp: x3                      # its HP times that much

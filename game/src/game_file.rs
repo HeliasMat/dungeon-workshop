@@ -30,7 +30,10 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("take", "take [n] <item>: out of the bag"),
     ("money", "money <n>: so many Poké given (taken, below 0)"),
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
-    ("shop", "shop <shop|market|bank|storage|jobs|recruits|appraise|cafe>: that screen of the game"),
+    (
+        "shop",
+        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken)",
+    ),
     ("map", "map [dungeons]: the world map, the places and dungeons opened (`map dungeons`: the dungeons only); the one chosen is gone to"),
     ("finish", "finish: the game ends (The End)"),
 ];
@@ -105,6 +108,10 @@ pub struct GameFile {
     pub team: Vec<String>,
     /// Where the team comes back to, K.O. in a dungeon: a place, an entrance.
     pub home: Option<(String, Option<String>)>,
+    /// `guild_cut: yes`: the guild keeps nine tenths of the jobs' rewards,
+    /// as in the original, till the flag `graduated` is up; else the team
+    /// gets them whole.
+    pub guild_cut: bool,
     pub chapters: Vec<Chapter>,
     /// What does not read, a line each (`line n: …`).
     pub problems: Vec<Diagnostic>,
@@ -169,9 +176,14 @@ impl GameFile {
                     "author" => game.author = value,
                     "team" => game.team = value.split_whitespace().map(str::to_string).collect(),
                     "home" => game.home = place_said(&value),
-                    _ => game
-                        .problems
-                        .push(Diagnostic::at(line_of(text, stmt.span.start), format!("“{key}:” is not a line of a game's head (title, author, team, home)"))),
+                    "guild_cut" => match value.as_str() {
+                        "yes" | "no" => game.guild_cut = value == "yes",
+                        _ => game.problems.push(Diagnostic::at(line_of(text, stmt.span.start), "guild_cut: yes|no")),
+                    },
+                    _ => game.problems.push(Diagnostic::at(
+                        line_of(text, stmt.span.start),
+                        format!("“{key}:” is not a line of a game's head (title, author, team, home, guild_cut)"),
+                    )),
                 }
                 continue;
             }
@@ -199,7 +211,7 @@ impl GameFile {
                 }
                 _ => game.problems.push(Diagnostic::at(
                     line_of(text, stmt.span.start),
-                    "before the chapters, only the head (title:, author:, team:, home:); then “chapter 1” … “end”",
+                    "before the chapters, only the head (title:, author:, team:, home:, guild_cut:); then “chapter 1” … “end”",
                 )),
             }
         }
@@ -232,6 +244,27 @@ impl GameFile {
         names
     }
 
+    /// Every word its actions open on the map (`open <word>`), in any chapter or rule.
+    pub fn opened_words(&self) -> BTreeSet<String> {
+        fn opened(actions: &[Action], words: &mut BTreeSet<String>) {
+            for action in actions {
+                match action {
+                    Action::Open(word) => {
+                        words.insert(word.clone());
+                    }
+                    Action::If(branches) => branches.iter().for_each(|(_, actions)| opened(actions, words)),
+                    _ => {}
+                }
+            }
+        }
+        let mut words = BTreeSet::new();
+        for chapter in &self.chapters {
+            opened(&chapter.actions, &mut words);
+            chapter.rules.iter().for_each(|rule| opened(&rule.actions, &mut words));
+        }
+        words
+    }
+
     /// Where its films are.
     pub fn films(&self) -> PathBuf {
         self.folder.join("films")
@@ -241,6 +274,23 @@ impl GameFile {
     pub fn decors(&self) -> PathBuf {
         self.folder.join("decors")
     }
+}
+
+/// The flag that ends the guild's cut (`guild_cut: yes`).
+pub const GRADUATED: &str = "graduated";
+
+/// Whether the guild keeps its cut of the jobs' rewards now: the game asks
+/// for it, and the team has not graduated yet.
+pub fn guild_cuts(game: &GameFile, flags: &BTreeSet<String>) -> bool {
+    game.guild_cut && !flags.contains(GRADUATED)
+}
+
+/// The dungeons the boards offer jobs in: those the story has opened
+/// (`opened`), if the game ever opens a dungeon (`open <dungeon>`, in its
+/// chapters or, so far, in a place); else (none) all of its own, as they did.
+pub fn job_dungeons(game: &GameFile, opened: &BTreeSet<String>, is_dungeon: impl Fn(&str) -> bool) -> Option<BTreeSet<String>> {
+    let words = game.opened_words();
+    words.iter().chain(opened).any(|word| is_dungeon(word)).then(|| opened.clone())
 }
 
 /// The names a rule reads and sets.
@@ -469,6 +519,33 @@ mod tests {
     use super::*;
 
     const GAME: &str = "title: Trial\nteam: pikachu piplup\nhome: town south\n\nchapter 1 \"The start\"\n  play intro\n  dungeon forest\n  if won\n    set forest_done\n    chapter 2\n  end\nend\n\nchapter 2\n  go town south\n  on talk kecleon if not met\n    set met\n  end\nend\n";
+
+    /// The boards' dungeons: those opened, once the game opens one; all, if it never does.
+    #[test]
+    fn jobs_are_in_the_dungeons_opened() {
+        let game = GameFile::read(&GAME.replace("  play intro\n", "  play intro\n  open forest\n  open town\n"));
+        assert_eq!(game.opened_words().into_iter().collect::<Vec<_>>(), ["forest", "town"]);
+        let dungeon = |word: &str| ["forest", "cave"].contains(&word);
+        let opened: BTreeSet<String> = ["town".to_string()].into();
+        assert_eq!(job_dungeons(&game, &opened, dungeon), Some(opened.clone()), "nothing opened yet: none");
+        let both: BTreeSet<String> = ["town".to_string(), "forest".to_string()].into();
+        assert_eq!(job_dungeons(&game, &both, dungeon), Some(both.clone()));
+        // (Never a dungeon opened: all of them, as before.)
+        assert_eq!(job_dungeons(&GameFile::read(GAME), &opened, dungeon), None);
+    }
+
+    /// The team gets the whole reward, unless the game gives the guild its cut, till `graduated`.
+    #[test]
+    fn jobs_pay_in_full_unless_the_guild_takes_its_cut() {
+        let mut flags = BTreeSet::new();
+        assert!(!guild_cuts(&GameFile::read(GAME), &flags));
+        let cut = GameFile::read(&format!("guild_cut: yes\n{GAME}"));
+        assert!(cut.problems.is_empty(), "{:?}", cut.problems);
+        assert!(guild_cuts(&cut, &flags));
+        flags.insert(GRADUATED.to_string());
+        assert!(!guild_cuts(&cut, &flags));
+        assert!(!GameFile::read(&format!("guild_cut: maybe\n{GAME}")).problems.is_empty());
+    }
 
     #[test]
     fn a_game_reads_its_head_and_its_chapters() {

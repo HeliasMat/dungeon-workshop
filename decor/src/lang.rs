@@ -901,4 +901,4 @@ pub struct LifeRule {
 }
 
 /// The screens and what a resident may do when talked to (`talk …`).
-pub const TALKS: [&str; 9] = ["film", "shop", "market", "bank", "storage", "jobs", "recruits", "appraise", "cafe"];
+pub const TALKS: [&str; 11] = ["film", "shop", "market", "bank", "storage", "jobs", "outlaws", "joblist", "recruits", "appraise", "cafe"];

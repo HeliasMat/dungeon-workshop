@@ -281,7 +281,7 @@ scene_player play my_first_game.dwpack
 - More places: a new one drawn in the **Decor** space, or a place of the game taken as it is and made
   your own (`decor import <level> <name>`; `scene_player search <word>` finds places and Pokémon).
   `exit x y width height to <place> <entrance>` in a `[life]` leads from one place to another.
-- A shop, a bank, a job board: `talk shop` under a resident, or `shop jobs` in a rule.
+- A shop, a bank, a job board: `talk shop` under a resident, or `shop jobs` in a rule (`outlaws`: the outlaw board; `joblist`: the jobs taken). The boards offer jobs in the dungeons your story has opened; `rank: C` in a `.dungeon` sets how hard they are there.
 - Bigger fights: `fight: <word>` and a `.fight` file made in the **Dungeon** space (+ New Boss Fight).
 - How a game's folder is laid out: [games/README.md](../games/README.md).
 - Every word of a film, a game, a dungeon: [film/FILMS.md](../film/FILMS.md); of a decor:

@@ -10,7 +10,7 @@
 //! changes it through the game (`team`, `bag`, `getmoney`, `getitem`,
 //! `takeitem`, a dungeon gone through).
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
 use assets::project::Project;
@@ -81,7 +81,7 @@ impl Playthrough {
             let Some(book) = Arc::get_mut(&mut run.book) else {
                 return;
             };
-            let id = rules::own::add(&mut book.tables, own.name, own.table);
+            let id = rules::own::add(&mut book.tables, own.name, own.table, &own.ranks);
             rules::own::retype(&mut book.tables, &own.species_types, &own.move_types);
             self.dungeons.push((word, id));
         }
@@ -92,14 +92,17 @@ impl Playthrough {
         self.dungeons.iter().find(|(known, _)| known == word).map(|(_, id)| *id)
     }
 
-    /// The dungeons of one's own that have floors before their fight (jobs go there).
-    pub fn open_dungeons(&self) -> Vec<u16> {
+    /// The dungeons of one's own that have floors before their fight (jobs
+    /// go there): of those words only, if it says (the dungeons the story
+    /// has opened).
+    pub fn open_dungeons(&self, only: Option<&BTreeSet<String>>) -> Vec<u16> {
         let Some(run) = self.run.as_ref() else {
             return Vec::new();
         };
         let tables = &run.book.tables;
         self.dungeons
             .iter()
+            .filter(|(word, _)| only.is_none_or(|only| only.contains(word)))
             .map(|(_, id)| *id)
             .filter(|id| tables.dungeons.get(*id as usize).is_some_and(|dungeon| dungeon.floors.iter().any(|floor| floor.fixed.is_none())))
             .collect()

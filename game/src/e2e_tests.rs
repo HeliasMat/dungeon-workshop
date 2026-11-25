@@ -90,7 +90,7 @@ fn a_new_game_buys_at_kecleon_s_saves_from_the_menu_and_is_taken_up_the_same() -
     // (Left: the list, then the shop.)
     driver.keys(&["escape", "escape"]);
     driver.wait_until(60, |game| game.mode() == Mode::Roam)?;
-    // (The menu, M: Team, Bag, Save.)
+    // (The menu, M: Team, Bag, Save, Job List.)
     driver.press("m");
     driver.wait_until(60, |game| matches!(game.screen, Some((GameScreen::Menu { .. }, _))))?;
     driver.keys(&["down", "down", "enter"]);

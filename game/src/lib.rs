@@ -647,12 +647,17 @@ impl Game {
         }
         // (The game is always the one that goes in: what the team becomes there is kept.)
         let (folder, folders) = (self.data.clone(), self.folders.clone());
+        let guild_cut = self.project.as_ref().is_some_and(|project| game_file::guild_cuts(project, &self.story.flags));
         let Some(playthrough) = self.playthrough_mut() else {
             self.said = Some("no data: the dungeons cannot be gone through".to_string());
             self.dive_told(false, String::new());
             return;
         };
         let at = playthrough.dungeon_id(word);
+        // (The guild keeps its cut of the jobs' rewards only if the game says, till the team graduates.)
+        if let Some(run) = playthrough.run_mut() {
+            run.set_chapter(if guild_cut { 0 } else { rules::jobs::GRADUATION });
+        }
         let Some(run) = playthrough.lend() else {
             self.said = Some("the game's team is already in a dungeon".to_string());
             self.dive_told(false, String::new());
@@ -745,9 +750,10 @@ impl Game {
     /// at the keys, or no game: passed at once.
     fn open_screen(&mut self, word: &str, ways: Vec<String>) {
         let mut draw = self.draw;
+        let jobs_in = self.job_dungeons();
         let opened = match self.nobody {
             true => None,
-            false => self.playthrough_mut().and_then(|playthrough| GameScreen::open(word, ways, playthrough, &mut draw)),
+            false => self.playthrough_mut().and_then(|playthrough| GameScreen::open(word, ways, playthrough, &mut draw, jobs_in.as_ref())),
         };
         self.draw = draw;
         match opened {
@@ -757,6 +763,11 @@ impl Game {
             }
             None => self.screen_left(0),
         }
+    }
+
+    /// The dungeons the boards offer jobs in (`game_file::job_dungeons`).
+    fn job_dungeons(&self) -> Option<BTreeSet<String>> {
+        game_file::job_dungeons(self.project.as_ref()?, &self.story.opened, |word| self.folders.dungeon(word).is_file())
     }
 
     /// The world map (`map`, `map dungeons`): the ways opened (the dungeons
