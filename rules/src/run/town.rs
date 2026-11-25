@@ -803,6 +803,37 @@ impl Run {
         };
         reward.map(|item| self.receive(item))
     }
+
+    /// Whether the team may stand sentry today: once a day, as the guild's.
+    pub fn sentry_free(&self) -> bool {
+        !self.team.progress.sentry_today
+    }
+
+    /// A sentry duty stood (`crate::sentry`): its points kept, the day's duty
+    /// done, what the guild gives for it (`sentry_reward`).
+    pub fn stand_sentry(&mut self, points: i32, rating: u8, draw: &mut Draw) -> Option<String> {
+        (self.team.progress.sentry_points, self.team.progress.sentry_today) = (points, true);
+        self.sentry_reward(rating, draw)
+    }
+
+    /// The partner leads, the leader becomes its partner (Chimecco Assembly,
+    /// once the story is over): what each has become, its name, kept; both
+    /// go. A recruit cannot lead: it is kept as a recruit, not as a member
+    /// that grows (`Recruit`). Whether it was done (not in a dungeon, not
+    /// alone).
+    pub fn swap_leader(&mut self) -> bool {
+        if self.dungeon.is_some() || self.team.alone {
+            return false;
+        }
+        let team = &mut self.team;
+        std::mem::swap(&mut team.leader, &mut team.partner);
+        std::mem::swap(&mut team.progress.leader, &mut team.progress.partner);
+        team.species = (team.species.1, team.species.0);
+        let names = &mut team.progress.names;
+        std::mem::swap(&mut names.0, &mut names.1);
+        team.progress.partner_home = false;
+        true
+    }
 }
 
 /// The slots of the chain of linked moves the one at `slot` is in (none:

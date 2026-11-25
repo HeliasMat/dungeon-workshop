@@ -68,8 +68,9 @@ impl Run {
     /// next `step`.
     fn enter(&mut self, id: u16, seed: u32, jobs: bool) {
         // (Off again the evening it came back, without a night in a bed: the
-        // team slept on the way, a new day begins.)
-        if self.team.progress.evening {
+        // team slept on the way, a new day begins; not for a maze of the
+        // Dojo, in town: the day goes on.)
+        if self.team.progress.evening && !crate::dojo::is_maze(id) {
             self.next_day();
         }
         let book = self.book.clone();
@@ -91,14 +92,16 @@ impl Run {
         let guests = if jobs { Vec::new() } else { story.guests.clone() };
         self.place_members(&mut dungeon, &guests);
         self.log.clear();
-        // A maze of the Dojo takes the bag's items (its door says so).
+        // A maze of the Dojo has the bag left at its door (given back on the
+        // way out: `leave_dungeon`).
         if crate::dojo::is_maze(id) {
-            self.bag.items.clear();
+            dungeon.kept_out.0 = std::mem::take(&mut self.bag.items);
         }
         // What the dungeon does not let in waits outside.
         let max_items = dungeon.rules.max_items as usize;
         if self.bag.items.len() > max_items {
-            dungeon.kept_out.0 = self.bag.items.split_off(max_items);
+            let over = self.bag.items.split_off(max_items);
+            dungeon.kept_out.0.extend(over);
         }
         if !dungeon.rules.money_allowed {
             dungeon.kept_out.1 = std::mem::take(&mut self.bag.money);
@@ -342,8 +345,9 @@ impl Run {
             }
         }
         // Back in the evening: the boards and the shops keep the day's,
-        // till the team sleeps (`next_day`).
-        progress.evening = true;
+        // till the team sleeps (`next_day`). (Out of a maze of the Dojo, in
+        // town, the day goes on.)
+        progress.evening |= !dungeon.id.is_some_and(crate::dojo::is_maze);
         // Fainting costs the jobs taken on, half the money, and about half
         // of the bag: each item is a coin toss, but the aura bows, which
         // stay. Two dungeons (and the mazes) are forgiving and take nothing.
@@ -369,7 +373,11 @@ impl Run {
                 }
             }
         }
-        // What was kept out is given back.
+        // What was kept out is given back; out of a maze, the bag as it was
+        // left at its door (what was picked up there stays there).
+        if dungeon.id.is_some_and(crate::dojo::is_maze) {
+            self.bag.items.clear();
+        }
         self.bag.items.extend(dungeon.kept_out.0);
         self.bag.money += dungeon.kept_out.1;
         let message = match outcome {

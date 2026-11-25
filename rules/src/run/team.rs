@@ -104,8 +104,12 @@ impl Progress {
         let rank = format!("{RANK_LINE}{}\n", self.rank);
         let day = format!("{DAY_LINE}{}{}\n", self.day, if self.evening { ",evening" } else { "" });
         let home = if self.partner_home { format!("{HOME_LINE}partner\n") } else { String::new() };
+        let sentry = match (self.sentry_points, self.sentry_today) {
+            (0, false) => String::new(),
+            (points, today) => format!("{SENTRY_LINE}{points}{}\n", if today { ",today" } else { "" }),
+        };
         format!(
-            "{NAMES_LINE}{}|{}|{}\n{RECRUITS_LINE}{recruits}\n{RECRUIT_MOVES_LINE}{}\n{chosen}{tactics}{rank}{day}{home}",
+            "{NAMES_LINE}{}|{}|{}\n{RECRUITS_LINE}{recruits}\n{RECRUIT_MOVES_LINE}{}\n{chosen}{tactics}{rank}{day}{home}{sentry}",
             names.0,
             names.1,
             names.2,
@@ -139,6 +143,9 @@ impl Progress {
         let day = text.lines().find_map(|line| line.strip_prefix(DAY_LINE)).unwrap_or("0");
         let (days, evening) = day.split_once(',').unwrap_or((day, ""));
         (self.day, self.evening) = (days.trim().parse().unwrap_or(0), evening.trim() == "evening");
+        let sentry = text.lines().find_map(|line| line.strip_prefix(SENTRY_LINE)).unwrap_or("0");
+        let (points, today) = sentry.split_once(',').unwrap_or((sentry, ""));
+        (self.sentry_points, self.sentry_today) = (points.trim().parse().unwrap_or(0), today.trim() == "today");
         let tactics = text.lines().find_map(|line| line.strip_prefix(TACTICS_LINE)).unwrap_or("");
         self.tactics = tactics
             .split(';')
@@ -161,6 +168,7 @@ impl Progress {
         self.offers.clear();
         self.outlaws.clear();
         self.swapped.clear();
+        self.sentry_today = false;
         self.eggs.iter_mut().for_each(|(_, days)| *days = days.saturating_sub(1));
     }
 
@@ -195,6 +203,8 @@ pub(crate) const RANK_LINE: &str = "rank=";
 pub(crate) const DAY_LINE: &str = "day=";
 /// Who stays at the base (`home=partner`): absent, all come.
 pub(crate) const HOME_LINE: &str = "home=";
+/// The points of the last sentry duty, and `,today` once stood today.
+pub(crate) const SENTRY_LINE: &str = "sentry=";
 
 /// The tactics of the team's members (`enum tactic_id`).
 pub mod tactic {
@@ -408,6 +418,10 @@ pub struct Progress {
     /// and whether it is evening: back from a dungeon, not slept since.
     pub day: u32,
     pub evening: bool,
+    /// The points of the last sentry duty, and whether it was stood today
+    /// (once a day, as the guild's).
+    pub sentry_points: i32,
+    pub sentry_today: bool,
     /// What the team lost fainting last, for an SOS (Pelipper's mail).
     pub sos: Option<Sos>,
     /// The Dojo's mazes gone through to their end.
@@ -589,6 +603,17 @@ mod tests {
         assert_eq!((read.day, read.evening), (1, true));
         read.read_names("names=a|b|c\n");
         assert_eq!((read.day, read.evening), (0, false), "a save of before: the first day, morning");
+    }
+
+    #[test]
+    fn sentry_duty_is_stood_once_a_day_and_its_points_saved() {
+        let mut progress = Progress { sentry_points: 4200, sentry_today: true, ..Progress::default() };
+        let mut read = Progress::default();
+        read.read_names(&progress.names_text());
+        assert_eq!((read.sentry_points, read.sentry_today), (4200, true));
+        progress.next_day();
+        read.read_names(&progress.names_text());
+        assert_eq!((read.sentry_points, read.sentry_today), (4200, false), "a new day: on duty again");
     }
 
     #[test]

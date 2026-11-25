@@ -61,6 +61,15 @@ impl Sentry {
         self.visitors.get(self.round).copied()
     }
 
+    /// Whose footprints are on show, and whether they are still to be
+    /// told (shown in shadow); once answered, the visitor as it was.
+    pub fn shown(&self) -> Option<(u16, bool)> {
+        match self.told {
+            Some(_) => self.visitors.get(self.round.checked_sub(1)?).map(|&visitor| (visitor, false)),
+            None => self.visitor().map(|visitor| (visitor, true)),
+        }
+    }
+
     /// Whether the duty is over.
     pub fn over(&self) -> bool {
         self.round >= ROUNDS && self.told.is_none()
