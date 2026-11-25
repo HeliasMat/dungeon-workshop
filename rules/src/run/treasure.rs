@@ -103,12 +103,10 @@ mod tests {
     use super::*;
 
     fn extras() -> Extras {
-        let mut extras = Extras::default();
-        extras.drops = vec![([0; 4], [0; 2]); 230];
+        let list = crate::dungeon::ItemTable { categories: vec![(0, 10000)], items: vec![(70, 0, 10000)] };
+        let mut extras = Extras { drops: vec![([0; 4], [0; 2]); 230], rank_lists: vec![list; 15], ..Extras::default() };
         // (A foe that drops a box one time in ten, mostly with an item.)
         extras.drops[19] = ([900, 80, 10, 10], [0; 2]);
-        let list = crate::dungeon::ItemTable { categories: vec![(0, 10000)], items: vec![(70, 0, 10000)] };
-        extras.rank_lists = vec![list; 15];
         extras
     }
 
@@ -154,7 +152,7 @@ mod tests {
         assert!(nectar * 6 > opened.len() && nectar * 3 < opened.len(), "{nectar} of {}", opened.len());
         // (The second and third of a kind: the first or second exclusive item of a species.)
         let second = content(FIRST_BOX + 4, &extras, 1400, &mut rng).expect("an item");
-        assert!(second >= FIRST_SPECIES_ITEM && (second - FIRST_SPECIES_ITEM) % 4 == 0);
+        assert!(second >= FIRST_SPECIES_ITEM && (second - FIRST_SPECIES_ITEM).is_multiple_of(4));
         assert_eq!(content(FIRST_BOX - 1, &extras, 1400, &mut rng), None);
         // The box is the box whatever it holds: its name, its price.
         assert_eq!(stack::id(FIRST_BOX | (5 << CONTENT_SHIFT)), FIRST_BOX);
