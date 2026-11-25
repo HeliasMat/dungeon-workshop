@@ -592,7 +592,7 @@ mod tests {
     #[test]
     fn a_new_day_redraws_the_boards_and_the_shops_and_is_saved() {
         let job = crate::jobs::Job::default();
-        let mut progress = Progress { offers: vec![job.clone()], outlaws: vec![job.clone()], jobs: vec![job], evening: true, ..Progress::default() };
+        let mut progress = Progress { offers: vec![job], outlaws: vec![job], jobs: vec![job], evening: true, ..Progress::default() };
         (progress.stock, progress.eggs) = ([Some(vec![70]), None], vec![(25, 2)]);
         progress.next_day();
         assert_eq!((progress.day, progress.evening, progress.offers.len(), progress.outlaws.len()), (1, false, 0, 0));
