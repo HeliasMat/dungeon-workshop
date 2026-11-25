@@ -18,8 +18,8 @@ pub mod status;
 pub mod weather;
 
 pub use combat::{
-    Action, Damage, FAIRY, FIXED_ONE, MoveSlot, REGULAR_ATTACK_ID, Stats, TYPE_COLOURS, TYPE_COUNT, TYPE_NAMES, TypeChart, calc_damage_with, enemy_action,
-    matchup, move_hits, range, targets_in_range, type_name, type_named,
+    Action, Damage, FAIRY, FIXED_ONE, MoveSlot, REGULAR_ATTACK_ID, Roaming, Stats, TYPE_COLOURS, TYPE_COUNT, TYPE_NAMES, TypeChart, calc_damage_with,
+    enemy_action, matchup, move_hits, range, roam, targets_in_range, type_name, type_named,
 };
 pub use exp::{Growth, LevelGain, defeat_exp, exp_value};
 pub use floor::{FLOOR_HEIGHT, FLOOR_WIDTH, Floor, Mobility, Pos, Tile};

@@ -13,6 +13,7 @@
 //! - `story`, `town`: what the scenes and the town's services do to the team.
 
 pub mod aftermath;
+mod ai_items;
 pub mod attack;
 pub mod attacking;
 pub mod book;

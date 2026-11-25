@@ -9,10 +9,13 @@
 use crate::dungeon::ai::{self, AiChoice, AiUser, Candidate};
 use crate::dungeon::combat::TYPE_COUNT;
 use crate::dungeon::exclusive::effect::{ABSORB_TEAMMATE_POISON, HEAL_STATUS_FROM_WATERY_TERRAIN, NO_WEATHER_DAMAGE, RECOVER_HP_FROM_WATERY_TERRAIN};
-use crate::dungeon::status::{DEEP_SLEEP, item, problems};
+use crate::dungeon::status::ItemUse;
+use crate::dungeon::status::{DEEP_SLEEP, problems};
 use crate::dungeon::{
-    Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, Tile, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held, iq, stack,
+    Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, Roaming, Tile, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held, iq, stack,
 };
+
+use super::ai_items::{self, AiItem};
 
 use super::attack::chebyshev;
 use super::dungeon::{DIRECTIONS, Phase, weather_name};
@@ -20,6 +23,9 @@ use super::leader::mobility;
 use super::team::tactic;
 use super::watch::watched;
 use super::{Book, Dungeon, Monster, MonsterId, Run, Side};
+
+/// Where nobody is: the target of who sees no one to hunt.
+const NOWHERE: Pos = Pos::new(-100, -100);
 
 /// What came of a monster's action.
 enum Acted {
@@ -343,11 +349,13 @@ impl Run {
         if !me.alive() || !leader_alive || (me.status.cannot_act() && sleep_use.is_none()) {
             return Acted::Done;
         }
-        // (Item Master: it eats what it holds when that does it good.)
-        if worth_eating(me) {
-            let name = me.name.clone();
-            return self.eats_held(who, &name);
+        // (Item Master: what it holds, eaten or thrown when that does good.)
+        if let Some(use_item) = ai_items::choose(dungeon, who) {
+            return self.ai_uses_item(who, use_item);
         }
+        let Some(me) = dungeon.monster(who) else {
+            return Acted::Over;
+        };
         let at = me.at;
         let foes: Vec<Pos> = dungeon.monsters.iter().filter(|monster| monster.side == Side::Foe && monster.alive()).map(|monster| monster.at).collect();
         let mut beside: Vec<Pos> =
@@ -459,6 +467,11 @@ impl Run {
         if !me.alive() || !dungeon.leader().alive() {
             return Acted::Over;
         }
+        // (Item Master: what it holds, eaten or thrown when that does good;
+        // asleep, it does nothing with it.)
+        if let Some(use_item) = ai_items::choose(dungeon, who) {
+            return self.ai_uses_item(who, use_item);
+        }
         let at = me.at;
         // The team members still standing; the closest one it sees is hunted
         // (out of sight, it wanders).
@@ -469,7 +482,6 @@ impl Run {
         let kin: Vec<Pos> = standing().filter(|monster| monster.side == Side::Foe && monster.id != who).map(|monster| monster.at).collect();
         // A decoy among the others draws their blows (Decoy Orb).
         let decoy = standing().find(|monster| monster.side == Side::Foe && monster.id != who && monster.status.decoy).map(|monster| (monster.id, monster.at));
-        const NOWHERE: Pos = Pos::new(-100, -100);
         let nearest = seen_foes.iter().copied().min_by_key(|&foe| chebyshev(at, foe));
         // A team member under Follow Me, a decoy (Substitute) or one in
         // Gaggle Specs, in sight, draws it.
@@ -496,11 +508,6 @@ impl Run {
             self.log.push(book.woke_up(&me.name));
             return Acted::Over;
         }
-        // (Item Master: hurt, it eats the berry it holds; ailing, what cures
-        // it.)
-        if worth_eating(&me) {
-            return self.eats_held(who, &me.name);
-        }
         let walks = mobility(&me.stats, &me.status, secondary_kind);
         let avoided = shunned(dungeon, &me, secondary_kind);
         let occupied = |tile: Pos| tile == at || foes.contains(&tile) || kin.contains(&tile) || Some(tile) == keeper || avoided.contains(&tile);
@@ -525,11 +532,39 @@ impl Run {
             let user = ai_user(&me, direction, walks);
             ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &open_moves(&me), &others)
         };
-        let action = foe_action(&dungeon.floor, &mut dungeon.rng, &me, target, choice, occupied, &foes, walks);
+        let mut goal = me.goal;
+        let action = foe_action(&dungeon.floor, &mut dungeon.rng, &me, target, choice, occupied, &foes, walks, &mut goal);
+        if let Some(me) = dungeon.monster_mut(who) {
+            me.goal = goal;
+        }
         self.foe_does(who, act, at, action, choice, decoy.map(|(id, _)| id))
     }
 
-    /// A monster eats what it holds (Item Master).
+    /// What the AI chose to do with the item its monster holds.
+    fn ai_uses_item(&mut self, who: MonsterId, choice: AiItem) -> Acted {
+        let Some(me) = self.here().monster_mut(who) else {
+            return Acted::Over;
+        };
+        let name = me.name.clone();
+        match choice {
+            AiItem::Eat => self.eats_held(who, &name),
+            AiItem::Throw(way, aim) => {
+                // (One of a pile.)
+                let held = me.stats.held;
+                let mut pile = vec![held];
+                let item = stack::take_one(&mut pile, 0);
+                (me.facing, me.stats.held) = (way, pile.first().copied().unwrap_or(0));
+                if self.fly(who, item, aim)
+                    && let Some(me) = self.here().monster_mut(who)
+                {
+                    me.stats.held = held;
+                }
+                Acted::Attacked
+            }
+        }
+    }
+
+    /// A monster eats what it holds (Item Master), its belly too.
     fn eats_held(&mut self, who: MonsterId, name: &str) -> Acted {
         let book = self.book.clone();
         let constants = &book.tables.constants;
@@ -538,9 +573,22 @@ impl Run {
         let Some(eater) = monsters.iter_mut().find(|monster| monster.id == who) else {
             return Acted::Over;
         };
-        let berry = std::mem::take(&mut eater.stats.held);
-        watched(eater, &mut self.sights, |eater| eat_item(berry, rng, constants, &mut eater.stats, &mut eater.status, &mut Belly::full(), &mut eater.moves));
+        let berry = stack::id(std::mem::take(&mut eater.stats.held));
+        let used = watched(eater, &mut self.sights, |eater| {
+            let Monster { stats, status, belly, moves, .. } = eater;
+            let mut full = Belly::full();
+            eat_item(berry, rng, constants, stats, status, belly.as_mut().unwrap_or(&mut full), moves)
+        });
         self.log.push(format!("{name} ate {}!", book.item_name(berry)));
+        match used {
+            ItemUse::Warp => {
+                let taken = self.standing();
+                self.warp(who, &taken);
+            }
+            ItemUse::Levels(levels) => self.gain_levels(who, levels),
+            ItemUse::Fussy(item) => self.eat_fussy(who, item),
+            _ => {}
+        }
         Acted::Done
     }
 
@@ -674,23 +722,6 @@ impl Around<'_> {
     }
 }
 
-/// Item Master: whether a monster eats what it holds now, as the berry or
-/// seed does it good: one that heals when hurt, one that cures what ails it.
-fn worth_eating(me: &Monster) -> bool {
-    let (stats, status) = (&me.stats, &me.status);
-    if !iq::has(stats, iq::ITEM_MASTER) || status.embargo_turns > 0 || stack::sticky(stats.held) {
-        return false;
-    }
-    match stack::id(stats.held) {
-        item::ORAN_BERRY | item::SITRUS_BERRY => stats.hp * 2 <= stats.max_hp,
-        item::PECHA_BERRY => status.poisoned,
-        item::RAWST_BERRY => status.burn_turns > 0,
-        item::CHERI_BERRY => status.paralysis_turns > 0,
-        item::HEAL_SEED => status.ailing(),
-        _ => false,
-    }
-}
-
 /// Another monster as the AI of `user` sees it: its status problems, and
 /// for a team member choosing among foes, what makes one worth more (Exp.
 /// Go-Getter: what beating it is worth; Efficiency Expert: the less HP it
@@ -754,8 +785,10 @@ fn open_moves(me: &Monster) -> Vec<crate::dungeon::MoveSlot> {
 }
 
 /// A foe's action: the attack the AI chose, else fleeing the closest of the
-/// team if terrified, else a step towards `target`; confusion sends it any
-/// way, and what it cannot do it waits instead of.
+/// team if terrified (roaming, if it sees none), else a step towards
+/// `target`, or roaming towards `goal`; confusion sends it any way, and
+/// what it cannot do it waits instead of.
+#[allow(clippy::too_many_arguments)]
 fn foe_action(
     floor: &Floor,
     rng: &mut DungeonRng,
@@ -765,6 +798,7 @@ fn foe_action(
     occupied: impl Fn(Pos) -> bool + Copy,
     foes: &[Pos],
     walks: Mobility,
+    goal: &mut Option<Pos>,
 ) -> Action {
     let at = me.at;
     let terrified = me.status.terrified_turns > 0 || ability::runs_away(&me.stats, false);
@@ -775,7 +809,7 @@ fn foe_action(
         }
         None if me.status.cannot_act() => Action::Wait,
         // Terrified, it flees from the closest of the team.
-        None if terrified => {
+        None if terrified && target != NOWHERE => {
             let steps = ai::DIRECTIONS.iter().copied().filter(|&(dx, dy)| floor.can_step_as(at, dx, dy, walks) && !occupied(Pos::new(at.x + dx, at.y + dy)));
             let away = |(dx, dy): (i32, i32)| chebyshev(Pos::new(at.x + dx, at.y + dy), target);
             match steps.max_by_key(|&step| away(step)) {
@@ -783,7 +817,8 @@ fn foe_action(
                 _ => Action::Wait,
             }
         }
-        None => enemy_action(floor, rng, at, target, occupied, walks),
+        None if terrified => crate::dungeon::roam(floor, rng, at, occupied, walks, Roaming { facing: me.facing, goal }),
+        None => enemy_action(floor, rng, at, target, occupied, walks, Roaming { facing: me.facing, goal }),
     };
     let action = match action {
         // Confusion sends moves and steps in a random direction.

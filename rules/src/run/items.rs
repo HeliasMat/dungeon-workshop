@@ -256,28 +256,43 @@ impl Run {
         monsters.filter(|monster| monster.side == Side::Foe && monster.alive()).map(|monster| (monster.id, monster.at)).collect()
     }
 
-    /// Thrown from where the leader stands, the way it faces, up to ten
-    /// tiles (or a wall), at the first one in line, or all of them for a
-    /// piercing throw; Gap Prober (Course Checker off) throws past the
-    /// team. Rocks fly in an arc, over anyone in the way, to the one they
-    /// find (`arc_landing`). Who holds nothing may catch it: a foe what is
-    /// neither a projectile, a seed nor a drink, a team member with Item
-    /// Catcher what is neither a seed nor a drink.
+    /// Thrown by the leader, from the bag.
     fn throw(&mut self, index: usize, item: u16) {
+        let Some(leader) = self.dungeon.as_ref().map(|dungeon| dungeon.leader().id) else {
+            return;
+        };
+        stack::take_one(&mut self.bag.items, index);
+        self.sights.push(Sight::BagDone);
+        if self.fly(leader, item, None) {
+            stack::add(&mut self.bag.items, item);
+        }
+    }
+
+    /// Thrown from where `who` stands, the way it faces, up to ten tiles
+    /// (or a wall), at the first one in line, or all of them for a
+    /// piercing throw; Gap Prober (Course Checker off) throws past the
+    /// team. Rocks fly in an arc, over anyone in the way, to `aim` or the
+    /// one they find (`arc_landing`). Who holds nothing may catch it: a foe
+    /// what is neither a projectile, a seed nor a drink, a team member with
+    /// Item Catcher what is neither a seed nor a drink. Whether it is back
+    /// in its thrower's hands, with nowhere to fly.
+    pub(crate) fn fly(&mut self, who: MonsterId, item: u16, aim: Option<Pos>) -> bool {
         let book = self.book.clone();
         let constants = &book.tables.constants;
         let item_name = book.item_name(item);
         let Some(dungeon) = self.dungeon.as_ref() else {
-            return;
+            return true;
         };
-        let leader = dungeon.leader();
+        let Some(leader) = dungeon.monster(who) else {
+            return true;
+        };
         let past_team = iq::has(&leader.stats, iq::GAP_PROBER) && !iq::has(&leader.stats, iq::COURSE_CHECKER);
-        let foes: Vec<(MonsterId, Pos)> = dungeon
-            .monsters
-            .iter()
-            .filter(|monster| monster.alive() && matches!(monster.side, Side::Foe | Side::Ally) && !(past_team && monster.team()))
-            .map(|monster| (monster.id, monster.at))
-            .collect();
+        // (Anyone in the way but a shopkeeper; with Gap Prober, not the
+        // thrower's own side.)
+        let team = leader.team();
+        let struck = |monster: &&Monster| monster.side != Side::Keeper && !(past_team && monster.team() == team);
+        let foes: Vec<(MonsterId, Pos)> =
+            dungeon.monsters.iter().filter(|monster| monster.alive() && monster.id != who).filter(struck).map(|monster| (monster.id, monster.at)).collect();
         let taken: Vec<Pos> = foes.iter().map(|foe| foe.1).collect();
         let (me, here, mut facing, name) = (leader.id, leader.at, leader.facing, leader.name.clone());
         let status = &leader.status;
@@ -296,7 +311,7 @@ impl Run {
             facing = super::dungeon::DIRECTIONS[rng.rand_int(8) as usize];
         }
         let Some(dungeon) = self.dungeon.as_ref() else {
-            return;
+            return true;
         };
         let mut flight = Vec::new();
         let mut at = here;
@@ -313,7 +328,7 @@ impl Run {
             flight.push(at);
         }
         if lobbed {
-            at = arc_landing(&dungeon.floor, here, facing, &taken);
+            at = aim.unwrap_or_else(|| arc_landing(&dungeon.floor, here, facing, &taken));
             flight = vec![at];
         }
         let mut hit: Vec<Pos> = flight.iter().copied().filter(|tile| taken.contains(tile)).collect();
@@ -324,20 +339,17 @@ impl Run {
         if whiffs {
             hit.clear();
         }
-        stack::take_one(&mut self.bag.items, index);
-        self.sights.push(Sight::BagDone);
         self.log.push(format!("{name} threw {item_name}."));
         self.sights.push(Sight::Sound(THROW_SOUND));
         let Some(&target) = hit.last() else {
             // Nobody in the way: the item lands where its flight ends.
-            if at == here {
-                stack::add(&mut self.bag.items, item);
-            } else {
-                self.sights.push(Sight::Thrown(item, here, at));
-                self.drop_item(at, item);
-            }
             self.log.push(format!("{item_name} fell to the ground."));
-            return;
+            if at == here {
+                return true;
+            }
+            self.sights.push(Sight::Thrown(item, here, at));
+            self.drop_item(at, item);
+            return false;
         };
         self.sights.push(Sight::Thrown(item, here, target));
         let projectile = (1..=kind::LAST_PROJECTILE).contains(&item);
@@ -388,7 +400,7 @@ impl Run {
                 self.drop_item(short, item);
             } else if projectile || item == kind::BLAST_SEED {
                 // Rocks and Blast Seeds do a set amount of damage.
-                self.scorch(foe, if projectile { slot.power } else { constants.blast_seed_damage.1 });
+                self.scorch(foe, if projectile { slot.power } else { constants.blast_seed_damage.1 }, team);
             } else if self.eaten_by_foe(foe, item) {
                 warped = Some(foe);
             }
@@ -397,6 +409,7 @@ impl Run {
         if let Some(foe) = warped {
             self.warp(foe, &taken);
         }
+        false
     }
 
     /// Whether what is thrown reaches a foe.
@@ -421,11 +434,11 @@ impl Run {
         self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(who)).map_or(String::new(), |monster| monster.name.clone())
     }
 
-    /// A set amount of damage, the team's doing.
-    fn scorch(&mut self, foe: MonsterId, amount: i32) {
+    /// A set amount of damage, the team's doing or not.
+    fn scorch(&mut self, foe: MonsterId, amount: i32, by_team: bool) {
         self.change(foe, |foe| {
             foe.stats.hp -= amount;
-            foe.status.struck_by_team = true;
+            foe.status.struck_by_team |= by_team;
             foe.status.struck();
         });
         let name = self.name_of(foe);
@@ -436,7 +449,9 @@ impl Run {
     /// Whether it is to warp.
     fn eaten_by_foe(&mut self, foe: MonsterId, item: u16) -> bool {
         let done = self.work(foe, |foe, rng, book, log| {
-            let eaten = eat_item(item, rng, &book.tables.constants, &mut foe.stats, &mut foe.status, &mut Belly::full(), &mut []);
+            let mut full = Belly::full();
+            let belly = foe.belly.as_mut().unwrap_or(&mut full);
+            let eaten = eat_item(item, rng, &book.tables.constants, &mut foe.stats, &mut foe.status, belly, &mut []);
             match eaten {
                 // (A Dough Seed works for the team only; a fussy food is
                 // not eaten when thrown.)
@@ -480,7 +495,7 @@ impl Run {
         let foe = self.foes().into_iter().find(|foe| Some(foe.1) == front);
         match foe {
             Some((foe, _)) => {
-                self.scorch(foe, self.book.tables.constants.blast_seed_damage.0);
+                self.scorch(foe, self.book.tables.constants.blast_seed_damage.0, true);
                 self.say_if_out(foe);
             }
             None => self.log.push("But there is no target.".to_string()),
@@ -646,7 +661,7 @@ impl Run {
     /// A food for some species only: a Mix Elixir gives a Linoone back all
     /// its PP, a Gravelyrock raises a Sudowoodo's or a Bonsly's IQ (as much
     /// as a Wonder Gummi: this project's own figure). Anyone else, nothing.
-    fn eat_fussy(&mut self, who: MonsterId, item: u16) {
+    pub(crate) fn eat_fussy(&mut self, who: MonsterId, item: u16) {
         self.work(who, |monster, _, book, log| {
             let fits = monster.species.is_some_and(|species| fussy_eaters(item).contains(&(species % 600)));
             if !fits {
@@ -669,7 +684,7 @@ impl Run {
         });
     }
 
-    fn gain_levels(&mut self, who: MonsterId, levels: i32) {
+    pub(crate) fn gain_levels(&mut self, who: MonsterId, levels: i32) {
         let asked = self.work(who, |monster, _, book, log| {
             let mut asked = Vec::new();
             for _ in 0..levels {

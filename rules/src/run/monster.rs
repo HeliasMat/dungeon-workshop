@@ -67,6 +67,8 @@ pub struct Monster {
     pub escorted: Option<usize>,
     /// An outlaw running while it has more than half its HP.
     pub fleeing: bool,
+    /// The tile it heads for while it hunts no one (see `dungeon::roam`).
+    pub goal: Option<Pos>,
     pub identity: Option<Identity>,
     /// What it shows as instead of its own sprite (Transform; a disguise).
     pub looks_like: Option<u16>,
@@ -106,6 +108,7 @@ impl Monster {
             job_target: None,
             escorted: None,
             fleeing: false,
+            goal: None,
             identity: None,
             looks_like: None,
             fading: None,

@@ -15,10 +15,32 @@ fn chases_then_attacks() {
     let floor = open_room();
     let mut rng = DungeonRng::new(1);
     let target = Pos::new(10, 8);
-    let far = enemy_action(&floor, &mut rng, Pos::new(6, 6), target, |_| false, Mobility::Normal);
+    let mut goal = None;
+    let far = enemy_action(&floor, &mut rng, Pos::new(6, 6), target, |_| false, Mobility::Normal, Roaming { facing: (0, 1), goal: &mut goal });
     assert_eq!(far, Action::Move(1, 1));
-    let near = enemy_action(&floor, &mut rng, Pos::new(9, 7), target, |_| false, Mobility::Normal);
+    let near = enemy_action(&floor, &mut rng, Pos::new(9, 7), target, |_| false, Mobility::Normal, Roaming { facing: (0, 1), goal: &mut goal });
     assert_eq!(near, Action::Attack(1, 1));
+}
+
+#[test]
+fn hunting_no_one_it_heads_for_an_exit_then_goes_on_down_the_hallway() {
+    // The room, a hallway leaving it to the right from (11, 7).
+    let mut floor = open_room();
+    for x in 12..30 {
+        floor.set(Pos::new(x, 7), Tile::Floor { room: None });
+    }
+    let mut rng = DungeonRng::new(3);
+    let mut goal = None;
+    let mut at = Pos::new(6, 6);
+    let mut facing = (0, 1);
+    for _ in 0..12 {
+        if let Action::Move(dx, dy) = roam(&floor, &mut rng, at, |_| false, Mobility::Normal, Roaming { facing, goal: &mut goal }) {
+            (at, facing) = (Pos::new(at.x + dx, at.y + dy), (dx, dy));
+        }
+    }
+    // (Out of the room, it keeps going the way it faces.)
+    assert!(at.x > 12 && at.y == 7, "{at:?}");
+    assert_eq!(facing, (1, 0));
 }
 
 fn fighter(level: i32, attack: i32, defense: i32, types: (u8, u8)) -> Fighter {

@@ -11,7 +11,7 @@ pub use chart::*;
 mod damage;
 pub use damage::*;
 
-use super::floor::{Floor, Mobility, Pos, Tile};
+use super::floor::{Floor, Mobility, Pos, Tile, chebyshev};
 use super::rng::DungeonRng;
 use super::status::{Constants, MoveEffect, STAGE_COUNT, is_fixed_damage, move_effect};
 use super::weather;
@@ -67,8 +67,24 @@ pub enum Action {
     Attack(i32, i32),
 }
 
-/// Decision for one enemy at `from` hunting `target`.
-pub fn enemy_action(floor: &Floor, rng: &mut DungeonRng, from: Pos, target: Pos, occupied: impl Fn(Pos) -> bool, mobility: Mobility) -> Action {
+/// Where a monster walks when it hunts no one: the way it faces, and
+/// the tile it heads for, kept from turn to turn.
+pub struct Roaming<'a> {
+    pub facing: (i32, i32),
+    pub goal: &'a mut Option<Pos>,
+}
+
+/// Decision for one enemy at `from` hunting `target`; out of sight of it,
+/// it roams (`roam`).
+pub fn enemy_action(
+    floor: &Floor,
+    rng: &mut DungeonRng,
+    from: Pos,
+    target: Pos,
+    occupied: impl Fn(Pos) -> bool,
+    mobility: Mobility,
+    roaming: Roaming,
+) -> Action {
     let (dx, dy) = (target.x - from.x, target.y - from.y);
     let distance = dx.abs().max(dy.abs());
     if distance == 1 && floor.can_step(from, dx, dy) {
@@ -78,6 +94,7 @@ pub fn enemy_action(floor: &Floor, rng: &mut DungeonRng, from: Pos, target: Pos,
     let free = |sx: i32, sy: i32| (sx, sy) != (0, 0) && floor.can_step_as(from, sx, sy, mobility) && !occupied(Pos::new(from.x + sx, from.y + sy));
     let same_room = floor.tile(from).room().is_some() && floor.tile(from).room() == floor.tile(target).room();
     if same_room || distance <= HALLWAY_SIGHT {
+        *roaming.goal = None;
         // Straight at the target first, then slide along either axis.
         let (sx, sy) = (dx.signum(), dy.signum());
         for (cx, cy) in [(sx, sy), (sx, 0), (0, sy)] {
@@ -87,9 +104,73 @@ pub fn enemy_action(floor: &Floor, rng: &mut DungeonRng, from: Pos, target: Pos,
         }
         return Action::Wait;
     }
+    roam(floor, rng, from, occupied, mobility, roaming)
+}
 
-    let (wx, wy) = (rng.rand_range(-1, 2), rng.rand_range(-1, 2));
-    if free(wx, wy) { Action::Move(wx, wy) } else { Action::Wait }
+/// The turns tried from the way a monster faces, as the game's
+/// `FACING_DIRECTION_INCREMENTS`: ahead, then a little aside, back last.
+const TURNS: [i32; 8] = [0, 1, -1, 2, -2, 3, -3, 4];
+
+/// A hallway tile where ways part: more than two ways on from it.
+fn at_crossing(floor: &Floor, at: Pos) -> bool {
+    [(1, 0), (-1, 0), (0, 1), (0, -1)].into_iter().filter(|&(dx, dy)| floor.can_step(at, dx, dy)).count() > 2
+}
+
+/// Hunting no one, as the game's `CalculateAiTargetPos`: in a hallway it
+/// goes on the way it faces (at a crossing, any way but back); in a room
+/// it heads for one of the room's exits, picked at random, then out by it
+/// into the hallway; in a room without exits, a step any way.
+pub fn roam(floor: &Floor, rng: &mut DungeonRng, from: Pos, occupied: impl Fn(Pos) -> bool, mobility: Mobility, roaming: Roaming) -> Action {
+    let Roaming { facing, goal } = roaming;
+    let free = |(dx, dy): (i32, i32)| (dx, dy) != (0, 0) && floor.can_step_as(from, dx, dy, mobility) && !occupied(Pos::new(from.x + dx, from.y + dy));
+    let step = |way: (i32, i32)| if free(way) { Action::Move(way.0, way.1) } else { Action::Wait };
+    let ahead = AROUND.iter().position(|&way| way == facing).unwrap_or(0) as i32;
+    let Some(room) = floor.tile(from).room() else {
+        *goal = None;
+        let crossing = at_crossing(floor, from);
+        let first = if crossing { rng.rand_int(8) } else { ahead };
+        let back = AROUND[(ahead + 4).rem_euclid(8) as usize];
+        let ways = TURNS.iter().map(|turn| AROUND[(first + turn).rem_euclid(8) as usize]);
+        return ways.filter(|&way| !(crossing && way == back)).find(|&way| free(way)).map_or(Action::Wait, step);
+    };
+    // Its exit reached: out into the hallway.
+    if floor.is_junction(from) && goal.is_none_or(|goal| goal == from) {
+        *goal = None;
+        let first = rng.rand_int(8);
+        let out = (0..8).map(|turn| AROUND[((first + turn) % 8) as usize]);
+        let hallway = |(dx, dy): (i32, i32)| floor.tile(Pos::new(from.x + dx, from.y + dy)) == Tile::Floor { room: None };
+        if let Some(way) = out.filter(|&way| hallway(way)).find(|&way| free(way)) {
+            return step(way);
+        }
+    }
+    if goal.is_none_or(|goal| goal == from || floor.tile(goal).room() != Some(room)) {
+        let exits: Vec<Pos> = Floor::positions().filter(|&tile| floor.tile(tile).room() == Some(room) && floor.is_junction(tile)).collect();
+        *goal = None;
+        // (Ten tries at an exit it is not on, as the game's.)
+        for _ in 0..10 {
+            let Some(&exit) = exits.get(rng.rand_int(exits.len().max(1) as i32) as usize) else {
+                break;
+            };
+            if exit != from {
+                *goal = Some(exit);
+                break;
+            }
+        }
+    }
+    let Some(to) = *goal else {
+        return step(AROUND[rng.rand_int(8) as usize]);
+    };
+    if chebyshev(from, to) == 1 {
+        return step((to.x - from.x, to.y - from.y));
+    }
+    match super::ai::step_towards(floor, from, to, mobility, &occupied) {
+        Some(way) => step(way),
+        // (No way there for now: another exit next time.)
+        None => {
+            *goal = None;
+            Action::Wait
+        }
+    }
 }
 
 #[cfg(test)]
