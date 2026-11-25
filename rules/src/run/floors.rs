@@ -24,6 +24,9 @@ const FRIEND_BOW_BOOST: i32 = 150;
 /// How far from the leader a fallen foe may still ask to join.
 const JOIN_REACH: i32 = 2;
 const PLAIN_SEED: u16 = 85;
+/// The piles of Poké a Dough Seed adds to the next floor (this project's
+/// own figure).
+const DOUGH_SEED_POKE: usize = 4;
 
 impl Run {
     /// On to the next floor; past the last one the dungeon is cleared. (A
@@ -149,6 +152,15 @@ impl Run {
             let kind = piled(&book, kind, &mut dungeon.rng);
             dungeon.items.push(FloorItem { at: tile, item: kind, price: None });
         }
+        // A Dough Seed eaten on the floor before: more Poké lie about.
+        if std::mem::take(&mut dungeon.dough_seed) {
+            let lying: Vec<Pos> = dungeon.items.iter().map(|item| item.at).collect();
+            for _ in 0..DOUGH_SEED_POKE {
+                if let Some(tile) = dungeon.warp_tile(&lying) {
+                    dungeon.items.push(FloorItem { at: tile, item: item::POKE, price: None });
+                }
+            }
+        }
         for tile in dungeon.floor.trap_spawns.clone() {
             if let Some(kind) = pick_weighted(&mut dungeon.rng, spec.traps.iter().copied().enumerate()) {
                 dungeon.traps.push(FloorTrap { at: tile, kind, seen: false, team: false });
@@ -208,7 +220,7 @@ impl Run {
         let spots: Vec<Pos> = around.clone().filter(|tile| !floor.enemy_spawns.contains(tile)).chain(around).collect();
         for (at, ally) in dungeon.monsters.iter_mut().filter(|monster| monster.side == Side::Ally).enumerate() {
             ally.at = spots.get(at).copied().unwrap_or(leader);
-            ally.status.reset_stages();
+            ally.status.leave_floor();
             ally.status.charging = None;
             ally.moves.iter_mut().for_each(|slot| slot.sealed = false);
         }
@@ -445,7 +457,7 @@ impl Run {
         let dungeon = self.here();
         let at = dungeon.leader().at;
         dungeon.stairs_seen = Some((dungeon.generation, at));
-        dungeon.leader_mut().status.reset_stages();
+        dungeon.leader_mut().status.leave_floor();
     }
 
     /// Lays the traps monsters set under themselves (Spikes): the team's

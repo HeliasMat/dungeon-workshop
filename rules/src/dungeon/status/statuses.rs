@@ -157,6 +157,10 @@ pub struct Statuses {
     /// Its blows are all critical hits until the floor is left (Focus
     /// Energy).
     pub focused: bool,
+    /// Until the floor is left: it walks on water (Slip Seed), and the dark
+    /// closes in around it, even in rooms (Dropeye Seed).
+    pub slipping: bool,
+    pub dropeye: bool,
     /// Multipliers of attack and defense, in 8-bit fixed point.
     pub attack_multiplier: i32,
     pub defense_multiplier: i32,
@@ -270,6 +274,8 @@ impl Default for Statuses {
             long_toss: false,
             piercing: false,
             focused: false,
+            slipping: false,
+            dropeye: false,
             attack_multiplier: 0x100,
             defense_multiplier: 0x100,
             sp_attack_stage: NEUTRAL_STAGE,
@@ -361,6 +367,13 @@ impl Statuses {
         for multiplier in [&mut self.attack_multiplier, &mut self.defense_multiplier, &mut self.sp_attack_multiplier, &mut self.sp_defense_multiplier] {
             *multiplier = 0x100;
         }
+    }
+
+    /// The floor is left: the stat stages back to neutral, and what lasts
+    /// a floor gone.
+    pub(crate) fn leave_floor(&mut self) {
+        self.reset_stages();
+        (self.slipping, self.dropeye) = (false, false);
     }
 
     pub fn asleep(&self) -> bool {

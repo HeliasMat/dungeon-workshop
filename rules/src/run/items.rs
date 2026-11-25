@@ -4,7 +4,7 @@
 //! the thing asked was done and the menu closes; without it the log says
 //! why not. Orbs are in `orbs`.
 
-use crate::dungeon::status::{ItemUse, item as kind};
+use crate::dungeon::status::{ItemUse, fussy_eaters, item as kind};
 use crate::dungeon::{Belly, Damage, DungeonRng, FIXED_ONE, FLOOR_WIDTH, Floor, MoveSlot, Pos, eat_item, exclusive, held, iq, matchup, move_hits, stack};
 
 use super::attack::Attack;
@@ -368,7 +368,9 @@ impl Run {
         let done = self.work(foe, |foe, rng, book, log| {
             let eaten = eat_item(item, rng, &book.tables.constants, &mut foe.stats, &mut foe.status, &mut Belly::full(), &mut []);
             match eaten {
-                ItemUse::Nothing => log.push("But nothing happened.".to_string()),
+                // (A Dough Seed works for the team only; a fussy food is
+                // not eaten when thrown.)
+                ItemUse::Nothing | ItemUse::MorePoke | ItemUse::Fussy(_) => log.push("But nothing happened.".to_string()),
                 ItemUse::Warp => return true,
                 ItemUse::LoseLevel if foe.stats.level > 1 => {
                     foe.stats.level -= 1;
@@ -490,6 +492,12 @@ impl Run {
         let Some(me) = self.dungeon.as_ref().map(|dungeon| dungeon.leader().id) else {
             return false;
         };
+        // (The locked doors of the rooms laid out by hand are not on the
+        // floors yet: a Key finds none.)
+        if item == kind::KEY {
+            self.log.push("There is no door here to open.".to_string());
+            return false;
+        }
         let used = self.work(me, |leader, rng, book, _| {
             let Monster { stats, status, belly, moves, .. } = leader;
             let mut full = Belly::full();
@@ -527,9 +535,42 @@ impl Run {
                 }
             }
             ItemUse::SeeTraps => self.see_traps(),
+            ItemUse::MorePoke => {
+                if let Some(dungeon) = self.dungeon.as_mut() {
+                    dungeon.dough_seed = true;
+                }
+                self.log.push("More Poké will turn up on the next floor!".to_string());
+            }
+            ItemUse::Fussy(item) => self.eat_fussy(me, item),
             ItemUse::Done | ItemUse::Nothing => {}
         }
         true
+    }
+
+    /// A food for some species only: a Mix Elixir gives a Linoone back all
+    /// its PP, a Gravelyrock raises a Sudowoodo's or a Bonsly's IQ (as much
+    /// as a Wonder Gummi: this project's own figure). Anyone else, nothing.
+    fn eat_fussy(&mut self, who: MonsterId, item: u16) {
+        self.work(who, |monster, _, book, log| {
+            let fits = monster.species.is_some_and(|species| fussy_eaters(item).contains(&(species % 600)));
+            if !fits {
+                log.push("But nothing happened.".to_string());
+                return;
+            }
+            if item == kind::MIX_ELIXIR {
+                monster.moves.iter_mut().for_each(|slot| slot.pp = slot.max_pp);
+                log.push(format!("{}'s PP were restored!", monster.name));
+                return;
+            }
+            let stats = &mut monster.stats;
+            let (before, gain) = (stats.iq_skills, book.tables.constants.wonder_gummi_iq);
+            stats.iq = (stats.iq + gain).min(iq::MAX_IQ);
+            stats.iq_skills = book.tables.iq.skills(stats.iq_group, stats.iq);
+            log.push(format!("{}'s IQ rose by {gain}!", monster.name));
+            for skill in iq::learnt(before, stats.iq_skills) {
+                log.push(format!("{} learned {}!", monster.name, book.iq_skill_name(skill)));
+            }
+        });
     }
 
     fn gain_levels(&mut self, who: MonsterId, levels: i32) {

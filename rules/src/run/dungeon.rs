@@ -202,6 +202,8 @@ pub struct Dungeon {
     pub chain_belly: i32,
     /// Recycle was used by the team.
     pub recycle: bool,
+    /// A Dough Seed was eaten: more Poké lie on the next floor.
+    pub dough_seed: bool,
     /// Where the monster now attacking faces (for Me First).
     pub aimed_at: Option<Pos>,
     /// The HP of those bound by Destiny Bond, a frame ago.
@@ -298,6 +300,7 @@ impl Dungeon {
             drops: Vec::new(),
             chain_belly: 0,
             recycle: false,
+            dough_seed: false,
             aimed_at: None,
             bond_hp: Vec::new(),
             identity_floor: 0,

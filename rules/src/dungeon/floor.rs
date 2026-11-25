@@ -50,7 +50,8 @@ impl Tile {
 }
 
 /// What terrain a monster can stand on.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+// (In order: each crosses all the one before crosses.)
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Mobility {
     /// Open terrain only.
     #[default]

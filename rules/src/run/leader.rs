@@ -18,6 +18,8 @@ pub(crate) fn mobility(status: &Statuses, secondary_kind: u8) -> Mobility {
     match (status.mobile, status.levitating_turns > 0) {
         (true, _) => Mobility::Intangible,
         (false, true) => Mobility::Hovering,
+        // (Slip: water is walked on, as by those that swim.)
+        (false, false) if status.slipping && secondary_kind == 0 => Mobility::resolve(status.movement, secondary_kind).max(Mobility::Secondary),
         (false, false) => Mobility::resolve(status.movement, secondary_kind),
     }
 }

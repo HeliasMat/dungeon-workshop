@@ -789,3 +789,25 @@ fn a_new_dose_keeps_the_longer_status() {
     assert!(!apply_effect(MoveEffect::HealHalf, &mut rng, &RULES, &mut stats, &mut statuses));
     assert_eq!(stats.hp, 5);
 }
+
+#[test]
+fn the_lookalike_items_do_their_own_thing() {
+    let mut rng = DungeonRng::new(4);
+    let (mut stats, mut statuses, mut belly) = (monster(), Statuses::default(), Belly::full());
+    let mut eat = |item: u16, stats: &mut Stats, statuses: &mut Statuses| eat_item(item, &mut rng, &RULES, stats, statuses, &mut belly, &mut []);
+    assert_eq!(eat(item::VIA_SEED, &mut stats, &mut statuses), ItemUse::Warp);
+    assert_eq!(eat(item::DOUGH_SEED, &mut stats, &mut statuses), ItemUse::MorePoke);
+    assert_eq!(eat(item::MIX_ELIXIR, &mut stats, &mut statuses), ItemUse::Fussy(item::MIX_ELIXIR));
+    assert!(fussy_eaters(item::GRAVELYROCK).contains(&185));
+    eat(item::SLIP_SEED, &mut stats, &mut statuses);
+    eat(item::DROPEYE_SEED, &mut stats, &mut statuses);
+    assert!(statuses.slipping && statuses.dropeye);
+    eat(item::GONE_PEBBLE, &mut stats, &mut statuses);
+    assert_eq!(statuses.shield, Some(Shield::Endure));
+    eat(item::WANDER_GUMMI, &mut stats, &mut statuses);
+    assert!(statuses.accuracy_stage < NEUTRAL_STAGE);
+    assert_eq!(eat(item::REVISER_SEED, &mut stats, &mut statuses), ItemUse::Done);
+    assert_eq!(eat(item::KEY, &mut stats, &mut statuses), ItemUse::Nothing);
+    statuses.leave_floor();
+    assert!(!statuses.slipping && !statuses.dropeye);
+}

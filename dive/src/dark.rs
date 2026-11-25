@@ -22,15 +22,16 @@ const DARK: u8 = 235;
 /// the dark (`floor_properties::visibility_range`).
 #[derive(Default)]
 pub struct Dark {
-    drawn: Option<(u32, u32, Pos)>,
+    drawn: Option<(u32, u32, Pos, bool)>,
     /// Those of the leader's room and the walls around it, around the leader.
     lit: Vec<bool>,
 }
 
 impl Dark {
-    fn lit_tiles(&mut self, floor: &Floor, at: Pos) {
+    /// `dropeye`: the leader's room is as dark as the rest.
+    fn lit_tiles(&mut self, floor: &Floor, at: Pos, dropeye: bool) {
         let room = match floor.tile(at) {
-            Tile::Floor { room: Some(room) } => Some(room),
+            Tile::Floor { room: Some(room) } if !dropeye => Some(room),
             _ => None,
         };
         let in_room =
@@ -42,16 +43,22 @@ impl Dark {
     }
 
     /// The dark, in spans of rows: `leader` shows at the middle of the
-    /// screen. (A hard edge, as all of the game's pixels.)
+    /// screen. (A hard edge, as all of the game's pixels.) A leader under
+    /// Dropeye sees only the tiles next to it, even in a room.
     pub fn draw(&mut self, world: &mut Screen, dungeon: &Dungeon, book: &Book) {
-        let range = if dungeon.lit { 0 } else { dungeon.spec(book).map_or(0, |floor| floor.visibility) };
+        let dropeye = dungeon.leader().status.dropeye;
+        let range = match (dropeye, dungeon.lit) {
+            (true, _) => 1,
+            (false, true) => 0,
+            (false, false) => dungeon.spec(book).map_or(0, |floor| floor.visibility),
+        };
         if range <= 0 {
             return;
         }
         let at = dungeon.leader().at;
-        let key = (dungeon.generation, dungeon.repaints, at);
+        let key = (dungeon.generation, dungeon.repaints, at, dropeye);
         if self.drawn != Some(key) {
-            self.lit_tiles(&dungeon.floor, at);
+            self.lit_tiles(&dungeon.floor, at, dropeye);
             self.drawn = Some(key);
         }
         let scale = world.scale as i32;

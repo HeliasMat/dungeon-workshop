@@ -38,6 +38,18 @@ pub mod item {
     pub(crate) const PURE_SEED: u16 = 95;
     pub(crate) const VANISH_SEED: u16 = 97;
     pub(crate) const NECTAR: u16 = 103;
+    /// The lookalikes of other seeds, drinks and food.
+    pub(crate) const DROPEYE_SEED: u16 = 104;
+    pub(crate) const REVISER_SEED: u16 = 105;
+    pub(crate) const SLIP_SEED: u16 = 106;
+    pub(crate) const VIA_SEED: u16 = 107;
+    pub(crate) const MIX_ELIXIR: u16 = 116;
+    pub(crate) const DOUGH_SEED: u16 = 118;
+    pub(crate) const GRAVELYROCK: u16 = 137;
+    pub(crate) const GONE_PEBBLE: u16 = 167;
+    pub(crate) const WANDER_GUMMI: u16 = 168;
+    /// Opens the locked doors of a dungeon's rooms laid out by hand.
+    pub(crate) const KEY: u16 = 182;
     pub(crate) const X_EYE_SEED: u16 = 76;
     pub(crate) const PROTEIN: u16 = 100;
     pub(crate) const CALCIUM: u16 = 101;
@@ -110,6 +122,22 @@ pub enum ItemUse {
     ToStairs,
     /// The floor's traps are shown (an Eyedrop Seed).
     SeeTraps,
+    /// More Poké lie on the team's next floor (a Dough Seed).
+    MorePoke,
+    /// It works for some species only ([`fussy_eaters`]), the caller
+    /// knowing who ate it: a Mix Elixir, a Gravelyrock.
+    Fussy(u16),
+}
+
+/// The species (by their first number) an item of [`ItemUse::Fussy`]
+/// works for: Linoone for the Mix Elixir, Sudowoodo and Bonsly for the
+/// Gravelyrock.
+pub fn fussy_eaters(item: u16) -> &'static [u16] {
+    match item {
+        item::MIX_ELIXIR => &[292],
+        item::GRAVELYROCK => &[185, 480],
+        _ => &[],
+    }
 }
 
 /// Eats or drinks an item: `use_item`, and the seeds, berries and drinks
@@ -151,7 +179,17 @@ pub fn eat_item(
         item::QUICK_SEED => affect(MoveEffect::UserSpeedUp, rng, stats, statuses),
         item::TOTTER_SEED => affect(MoveEffect::Confuse, rng, stats, statuses),
         item::SLEEP_SEED => affect(MoveEffect::Sleep, rng, stats, statuses),
-        item::BLINKER_SEED => affect(MoveEffect::TargetAccuracy(-2), rng, stats, statuses),
+        // (Blinker, from a Blinker Seed or a Wander Gummi's gunk, is an
+        // accuracy drop here.)
+        item::BLINKER_SEED | item::WANDER_GUMMI => affect(MoveEffect::TargetAccuracy(-2), rng, stats, statuses),
+        // Dropeye: dark around it, even in rooms; Slip: it walks on water.
+        // (Both until the floor is left.)
+        item::DROPEYE_SEED => statuses.dropeye = true,
+        item::SLIP_SEED => statuses.slipping = true,
+        // A Reviser Seed revives nobody: eaten, it is a Plain Seed.
+        item::REVISER_SEED => {}
+        // A Gone Pebble brings tears: Enduring.
+        item::GONE_PEBBLE => affect(MoveEffect::Endure, rng, stats, statuses),
         item::VANISH_SEED => affect(MoveEffect::Invisify, rng, stats, statuses),
         item::VIOLENT_SEED => {
             let top = STAGE_COUNT as i32 - 1;
@@ -187,7 +225,10 @@ pub fn eat_item(
 /// The items whose whole effect is the caller's.
 fn eaten_elsewhere(item: u16) -> Option<ItemUse> {
     Some(match item {
-        item::WARP_SEED => ItemUse::Warp,
+        // (A Via Seed: "See ya!")
+        item::WARP_SEED | item::VIA_SEED => ItemUse::Warp,
+        item::DOUGH_SEED => ItemUse::MorePoke,
+        item::MIX_ELIXIR | item::GRAVELYROCK => ItemUse::Fussy(item),
         item::DOOM_SEED => ItemUse::LoseLevel,
         item::PURE_SEED => ItemUse::ToStairs,
         item::EYEDROP_SEED => ItemUse::SeeTraps,
