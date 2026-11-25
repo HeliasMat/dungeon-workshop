@@ -17,8 +17,12 @@ pub enum Outcome {
     Fainted,
     /// Left through the pause menu.
     Abandoned,
-    /// Left by an Escape Orb: as abandoned, the bag kept.
+    /// Left by an Escape Orb (or Shedinja's path): a retreat, the bag and
+    /// the money kept, nothing done there paid but the jobs.
     Escaped,
+    /// Left at the "leave the dungeon?" a job done asks: a success, the
+    /// jobs paid, nothing lost (the dungeon not cleared for all that).
+    JobDone,
     /// Blown out by the wind after too long on a floor: as fainted.
     BlownOut,
 }
@@ -240,6 +244,9 @@ pub struct Dungeon {
     pub outcome: Option<Outcome>,
     /// The team is down: the frames before the run ends.
     pub knocked_out: Option<u32>,
+    /// The client escorted fainted: the run is lost, as the original's
+    /// "failed to escort the client" (`FORCED_LOSS_ESCORT_FAINTED`).
+    pub client_fainted: bool,
     /// What the dungeon's rules kept out (items beyond its limit, money
     /// where it is not allowed): given back on leaving.
     pub kept_out: (Vec<u16>, i32),
@@ -341,6 +348,7 @@ impl Dungeon {
             floor_turns: 0,
             outcome: None,
             knocked_out: None,
+            client_fainted: false,
             kept_out: (Vec::new(), 0),
             trail: None,
             cooldown: 0,

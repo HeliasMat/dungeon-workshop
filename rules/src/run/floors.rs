@@ -575,7 +575,12 @@ impl Run {
                     false => self.log.push(format!("{} returned to the base.", monster.name)),
                 }
             } else {
-                // (The run ends once the blow is seen: `knock_out`.)
+                // (The run ends once the blow is seen: `knock_out`; the
+                // client escorted too, as the original's forced loss.)
+                if monster.escorted.is_some() {
+                    dungeon.client_fainted = true;
+                    self.log.push(format!("{} fainted! The team failed to escort the client...", monster.name));
+                }
                 monster.fading = Some(u32::MAX);
                 dungeon.knocked_out.get_or_insert(KNOCKED_OUT);
             }

@@ -371,9 +371,11 @@ impl Run {
         self.bag.money += dungeon.kept_out.1;
         let message = match outcome {
             Outcome::Cleared => format!("Dungeon cleared in {} turns!", dungeon.turn),
+            Outcome::Fainted if dungeon.client_fainted => format!("The client fainted on floor {}: the team failed to escort it...", dungeon.floor_number),
             Outcome::Fainted => format!("Fainted on floor {}...", dungeon.floor_number),
             Outcome::BlownOut => "The team was blown out of the dungeon by the wind...".to_string(),
             Outcome::Escaped => "The team escaped from the dungeon.".to_string(),
+            Outcome::JobDone => "The team left the dungeon, its job done.".to_string(),
             Outcome::Abandoned => "Dungeon given up.".to_string(),
         };
         Some(Left { outcome, floor: dungeon.floor_number, message })
@@ -382,15 +384,22 @@ impl Run {
     /// Back from a dungeon the team chose: the jobs done are paid, their
     /// items in the bag while it has room, else in storage; their points to
     /// the exploration rank. What is to be told, items by the name scenes
-    /// give them (`{item:12}`); `None`: no job was done.
+    /// give them (`{item:12}`); `None`: no job was done. Each client
+    /// thanks the team first, as the original's comes to.
     pub fn pay_jobs(&mut self) -> Option<String> {
         let progress = &mut self.team.progress;
         let book = self.book.clone();
         let tables = &book.tables.jobs;
+        let thanks: Vec<String> = progress
+            .jobs
+            .iter()
+            .filter(|job| job.done)
+            .map(|job| job.thanks(|species| book.species_name(species), |item| format!("{{item:{item}}}")))
+            .collect();
         let payment = jobs::paid(tables, &mut progress.jobs, progress.chapter >= jobs::GRADUATION)?;
         self.bag.money = (self.bag.money + payment.money).min(MONEY_LIMIT);
         let items: Vec<String> = payment.items.iter().map(|item| format!(" + {{item:{item}}}")).collect();
-        let mut told = format!("Mission accomplished!\nReward: {} Poké{}", payment.money, items.concat());
+        let mut told = format!("{}\nMission accomplished!\nReward: {} Poké{}", thanks.join("\n"), payment.money, items.concat());
         let (before, points) = (progress.rank, progress.rank + payment.points);
         progress.rank = points;
         let prizes = tables.prizes_between(before, points);

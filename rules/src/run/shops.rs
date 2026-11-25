@@ -305,7 +305,7 @@ impl Run {
             Ask::Recruit(recruit) if yes => self.join(recruit),
             Ask::Recruit(recruit) => self.log.push(format!("{} went away.", recruit.name)),
             Ask::Leave if yes => {
-                dungeon.outcome = Some(Outcome::Escaped);
+                dungeon.outcome = Some(Outcome::JobDone);
                 self.log.push("The team left the dungeon.".to_string());
             }
             Ask::Leave => {}

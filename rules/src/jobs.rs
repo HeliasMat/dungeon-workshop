@@ -126,6 +126,13 @@ impl JobTables {
         self.floor_ranks.get(dungeon as usize).and_then(|floors| floors.get(floor.saturating_sub(1) as usize)).copied().unwrap_or(0)
     }
 
+    /// The team's exploration rank for so many points, as a number: 1 the
+    /// first (Normal), 2 the next… (`if rank >= 3`).
+    pub fn rank_number(&self, points: u32) -> u32 {
+        let at = self.ranks.iter().position(|rank| points < rank.points).unwrap_or(self.ranks.len().saturating_sub(1));
+        at as u32 + 1
+    }
+
     /// The rank of a job of that kind there: harder to take someone along or
     /// to arrest (`GetMissionRankWithCapAndModifiers`).
     fn job_rank(&self, dungeon: u16, floor: u32, kind: Kind) -> u8 {
@@ -154,6 +161,29 @@ pub enum Kind {
     /// An outlaw on the floor has stolen the item: defeated, it gives it
     /// back to its owner.
     Stolen,
+}
+
+impl Kind {
+    /// The kinds by their words in a game's file (`on job done rescue`).
+    pub const WORDS: [(&str, Kind); 7] = [
+        ("rescue", Kind::Rescue),
+        ("deliver", Kind::Deliver),
+        ("escort", Kind::Escort),
+        ("explore", Kind::Explore),
+        ("find", Kind::Find),
+        ("outlaw", Kind::Outlaw),
+        ("stolen", Kind::Stolen),
+    ];
+
+    /// Its word.
+    pub fn word(self) -> &'static str {
+        Self::WORDS.iter().find(|(_, kind)| *kind == self).map_or("rescue", |(word, _)| word)
+    }
+
+    /// The kind of that word.
+    pub fn named(word: &str) -> Option<Kind> {
+        Self::WORDS.iter().find(|(known, _)| *known == word).map(|(_, kind)| *kind)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -205,6 +235,21 @@ impl Job {
             Kind::Explore => format!("Explore with {}", monster(self.client)),
             Kind::Find => format!("Find {} for {}", item(self.item), monster(self.client)),
             Kind::Stolen => format!("Take back {} from {}", item(self.item), monster(self.client)),
+        }
+    }
+
+    /// What is said back in town before the reward, as the original's
+    /// client comes to thank the team (an outlaw's: Officer Magnezone).
+    pub fn thanks(&self, monster: impl Fn(u16) -> String, item: impl Fn(u16) -> String) -> String {
+        let client = monster(self.client);
+        match self.kind {
+            Kind::Rescue => format!("{client}: Thank you so much for rescuing me! Please accept this reward."),
+            Kind::Deliver => format!("{client}: Thank you for bringing me {}! Please accept this reward.", item(self.item)),
+            Kind::Escort => format!("{client}: Thank you for taking me to {}! Please accept this reward.", monster(self.item)),
+            Kind::Explore => format!("{client}: Thank you for coming along with me! Please accept this reward."),
+            Kind::Find => format!("{client}: You found my {}! Thank you! Please accept this reward.", item(self.item)),
+            Kind::Outlaw => format!("Magnezone: ZZT! {client} is under arrest, thanks to you! Here is your reward."),
+            Kind::Stolen => format!("Magnezone: ZZT! {client} is under arrest, and {} is back with its owner! Here is your reward.", item(self.item)),
         }
     }
 
@@ -736,5 +781,17 @@ mod tests {
         assert_eq!(list.press_departure(Confirm, &[1, 3, 4]), Some(Some(3)));
         assert_eq!(list.press_departure(Cancel, &[1, 3, 4]), Some(None));
         assert_eq!(list.press_departure(Confirm, &[]), Some(None));
+    }
+
+    #[test]
+    fn kinds_by_their_words_ranks_by_number_and_the_client_s_thanks() {
+        assert!(Kind::WORDS.iter().all(|(word, kind)| kind.word() == *word && Kind::named(word) == Some(*kind)));
+        assert_eq!(Kind::named("party"), None);
+        let tables = tables();
+        assert_eq!([tables.rank_number(0), tables.rank_number(100), tables.rank_number(u32::MAX)], [1, 2, 2]);
+        let job = |kind| Job { kind, client: 7, item: 3, ..Job::default() };
+        let thanks = |kind| job(kind).thanks(|species| format!("M{species}"), |item| format!("I{item}"));
+        assert!(thanks(Kind::Deliver).starts_with("M7: Thank you for bringing me I3!"), "{}", thanks(Kind::Deliver));
+        assert!(thanks(Kind::Outlaw).starts_with("Magnezone:") && thanks(Kind::Outlaw).contains("M7 is under arrest"));
     }
 }

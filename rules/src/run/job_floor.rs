@@ -217,7 +217,7 @@ impl Run {
             }
             jobs::Kind::Escort => {
                 // (The one escorted leaves with who it was taken to.)
-                let Some(place) = dungeon.monsters.iter().position(|monster| monster.escorted == Some(index)) else {
+                let Some(place) = dungeon.monsters.iter().position(|monster| monster.escorted == Some(index) && monster.alive()) else {
                     return false;
                 };
                 let client = dungeon.monsters.remove(place);
