@@ -16,6 +16,9 @@
 //! rules: fairy, push_allies    (options of the rules: `crate::rule_options`)
 //! pokemon_type: Clefairy fairy (a species' types there, one or two)
 //! move_type: Charm fairy       (a move's type there)
+//! rank: E floors 1-2, D        (the jobs' rank there, for the boards: E, D, C,
+//!                              B, A, S, then 1* to 9*; by floors, or all of
+//!                              them; none said: from the levels met there)
 //! ```
 
 use diagnostics::Diagnostic;
@@ -51,6 +54,8 @@ pub struct Own {
     /// The types it gives species and moves (see [`retype`]).
     pub species_types: Vec<(u16, (u8, u8))>,
     pub move_types: Vec<(u16, u8)>,
+    /// The rank of each floor, for the jobs of the boards (see [`rank_floors`]).
+    pub ranks: Vec<u8>,
 }
 
 /// The types a dungeon gives species and moves, written into the tables it
@@ -307,7 +312,7 @@ fn on_floors(said: &str) -> (&str, Floors) {
 }
 
 /// The keys a dungeon's text knows, as its faults name them.
-const KEYS_SAID: &str = "name, floors, look, tileset, music, pokemon, items, recruiting, upward, level, boss, boss_guards, boss_hp, boss_arena, boss_shape, boss_music, boss_says, boss_anger, boss_falls, boss_item, boss_moves, boss_reinforcements, boss_heal, boss_phase, boss_recruit, boss_cry, boss_at, boss_team_at, boss_floor_items, boss_traps, boss_title, boss_look, boss_map, boss_allies, boss_hero, boss_partner, boss_level, fight, rules, pokemon_type, move_type";
+const KEYS_SAID: &str = "name, floors, look, tileset, music, pokemon, items, recruiting, upward, level, boss, boss_guards, boss_hp, boss_arena, boss_shape, boss_music, boss_says, boss_anger, boss_falls, boss_item, boss_moves, boss_reinforcements, boss_heal, boss_phase, boss_recruit, boss_cry, boss_at, boss_team_at, boss_floor_items, boss_traps, boss_title, boss_look, boss_map, boss_allies, boss_hero, boss_partner, boss_level, fight, rules, pokemon_type, move_type, rank";
 
 /// A species and the types it is given there.
 type SpeciesTyped = (u16, (u8, u8));
@@ -332,6 +337,8 @@ struct Reading<'a> {
     options: crate::rule_options::RuleOptions,
     species_types: Vec<(usize, SpeciesTyped)>,
     move_types: Vec<(usize, (u16, u8))>,
+    /// The jobs' ranks said, and on which floors.
+    ranks: Vec<(u8, Floors)>,
 }
 
 impl Reading<'_> {
@@ -468,6 +475,7 @@ const KEYS: &[(&str, Handler)] = &[
             }
         }
     }),
+    ("rank", ranks_said),
     ("level", |reading, value| match value.parse::<i32>() {
         Ok(level @ 1..=100) => reading.team_level = Some(level),
         _ => reading.wrong("the team's level coming in, from 1 to 100"),
@@ -487,6 +495,42 @@ fn listed(value: &str) -> impl Iterator<Item = &str> {
 /// A song by its number or its word.
 fn song(value: &str) -> Option<u16> {
     value.parse::<u16>().ok().or_else(|| crate::songs::SONGS.iter().find(|song| plain(song.word) == plain(value)).map(|song| song.number))
+}
+
+/// `rank: E floors 1-2, D floor 3` (or `E 1-2`), `rank: C`: the jobs' ranks.
+fn ranks_said(reading: &mut Reading<'_>, value: &str) {
+    for part in listed(value) {
+        match rank_part(part) {
+            Ok(said) => reading.ranks.push(said),
+            Err(why) => reading.wrong(why),
+        }
+    }
+}
+
+/// `E floors 1-2`, `E 1-2`, `C`: a rank and its floors.
+fn rank_part(part: &str) -> Result<(u8, Floors), String> {
+    let (said, floors) = match on_floors(part) {
+        (said, None) => match said.split_once(' ') {
+            // (`E 1-2`: the floors without their word.)
+            Some((rank, range)) => on_floors(&format!("{rank} floors {range}")).1.map_or((said, None), |floors| (rank, Some(floors))),
+            None => (said, None),
+        },
+        said => said,
+    };
+    match crate::jobs::rank_named(said) {
+        Some(rank) => Ok((rank, floors)),
+        None => Err(format!("\"{said}\" is not a job rank (E, D, C, B, A, S, then 1* to 9*; \"E floors 1-2, D floor 3\")")),
+    }
+}
+
+/// The jobs' rank on a floor: the last said for it, else as hard as the
+/// levels of those met there (`levels`: each with its floors).
+fn rank_on(said: &[(u8, Floors)], levels: &[(i32, Floors)], at: usize) -> u8 {
+    if let Some((rank, _)) = said.iter().rev().find(|(_, floors)| on(*floors, at)) {
+        return *rank;
+    }
+    let here: Vec<i32> = levels.iter().filter(|(_, floors)| on(*floors, at)).map(|(level, _)| *level).collect();
+    crate::jobs::rank_for_level(here.iter().sum::<i32>() / (here.len().max(1) as i32))
 }
 
 fn floors_said(reading: &mut Reading<'_>, value: &str) {
@@ -639,6 +683,7 @@ pub fn read(text: &str, tables: &Tables) -> Result<Own, Vec<Diagnostic>> {
         options: crate::rule_options::RuleOptions::default(),
         species_types: Vec::new(),
         move_types: Vec::new(),
+        ranks: Vec::new(),
     };
     for (at, line) in text.lines().enumerate() {
         let line = line.split('#').next().unwrap_or_default().trim();
@@ -715,11 +760,15 @@ impl Reading<'_> {
         for at in 1..=self.floors {
             made.push(self.floor_made(floor, at)?);
         }
+        let levels: Vec<(i32, Floors)> = self.foes.iter().map(|(enemy, floors)| (enemy.stats.level, *floors)).collect();
+        let mut ranks: Vec<u8> = (1..=self.floors).map(|at| rank_on(&self.ranks, &levels, at)).collect();
         let says = self.arena(floor, &mut made)?;
+        // (The fight's floor as the last: no job goes there.)
+        ranks.resize(made.len(), ranks.last().copied().unwrap_or(1));
         let species_types: Vec<(u16, (u8, u8))> = self.species_types.into_iter().map(|(_, typed)| typed).collect();
         let move_types: Vec<(u16, u8)> = self.move_types.into_iter().map(|(_, typed)| typed).collect();
         let table = DungeonTable { goes_up: self.goes_up, rules, music: self.music.unwrap_or(base.music), floors: made };
-        Ok(Own { name: self.name, table, team_level: self.team_level, boss: says, species_types, move_types })
+        Ok(Own { name: self.name, table, team_level: self.team_level, boss: says, species_types, move_types, ranks })
     }
 
     /// A floor of it, the game's floor taken: those met there (by thresholds
@@ -984,15 +1033,26 @@ pub(crate) fn met(tables: &Tables, species: u16, level: i32) -> Option<&Enemy> {
         .min_by_key(|enemy| (enemy.stats.level - level).abs())
 }
 
-/// The dungeon added after the game's: its number.
-pub fn add(tables: &mut Tables, name: String, dungeon: DungeonTable) -> u16 {
+/// The dungeon added after the game's, the ranks of its floors for the
+/// jobs with it: its number.
+pub fn add(tables: &mut Tables, name: String, dungeon: DungeonTable, ranks: &[u8]) -> u16 {
     let id = tables.dungeons.len() as u16;
     tables.dungeons.push(dungeon);
     while tables.dungeon_names.len() <= id as usize {
         tables.dungeon_names.push(String::new());
     }
     tables.dungeon_names[id as usize] = name;
+    rank_floors(tables, id, ranks);
     id
+}
+
+/// The ranks of a dungeon's floors, as the boards read them (`JobTables::floor_ranks`).
+pub fn rank_floors(tables: &mut Tables, id: u16, ranks: &[u8]) {
+    let listed = &mut tables.jobs.floor_ranks;
+    if listed.len() <= id as usize {
+        listed.resize(id as usize + 1, Vec::new());
+    }
+    listed[id as usize] = ranks.to_vec();
 }
 
 /// A dungeon of the game by its name (or number), and one of its floors
@@ -1118,5 +1178,21 @@ mod tests {
         }
         let said: Vec<String> = KEYS_SAID.split(", ").map(plain).collect();
         assert!(KEYS.iter().all(|(key, _)| said.iter().any(|known| known == key)), "each key told in the faults");
+    }
+
+    /// `rank:` read, by floors or for all; a floor it does not name ranked
+    /// by the levels met there.
+    #[test]
+    fn the_jobs_ranks_of_its_floors() {
+        assert_eq!(rank_part("E floors 1-2"), Ok((1, Some((1, 2)))));
+        assert_eq!(rank_part("D 3"), Ok((2, Some((3, 3)))));
+        assert_eq!(rank_part("2*"), Ok((8, None)));
+        assert!(rank_part("Z floor 1").is_err() && rank_part("floors 1-2").is_err());
+        let said = [rank_part("E 1-2").unwrap(), rank_part("C floor 2").unwrap()];
+        let levels = [(5, None), (30, Some((4, 4)))];
+        // (Floor 2: the last said; floor 3: level 5, E; floor 4: about 17, D.)
+        let ranks: Vec<u8> = (1..=4).map(|at| rank_on(&said, &levels, at)).collect();
+        assert_eq!(ranks, [1, 3, 1, 2]);
+        assert_eq!(rank_on(&[rank_part("B").unwrap()], &levels, 9), 4);
     }
 }

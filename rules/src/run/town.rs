@@ -525,7 +525,7 @@ impl Run {
     }
 
     /// A board filled if it is empty: its jobs are in the dungeons open so
-    /// far.
+    /// far, none on a floor laid out by hand (a boss's arena).
     pub fn fill_board(&mut self, outlaws: bool, open: &[u16], draw: &mut Draw) {
         let filled = if outlaws { &self.team.progress.outlaws } else { &self.team.progress.offers };
         if !filled.is_empty() {
@@ -534,7 +534,11 @@ impl Run {
         let book = self.book.clone();
         let floors: Vec<(u16, u32)> =
             open.iter().map(|&dungeon| (dungeon, book.tables.dungeons.get(dungeon as usize).map_or(0, |dungeon| dungeon.floors.len() as u32))).collect();
-        let offered = jobs::offers(&book.tables.jobs, &floors, outlaws, |dungeon, floor| book.floor_species(dungeon, floor), |below| draw.below(below));
+        let mut offered = jobs::offers(&book.tables.jobs, &floors, outlaws, |dungeon, floor| book.floor_species(dungeon, floor), |below| draw.below(below));
+        offered.retain(|job| {
+            let floors = book.tables.dungeons.get(job.dungeon as usize).map(|dungeon| &dungeon.floors);
+            floors.and_then(|floors| floors.get((job.floor as usize).saturating_sub(1))).is_some_and(|floor| floor.fixed.is_none())
+        });
         match outlaws {
             true => self.team.progress.outlaws = offered,
             false => self.team.progress.offers = offered,

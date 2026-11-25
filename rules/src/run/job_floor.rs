@@ -16,6 +16,12 @@ pub fn job_title(job: &Job, book: &Book) -> String {
     job.title(|monster| book.species_name(monster), |item| book.item_name(item))
 }
 
+/// A job in full, as a board shows it read, by the names of the game's
+/// monsters, items and dungeons.
+pub fn job_details(job: &Job, book: &Book) -> String {
+    job.details(|monster| book.species_name(monster), |item| book.item_name(item), |dungeon| book.dungeon_name(dungeon))
+}
+
 impl Run {
     /// The floor's jobs: who waits there to be found or for an item, and
     /// the outlaw, as one of the monsters of the floor. (Those who wait are

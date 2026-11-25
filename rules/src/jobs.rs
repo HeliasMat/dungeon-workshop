@@ -27,7 +27,8 @@ pub const DEPARTURE: u16 = 0x7F00;
 const OFFERED: usize = 8;
 pub const HELD: usize = 8;
 /// What the guild leaves the team of a reward, before its graduation;
-/// from the chapter of the graduation on, the whole reward.
+/// from the chapter of the graduation on, the whole reward. (A game of
+/// one's own pays in full, unless it says `guild_cut: yes`.)
 const TEAM_SHARE: i32 = 10;
 pub const GRADUATION: i32 = 29;
 /// What clients ask to be brought: Oran, Pecha, Cheri, Rawst and Chesto
@@ -57,6 +58,25 @@ const EXCLUSIVE: usize = 4;
 const HIDDEN_MONEY: usize = 5;
 const JOINS: usize = 6;
 const EGG_ONE_IN: usize = 8;
+
+/// A job's rank by its letter (`E` … `S`) or its stars (`1*` … `9*`).
+pub fn rank_named(word: &str) -> Option<u8> {
+    let word = word.trim().to_ascii_uppercase();
+    if let Some(stars) = word.strip_suffix('*') {
+        let stars: u8 = stars.trim().parse().ok().filter(|stars| (1..=TOP_RANK - RANKS_IN_LETTERS.len() as u8).contains(stars))?;
+        return Some(RANKS_IN_LETTERS.len() as u8 + stars);
+    }
+    let mut letters = word.chars();
+    let letter = letters.next().filter(|_| letters.next().is_none())?;
+    RANKS_IN_LETTERS.iter().position(|&known| known == letter).map(|at| at as u8 + 1)
+}
+
+/// The rank of a floor whose foes are of that level, for a dungeon that
+/// does not say it: E below 9, D below 18, C below 27… (the game's own
+/// floors go about so).
+pub fn rank_for_level(level: i32) -> u8 {
+    (1 + level.max(0) / 9).min(i32::from(TOP_RANK)) as u8
+}
 
 /// An exploration rank: its name, the points that lead past it, the room the
 /// storage has at it, the item given on leaving it (0: none).
@@ -178,7 +198,7 @@ impl Job {
     /// What the job asks, in a few words.
     pub fn title(&self, monster: impl Fn(u16) -> String, item: impl Fn(u16) -> String) -> String {
         match self.kind {
-            Kind::Rescue => format!("Sauver {}", monster(self.client)),
+            Kind::Rescue => format!("Rescue {}", monster(self.client)),
             Kind::Deliver => format!("{} for {}", item(self.item), monster(self.client)),
             Kind::Outlaw => format!("Arrest {}", monster(self.client)),
             Kind::Escort => format!("Escort {} to {}", monster(self.client), monster(self.item)),
@@ -194,6 +214,34 @@ impl Job {
             true => "?".to_string(),
             false => self.reward.to_string(),
         }
+    }
+
+    /// The job in full, as a board shows it read: who asks (or who is
+    /// wanted), what for, where, how hard, what it gives (`dungeon` names
+    /// its place).
+    pub fn details(&self, monster: impl Fn(u16) -> String, item: impl Fn(u16) -> String, dungeon: impl Fn(u16) -> String) -> String {
+        let (who, objective) = match self.kind {
+            Kind::Rescue => ("Client", format!("Rescue {}.", monster(self.client))),
+            Kind::Deliver => ("Client", format!("Deliver {} to {}.", item(self.item), monster(self.client))),
+            Kind::Escort => ("Client", format!("Escort {} to {}.", monster(self.client), monster(self.item))),
+            Kind::Explore => ("Client", format!("Reach the floor with {}.", monster(self.client))),
+            Kind::Find => ("Client", format!("Find {}.", item(self.item))),
+            Kind::Outlaw => ("Outlaw", format!("Arrest {}.", monster(self.client))),
+            Kind::Stolen => ("Outlaw", format!("Take back {} from {}.", item(self.item), monster(self.client))),
+        };
+        let reward = match (self.secret, self.reward, self.prize) {
+            (true, ..) => "?".to_string(),
+            (false, money, 0) => format!("{money} Poké"),
+            (false, 0, prize) => item(prize),
+            (false, money, prize) => format!("{money} Poké + {}", item(prize)),
+        };
+        format!(
+            "{who}: {}\nObjective: {objective}\nPlace: {} {}\nDifficulty: {}  Reward: {reward}",
+            monster(self.client),
+            dungeon(self.dungeon),
+            floor_label(self.floor),
+            self.letter()
+        )
     }
 }
 
@@ -316,12 +364,30 @@ pub struct Listing {
     cursor: usize,
     /// The board read is the outlaws'.
     pub outlaws: bool,
+    /// The job under the cursor read in full, and the choice under the
+    /// cursor there (0: take it, or give it up; 1: back to the list).
+    reading: Option<usize>,
 }
 
 impl Listing {
     /// One of the two boards.
     pub fn board(outlaws: bool) -> Self {
-        Self { cursor: 0, outlaws }
+        Self { cursor: 0, outlaws, reading: None }
+    }
+
+    /// A key on a job read in full: true once its first choice is made;
+    /// back to the list on any choice or Cancel.
+    fn press_reading(&mut self, input: Input) -> bool {
+        let Some(choice) = self.reading.as_mut() else {
+            return false;
+        };
+        match input {
+            Input::Up | Input::Down => *choice = 1 - *choice,
+            Input::Confirm => return self.reading.take() == Some(0),
+            Input::Cancel => self.reading = None,
+            _ => {}
+        }
+        false
     }
 
     fn step(&mut self, input: Input, count: usize) {
@@ -333,17 +399,42 @@ impl Listing {
         }
     }
 
-    /// A key at a board: Confirm takes the job under the cursor (if there
-    /// is room for it); true once the board is left.
+    /// A key at a board: Confirm reads the job under the cursor in full,
+    /// and there takes it (if there is room for it); true once the board
+    /// is left.
     pub fn press_board(&mut self, input: Input, offered: &mut Vec<Job>, held: &mut Vec<Job>) -> bool {
+        if self.reading.is_some() {
+            if self.press_reading(input) && self.cursor < offered.len() && held.len() < HELD {
+                held.push(offered.remove(self.cursor));
+                self.step(Input::Confirm, offered.len());
+            }
+            return false;
+        }
         self.step(input, offered.len());
         match input {
             Input::Cancel => return true,
-            Input::Confirm if self.cursor < offered.len() && held.len() < HELD => {
-                held.push(offered.remove(self.cursor));
-                self.step(input, offered.len());
+            Input::Confirm if self.cursor < offered.len() => self.reading = Some(0),
+            Input::Confirm => return true,
+            _ => {}
+        }
+        false
+    }
+
+    /// A key at the Job List, the jobs held: Confirm reads the one under
+    /// the cursor in full, and there gives it up; true once the list is left.
+    pub fn press_held(&mut self, input: Input, held: &mut Vec<Job>) -> bool {
+        if self.reading.is_some() {
+            if self.press_reading(input) && self.cursor < held.len() {
+                held.remove(self.cursor);
+                self.step(Input::Confirm, held.len());
             }
-            Input::Confirm if offered.is_empty() => return true,
+            return false;
+        }
+        self.step(input, held.len());
+        match input {
+            Input::Cancel => return true,
+            Input::Confirm if self.cursor < held.len() => self.reading = Some(0),
+            Input::Confirm => return true,
             _ => {}
         }
         false
@@ -362,15 +453,42 @@ impl Listing {
 
     /// What a board shows: each job by what it asks (`title`) and its
     /// reward, and where the one under the cursor is (`name` names a
-    /// dungeon).
-    pub fn view_board(&self, offered: &[Job], held: &[Job], title: impl Fn(&Job) -> String, name: impl Fn(u16) -> String) -> View {
+    /// dungeon); a job read in full, what `detail` says of it (`Job::details`)
+    /// and its two choices.
+    pub fn view_board(
+        &self,
+        offered: &[Job],
+        held: &[Job],
+        title: impl Fn(&Job) -> String,
+        detail: impl Fn(&Job) -> String,
+        name: impl Fn(u16) -> String,
+    ) -> View {
+        if let (Some(choice), Some(job)) = (self.reading, offered.get(self.cursor)) {
+            let take = if held.len() < HELD { "Take job" } else { "Job List full" };
+            return View { message: detail(job), options: vec![take.to_string(), "Back".to_string()], cursor: choice };
+        }
         let line = |job: &Job| format!("{}  [CS:G]{}[CR]  {}", title(job), job.shown_reward(), job.letter());
         let message = match (offered.get(self.cursor), held.len() < HELD) {
+            (None, _) if self.outlaws => "No outlaw is wanted.".to_string(),
             (None, _) => "No job is posted.".to_string(),
             (_, false) => "You cannot take any more jobs.".to_string(),
             (Some(job), _) => format!("{} {}", name(job.dungeon), floor_label(job.floor)),
         };
         View { message: format!("{message}\nJobs taken: {} / {HELD}", held.len()), options: offered.iter().map(line).collect(), cursor: self.cursor }
+    }
+
+    /// What the Job List shows: the jobs held, each by what it asks and
+    /// where; one read in full, what `details` says and its two choices.
+    pub fn view_held(&self, held: &[Job], title: impl Fn(&Job) -> String, detail: impl Fn(&Job) -> String, name: impl Fn(u16) -> String) -> View {
+        if let (Some(choice), Some(job)) = (self.reading, held.get(self.cursor)) {
+            return View { message: detail(job), options: vec!["Give up".to_string(), "Back".to_string()], cursor: choice };
+        }
+        let line = |job: &Job| format!("{}  {} {}  {}", title(job), name(job.dungeon), floor_label(job.floor), job.letter());
+        let message = match held.is_empty() {
+            true => "Job List: no job taken.".to_string(),
+            false => format!("Job List: {} / {HELD}", held.len()),
+        };
+        View { message, options: held.iter().map(line).collect(), cursor: self.cursor }
     }
 
     pub fn view_departure(&self, dungeons: &[u16], held: &[Job], name: impl Fn(u16) -> String) -> View {
@@ -534,13 +652,19 @@ mod tests {
         let (mut offered, mut held) = (jobs.clone(), Vec::new());
         let mut board = Listing::board(false);
         let title = |job: &Job| job.title(|monster| format!("monster {monster}"), |item| format!("item {item}"));
-        let view = board.view_board(&offered, &held, title, |dungeon| format!("dungeon {dungeon}"));
-        assert_eq!(view.options[0], "Sauver monster 7  [CS:G]200[CR]  E");
+        let detail = |job: &Job| job.details(|monster| format!("monster {monster}"), |item| format!("item {item}"), |dungeon| format!("dungeon {dungeon}"));
+        let view = board.view_board(&offered, &held, title, detail, |dungeon| format!("dungeon {dungeon}"));
+        assert_eq!(view.options[0], "Rescue monster 7  [CS:G]200[CR]  E");
         assert_eq!(view.options[1], "Arrest monster 7  [CS:G]500[CR]  C");
         assert_eq!(view.options[2], "item 70 for monster 7  [CS:G]100[CR]  E");
         assert!(view.message.starts_with("dungeon 3 floor 2\n"), "{}", view.message);
-        // The first and the last are taken.
-        for input in [Confirm, Down, Confirm] {
+        // A job read in full: who, what, where, how hard, what it gives.
+        assert!(!board.press_board(Confirm, &mut offered, &mut held));
+        let view = board.view_board(&offered, &held, title, detail, |dungeon| format!("dungeon {dungeon}"));
+        assert_eq!(view.options, ["Take job", "Back"]);
+        assert_eq!(view.message, "Client: monster 7\nObjective: Rescue monster 7.\nPlace: dungeon 3 floor 2\nDifficulty: E  Reward: 200 Poké + item 71");
+        // Back, read again; the first and the last are taken.
+        for input in [Down, Confirm, Confirm, Confirm, Down, Confirm, Confirm] {
             assert!(!board.press_board(input, &mut offered, &mut held));
         }
         assert_eq!((offered.clone(), held.clone()), (vec![jobs[1]], vec![jobs[0], jobs[2]]));
@@ -557,6 +681,51 @@ mod tests {
         assert_eq!(held, [jobs[2]]);
         assert_eq!(from_text(&to_text(&held)), held);
         assert_eq!(from_text("3:2:200"), []);
+    }
+
+    #[test]
+    fn the_job_list_gives_jobs_up() {
+        use Input::*;
+        let job = |floor| Job { dungeon: 3, floor, rank: 2, client: 7, ..Job::default() };
+        let mut held = vec![job(1), job(2), job(3)];
+        let mut list = Listing::board(false);
+        let title = |job: &Job| format!("job {}", job.floor);
+        let detail = |job: &Job| format!("details {}", job.floor);
+        let view = list.view_held(&held, title, detail, |dungeon| format!("dungeon {dungeon}"));
+        assert_eq!((view.message.as_str(), view.options[1].as_str()), ("Job List: 3 / 8", "job 2  dungeon 3 floor 2  D"));
+        // The second read, kept (Back), then given up.
+        for input in [Down, Confirm, Down, Confirm, Confirm] {
+            assert!(!list.press_held(input, &mut held));
+        }
+        assert_eq!(list.view_held(&held, title, detail, |_| String::new()).options, ["Give up", "Back"]);
+        assert!(!list.press_held(Confirm, &mut held));
+        assert_eq!(held, [job(1), job(3)]);
+        assert!(list.press_held(Cancel, &mut held));
+        assert!(list.press_held(Confirm, &mut Vec::new()), "nothing held: left");
+    }
+
+    #[test]
+    fn the_outlaw_board_wants_outlaws() {
+        use Input::*;
+        let tables = tables();
+        let living = |_: u16, floor: u32| vec![20 + floor as u16];
+        let mut offered = offers(&tables, &[(3, 2)], true, living, |below| (below - 1).min(3));
+        assert!(offered.iter().all(|job| job.kind == Kind::Outlaw), "{offered:?}");
+        let (mut board, mut held) = (Listing::board(true), Vec::new());
+        let title = |job: &Job| job.title(|monster| format!("monster {monster}"), |item| format!("item {item}"));
+        let detail = |job: &Job| job.details(|monster| format!("monster {monster}"), |item| format!("item {item}"), |_| "Den".to_string());
+        assert!(!board.press_board(Confirm, &mut offered, &mut held));
+        assert!(board.view_board(&offered, &held, title, detail, |_| String::new()).message.starts_with("Outlaw: monster 22\nObjective: Arrest monster 22."));
+        assert!(!board.press_board(Confirm, &mut offered, &mut held));
+        assert_eq!((held.len(), held[0].kind, offered.len()), (1, Kind::Outlaw, OFFERED - 1));
+        assert_eq!(Listing::board(true).view_board(&[], &[], title, detail, |_| String::new()).message, "No outlaw is wanted.\nJobs taken: 0 / 8");
+    }
+
+    #[test]
+    fn ranks_by_name_and_by_level() {
+        assert_eq!([rank_named("E"), rank_named("c"), rank_named("S"), rank_named("1*"), rank_named("9*")], [Some(1), Some(3), Some(6), Some(7), Some(15)]);
+        assert_eq!([rank_named("F"), rank_named("10*"), rank_named("EE")], [None, None, None]);
+        assert_eq!([rank_for_level(5), rank_for_level(9), rank_for_level(20), rank_for_level(500)], [1, 2, 3, TOP_RANK]);
     }
 
     #[test]
