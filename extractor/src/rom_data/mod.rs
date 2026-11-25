@@ -411,5 +411,6 @@ pub(crate) fn move_slot(id: u16, m: &rom_formats::moves::Move) -> MoveSlot {
         ai_target_range: m.ai_target_range,
         ai_chance: m.ai_chance as i32,
         linked: false,
+        talented: false,
     }
 }

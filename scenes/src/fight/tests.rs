@@ -32,6 +32,7 @@ fn slot(id: u16, power: i32, type_id: u8, category: u8, strikes: i32) -> MoveSlo
         ai_target_range: 0,
         ai_chance: 0,
         linked: false,
+        talented: false,
     }
 }
 

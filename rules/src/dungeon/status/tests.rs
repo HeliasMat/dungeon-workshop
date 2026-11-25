@@ -584,6 +584,7 @@ pub(crate) fn slot() -> MoveSlot {
         ai_target_range: 0,
         ai_chance: 0,
         linked: false,
+        talented: false,
     }
 }
 

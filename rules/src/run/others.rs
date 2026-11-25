@@ -8,15 +8,16 @@
 
 use crate::dungeon::ai::{self, AiChoice, AiUser, Candidate};
 use crate::dungeon::exclusive::effect::NO_WEATHER_DAMAGE;
-use crate::dungeon::status::DEEP_SLEEP;
-use crate::dungeon::{Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held};
+use crate::dungeon::combat::TYPE_COUNT;
+use crate::dungeon::status::{DEEP_SLEEP, item, problems};
+use crate::dungeon::{Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, Tile, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held, iq, stack};
 
 use super::attack::chebyshev;
 use super::dungeon::{DIRECTIONS, Phase, weather_name};
 use super::leader::mobility;
 use super::team::tactic;
 use super::watch::watched;
-use super::{Dungeon, Monster, MonsterId, Run, Side};
+use super::{Book, Dungeon, Monster, MonsterId, Run, Side};
 
 /// What came of a monster's action.
 enum Acted {
@@ -296,11 +297,18 @@ impl Run {
         if !me.alive() || !leader_alive || (me.status.cannot_act() && sleep_use.is_none()) {
             return Acted::Done;
         }
+        // (Item Master: it eats what it holds when that does it good.)
+        if worth_eating(me) {
+            let name = me.name.clone();
+            return self.eats_held(who, &name);
+        }
         let at = me.at;
         let foes: Vec<Pos> = dungeon.monsters.iter().filter(|monster| monster.side == Side::Foe && monster.alive()).map(|monster| monster.at).collect();
         let mut beside: Vec<Pos> =
             dungeon.monsters.iter().filter(|monster| monster.side == Side::Ally && monster.id != who && monster.alive()).map(|monster| monster.at).collect();
         beside.extend(dungeon.shop.as_ref().and_then(|shop| shop.keeper));
+        // (What its IQ keeps it off, it walks round.)
+        beside.extend(shunned(dungeon, me, secondary_kind));
         let walks = mobility(&me.stats, &me.status, secondary_kind);
         let direction = facing_index(me.facing);
         // Its tactic:
@@ -312,8 +320,18 @@ impl Run {
         let low = me.stats.hp * 2 <= me.stats.max_hp;
         let flees = tactic == tactic::GET_AWAY || (tactic == tactic::AVOID_TROUBLE && low) || ability::runs_away(&me.stats, false);
         let close_foe = foes.iter().any(|&foe| chebyshev(at, foe) <= 1);
-        let holds_back =
-            flees || tactic == tactic::KEEP_DISTANCE || (tactic == tactic::AVOID_FIRST_HIT && !close_foe) || ability::stalls(&me.stats, false, close_foe);
+        let confused = me.status.confused();
+        let around = Around { at, leader_at, walks, foes: &foes, beside: &beside };
+        // Dedicated Traveler: it walks first, and strikes only when it has
+        // nowhere to go.
+        let travels = iq::has(&me.stats, iq::DEDICATED_TRAVELER)
+            && !me.status.rooted()
+            && around.ally_step(&dungeon.floor, &mut dungeon.rng.clone(), tactic, low, flees, previous, false).is_some();
+        let holds_back = flees
+            || travels
+            || tactic == tactic::KEEP_DISTANCE
+            || (tactic == tactic::AVOID_FIRST_HIT && !close_foe)
+            || ability::stalls(&me.stats, false, close_foe);
         let choice = if let Some(slot) = sleep_use {
             Some(AiChoice { slot: Some(slot), direction })
         } else if me.status.cannot_attack() || holds_back {
@@ -322,11 +340,21 @@ impl Run {
             Some(AiChoice { slot: None, direction })
         } else {
             // (A leader made a decoy is a foe to its allies.)
-            let others: Vec<Candidate> =
-                foes.iter().map(|&pos| Candidate { pos, hostile: true }).chain([Candidate { pos: leader_at, hostile: leader_decoy }]).collect();
-            let user = AiUser { pos: at, facing: direction, mobility: walks, full_hp: me.stats.hp >= me.stats.max_hp };
+            let seen = |monster: &Monster| monster.alive() && (monster.side == Side::Foe || monster.side == Side::Leader);
+            let others: Vec<Candidate> = dungeon
+                .monsters
+                .iter()
+                .filter(|monster| seen(monster))
+                .map(|monster| candidate(&book, me, monster, monster.side == Side::Foe || leader_decoy))
+                .collect();
+            let user = ai_user(me, direction, walks);
             let moves = me.moves.clone();
             ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &moves, &others)
+        };
+        // Confused, it strikes any way.
+        let choice = match choice {
+            Some(choice) if confused && sleep_use.is_none() => Some(AiChoice { direction: dungeon.rng.rand_int(8) as usize, ..choice }),
+            choice => choice,
         };
         let Some(me) = dungeon.monster_mut(who) else {
             return Acted::Over;
@@ -340,8 +368,6 @@ impl Run {
         if me.status.rooted() {
             return Acted::Done;
         }
-        let confused = me.status.confused();
-        let around = Around { at, leader_at, walks, foes: &foes, beside: &beside };
         let step = around.ally_step(&dungeon.floor, &mut dungeon.rng, tactic, low, flees, previous, confused);
         let Some((dx, dy)) = step else {
             return Acted::Done;
@@ -424,12 +450,14 @@ impl Run {
             self.log.push(book.woke_up(&me.name));
             return Acted::Over;
         }
-        // Hurt, it eats the berry it holds.
-        if matches!(me.stats.held, ORAN_BERRY | SITRUS_BERRY) && me.stats.hp * 2 <= me.stats.max_hp && me.status.embargo_turns == 0 {
-            return self.foe_eats_berry(who, &me.name);
+        // (Item Master: hurt, it eats the berry it holds; ailing, what cures
+        // it.)
+        if worth_eating(&me) {
+            return self.eats_held(who, &me.name);
         }
         let walks = mobility(&me.stats, &me.status, secondary_kind);
-        let occupied = |tile: Pos| tile == at || foes.contains(&tile) || kin.contains(&tile) || Some(tile) == keeper;
+        let avoided = shunned(dungeon, &me, secondary_kind);
+        let occupied = |tile: Pos| tile == at || foes.contains(&tile) || kin.contains(&tile) || Some(tile) == keeper || avoided.contains(&tile);
         // The attack comes first; a monster without one in reach walks.
         let direction = facing_index(me.facing);
         // (Run Away: below half its HP it flees as the terrified do; Stall:
@@ -444,17 +472,18 @@ impl Run {
             // A charged move goes off where its user faces.
             Some(AiChoice { slot: None, direction })
         } else {
-            let hostile = seen_foes.iter().map(|&pos| Candidate { pos, hostile: true });
-            let others: Vec<Candidate> = hostile.chain(kin.iter().map(|&pos| Candidate { pos, hostile: false })).collect();
-            let user = AiUser { pos: at, facing: direction, mobility: walks, full_hp: me.stats.hp >= me.stats.max_hp };
+            let at_tile = |pos: Pos| standing().find(|monster| monster.at == pos);
+            let hostile = seen_foes.iter().filter_map(|&pos| at_tile(pos)).map(|monster| candidate(&book, &me, monster, true));
+            let others: Vec<Candidate> = hostile.chain(kin.iter().filter_map(|&pos| at_tile(pos)).map(|monster| candidate(&book, &me, monster, false))).collect();
+            let user = ai_user(&me, direction, walks);
             ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &me.moves, &others)
         };
         let action = foe_action(&dungeon.floor, &mut dungeon.rng, &me, target, choice, occupied, &foes, walks);
         self.foe_does(who, act, at, action, choice, decoy.map(|(id, _)| id))
     }
 
-    /// A hurt foe eats the Oran or Sitrus Berry it holds.
-    fn foe_eats_berry(&mut self, who: MonsterId, name: &str) -> Acted {
+    /// A monster eats what it holds (Item Master).
+    fn eats_held(&mut self, who: MonsterId, name: &str) -> Acted {
         let book = self.book.clone();
         let constants = &book.tables.constants;
         let dungeon = self.dungeon.as_mut().expect("a dungeon");
@@ -598,9 +627,76 @@ impl Around<'_> {
     }
 }
 
-/// The berries a hurt foe eats.
-const ORAN_BERRY: u16 = 70;
-const SITRUS_BERRY: u16 = 71;
+/// Item Master: whether a monster eats what it holds now, as the berry or
+/// seed does it good: one that heals when hurt, one that cures what ails it.
+fn worth_eating(me: &Monster) -> bool {
+    let (stats, status) = (&me.stats, &me.status);
+    if !iq::has(stats, iq::ITEM_MASTER) || status.embargo_turns > 0 || stack::sticky(stats.held) {
+        return false;
+    }
+    match stack::id(stats.held) {
+        item::ORAN_BERRY | item::SITRUS_BERRY => stats.hp * 2 <= stats.max_hp,
+        item::PECHA_BERRY => status.poisoned,
+        item::RAWST_BERRY => status.burn_turns > 0,
+        item::CHERI_BERRY => status.paralysis_turns > 0,
+        item::HEAL_SEED => status.ailing(),
+        _ => false,
+    }
+}
+
+/// Another monster as the AI of `user` sees it: its status problems, and
+/// for a team member choosing among foes, what makes one worth more (Exp.
+/// Go-Getter: what beating it is worth; Efficiency Expert: the less HP it
+/// has, the game's 500 less its HP).
+fn candidate(book: &Book, user: &Monster, other: &Monster, hostile: bool) -> Candidate {
+    const EFFICIENCY_TOP: i32 = 500;
+    let mut seen = Candidate::new(other.at, hostile);
+    seen.problems = problems(&other.status);
+    if user.team() && !other.team() {
+        seen.worth = match (iq::has(&user.stats, iq::EXP_GO_GETTER), iq::has(&user.stats, iq::EFFICIENCY_EXPERT)) {
+            (true, _) => other.exp_value,
+            (false, true) => EFFICIENCY_TOP - other.stats.hp,
+            _ => 1,
+        }
+        .max(1);
+    }
+    if let Some(chart) = book.tables.types.as_ref() {
+        for (kind, fares) in seen.matchups.iter_mut().enumerate().take(TYPE_COUNT) {
+            *fares = chart.overall(kind as u8, &other.stats);
+        }
+    }
+    seen
+}
+
+/// A monster as its own AI goes by.
+fn ai_user(me: &Monster, facing: usize, mobility: Mobility) -> AiUser {
+    AiUser { pos: me.at, facing, mobility, full_hp: me.stats.hp >= me.stats.max_hp, skills: me.stats.iq_skills, types: me.stats.types }
+}
+
+/// The tiles a monster's IQ keeps it off as it walks: lava it could cross
+/// (Lava Evader), the traps it sees that would go off under it (Trap
+/// Avoider), a Monster House not yet woken (House Avoider).
+fn shunned(dungeon: &Dungeon, me: &Monster, secondary_kind: u8) -> Vec<Pos> {
+    const LAVA: u8 = 1;
+    let floor = &dungeon.floor;
+    let mut tiles = Vec::new();
+    if secondary_kind == LAVA && iq::has(&me.stats, iq::LAVA_EVADER) {
+        tiles.extend(Floor::positions().filter(|&tile| floor.tile(tile) == Tile::Secondary));
+    }
+    if iq::has(&me.stats, iq::TRAP_AVOIDER) {
+        tiles.extend(dungeon.traps.iter().filter(|trap| trap.seen && trap.team != me.team()).map(|trap| trap.at));
+    }
+    if iq::has(&me.stats, iq::HOUSE_AVOIDER) && dungeon.monsters.iter().any(|monster| monster.dormant) {
+        tiles.extend(Floor::positions().filter(|&tile| floor.in_monster_house(tile)));
+    }
+    tiles
+}
+
+/// Confused (or seeing things) without Nontraitor, a monster's blows may
+/// strike its own side.
+pub(crate) fn traitor(me: &Monster) -> bool {
+    me.status.confused() && !iq::has(&me.stats, iq::NONTRAITOR)
+}
 
 /// A foe's action: the attack the AI chose, else fleeing the closest of the
 /// team if terrified, else a step towards `target`; confusion sends it any
@@ -641,7 +737,7 @@ fn foe_action(
             let tile = Pos::new(at.x + dx, at.y + dy);
             if !floor.can_step_as(at, dx, dy, walks) {
                 Action::Wait
-            } else if foes.contains(&tile) {
+            } else if foes.contains(&tile) || (traitor(me) && occupied(tile)) {
                 Action::Attack(dx, dy)
             } else if occupied(tile) {
                 Action::Wait

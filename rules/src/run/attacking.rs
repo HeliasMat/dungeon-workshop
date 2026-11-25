@@ -81,6 +81,8 @@ impl Run {
         };
         let (from, facing, side) = (monster.at, monster.facing, monster.side);
         let spared = monster.status.exclusive.has(NO_FRIENDLY_FIRE);
+        // (Confused without Nontraitor, its blows may strike its own side.)
+        let traitor = super::others::traitor(monster);
         self.show(Sight::Strike(user));
         if let Some(effect) = attack.effect.filter(|effect| effect.on_user()) {
             self.show(Sight::Move { move_id: attack.slot.id, user, from, targets: Vec::new() });
@@ -114,9 +116,9 @@ impl Run {
             .iter()
             .filter(|monster| monster.alive() && monster.id != user && monster.side != Side::Keeper)
             .filter(|monster| match (side, monster.team()) {
-                (Side::Foe, team) => team || Some(monster.id) == decoy,
+                (Side::Foe, team) => team || Some(monster.id) == decoy || traitor,
                 (_, false) => true,
-                (_, true) => monster.status.decoy || friendly_fire,
+                (_, true) => monster.status.decoy || friendly_fire || traitor,
             })
             .map(|monster| (monster.id, monster.at))
             .collect();

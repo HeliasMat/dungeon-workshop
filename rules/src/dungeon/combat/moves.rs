@@ -27,6 +27,7 @@ impl MoveSlot {
             ai_target_range: 0,
             ai_chance: 0,
             linked: false,
+            talented: false,
         }
     }
 }
@@ -104,6 +105,9 @@ pub struct MoveSlot {
     /// one turn.
     #[serde(default)]
     pub linked: bool,
+    /// Given Multitalent's PP (see `iq::keep_boosts`).
+    #[serde(default)]
+    pub talented: bool,
 }
 
 impl MoveSlot {

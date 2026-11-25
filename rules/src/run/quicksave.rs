@@ -92,6 +92,7 @@ impl Run {
         (dungeon.enemy_phase, dungeon.phase, dungeon.wait) = (false, None, 0);
         let leader = dungeon.leader_mut();
         (leader.stats, leader.moves, leader.experience) = (save.stats, moves, Some(experience));
+        leader.tough = crate::dungeon::iq::has(&leader.stats, crate::dungeon::iq::BRICK_TOUGH);
         leader.belly = Some(Belly::from_raw(save.belly));
         leader.status = Statuses::for_species(leader.status.movement);
         leader.status.sleep_turns = save.sleep_turns;
@@ -103,6 +104,7 @@ impl Run {
         let extras = dungeon.monsters.iter_mut().filter(|monster| monster.side == Side::Ally && monster.extra.is_some());
         for (monster, saved) in extras.zip(&save.extras) {
             monster.stats = saved.stats;
+            monster.tough = crate::dungeon::iq::has(&monster.stats, crate::dungeon::iq::BRICK_TOUGH);
             if let Some(experience) = &mut monster.experience {
                 experience.growth.points = saved.exp;
             }
@@ -116,6 +118,7 @@ impl Run {
             Some((stats, moves, experience, movement)) => {
                 if let Some(ally) = dungeon.monsters.iter_mut().find(|monster| is_partner(monster)) {
                     (ally.stats, ally.moves, ally.experience) = (stats, moves, Some(experience));
+                    ally.tough = crate::dungeon::iq::has(&ally.stats, crate::dungeon::iq::BRICK_TOUGH);
                     ally.status = Statuses::for_species(movement);
                 }
             }

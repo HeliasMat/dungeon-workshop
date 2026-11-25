@@ -252,6 +252,8 @@ impl Run {
     /// `None`: no dungeon to leave.
     pub fn leave_dungeon(&mut self) -> Option<Left> {
         let mut dungeon = self.dungeon.take()?;
+        // (What Brick-Tough and Multitalent give is the dungeon's only.)
+        dungeon.monsters.iter_mut().for_each(Monster::unboost);
         let progress = &mut self.team.progress;
         // (An exploration: the eggs at the Day Care grow, an SOS sent may be
         // answered.)

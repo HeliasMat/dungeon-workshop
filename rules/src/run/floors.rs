@@ -541,13 +541,15 @@ impl Run {
                 monster.stats.iq = floor_iq;
             }
             let (iq, group) = (monster.stats.iq, monster.stats.iq_group);
+            let always_on = iq::ALWAYS_ON.iter().fold(0u128, |bits, &skill| bits | 1 << skill);
             monster.stats.iq_skills = if disabled {
                 0
             } else if monster.team() {
-                tables.skills(group, iq) & !switched_off.get(&monster.name).copied().unwrap_or(0)
+                tables.skills(group, iq) & !(switched_off.get(&monster.name).copied().unwrap_or(0) & !always_on)
             } else {
                 tables.enemy_skills(group, iq)
             };
+            iq::keep_boosts(&mut monster.stats, &mut monster.moves, &mut monster.tough);
         }
     }
 
@@ -656,11 +658,15 @@ impl Run {
             return;
         };
         let name = monster.name.clone();
+        let skill_name = self.book.tables.iq_skills.get(skill as usize).cloned().unwrap_or_default();
+        if iq::ALWAYS_ON.contains(&skill) {
+            self.log.push(format!("{name}: {skill_name} can't be turned off."));
+            return;
+        }
         let bit = 1u128 << skill;
         let off = self.team.progress.iq_off.entry(name.clone()).or_default();
         *off ^= bit;
         let now_off = *off & bit != 0;
-        let skill_name = self.book.tables.iq_skills.get(skill as usize).cloned().unwrap_or_default();
         self.log.push(format!("{name}: {skill_name} {}.", if now_off { "off" } else { "on" }));
         self.keep_iq();
     }

@@ -30,6 +30,33 @@ pub(crate) const QUICK_HEALER: u8 = 53;
 pub(crate) const CLUTCH_PERFORMER: u8 = 63;
 pub(crate) const CRITICAL_DODGER: u8 = 64;
 pub(crate) const MAP_SURVEYOR: u8 = 65;
+pub(crate) const ITEM_CATCHER: u8 = 2;
+pub(crate) const COURSE_CHECKER: u8 = 3;
+pub(crate) const NONTRAITOR: u8 = 7;
+pub(crate) const STATUS_CHECKER: u8 = 8;
+pub(crate) const WEAK_TYPE_PICKER: u8 = 11;
+pub(crate) const LAVA_EVADER: u8 = 20;
+pub(crate) const ESCAPIST: u8 = 24;
+pub(crate) const BRICK_TOUGH: u8 = 56;
+pub(crate) const MULTITALENT: u8 = 57;
+pub(crate) const EXP_GO_GETTER: u8 = 9;
+pub(crate) const EFFICIENCY_EXPERT: u8 = 10;
+pub(crate) const TRAP_AVOIDER: u8 = 14;
+pub(crate) const HOUSE_AVOIDER: u8 = 15;
+pub(crate) const SELF_CURER: u8 = 18;
+pub(crate) const GAP_PROBER: u8 = 46;
+
+/// What Brick-Tough adds to the max HP and Multitalent to each move's
+/// PP while they are on (the game's, read from its arm9).
+pub(crate) const BRICK_TOUGH_HP: i32 = 10;
+pub(crate) const MULTITALENT_PP: i32 = 5;
+
+/// Below these IQs a wild monster goes without Exclusive Move-User and
+/// Item Master (the game's, read from its arm9).
+const MIN_WILD_IQ_EXCLUSIVE_MOVE_USER: i32 = 331;
+const MIN_WILD_IQ_ITEM_MASTER: i32 = 150;
+/// The skills that cannot be switched off, as in the game.
+pub(crate) const ALWAYS_ON: [u8; 3] = [ESCAPIST, BRICK_TOUGH, MULTITALENT];
 
 /// How many skill numbers there are (1 to 68; 0 is none).
 pub const SKILLS: usize = 69;
@@ -61,8 +88,9 @@ pub struct IqTables {
 /// Ends a group's list of skills.
 const END_OF_GROUP: u8 = 0xFF;
 
-/// The skills only a team makes use of: enemies go without them.
-const TEAM_ONLY: [u8; 7] = [TRAP_SEER, STAIR_SENSOR, MAP_SURVEYOR, ITEM_MASTER, EXP_ELITE, DEDICATED_TRAVELER, EXCLUSIVE_MOVE_USER];
+/// The skills only a team makes use of, and those the game takes from
+/// wild monsters (Dedicated Traveler, Lava Evader, Weak-Type Picker).
+const TEAM_ONLY: [u8; 7] = [TRAP_SEER, STAIR_SENSOR, MAP_SURVEYOR, EXP_ELITE, DEDICATED_TRAVELER, LAVA_EVADER, WEAK_TYPE_PICKER];
 
 impl IqTables {
     /// The skills a monster of `group` has at `iq`, as bits by skill
@@ -93,10 +121,18 @@ impl IqTables {
         skills
     }
 
-    /// Those of an enemy at its floor's IQ, less the team's own skills.
+    /// Those of an enemy at its floor's IQ, less the team's own skills;
+    /// Exclusive Move-User and Item Master only past an IQ (the game's
+    /// `UpdateIqSkills`).
     pub(crate) fn enemy_skills(&self, group: u8, iq: i32) -> u128 {
-        let team_only = TEAM_ONLY.iter().fold(0u128, |bits, &skill| bits | 1 << skill);
-        self.skills(group, iq) & !team_only
+        let mut kept_off = TEAM_ONLY.iter().fold(0u128, |bits, &skill| bits | 1 << skill);
+        if iq < MIN_WILD_IQ_EXCLUSIVE_MOVE_USER {
+            kept_off |= 1 << EXCLUSIVE_MOVE_USER;
+        }
+        if iq < MIN_WILD_IQ_ITEM_MASTER {
+            kept_off |= 1 << ITEM_MASTER;
+        }
+        self.skills(group, iq) & !kept_off
     }
 
     /// What eating a Gummi gives a monster of these types: IQ points and
@@ -118,6 +154,34 @@ impl IqTables {
 /// Whether a monster has a skill on.
 pub fn has(stats: &Stats, skill: u8) -> bool {
     (skill as usize) < SKILLS && stats.iq_skills & (1 << skill) != 0
+}
+
+/// Brick-Tough's HP and Multitalent's PP, given or taken back as the
+/// skills come on or off: `boosted` tells whether the HP are given.
+pub(crate) fn keep_boosts(stats: &mut Stats, moves: &mut [super::combat::MoveSlot], boosted: &mut bool) {
+    let tough = has(stats, BRICK_TOUGH);
+    if tough != *boosted {
+        *boosted = tough;
+        let by = if tough { BRICK_TOUGH_HP } else { -BRICK_TOUGH_HP };
+        stats.max_hp = (stats.max_hp + by).max(1);
+        stats.hp = if tough { stats.hp + by } else { stats.hp.min(stats.max_hp) };
+    }
+    let talented = has(stats, MULTITALENT);
+    for slot in moves.iter_mut().filter(|slot| slot.talented != talented) {
+        slot.talented = talented;
+        let by = if talented { MULTITALENT_PP } else { -MULTITALENT_PP };
+        slot.max_pp = (slot.max_pp + by).max(1);
+        slot.pp = if talented { slot.pp + by } else { slot.pp.min(slot.max_pp) };
+    }
+}
+
+/// Self-Curer: a status problem lasts half as long (`extra` the turn it
+/// starts on, for those that count it).
+pub(crate) fn cure_sooner(stats: &Stats, turns: &mut i32, extra: i32) {
+    const LASTING: i32 = 100;
+    if has(stats, SELF_CURER) && *turns < LASTING && *turns > extra {
+        *turns = (*turns - extra + 1) / 2 + extra;
+    }
 }
 
 /// The skills a monster has that it did not have before, by number.
@@ -165,6 +229,40 @@ mod tests {
         tables.groups[0].insert(0, MAP_SURVEYOR);
         assert_eq!(tables.skills(0, 10), 1 << MAP_SURVEYOR | 1 << AGGRESSOR);
         assert_eq!(tables.enemy_skills(0, 10), 1 << AGGRESSOR);
+    }
+
+    #[test]
+    fn wild_monsters_need_iq_for_two_skills() {
+        let mut tables = tables();
+        tables.required.resize(SKILLS, 0);
+        (tables.required[ITEM_MASTER as usize], tables.required[EXCLUSIVE_MOVE_USER as usize]) = (-1, -1);
+        tables.groups[0] = vec![ITEM_MASTER, EXCLUSIVE_MOVE_USER, LAVA_EVADER, 0xFF];
+        assert_eq!(tables.skills(0, 1), 1 << ITEM_MASTER | 1 << EXCLUSIVE_MOVE_USER | 1 << LAVA_EVADER);
+        assert_eq!(tables.enemy_skills(0, 149), 0);
+        assert_eq!(tables.enemy_skills(0, 150), 1 << ITEM_MASTER);
+        assert_eq!(tables.enemy_skills(0, 331), 1 << ITEM_MASTER | 1 << EXCLUSIVE_MOVE_USER);
+    }
+
+    #[test]
+    fn brick_tough_and_multitalent_give_and_take_back() {
+        let mut stats = Stats { level: 5, max_hp: 30, hp: 30, attack: 9, defense: 9, sp_attack: 9, sp_defense: 9, types: (1, 0), abilities: [0, 0], held: 0, iq: 1, iq_group: 0, iq_skills: 0, female: false };
+        let mut moves = [super::super::combat::MoveSlot { pp: 3, max_pp: 10, ..super::super::combat::MoveSlot::fallback_regular_attack() }];
+        let (hp, mut tough) = (stats.max_hp, false);
+        stats.iq_skills = 1 << BRICK_TOUGH | 1 << MULTITALENT;
+        keep_boosts(&mut stats, &mut moves, &mut tough);
+        keep_boosts(&mut stats, &mut moves, &mut tough);
+        assert_eq!((stats.max_hp, moves[0].max_pp, moves[0].pp), (hp + BRICK_TOUGH_HP, 10 + MULTITALENT_PP, 3 + MULTITALENT_PP));
+        stats.iq_skills = 0;
+        keep_boosts(&mut stats, &mut moves, &mut tough);
+        // (The PP left stay, up to the max.)
+        assert_eq!((stats.max_hp, moves[0].max_pp, moves[0].pp), (hp, 10, 8));
+        // Self-Curer halves a status problem's turns.
+        let mut turns = 9;
+        cure_sooner(&stats, &mut turns, 1);
+        assert_eq!(turns, 9);
+        stats.iq_skills = 1 << SELF_CURER;
+        cure_sooner(&stats, &mut turns, 1);
+        assert_eq!(turns, 5);
     }
 
     #[test]

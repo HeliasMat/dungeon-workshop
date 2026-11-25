@@ -72,6 +72,8 @@ pub struct Monster {
     pub looks_like: Option<u16>,
     /// Defeated: the frames before it leaves the list, seen blinking out.
     pub fading: Option<u32>,
+    /// Given Brick-Tough's HP (see `iq::keep_boosts`).
+    pub tough: bool,
 }
 
 impl Monster {
@@ -99,11 +101,20 @@ impl Monster {
             identity: None,
             looks_like: None,
             fading: None,
+            tough: false,
         }
     }
 
     pub fn alive(&self) -> bool {
         self.stats.is_alive()
+    }
+
+    /// What Brick-Tough and Multitalent gave taken back, as the team leaves
+    /// the dungeon.
+    pub(crate) fn unboost(&mut self) {
+        let skills = std::mem::take(&mut self.stats.iq_skills);
+        crate::dungeon::iq::keep_boosts(&mut self.stats, &mut self.moves, &mut self.tough);
+        self.stats.iq_skills = skills;
     }
 
     /// One of the player's team.

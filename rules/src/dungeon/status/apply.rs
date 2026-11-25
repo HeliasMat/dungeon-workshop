@@ -138,6 +138,63 @@ fn kept_off(effect: MoveEffect, stats: &Stats, statuses: &Statuses) -> bool {
         || (effect == Sleep && crate::dungeon::iq::has(stats, crate::dungeon::iq::NONSLEEPER))
 }
 
+/// A monster's status problems as bits, for who checks before giving one
+/// again (Status Checker): see [`problems`] and [`problem_of`].
+pub(crate) mod problem {
+    pub const ASLEEP: u16 = 1;
+    pub const POISONED: u16 = 2;
+    pub const BURNED: u16 = 4;
+    pub const PARALYZED: u16 = 8;
+    pub const FROZEN: u16 = 16;
+    pub const CONFUSED: u16 = 32;
+    pub const INFATUATED: u16 = 64;
+    pub const SEEDED: u16 = 128;
+    pub const CURSED: u16 = 256;
+    pub const YAWNING: u16 = 512;
+    pub const CRINGING: u16 = 1024;
+}
+
+/// The status problems a monster has, as [`problem`] bits.
+pub(crate) fn problems(statuses: &Statuses) -> u16 {
+    use problem::*;
+    [
+        (statuses.asleep(), ASLEEP),
+        (statuses.poisoned, POISONED),
+        (statuses.burn_turns > 0, BURNED),
+        (statuses.paralysis_turns > 0, PARALYZED),
+        (statuses.frozen_turns > 0, FROZEN),
+        (statuses.confused_turns > 0, CONFUSED),
+        (statuses.infatuated_turns > 0, INFATUATED),
+        (statuses.leech_seed_turns > 0, SEEDED),
+        (statuses.cursed_turns > 0, CURSED),
+        (statuses.yawning_turns > 0, YAWNING),
+        (statuses.cringe_turns > 0, CRINGING),
+    ]
+    .iter()
+    .filter(|&&(has, _)| has)
+    .fold(0, |bits, &(_, bit)| bits | bit)
+}
+
+/// The status problem an effect gives, as [`problem`] bits (0: none).
+pub(crate) fn problem_of(effect: MoveEffect) -> u16 {
+    use MoveEffect::*;
+    use problem::*;
+    match effect {
+        Sleep | Nightmare => ASLEEP,
+        Yawn => ASLEEP | YAWNING,
+        Poison | BadlyPoison => POISONED,
+        Burn => BURNED,
+        Paralyze => PARALYZED,
+        Freeze => FROZEN,
+        Confuse => CONFUSED,
+        Infatuate => INFATUATED,
+        LeechSeed => SEEDED,
+        Cursed => CURSED,
+        Cringe => CRINGING,
+        _ => 0,
+    }
+}
+
 /// Applies a move's effect to the monster it lands on. Returns false when
 /// it fails: something keeps it off (Safeguard, Mist...), or there is
 /// nothing for it to do.
@@ -219,6 +276,16 @@ fn inflict(effect: MoveEffect, rng: &mut DungeonRng, constants: &Constants, stat
         }
         for turns in [&mut statuses.burn_turns, &mut statuses.paralysis_turns, &mut statuses.frozen_turns, &mut statuses.confused_turns] {
             ability::cure_sooner(stats, turns, 1);
+        }
+    }
+    // Self-Curer: all of it half as long.
+    if matches!(effect, Sleep | Nightmare | Burn | Paralyze | Freeze | Confuse | Swagger | Flatter | TriAttack | Cringe | Infatuate) {
+        if statuses.sleep_turns != DEEP_SLEEP {
+            crate::dungeon::iq::cure_sooner(stats, &mut statuses.sleep_turns, 0);
+        }
+        let turns = [&mut statuses.burn_turns, &mut statuses.paralysis_turns, &mut statuses.frozen_turns, &mut statuses.confused_turns];
+        for turns in turns.into_iter().chain([&mut statuses.cringe_turns, &mut statuses.infatuated_turns]) {
+            crate::dungeon::iq::cure_sooner(stats, turns, 1);
         }
     }
     true

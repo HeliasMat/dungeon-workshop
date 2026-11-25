@@ -24,6 +24,17 @@ pub(crate) const PICK_UP_SOUND: u16 = 0x1304;
 pub(crate) const MONEY_SOUND: u16 = 0x1308;
 const THROW_SOUND: u16 = 0x130E;
 
+/// Whether one struck by a thrown item catches it, holding nothing: a
+/// team member needs Item Catcher, and seeds and drinks are never caught,
+/// nor by a foe the projectiles (Rescue Team's `sub_80479B8`).
+fn catches(monster: &Monster, item: u16) -> bool {
+    use crate::dungeon::status::item::{DOUGH_SEED, HEAL_SEED, MIX_ELIXIR, OREN_BERRY, ZINC};
+    let seed_or_drink = (HEAL_SEED..=ZINC).contains(&item)
+        || matches!(item, MIX_ELIXIR | OREN_BERRY | DOUGH_SEED);
+    let able = if monster.team() { iq::has(&monster.stats, iq::ITEM_CATCHER) } else { !(1..=kind::LAST_PROJECTILE).contains(&item) };
+    monster.stats.held == 0 && !seed_or_drink && able
+}
+
 /// Where a rock falls: on the nearest foe within reach in front of the
 /// thrower (a cone widening as it goes, or the quarter of the floor a
 /// diagonal faces), the one most straight ahead first; with no one there,
@@ -247,19 +258,28 @@ impl Run {
     }
 
     /// Thrown from where the leader stands, the way it faces, up to ten
-    /// tiles (or a wall), at the first foe in line, or all of them for a
-    /// piercing throw. Rocks fly in an arc, over anyone in the way, to the
-    /// foe they find (`arc_landing`).
+    /// tiles (or a wall), at the first one in line, or all of them for a
+    /// piercing throw; Gap Prober (Course Checker off) throws past the
+    /// team. Rocks fly in an arc, over anyone in the way, to the one they
+    /// find (`arc_landing`). Who holds nothing may catch it: a foe what is
+    /// neither a projectile, a seed nor a drink, a team member with Item
+    /// Catcher what is neither a seed nor a drink.
     fn throw(&mut self, index: usize, item: u16) {
         let book = self.book.clone();
         let constants = &book.tables.constants;
         let item_name = book.item_name(item);
-        let foes = self.foes();
-        let taken: Vec<Pos> = foes.iter().map(|foe| foe.1).collect();
         let Some(dungeon) = self.dungeon.as_ref() else {
             return;
         };
         let leader = dungeon.leader();
+        let past_team = iq::has(&leader.stats, iq::GAP_PROBER) && !iq::has(&leader.stats, iq::COURSE_CHECKER);
+        let foes: Vec<(MonsterId, Pos)> = dungeon
+            .monsters
+            .iter()
+            .filter(|monster| monster.alive() && matches!(monster.side, Side::Foe | Side::Ally) && !(past_team && monster.team()))
+            .map(|monster| (monster.id, monster.at))
+            .collect();
+        let taken: Vec<Pos> = foes.iter().map(|foe| foe.1).collect();
         let (me, here, mut facing, name) = (leader.id, leader.at, leader.facing, leader.name.clone());
         let status = &leader.status;
         let reach = if status.long_toss || status.exclusive.has(exclusive::effect::LONG_TOSS) { FLOOR_WIDTH } else { 10 };
@@ -331,6 +351,14 @@ impl Run {
             // sends it back.
             let foe_holds = |which| self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(foe)).is_some_and(|foe| held::holds(&foe.stats, which));
             let (dodges, bounces) = (foe_holds(held::DODGE_SCARF), foe_holds(held::BOUNCE_BAND));
+            let catcher = self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(foe)).filter(|foe| catches(foe, item)).map(|foe| foe.name.clone());
+            if let Some(catcher) = catcher {
+                if let Some(foe) = self.here().monster_mut(foe) {
+                    foe.stats.held = item;
+                }
+                self.log.push(format!("{catcher} caught {item_name}!"));
+                continue;
+            }
             if dodges || bounces {
                 let foe_name = self.name_of(foe);
                 self.log.push(match bounces {
@@ -647,6 +675,39 @@ impl Run {
 mod tests {
     use super::*;
     use crate::dungeon::Tile;
+
+    #[test]
+    fn items_thrown_are_caught_by_who_holds_nothing() {
+        let stats = crate::dungeon::Stats {
+            level: 5,
+            max_hp: 30,
+            hp: 30,
+            attack: 9,
+            defense: 9,
+            sp_attack: 9,
+            sp_defense: 9,
+            types: (1, 0),
+            abilities: [0, 0],
+            held: 0,
+            iq: 1,
+            iq_group: 0,
+            iq_skills: 0,
+            female: false,
+        };
+        let status = crate::dungeon::Statuses::for_species(0);
+        let mut foe = Monster::new(MonsterId(1), Side::Foe, "Foe".into(), None, stats, Vec::new(), status, Pos::new(1, 1));
+        // A foe: an apple, not a stick nor a seed.
+        assert!(catches(&foe, kind::APPLE));
+        assert!(!catches(&foe, 1) && !catches(&foe, kind::ORAN_BERRY));
+        foe.stats.held = kind::APPLE;
+        assert!(!catches(&foe, kind::APPLE));
+        // A team member: with Item Catcher, a stick too.
+        let mut ally = Monster { side: Side::Ally, ..foe.clone() };
+        ally.stats.held = 0;
+        assert!(!catches(&ally, 1));
+        ally.stats.iq_skills = 1 << iq::ITEM_CATCHER;
+        assert!(catches(&ally, 1) && !catches(&ally, kind::PROTEIN));
+    }
 
     #[test]
     fn rocks_land_on_a_foe_of_the_cone_or_two_tiles_ahead() {
