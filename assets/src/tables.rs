@@ -300,15 +300,14 @@ pub fn variants(folder: &str) -> Vec<Variant> {
     rows_of(folder, "variants.txt").into_iter().filter_map(variant).collect()
 }
 
-/// A step of a monster's animation: its marker ([`HIT_MARK`],
-/// [`RETURN_MARK`], or 0), and where its head, hands and middle are then,
-/// from its cell's middle (y downwards), if its sprite says.
+/// A step of a monster's animation: its marker ([`HIT_MARK`]; 1, the one
+/// it is back in place from; or 0), and where its head, hands and middle are
+/// then, from its cell's middle (y downwards), if its sprite says.
 pub type Step = (u8, Option<[(i32, i32); 4]>);
 /// A monster's steps, by animation and way (`sprites/<monster>.txt`).
 pub type Steps = HashMap<(u8, u8), Vec<Step>>;
-/// The step a blow lands on; the one it is back in place from.
+/// The step a blow lands on.
 pub const HIT_MARK: u8 = 2;
-pub const RETURN_MARK: u8 = 1;
 
 /// `sprites/<monster>.txt`: `<animation> <way> <markers> <points>`, a
 /// marker each step (comma-separated) and each step's points

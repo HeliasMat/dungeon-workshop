@@ -81,14 +81,6 @@ impl Frame {
         }
     }
 
-    /// Where the story is saved.
-    pub fn story_path(&self) -> String {
-        match self.scratch {
-            true => "target/dungeon_test_story.txt".to_string(),
-            false => saved("dungeon_game.txt"),
-        }
-    }
-
     /// Where the dungeon's quicksave is kept.
     pub fn quicksave_path(&self) -> String {
         match self.scratch {

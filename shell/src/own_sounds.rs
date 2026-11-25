@@ -8,9 +8,6 @@ use assets::project::Project;
 
 use crate::audio::OUTPUT_RATE;
 
-/// The folder of our own sounds in the repository.
-pub const FOLDER: &str = "library/sounds";
-
 /// Where a sound of our own is: in the data's hand layer (a packet has it
 /// there), else among the project's sounds (then the repository's).
 pub fn path(folder: &str, project: &Project, name: &str) -> PathBuf {

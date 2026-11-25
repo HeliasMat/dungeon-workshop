@@ -74,11 +74,6 @@ impl Project {
         }
     }
 
-    /// The shared library of its root.
-    pub fn the_library(&self) -> Project {
-        Project::library(&self.root)
-    }
-
     /// Its root: `library/`, `games/`, `film/recipes/`, `data/` side by side.
     pub fn root(&self) -> &Path {
         &self.root

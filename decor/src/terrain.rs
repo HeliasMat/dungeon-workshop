@@ -511,11 +511,6 @@ impl Tileset {
     pub fn keys(&self) -> impl Iterator<Item = (&[u8; 4], &Vec<u32>)> {
         self.by_corners.iter()
     }
-
-    /// The picture of one tile (frame 0), RGBA.
-    pub fn tile_picture(&self, id: usize) -> &Picture {
-        &self.tiles[id].frames[0]
-    }
 }
 
 /// A terrain as a line of a decor says it.

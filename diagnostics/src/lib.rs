@@ -224,11 +224,6 @@ impl Diagnostic {
         Diagnostic { severity: Severity::Remark, ..self }
     }
 
-    /// The same, of that weight.
-    pub fn weighing(self, severity: Severity) -> Self {
-        Diagnostic { severity, ..self }
-    }
-
     /// The same, about those words of its line (bytes of the text; none:
     /// the whole line).
     pub fn on(mut self, bytes: Option<(usize, usize)>) -> Self {

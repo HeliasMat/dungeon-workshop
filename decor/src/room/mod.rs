@@ -230,12 +230,6 @@ pub fn build(project: &assets::project::Project, name: &str, data: &str, extra: 
     built(project, name, read(project, name)?, data, extra)
 }
 
-/// The same from the room's text (one being written, in the Workshop), its
-/// faults on the lines of `<name>.room`.
-pub fn build_text(project: &assets::project::Project, name: &str, text: &str, data: &str, extra: &Path) -> Result<Room, Diagnostic> {
-    built(project, name, plan_of(text, &format!("{name}.room"))?, data, extra)
-}
-
 /// A room's floor laid from its layout: its picture, which colour each pixel
 /// shows, the palettes that change with time, its walls by tiles of 8, its
 /// spots (line, x, y, letter), the name it shows if it says none, its tileset.

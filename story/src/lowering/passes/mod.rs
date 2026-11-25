@@ -64,12 +64,3 @@ fn read_text(text: &str, folder: Option<&std::path::Path>, words: &'static Vocab
     let lines = engine::read_fields(text, folder, &mut problems, words);
     passes(lines, problems, words)
 }
-
-/// One line of the engine's words written out if it is a short form
-/// (`narrate`, `cheer`, `bolt`, `each`, `waitfor a b`…): the lines it
-/// gives; none if it is no short form (the line as it is).
-pub fn written_short(number: usize, fields: Vec<String>, problems: &mut Vec<Diagnostic>, words: &'static Vocabulary) -> Option<Lines> {
-    let line = vec![(number, fields)];
-    let out = shorthands(line.clone(), problems, words);
-    (out != line).then_some(out)
-}
