@@ -1,6 +1,6 @@
 //! A status move on its target.
 
-use crate::dungeon::status::StatSwap;
+use crate::dungeon::status::{StatSwap, Statuses};
 use crate::dungeon::{FIXED_ONE, MoveEffect, ability, move_hits};
 
 use super::{Attack, Happened, Party, Play, Role};
@@ -29,23 +29,7 @@ impl Play<'_, '_> {
             }
             // Swaps of stat changes, of held items.
             MoveEffect::Swap(which) => {
-                let (a, b) = (&mut *user.status, &mut *victim.status);
-                if matches!(which, StatSwap::Defenses | StatSwap::All) {
-                    std::mem::swap(&mut a.defense_stage, &mut b.defense_stage);
-                    std::mem::swap(&mut a.sp_defense_stage, &mut b.sp_defense_stage);
-                    std::mem::swap(&mut a.defense_multiplier, &mut b.defense_multiplier);
-                    std::mem::swap(&mut a.sp_defense_multiplier, &mut b.sp_defense_multiplier);
-                }
-                if matches!(which, StatSwap::Attacks | StatSwap::All) {
-                    std::mem::swap(&mut a.attack_stage, &mut b.attack_stage);
-                    std::mem::swap(&mut a.sp_attack_stage, &mut b.sp_attack_stage);
-                    std::mem::swap(&mut a.attack_multiplier, &mut b.attack_multiplier);
-                    std::mem::swap(&mut a.sp_attack_multiplier, &mut b.sp_attack_multiplier);
-                }
-                if which == StatSwap::All {
-                    std::mem::swap(&mut a.accuracy_stage, &mut b.accuracy_stage);
-                    std::mem::swap(&mut a.evasion_stage, &mut b.evasion_stage);
-                }
+                swap_stats(user.status, victim.status, which);
                 self.says(Happened::StatsSwapped);
             }
             MoveEffect::Trick => {
@@ -57,46 +41,8 @@ impl Play<'_, '_> {
                 }
             }
             // Mimic: the target's last move, on it in turn; Sketch: learnt.
-            MoveEffect::Mimic | MoveEffect::Sketch => {
-                let copied = victim.status.last_move.and_then(|id| self.field.moves.get(id as usize).copied());
-                let Some(copied) = copied.filter(|copied| !matches!(copied.id, 138 | 327)) else {
-                    self.says(Happened::Failed);
-                    return true;
-                };
-                if effect == MoveEffect::Sketch {
-                    user.status.sketched = Some(copied.id);
-                    return true;
-                }
-                self.says(Happened::Mimics(copied.id));
-                let mimicked = Attack { slot: copied, effect: copied.effect_in(constants, weather, user.stats), damage_mult: FIXED_ONE, linked: attack.linked };
-                return match mimicked.effect {
-                    Some(effect) if effect.on_user() => {
-                        self.affects(effect, user, Role::User);
-                        self.says(Happened::Cast(effect));
-                        true
-                    }
-                    _ => self.land(user, victim, &mimicked),
-                };
-            }
-            // Abilities taken, swapped or lost, for the floor.
-            MoveEffect::RolePlay | MoveEffect::SkillSwap | MoveEffect::GastroAcid => {
-                user.status.remember_identity(user.stats);
-                victim.status.remember_identity(victim.stats);
-                match effect {
-                    MoveEffect::RolePlay => {
-                        user.stats.abilities = victim.stats.abilities;
-                        self.says(Happened::AbilityCopied);
-                    }
-                    MoveEffect::SkillSwap => {
-                        std::mem::swap(&mut user.stats.abilities, &mut victim.stats.abilities);
-                        self.says(Happened::AbilitiesSwapped);
-                    }
-                    _ => {
-                        victim.stats.abilities = [0, 0];
-                        self.says(Happened::AbilityLost);
-                    }
-                }
-            }
+            MoveEffect::Mimic | MoveEffect::Sketch => return self.mimic(user, victim, attack, effect),
+            MoveEffect::RolePlay | MoveEffect::SkillSwap | MoveEffect::GastroAcid => self.abilities_moved(user, victim, effect),
             // Psycho Shift: the user's status problems go to the target.
             MoveEffect::PsychoShift => {
                 if !user.status.ailing() {
@@ -141,5 +87,70 @@ impl Play<'_, '_> {
             }
         }
         true
+    }
+
+    /// Mimic: the target's last move, on it in turn; Sketch: learnt.
+    fn mimic(&mut self, user: &mut Party, victim: &mut Party, attack: &Attack, effect: MoveEffect) -> bool {
+        let (constants, weather) = (self.field.constants, self.field.weather);
+        let copied = victim.status.last_move.and_then(|id| self.field.moves.get(id as usize).copied());
+        let Some(copied) = copied.filter(|copied| !matches!(copied.id, 138 | 327)) else {
+            self.says(Happened::Failed);
+            return true;
+        };
+        if effect == MoveEffect::Sketch {
+            user.status.sketched = Some(copied.id);
+            return true;
+        }
+        self.says(Happened::Mimics(copied.id));
+        let mimicked = Attack { slot: copied, effect: copied.effect_in(constants, weather, user.stats), damage_mult: FIXED_ONE, linked: attack.linked };
+        match mimicked.effect {
+            Some(effect) if effect.on_user() => {
+                self.affects(effect, user, Role::User);
+                self.says(Happened::Cast(effect));
+                true
+            }
+            _ => self.land(user, victim, &mimicked),
+        }
+    }
+
+    /// Abilities taken, swapped or lost, for the floor: Role Play, Skill
+    /// Swap, Gastro Acid.
+    fn abilities_moved(&mut self, user: &mut Party, victim: &mut Party, effect: MoveEffect) {
+        user.status.remember_identity(user.stats);
+        victim.status.remember_identity(victim.stats);
+        match effect {
+            MoveEffect::RolePlay => {
+                user.stats.abilities = victim.stats.abilities;
+                self.says(Happened::AbilityCopied);
+            }
+            MoveEffect::SkillSwap => {
+                std::mem::swap(&mut user.stats.abilities, &mut victim.stats.abilities);
+                self.says(Happened::AbilitiesSwapped);
+            }
+            _ => {
+                victim.stats.abilities = [0, 0];
+                self.says(Happened::AbilityLost);
+            }
+        }
+    }
+}
+
+/// Swaps of stat changes: the defenses', the attacks', or all of them.
+fn swap_stats(a: &mut Statuses, b: &mut Statuses, which: StatSwap) {
+    if matches!(which, StatSwap::Defenses | StatSwap::All) {
+        std::mem::swap(&mut a.defense_stage, &mut b.defense_stage);
+        std::mem::swap(&mut a.sp_defense_stage, &mut b.sp_defense_stage);
+        std::mem::swap(&mut a.defense_multiplier, &mut b.defense_multiplier);
+        std::mem::swap(&mut a.sp_defense_multiplier, &mut b.sp_defense_multiplier);
+    }
+    if matches!(which, StatSwap::Attacks | StatSwap::All) {
+        std::mem::swap(&mut a.attack_stage, &mut b.attack_stage);
+        std::mem::swap(&mut a.sp_attack_stage, &mut b.sp_attack_stage);
+        std::mem::swap(&mut a.attack_multiplier, &mut b.attack_multiplier);
+        std::mem::swap(&mut a.sp_attack_multiplier, &mut b.sp_attack_multiplier);
+    }
+    if which == StatSwap::All {
+        std::mem::swap(&mut a.accuracy_stage, &mut b.accuracy_stage);
+        std::mem::swap(&mut a.evasion_stage, &mut b.evasion_stage);
     }
 }
