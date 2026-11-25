@@ -13,29 +13,8 @@ impl Writer<'_> {
         match beat {
             // Floating words (`Missed!`): Sky's scenes have none.
             BodyBeat::Popup { text, .. } => self.notes.push(format!("line {number}: the words {text:?} floating up")),
-            // The place's things: objects of the game in the scene's layout.
-            BodyBeat::Put { who: Who::Thing { object, .. }, at, .. } => {
-                let Some(point) = self.point(at) else { return };
-                if self.objects.contains_key(object) {
-                    let position = self.position(point);
-                    self.line(&format!("SetPositionMark<object OBJECT_N{object}>({position});"));
-                } else {
-                    self.objects.insert(*object, point);
-                }
-            }
-            // Opened: its animation once (Sky's objects' table: 17); closed: its first picture held (9).
-            BodyBeat::Anim { who: Who::Thing { object, .. }, play, .. } => {
-                if !self.objects.contains_key(object) {
-                    self.problems.push(format!("line {number}: the thing {object} is not put in the scene"));
-                    return;
-                }
-                let set = match play {
-                    Play::Hold(_) => 9,
-                    Play::Loop => 1,
-                    _ => 17,
-                };
-                self.line(&format!("SetAnimation<object OBJECT_N{object}>({set});"));
-            }
+            BodyBeat::Put { who: Who::Thing { object, .. }, at, .. } => self.put_thing(object, at),
+            BodyBeat::Anim { who: Who::Thing { object, .. }, play, .. } => self.thing_anim(number, *object, play),
             BodyBeat::ThingName { who: Who::Thing { .. }, .. } => {}
             // Sunk in the water: Sky draws its actors whole (R-DS-LOSS).
             BodyBeat::Sink { .. } => {}
@@ -46,18 +25,7 @@ impl Writer<'_> {
             // Evolving: a shine, the screen white, the evolved one (an actor of its
             // own) put where the other stood, the other hidden, the screen back.
             BodyBeat::Disguise { who, like: Some(like) } if word == Some("evolve") => self.evolve(number, who, like),
-            // Transformed: a shine, the screen white and back; Sky's actors keep
-            // their look (R-DS-LOSS).
-            BodyBeat::Mimic { who, .. } => {
-                let Some(old) = self.who(number, *who) else { return };
-                self.line(&format!("SetEffect<actor {old}>(691, 3);"));
-                self.line("Wait(40);");
-                self.line("screen_WhiteOut(1, 30);");
-                self.line("WaitScreenFade();");
-                self.line(&format!("SetEffect<actor {old}>(EFFECT_NONE, 3);"));
-                self.line("screen_FadeIn(1, 30);");
-                self.line("WaitScreenFade();");
-            }
+            BodyBeat::Mimic { who, .. } => self.mimic(number, *who),
             // An unseen point (where a dodger stood): only its place, kept.
             BodyBeat::Put { who: who @ Who::Spot(_), at, .. } => {
                 if let Some(point) = self.point(at) {
@@ -65,30 +33,8 @@ impl Writer<'_> {
                 }
             }
             BodyBeat::Put { who, at, direction: way } => self.put(number, who, at, way),
-            BodyBeat::PutNear { who, other, side } => {
-                let (Some(actor), Some(&(x, y))) = (self.who(number, *who), self.at.get(other)) else { return };
-                let right = matches!(side, Direction::Right | Direction::UpRight | Direction::DownRight);
-                let point = (if right { x + BESIDE } else { x - BESIDE }, y);
-                self.at.insert(*who, point);
-                let position = self.position(point);
-                self.line(&format!("SetPositionMark<actor {actor}>({position});"));
-                let facing = way_to(point, (x, y));
-                self.facing.insert(*who, facing);
-                self.line(&format!("SetDirection<actor {actor}>({});", direction(facing)));
-            }
-            BodyBeat::Turn { who, direction: way } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                self.facing.insert(*who, *way);
-                let facing = direction(*way);
-                let started = self.started;
-                match self.actors.get_mut(who).filter(|_| !started).and_then(|one| one.first.as_mut()) {
-                    Some(first) => first.2 = facing,
-                    None => {
-                        self.line(&format!("Turn2Direction<actor {actor}>(4, 10, {facing});"));
-                        self.wait_for(&actor);
-                    }
-                }
-            }
+            BodyBeat::PutNear { who, other, side } => self.put_near(number, *who, other, side),
+            BodyBeat::Turn { who, direction: way } => self.turn(number, *who, *way),
             BodyBeat::TurnBy { who, eighths } => {
                 let Some(actor) = self.who(number, *who) else { return };
                 let now = self.facing.get(who).copied().unwrap_or(Direction::Down);
@@ -109,40 +55,115 @@ impl Writer<'_> {
                 self.facing.insert(*who, way);
                 self.line(&format!("SetDirection<actor {actor}>({});", direction(way)));
             }
-            // Turned to an unseen point (`use Move at x y`): its way from where he stands.
-            BodyBeat::Face { who, other: other @ Who::Spot(_) } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let (Some(&from), Some(&to)) = (self.at.get(who), self.at.get(other)) else { return };
-                let way = way_to(from, to);
-                self.facing.insert(*who, way);
-                self.line(&format!("Turn2Direction<actor {actor}>(4, 10, {});", direction(way)));
-                self.wait_for(&actor);
-            }
-            BodyBeat::Face { who, other } => {
-                let (Some(actor), Some(other_actor)) = (self.who(number, *who), self.who(number, *other)) else { return };
-                if let (Some(&from), Some(&to)) = (self.at.get(who), self.at.get(other)) {
-                    self.facing.insert(*who, way_to(from, to));
-                }
-                self.line(&format!("Turn2DirectionLives<actor {actor}>(4, 10, {other_actor});"));
-                self.wait_for(&actor);
-            }
+            BodyBeat::Face { who, other } => self.face(number, *who, *other),
             BodyBeat::Stop(_) | BodyBeat::Fidget { .. } => {}
             BodyBeat::Gone(who) => {
                 let Some(actor) = self.who(number, *who) else { return };
                 self.line(&format!("SetOutputAttribute<actor {actor}>({HIDDEN});"));
             }
-            BodyBeat::Opacity { who, to, .. } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                if *to > 0.5 {
-                    let at = self.at.get(who).copied().unwrap_or(self.camera);
-                    self.show_at(*who, &actor, at);
-                } else if self.actors.get(who).is_some_and(|one| one.hidden && one.first.is_some()) {
-                    // Put, hidden, before it appears: hidden from the start.
-                } else {
-                    self.line(&format!("SetOutputAttribute<actor {actor}>({HIDDEN});"));
-                }
-            }
+            BodyBeat::Opacity { who, to, .. } => self.opacity(number, *who, *to),
             other => self.acting(number, word, other),
+        }
+    }
+
+    /// The place's things: objects of the game in the scene's layout.
+    fn put_thing(&mut self, object: &u16, at: &Point) {
+        let Some(point) = self.point(at) else { return };
+        if self.objects.contains_key(object) {
+            let position = self.position(point);
+            self.line(&format!("SetPositionMark<object OBJECT_N{object}>({position});"));
+        } else {
+            self.objects.insert(*object, point);
+        }
+    }
+
+    /// A thing opened: its animation once (Sky's objects' table: 17); closed:
+    /// its first picture held (9).
+    fn thing_anim(&mut self, number: i32, object: u16, play: &Play) {
+        if !self.objects.contains_key(&object) {
+            self.problems.push(format!("line {number}: the thing {object} is not put in the scene"));
+            return;
+        }
+        let set = match play {
+            Play::Hold(_) => 9,
+            Play::Loop => 1,
+            _ => 17,
+        };
+        self.line(&format!("SetAnimation<object OBJECT_N{object}>({set});"));
+    }
+
+    /// Transformed: a shine, the screen white and back; Sky's actors keep
+    /// their look (R-DS-LOSS).
+    fn mimic(&mut self, number: i32, who: Who) {
+        let Some(old) = self.who(number, who) else { return };
+        self.line(&format!("SetEffect<actor {old}>(691, 3);"));
+        self.line("Wait(40);");
+        self.line("screen_WhiteOut(1, 30);");
+        self.line("WaitScreenFade();");
+        self.line(&format!("SetEffect<actor {old}>(EFFECT_NONE, 3);"));
+        self.line("screen_FadeIn(1, 30);");
+        self.line("WaitScreenFade();");
+    }
+
+    /// Put beside another, on that side, facing them.
+    fn put_near(&mut self, number: i32, who: Who, other: &Who, side: &Direction) {
+        let (Some(actor), Some(&(x, y))) = (self.who(number, who), self.at.get(other)) else { return };
+        let right = matches!(side, Direction::Right | Direction::UpRight | Direction::DownRight);
+        let point = (if right { x + BESIDE } else { x - BESIDE }, y);
+        self.at.insert(who, point);
+        let position = self.position(point);
+        self.line(&format!("SetPositionMark<actor {actor}>({position});"));
+        let facing = way_to(point, (x, y));
+        self.facing.insert(who, facing);
+        self.line(&format!("SetDirection<actor {actor}>({});", direction(facing)));
+    }
+
+    /// Turned a way: the way they first face, if the scene has not begun.
+    fn turn(&mut self, number: i32, who: Who, way: Direction) {
+        let Some(actor) = self.who(number, who) else { return };
+        self.facing.insert(who, way);
+        let facing = direction(way);
+        let started = self.started;
+        match self.actors.get_mut(&who).filter(|_| !started).and_then(|one| one.first.as_mut()) {
+            Some(first) => first.2 = facing,
+            None => {
+                self.line(&format!("Turn2Direction<actor {actor}>(4, 10, {facing});"));
+                self.wait_for(&actor);
+            }
+        }
+    }
+
+    /// Turned to another; to an unseen point (`use Move at x y`), its way
+    /// from where he stands.
+    fn face(&mut self, number: i32, who: Who, other: Who) {
+        if let Who::Spot(_) = other {
+            let Some(actor) = self.who(number, who) else { return };
+            let (Some(&from), Some(&to)) = (self.at.get(&who), self.at.get(&other)) else { return };
+            let way = way_to(from, to);
+            self.facing.insert(who, way);
+            self.line(&format!("Turn2Direction<actor {actor}>(4, 10, {});", direction(way)));
+            self.wait_for(&actor);
+            return;
+        }
+        let (Some(actor), Some(other_actor)) = (self.who(number, who), self.who(number, other)) else { return };
+        if let (Some(&from), Some(&to)) = (self.at.get(&who), self.at.get(&other)) {
+            self.facing.insert(who, way_to(from, to));
+        }
+        self.line(&format!("Turn2DirectionLives<actor {actor}>(4, 10, {other_actor});"));
+        self.wait_for(&actor);
+    }
+
+    /// Shown where they stand, or hidden (put hidden before it appears:
+    /// hidden from the start).
+    fn opacity(&mut self, number: i32, who: Who, to: f32) {
+        let Some(actor) = self.who(number, who) else { return };
+        if to > 0.5 {
+            let at = self.at.get(&who).copied().unwrap_or(self.camera);
+            self.show_at(who, &actor, at);
+        } else if self.actors.get(&who).is_some_and(|one| one.hidden && one.first.is_some()) {
+            // Put, hidden, before it appears: hidden from the start.
+        } else {
+            self.line(&format!("SetOutputAttribute<actor {actor}>({HIDDEN});"));
         }
     }
 

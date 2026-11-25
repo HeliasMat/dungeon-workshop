@@ -36,70 +36,10 @@ impl Writer<'_> {
             }
             ScreenBeat::Tint { colour, frames } if !self.memory => self.light_to(colour, frames),
             ScreenBeat::Tint { .. } => {}
-            ScreenBeat::Grey(on) => {
-                if *on && !self.memory {
-                    // Sky's memories and visions: the screen in sepia.
-                    self.line("screen_FlushOut(1, 0, 8, 0, 0, 0);");
-                } else if !*on && self.memory {
-                    self.line("screen_FlushIn(1, 0, 1, 0, 0, 0);");
-                    // (The sepia took the light's place: the light again.)
-                    if let Some(tint) = self.tint {
-                        self.flush("Out", 0, tint);
-                    }
-                }
-                self.memory = *on;
-            }
-            // (A decor of the Workshop's: a map of its own, `LEVEL_DECOR_<n>` until patch_rom.py gives it a level.)
-            ScreenBeat::Backdrop(id, ..) => match self
-                .game
-                .levels
-                .get(id)
-                .cloned()
-                .or_else(|| self.game.decors.contains_key(id).then(|| format!("{}{id}", DECOR_LEVEL.trim_start_matches("LEVEL_"))))
-            {
-                Some(level) => {
-                    self.top = TOP_SCREENS.iter().find(|(place, _)| *place == level).map(|(_, top)| *top);
-                    self.size = self.game.size(*id);
-                    // (`--tall`: the place itself on the top screen, a screen above, where it is tall enough.)
-                    // (A place Sky pairs with a picture of its own keeps it: the beach's is its sky and
-                    // rock, where the place above the sand is only sea, its foam blank on the top screen.)
-                    self.tall = self.tall_asked && self.top.is_none() && self.size.is_some_and(|(_, high)| high >= 384.0);
-                    if self.tall_asked && !self.tall {
-                        let why = if self.top.is_some() { "Sky's own top picture for it kept" } else { "too short for two screens (384 pixels)" };
-                        self.told.push(format!("{level}: no tall view, {why}"));
-                    }
-                    if self.tall {
-                        self.top = None;
-                        self.line("back2_SetMode(4);");
-                        self.line(&format!("back2_SetGround(LEVEL_{level});"));
-                    } else if let Some(top) = self.top {
-                        self.line("back2_SetMode(4);");
-                        self.line(&format!("back2_SetGround(LEVEL_{top});"));
-                    }
-                    let level = format!("LEVEL_{level}");
-                    self.line(&format!("back_SetGround({level});"));
-                    self.line("supervision_Acting(0);");
-                    self.level = Some(level);
-                }
-                None => self.problems.push(format!("line {number}: no level {id} in the game's data")),
-            },
+            ScreenBeat::Grey(on) => self.grey(*on),
+            ScreenBeat::Backdrop(id, ..) => self.backdrop(number, *id),
             ScreenBeat::Weather(weather) => self.weather(number, *weather),
-            ScreenBeat::Fade { out: false, white, frames } => {
-                let first = !self.started;
-                self.started = true;
-                self.faded_out = false;
-                let frames = frames.0.round() as i32;
-                if first && (self.top.is_some() || self.tall) {
-                    self.line(&format!("screen2_FadeIn(0, {frames});"));
-                }
-                if let Some(tint) = self.tint.filter(|_| first) {
-                    self.flush("Out", 0, tint);
-                }
-                // (Sky comes back from white with a fade in: it has no WhiteIn of its own.)
-                let fade = "screen_FadeIn";
-                let _ = white;
-                self.line(&format!("{fade}(1, {frames});"));
-            }
+            ScreenBeat::Fade { out: false, white, frames } => self.fade_in(*white, *frames),
             ScreenBeat::Fade { out: true, white, frames } => {
                 if !self.faded_out {
                     let fade = if *white { "screen_WhiteOut" } else { "screen_FadeOut" };
@@ -109,20 +49,7 @@ impl Writer<'_> {
             }
             // (A wipe: Sky fades.)
             ScreenBeat::Wipe { out, frames, .. } => self.screen(number, word, &ScreenBeat::Fade { out: *out, white: false, frames: *frames }),
-            // A flash: Sky's own (white: `screen_WhiteOut` and back; a colour: `screen_FlushOut`).
-            ScreenBeat::Flash { colour, frames } => {
-                let half = (frames.0 / 2.0).round().max(1.0) as i32;
-                if colour.iter().all(|part| *part >= 250.0) {
-                    self.line("screen_WhiteOut(1, 2);");
-                    self.line("Wait(2);");
-                    self.line(&format!("screen_FadeIn(1, {});", frames.0.round() as i32));
-                } else {
-                    let [red, green, blue] = colour.map(|part| part.round() as i32);
-                    self.line(&format!("screen_FlushOut(1, {half}, 2, {red}, {green}, {blue});"));
-                    self.line(&format!("Wait({half});"));
-                    self.line(&format!("screen_FlushIn(1, {half}, 2, {red}, {green}, {blue});"));
-                }
-            }
+            ScreenBeat::Flash { colour, frames } => self.flash(colour, *frames),
             // (The title again, as the engine shows it with each scene: once is enough.)
             ScreenBeat::Caption { text, .. } if self.title.as_ref() == Some(text) => {}
             ScreenBeat::Caption { text, .. } => {
@@ -139,6 +66,92 @@ impl Writer<'_> {
                 self.line(&format!("back_SetTitleBanner(56, \"{}\");", quoted(text)));
             }
             other => self.unexported(number, word, &Beat::Screen(other.clone())),
+        }
+    }
+
+    /// Sky's memories and visions: the screen in sepia, and back.
+    fn grey(&mut self, on: bool) {
+        if on && !self.memory {
+            self.line("screen_FlushOut(1, 0, 8, 0, 0, 0);");
+        } else if !on && self.memory {
+            self.line("screen_FlushIn(1, 0, 1, 0, 0, 0);");
+            // (The sepia took the light's place: the light again.)
+            if let Some(tint) = self.tint {
+                self.flush("Out", 0, tint);
+            }
+        }
+        self.memory = on;
+    }
+
+    /// The place shown: its level, and the top screen's picture. (A decor of
+    /// the Workshop's: a map of its own, `LEVEL_DECOR_<n>` until patch_rom.py
+    /// gives it a level.)
+    fn backdrop(&mut self, number: i32, id: u16) {
+        let level = self
+            .game
+            .levels
+            .get(&id)
+            .cloned()
+            .or_else(|| self.game.decors.contains_key(&id).then(|| format!("{}{id}", DECOR_LEVEL.trim_start_matches("LEVEL_"))));
+        let Some(level) = level else {
+            self.problems.push(format!("line {number}: no level {id} in the game's data"));
+            return;
+        };
+        self.top = TOP_SCREENS.iter().find(|(place, _)| *place == level).map(|(_, top)| *top);
+        self.size = self.game.size(id);
+        // (`--tall`: the place itself on the top screen, a screen above, where it is tall enough.)
+        // (A place Sky pairs with a picture of its own keeps it: the beach's is its sky and
+        // rock, where the place above the sand is only sea, its foam blank on the top screen.)
+        self.tall = self.tall_asked && self.top.is_none() && self.size.is_some_and(|(_, high)| high >= 384.0);
+        if self.tall_asked && !self.tall {
+            let why = if self.top.is_some() { "Sky's own top picture for it kept" } else { "too short for two screens (384 pixels)" };
+            self.told.push(format!("{level}: no tall view, {why}"));
+        }
+        if self.tall {
+            self.top = None;
+            self.line("back2_SetMode(4);");
+            self.line(&format!("back2_SetGround(LEVEL_{level});"));
+        } else if let Some(top) = self.top {
+            self.line("back2_SetMode(4);");
+            self.line(&format!("back2_SetGround(LEVEL_{top});"));
+        }
+        let level = format!("LEVEL_{level}");
+        self.line(&format!("back_SetGround({level});"));
+        self.line("supervision_Acting(0);");
+        self.level = Some(level);
+    }
+
+    /// The screen faded in; the first time, the top screen too, and the
+    /// light the scene opens with.
+    fn fade_in(&mut self, white: bool, frames: Frames) {
+        let first = !self.started;
+        self.started = true;
+        self.faded_out = false;
+        let frames = frames.0.round() as i32;
+        if first && (self.top.is_some() || self.tall) {
+            self.line(&format!("screen2_FadeIn(0, {frames});"));
+        }
+        if let Some(tint) = self.tint.filter(|_| first) {
+            self.flush("Out", 0, tint);
+        }
+        // (Sky comes back from white with a fade in: it has no WhiteIn of its own.)
+        let fade = "screen_FadeIn";
+        let _ = white;
+        self.line(&format!("{fade}(1, {frames});"));
+    }
+
+    /// A flash: Sky's own (white: `screen_WhiteOut` and back; a colour: `screen_FlushOut`).
+    fn flash(&mut self, colour: &[f32; 3], frames: Frames) {
+        let half = (frames.0 / 2.0).round().max(1.0) as i32;
+        if colour.iter().all(|part| *part >= 250.0) {
+            self.line("screen_WhiteOut(1, 2);");
+            self.line("Wait(2);");
+            self.line(&format!("screen_FadeIn(1, {});", frames.0.round() as i32));
+        } else {
+            let [red, green, blue] = colour.map(|part| part.round() as i32);
+            self.line(&format!("screen_FlushOut(1, {half}, 2, {red}, {green}, {blue});"));
+            self.line(&format!("Wait({half});"));
+            self.line(&format!("screen_FlushIn(1, {half}, 2, {red}, {green}, {blue});"));
         }
     }
 
