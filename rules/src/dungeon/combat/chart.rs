@@ -90,7 +90,8 @@ pub struct TypeChart {
     /// The overall matchup against a dual-type target, from the matchups
     /// against each of its types.
     pub combinator: [[u8; 4]; 4],
-    /// A logarithm table some data files carry; the rules do not use it.
+    /// The game's natural logarithm table, ln(x) with 12 fraction bits by
+    /// x (the damage formula's; empty without the game's data).
     pub ln_table: Vec<i16>,
 }
 

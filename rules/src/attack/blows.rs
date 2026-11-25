@@ -202,8 +202,8 @@ impl Play<'_, '_> {
 
     /// What weakens or strengthens a blow past the damage counted.
     fn temper(&mut self, damage: &mut Damage, user: &mut Party, victim: &Party, type_id: u8, physical: bool, reached: bool) {
-        // Mud Sport and Water Sport halve Electric and Fire moves.
-        // (Halved is this project's own figure.)
+        // Mud Sport and Water Sport halve Electric and Fire moves (the
+        // game's figure).
         if (type_id == ELECTRIC && self.field.mud_sport) || (type_id == FIRE && self.field.water_sport) {
             damage.amount = (damage.amount / 2).max(1);
         }
