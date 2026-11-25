@@ -1,7 +1,7 @@
 //! What someone does, as Sky's actors do it: animations and poses, emotes
 //! and effects, jumps, moves and blows, the routines Sky has for some words.
 
-use engine::{AnimId, Beat, BodyBeat, Direction, MoveId, Play, Pose, ScreenBeat, SoundBeat, Who};
+use engine::{AnimId, Beat, BodyBeat, Direction, EmoteId, MoveId, Play, Pose, ScreenBeat, SoundBeat, Who};
 
 use super::Writer;
 use super::scene::Part;
@@ -11,60 +11,14 @@ impl Writer<'_> {
     /// A body beat of what someone does: an animation, an effect, a jump, a move.
     pub(super) fn acting(&mut self, number: i32, word: Option<&str>, beat: &BodyBeat) {
         match beat {
-            BodyBeat::Effect { who, id, .. } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let effect = EFFECTS.iter().find(|(of, _)| *of == id.0).map_or(id.0.to_string(), |(_, name)| name.to_string());
-                self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
-                self.shown_for = 0.0;
-                if !self.showing.contains(&actor) {
-                    self.showing.push(actor);
-                }
-            }
-            BodyBeat::MoveEffect { who, id } => {
-                // At a place: on the camera (performer 0), in the middle of the screen.
-                let on = match who {
-                    Who::Spot(_) => "performer 0".to_string(),
-                    _ => match self.who(number, *who) {
-                        Some(actor) => format!("actor {actor}"),
-                        None => return,
-                    },
-                };
-                let kind = self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1);
-                self.line(&format!("SetEffect<{on}>({}, 3);", move_effect(kind)));
-                self.line(&format!("WaitEffect<{on}>();"));
-                self.line(&format!("SetEffect<{on}>(EFFECT_NONE, 3);"));
-            }
+            BodyBeat::Effect { who, id, .. } => self.effect(number, *who, *id),
+            BodyBeat::MoveEffect { who, id } => self.move_effect(number, *who, *id),
             // A move's shot from one to another: Sky's effect of its type on the one it reaches.
             BodyBeat::MoveShot { to, id, .. } => self.plain(number, word, &Beat::Body(BodyBeat::MoveEffect { who: *to, id: *id })),
             // Hops: Sky's own jumps (`CORO_JUMP_…`), happy, surprised or angry.
-            BodyBeat::Anim { who, anim, play } if anim.0 == 10 => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let mood = if self.said_with(number, "surprised") || self.said_with(number, "surprise") || self.said_with(number, "fear") {
-                    "SURPRISE"
-                } else if self.said_with(number, "angry") || self.said_with(number, "anger") {
-                    "ANGRY"
-                } else {
-                    "HAPPY"
-                };
-                let times = if let Play::Times(times) = play { *times } else { 1 };
-                for _ in 0..times.max(1) {
-                    self.line(&format!("ExecuteCommon<actor {actor}>(CORO_JUMP_{mood}_FUNC_SERIES, 0);"));
-                    self.wait_for(&actor);
-                }
-            }
+            BodyBeat::Anim { who, anim, play } if anim.0 == 10 => self.hops(number, *who, play),
             BodyBeat::Anim { who, anim, play } => self.animate(number, who, anim, play),
-            BodyBeat::Pose { who, pose } => {
-                let Some(actor) = self.who(number, *who) else { return };
-                let set = match pose {
-                    Pose::Idle => 2,
-                    Pose::Walk => 1,
-                    Pose::Sleep => self.set(*who, 13, true).unwrap_or(6),
-                    Pose::Hurt => 14,
-                    Pose::Attack => 13,
-                };
-                self.stand_after.retain(|one| *one != actor);
-                self.line(&format!("SetAnimation<actor {actor}>({set});"));
-            }
+            BodyBeat::Pose { who, pose } => self.pose(number, *who, pose),
             // A trembling: Sky shows pain (its looped animation), never a shiver.
             BodyBeat::Tremble { who, frames, .. } => {
                 let Some(actor) = self.who(number, *who) else { return };
@@ -118,6 +72,65 @@ impl Writer<'_> {
             BodyBeat::Float { who, height, frames } => self.float(number, *who, *height, frames.0),
             other => self.unexported(number, word, &Beat::Body(other.clone())),
         }
+    }
+
+    /// An emote or an effect over someone, shown a while.
+    fn effect(&mut self, number: i32, who: Who, id: EmoteId) {
+        let Some(actor) = self.who(number, who) else { return };
+        let effect = EFFECTS.iter().find(|(of, _)| *of == id.0).map_or(id.0.to_string(), |(_, name)| name.to_string());
+        self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
+        self.shown_for = 0.0;
+        if !self.showing.contains(&actor) {
+            self.showing.push(actor);
+        }
+    }
+
+    /// A move's effect, of its type, on someone; at a place: on the camera
+    /// (performer 0), in the middle of the screen.
+    fn move_effect(&mut self, number: i32, who: Who, id: MoveId) {
+        let on = match who {
+            Who::Spot(_) => "performer 0".to_string(),
+            _ => match self.who(number, who) {
+                Some(actor) => format!("actor {actor}"),
+                None => return,
+            },
+        };
+        let kind = self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1);
+        self.line(&format!("SetEffect<{on}>({}, 3);", move_effect(kind)));
+        self.line(&format!("WaitEffect<{on}>();"));
+        self.line(&format!("SetEffect<{on}>(EFFECT_NONE, 3);"));
+    }
+
+    /// Hops: Sky's own jumps (`CORO_JUMP_…`), happy, surprised or angry as
+    /// the line is said.
+    fn hops(&mut self, number: i32, who: Who, play: &Play) {
+        let Some(actor) = self.who(number, who) else { return };
+        let mood = if self.said_with(number, "surprised") || self.said_with(number, "surprise") || self.said_with(number, "fear") {
+            "SURPRISE"
+        } else if self.said_with(number, "angry") || self.said_with(number, "anger") {
+            "ANGRY"
+        } else {
+            "HAPPY"
+        };
+        let times = if let Play::Times(times) = play { *times } else { 1 };
+        for _ in 0..times.max(1) {
+            self.line(&format!("ExecuteCommon<actor {actor}>(CORO_JUMP_{mood}_FUNC_SERIES, 0);"));
+            self.wait_for(&actor);
+        }
+    }
+
+    /// A pose: Sky's animation for it, held.
+    fn pose(&mut self, number: i32, who: Who, pose: &Pose) {
+        let Some(actor) = self.who(number, who) else { return };
+        let set = match pose {
+            Pose::Idle => 2,
+            Pose::Walk => 1,
+            Pose::Sleep => self.set(who, 13, true).unwrap_or(6),
+            Pose::Hurt => 14,
+            Pose::Attack => 13,
+        };
+        self.stand_after.retain(|one| *one != actor);
+        self.line(&format!("SetAnimation<actor {actor}>({set});"));
     }
 
     /// The words Sky plays with a routine of its own (`unionall`'s
