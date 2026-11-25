@@ -69,6 +69,21 @@ impl Play<'_, '_> {
             (victim.status.sleep_turns, victim.status.napping, victim.status.nightmare) = (0, false, false);
             self.says(Happened::Woken);
         }
+        // SmellingSalt cures the paralysis it struck twice as hard.
+        const SMELLINGSALT: u16 = 78;
+        if slot.id == SMELLINGSALT && victim.status.paralysis_turns > 0 && victim.alive() {
+            victim.status.paralysis_turns = 0;
+            self.says(Happened::Unparalyzed);
+        }
+        // Rapid Spin frees its user from what binds it or saps it:
+        // constriction, Shadow Hold, Leech Seed.
+        const RAPID_SPIN: u16 = 96;
+        let bound = user.status.constricted_turns > 0 || user.status.held_turns > 0 || user.status.leech_seed_turns > 0;
+        if slot.id == RAPID_SPIN && bound && user.alive() {
+            (user.status.constricted_turns, user.status.held_turns, user.status.leech_seed_turns) = (0, 0, 0);
+            user.status.leech_sower = None;
+            self.says(Happened::SpunFree);
+        }
         // Conversion 2: hit by a move, the monster turns to a type that
         // stands up to it (the type data says which; none, it stays).
         let resisting = constants.conversion2_types.get(type_id as usize).copied().unwrap_or(0);

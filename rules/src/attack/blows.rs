@@ -59,6 +59,12 @@ impl Play<'_, '_> {
             true => 5,
             false => strike_count(self.field.rng, slot.strikes),
         };
+        // Brick Break shatters the target's Reflect or Light Screen first.
+        const BRICK_BREAK: u16 = 72;
+        if slot.id == BRICK_BREAK && matches!(victim.status.shield, Some(status::Shield::Reflect | status::Shield::LightScreen)) {
+            victim.status.shield = None;
+            self.says(Happened::Shattered);
+        }
         // Under Gravity, Ground moves reach what flies or floats.
         let gravity = self.field.gravity && slot.type_id == GROUND;
         for strike in 0..strikes as usize {

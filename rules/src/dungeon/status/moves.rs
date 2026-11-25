@@ -212,6 +212,9 @@ fn by_state(move_id: u16, (pp, max_pp): (i32, i32), constants: &Constants, user:
         457 => trump_card(pp, max_pp),
         // Wake-Up Slap: twice as hard on a sleeper (it wakes: see the caller).
         531 if target_status.asleep() => 2 * ONE,
+        // SmellingSalt: twice as hard on a paralysed target (it is cured:
+        // see the caller).
+        78 if target_status.paralysis_turns > 0 => 2 * ONE,
         // Low Kick, Grass Knot: by the target's weight.
         92 | 458 => target_status.weight,
         // Hi Jump Kick, Blast Burn.
@@ -301,8 +304,8 @@ pub fn user_effect(move_id: u16, constants: &Constants) -> Option<(i32, MoveEffe
         // Close Combat; Hammer Arm.
         440 => (100, CloseCombat),
         430 => (100, UserSpeedDown),
-        // Petal Dance leaves its user dizzy.
-        253 => (100, Confuse),
+        // Petal Dance and Outrage leave their user dizzy.
+        253 | 91 => (100, Confuse),
         _ => return None,
     })
 }

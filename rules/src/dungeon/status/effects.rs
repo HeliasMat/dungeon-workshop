@@ -186,7 +186,7 @@ pub enum MoveEffect {
     PerishSong,
     /// Trick Room: the speed a level up or down, at random.
     TrickRoom,
-    /// Counter, Payback, Mirror Coat, Metal Burst: damage taken comes back
+    /// Counter, Payback, Pursuit, Mirror Coat, Metal Burst: damage taken comes back
     /// to who dealt it.
     Counter(CounterKind),
     /// Selfdestruct, Explosion: the user blows up, this far around (see
@@ -551,7 +551,9 @@ fn other_effect(move_id: u16) -> Option<MoveEffect> {
         21 => PainSplit,
         209 | 482 => Trick,
         499 => TrickRoom,
-        51 | 472 => Counter(CounterKind::Physical),
+        // Counter, Payback, and Pursuit (which in these games strikes back
+        // as Counter does).
+        51 | 472 | 38 => Counter(CounterKind::Physical),
         316 => Counter(CounterKind::Special),
         532 => Counter(CounterKind::Any),
         // Selfdestruct, Explosion.

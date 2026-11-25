@@ -10,6 +10,8 @@ use crate::dungeon::{Constants, DungeonRng, MoveEffect, MoveSlot, Pos, Stats, St
 mod answers;
 mod blows;
 mod status_moves;
+#[cfg(test)]
+mod tests;
 
 /// What of the victim's whole life a blast takes on a stage (a half).
 const BLAST_SHARE: i32 = 2;
@@ -123,6 +125,8 @@ pub enum Happened {
     },
     NotAsleep,
     Unshielded,
+    /// The victim's Reflect or Light Screen broke (Brick Break).
+    Shattered,
     /// The user crashes down and loses that.
     Crashed(i32),
     /// It stands a one-hit move.
@@ -145,6 +149,10 @@ pub enum Happened {
     /// The user must rest.
     Rests,
     Woken,
+    /// The victim's paralysis is cured (SmellingSalt).
+    Unparalyzed,
+    /// The user broke free of what bound or sapped it (Rapid Spin).
+    SpunFree,
     TypeChanged,
     Stole(u16),
     /// What the victim's item sent back.

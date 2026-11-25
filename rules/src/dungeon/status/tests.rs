@@ -37,7 +37,7 @@ fn seeds_and_drinks_do_their_thing() {
     assert_eq!(eat(1, &mut stats, &mut statuses, &mut belly), ItemUse::Nothing);
 }
 
-const RULES: Constants = Constants {
+pub(crate) const RULES: Constants = Constants {
     oran_berry_hp: 100,
     sitrus_berry_hp: 100,
     oran_berry_full_hp_boost: 0,
@@ -565,7 +565,7 @@ fn recoil_and_drain_go_by_the_damage_dealt() {
     assert_eq!(secondary_effects(461, &RULES).len(), 2);
 }
 
-fn slot() -> MoveSlot {
+pub(crate) fn slot() -> MoveSlot {
     MoveSlot {
         id: 1,
         power: 40,
@@ -587,7 +587,7 @@ fn slot() -> MoveSlot {
     }
 }
 
-fn monster() -> Stats {
+pub(crate) fn monster() -> Stats {
     Stats {
         level: 5,
         max_hp: 30,
