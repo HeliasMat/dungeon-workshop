@@ -377,3 +377,56 @@ fn back_in_the_evening_the_team_sleeps_and_wakes_to_a_new_day_and_its_on_morning
     assert_eq!(berries(&game), before + 1, "its `on night` then its `on morning` played: {:?}", game.log);
     assert!(game.place.as_ref().is_some_and(|place| !place.text.contains("daytime")), "daylight again");
 }
+
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn chimecco_s_assembly_sends_four_at_most_and_the_team_is_named() {
+    use rules::services::Input::{Cancel, Confirm, Down, Mark, Up};
+    let data = data().expect("the extracted data/");
+    let rescue = crate::testing::root().join("tests/games/test_rescue/test_rescue.game");
+    let mut game = Game::open(&crate::testing::context_on(&data), &rescue, None).expect("the game opens");
+    game.make_team();
+    let playthrough = game.playthrough.as_mut().expect("a game");
+    for species in [10, 16, 19] {
+        playthrough.recruit(species);
+    }
+    let run = playthrough.run_mut().expect("its rules");
+    // (At Normal Rank: a bag of 16, the storage the rank's room.)
+    assert_eq!(run.bag_room(), 16);
+    assert!(run.storage_room() < usize::MAX, "the rank's room: {}", run.storage_room());
+    let mut assembly = crate::assembly::Assembly::default();
+    let press = |assembly: &mut crate::assembly::Assembly, keys: &[rules::services::Input], run: &mut rules::run::Run| {
+        keys.iter().map(|&key| assembly.play(Some(key), run).1).last().unwrap_or_default()
+    };
+    // (The leader, the partner, the first two recruits: four, the third stays.)
+    assert_eq!(run.team_size(), 4);
+    let (said, ..) = press(&mut assembly, &[Down, Down, Down, Down, Mark], run);
+    assert!(said.contains("full"), "{said}");
+    press(&mut assembly, &[Confirm], run);
+    assert_eq!(run.along(), [0, 1]);
+    // (Graduated: the partner home, the third recruit in its place.)
+    assembly.free = true;
+    press(&mut assembly, &[Up, Up, Up, Mark, Down, Down, Down, Mark], run);
+    assert_eq!((run.team_size(), run.along()), (4, vec![0, 1, 2]));
+    // (A recruit seen, its tactic changed, then released once asked again.)
+    let (page, options, _) = press(&mut assembly, &[Up, Up, Confirm], run);
+    assert!(page.contains("Lv.") && page.contains("HP") && page.contains("Moves:"), "{page}");
+    assert_eq!(options.len(), 4, "{options:?}");
+    press(&mut assembly, &[Down, Confirm], run);
+    assert_ne!(run.member_tactic(rules::run::town::Whom::Recruit(0)), 0, "its next tactic");
+    let (asked, ..) = press(&mut assembly, &[Down, Confirm], run);
+    assert!(asked.starts_with("Release"), "{asked}");
+    let (said, ..) = press(&mut assembly, &[Up, Confirm], run);
+    assert!(said.contains("left the team"), "{said}");
+    press(&mut assembly, &[Cancel], run);
+    assert_eq!(run.team().progress.recruits.len(), 2);
+    // (The team named: `{team}` in a film.)
+    assert_eq!(run.team().team_name(), rules::run::town::DEFAULT_TEAM_NAME);
+    let mut naming = crate::assembly::Naming::new(run);
+    let keys = shell::Keys { typed: "Thorns".chars().collect(), ..shell::Keys::default() };
+    naming.play(&keys, run);
+    assert!(naming.play(&shell::Keys { enter: true, ..shell::Keys::default() }, run).0);
+    assert_eq!(run.team().team_name(), "Thorns");
+    let (_, words) = game.playthrough.as_ref().expect("a game").numbers();
+    assert!(words.contains(&("team".to_string(), "Thorns".to_string())), "{words:?}");
+}

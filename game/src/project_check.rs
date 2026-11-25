@@ -712,7 +712,7 @@ impl Check<'_> {
                             "no screen",
                             screen,
                             decor::lang::TALKS[1..].iter().copied(),
-                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed",
+                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name",
                         ),
                     );
                 }

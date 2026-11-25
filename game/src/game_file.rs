@@ -32,8 +32,9 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
     (
         "shop",
-        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `daycare`: the eggs hatched; `bed`: “Go to sleep?”, then “Save your adventure?”, and `sleep`)",
+        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `recruits`: Chimecco Assembly, who goes, each member's tactic, a recruit released; `daycare`: the eggs hatched; `bed`: “Go to sleep?”, then “Save your adventure?”, and `sleep`; `name`: the team's name typed)",
     ),
+    ("name_team", "name_team: the team's name typed (as `shop name`), shown in `{team}`; Poképals till then"),
     ("map", "map [dungeons]: the world map, the places and dungeons opened (`map dungeons`: the dungeons only); the one chosen is gone to"),
     (
         "sleep",
@@ -507,6 +508,7 @@ fn action(call: &language::ast::Call) -> Result<Action, String> {
         },
         "finish" => Action::Finish,
         "sleep" => Action::Sleep { save: false },
+        "name_team" => Action::Shop("name".to_string()),
         _ => {
             let known: Vec<&str> = ACTIONS.iter().map(|(word, _)| *word).collect();
             return Err(format!("“{word}” is not an action of a game ({})", known.join(", ")));

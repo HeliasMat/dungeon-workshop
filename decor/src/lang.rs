@@ -49,7 +49,7 @@ pub const COMMANDS: [(&str, &str); 33] = [
     ),
     (
         "talk",
-        "talk film <film> | talk shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed: talking to the resident above plays that film of the game, or opens that screen, after what it says (`talk bed`: “Go to sleep?”, a new day)",
+        "talk film <film> | talk shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name: talking to the resident above plays that film of the game, or opens that screen, after what it says (`talk recruits`: Chimecco Assembly; `talk bed`: “Go to sleep?”, a new day; `talk name`: the team's name)",
     ),
     ("zone", "zone name x y width height: a zone of the place; walking into it plays the game's `on zone name`"),
     (
@@ -901,4 +901,5 @@ pub struct LifeRule {
 }
 
 /// The screens and what a resident may do when talked to (`talk …`).
-pub const TALKS: [&str; 13] = ["film", "shop", "market", "bank", "storage", "jobs", "outlaws", "joblist", "recruits", "appraise", "cafe", "daycare", "bed"];
+pub const TALKS: [&str; 14] =
+    ["film", "shop", "market", "bank", "storage", "jobs", "outlaws", "joblist", "recruits", "appraise", "cafe", "daycare", "bed", "name"];

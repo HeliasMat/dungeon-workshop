@@ -133,6 +133,7 @@ pub static POKEMON: Vocabulary = Vocabulary {
         "partner_species",
         "hero",
         "partner",
+        "team",
         "answer",
         "recruits",
         "presses",
@@ -154,7 +155,19 @@ pub static POKEMON: Vocabulary = Vocabulary {
         "summary_misses",
         "summary_hp",
     ],
-    given_beginnings: &[ITEM_NUMBERS, "recruit_", "bag_", "game_", "hero_level", "partner_level", "recruits", "map_choice", "dungeon_message"],
+    given_beginnings: &[
+        ITEM_NUMBERS,
+        "recruit_",
+        "bag_",
+        "game_",
+        "hero_level",
+        "partner_level",
+        "recruits",
+        "map_choice",
+        "dungeon_message",
+        "team_size",
+        "rank_name",
+    ],
 };
 
 #[cfg(test)]

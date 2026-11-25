@@ -313,6 +313,22 @@ scene_player play my_first_game.dwpack
 
   `if day >= 5`, `if evening` test the day and the hour; `autosave: yes` in the head saves the game each time
   the team is back from a dungeon.
+- **The team**: `talk recruits` under a resident (Chimecco) opens the assembly: who goes exploring (four at
+  most: the leader, the partner, two recruits; Space marks one going or staying), each member seen (level, HP,
+  moves) and given its tactic, a recruit released. Once `set graduated`, the partner may stay home for a third
+  recruit. `name_team` (or `talk name`) asks the team's name; `{team}` in a line says it (Poképals till then):
+
+  ```text
+  chapter 1 "A New Team"
+    play first_night
+    name_team                      # "What is your team's name?"
+    play the_guild_signs_us_up     # loudred: Team {team}? Never heard of you!
+  end
+  ```
+
+  The rank grows with the jobs: the bag holds 16 items at Normal Rank, more at each rank (48 at most), and
+  Kangaskhan Storage keeps more too; M › Team tells the rank and the points to the next, `if team_size >= 3`
+  how many go.
 - Bigger fights: `fight: <word>` and a `.fight` file made in the **Dungeon** space (+ New Boss Fight).
 - How a game's folder is laid out: [games/README.md](../games/README.md).
 - Every word of a film, a game, a dungeon: [film/FILMS.md](../film/FILMS.md); of a decor:

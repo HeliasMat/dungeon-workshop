@@ -80,7 +80,7 @@ The words come in families: Structure, Speech, Presence, Formations, Movement, T
 |---|---|
 | `option "Give an apple" if apples > 0 once` | in a `choice`: an answer offered only when its test holds, never again once taken (`once`); `option Leave` as before |
 | `piplup: {if met: You again! \| Hello!}` | in a line said: the words the test chooses as the film plays (none after the `\|`: nothing) |
-| `partner: I have {apples} apples, and {money} Poké.` | a value put in: a flag, a counter, the money the game gives the film |
+| `partner: I have {apples} apples, and {money} Poké.` | a value put in: a flag, a counter, the money the game gives the film; in a game also `{team}` (the team's name, Poképals till `name_team`), `{rank_name}`, `{team_size}` |
 | `go moment the offer`, `go scene town` | on to another moment of the film, back or ahead (in another scene: that scene opens, set, then goes on from the moment), or another scene from its start; an unknown one is told |
 | `if seen(the_offer) < 3` | how many times a moment (or a scene, by its place) was played: counted for the run of a film alone, kept by a game's story from one play to the next |
 | `pikachu: Hello! \| fr: Bonjour ! #k3f9` | the line's id, written last, its own name whatever its words become, for those who translate it: `scene_player ids <film>` gives one to each line that has none, the ids there kept |
@@ -388,7 +388,8 @@ end
 - **The actions** (in a chapter, in a rule, in a place's `on … end`): `play <film>`,
   `set <flag>`, `clear <flag>`, `add <counter> <n>`, `chapter <n>`, `go <place> [entrance]`,
   `dungeon <name>` and `fight <name>` (then `if won`), `open <place|dungeon>` (on the map),
-  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed>` (`jobs`: the job board, eight random jobs in the dungeons the story has opened, all of the game's if it never opens one, new ones each day; Enter reads a job in full, its client, objective, place, difficulty and reward, then takes it; `outlaws`: the outlaw board, the same with outlaws to arrest; `joblist`: the jobs taken, eight at most, each read and maybe given up; a job is done in its dungeon and paid on the way out, its client thanking the team first; `daycare`: Chansey's Day Care, where the Eggs some clients give wait (two days), each hatched there once ready, the Pokémon born joining the recruits; `bed`: “Go to sleep?”, then “Save your adventure?”, and the team sleeps as `sleep` does; `appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
+  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name>` (`jobs`: the job board, eight random jobs in the dungeons the story has opened, all of the game's if it never opens one, new ones each day; Enter reads a job in full, its client, objective, place, difficulty and reward, then takes it; `outlaws`: the outlaw board, the same with outlaws to arrest; `joblist`: the jobs taken, eight at most, each read and maybe given up; a job is done in its dungeon and paid on the way out, its client thanking the team first; `recruits`: Chimecco Assembly, who goes exploring, four at most: the leader always, the partner, two recruits (Space marks one going or staying; Enter shows a member, its level, HP, moves and tactic, its next tactic chosen, a recruit released after “Release …? Yes”); once the flag `graduated` is up the partner may stay home, a third recruit in its place, as the original once its story is over; `name`: the team's name typed, ten letters at most, then `{team}` in the lines; `daycare`: Chansey's Day Care, where the Eggs some clients give wait (two days), each hatched there once ready, the Pokémon born joining the recruits; `bed`: “Go to sleep?”, then “Save your adventure?”, and the team sleeps as `sleep` does; `appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
+  `name_team` (the team's name typed, as `shop name`; headless, it stays Poképals),
   `map` (the world map of what was opened; `map dungeons`: the dungeons only, as at a crossroads; the one chosen is gone into),
   `sleep` (the team goes to bed: the `on night` rules, a new day, the `on morning` rules; see **Days**), `finish` (the game's end card, “The End” and its title, until Enter goes back to the
   title screen; the same once the last chapter has nothing left to play; headless, `the end`);
@@ -396,6 +397,7 @@ end
   `if chapter >= 2 and not met_kecleon`. Besides the flags and counters, a test reads the game's own numbers
   (never set): `chapter`, `won` (the last dungeon cleared), `jobs_done` (the jobs paid so far), `rank` (the
   exploration rank as a number: 1 Normal, 2 Bronze, 3 Silver…), `money` (in the bag), `recruits` (how many joined),
+  `team_size` (how many go exploring: the leader, the partner unless at home, the recruits along),
   `day` (1 the first day), `evening` (1 once back from a dungeon, till the team sleeps):
   `if jobs_done >= 3 and rank >= 2`, `if day >= 2 and not evening`.
 - **Days**, as in the original: a day ends when the team sleeps (`sleep`, or the bed of a place: `talk bed` under
@@ -445,7 +447,12 @@ end
 
   The game makes a scene of the place (its residents put, the team at the entrance it came by,
   the player at the keys: arrows, Enter to talk, Shift to run, M or X for the menu: Team, Bag,
-  Save, Job List (the jobs taken, each read and maybe given up), Close), and makes it again when the story changes what it shows.
+  Save, Job List (the jobs taken, each read and maybe given up), Close; Team tells the team's name, its rank and the points
+  to the next, who goes exploring, the bag's room), and makes it again when the story changes what it shows.
+- **The rank**, as the original's: jobs give points, and each rank (Normal, Bronze, Silver, Gold, Diamond…, Sky's `RANK_UP_TABLE`)
+  gives Kangaskhan Storage its room (64 items at Normal, 96 at Bronze, 200 at Silver… 1000) and, here, the Treasure Bag its
+  level: 16 items at Normal, 24, 32, 40, then 48 from Ultra (the original's bag sizes, its level raised by its story);
+  a new rank is told on the way back, with the bag and the storage grown.
 - **A film reads the game's flags** by `keep`: `keep fireflies_back = false` before its first
   scene, then `if fireflies_back`. The game gives every flag (1 up, 0 down), every counter and
   `chapter` to the film it plays; a `keep` only takes its value when the game gives none.

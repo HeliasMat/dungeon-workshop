@@ -25,6 +25,7 @@
 //! - `book`: the rules' book, read from the data;
 //! - `drive`: a game played by a script at the keys, with no window (the end-to-end tests).
 
+pub mod assembly;
 pub mod book;
 pub mod dive;
 #[cfg(test)]
@@ -778,7 +779,8 @@ impl Game {
         let progress = &run.team().progress;
         let rank = run.book.tables.jobs.rank_number(progress.rank);
         let (day, evening) = run.day();
-        self.story.team = story::TeamNumbers { rank, money: run.bag().money, recruits: progress.recruits.len() as u32, day, evening };
+        let (money, recruits, team_size) = (run.bag().money, progress.recruits.len() as u32, run.team_size() as u32);
+        self.story.team = story::TeamNumbers { rank, money, recruits, team_size, day, evening };
     }
 
     /// The team goes to bed: the night's rules (`on night`: the guild's
@@ -835,10 +837,15 @@ impl Game {
             self.screen_left(0);
             return self.push(vec![Action::Sleep { save: false }]);
         }
-        let opened = match self.nobody {
+        let graduated = self.story.flags.contains(game_file::GRADUATED);
+        let mut opened = match self.nobody {
             true => None,
             false => self.playthrough_mut().and_then(|playthrough| GameScreen::open(word, ways, playthrough, &mut draw, jobs_in.as_ref())),
         };
+        // (Chimecco lets the partner stay home once the team has graduated, as the original once its story is over.)
+        if let Some(GameScreen::Recruits(assembly)) = &mut opened {
+            assembly.free = graduated;
+        }
         self.draw = draw;
         match opened {
             Some(screen) => {

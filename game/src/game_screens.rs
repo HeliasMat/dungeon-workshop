@@ -1,7 +1,8 @@
 //! The game's own screens a film one plays opens (`screen shop`, `map
 //! …`), over the scene, the film waiting until they are left: the shops,
 //! the bank, the storage, the boards of jobs and of outlaws, the Job List
-//! (the jobs taken, to give up), the recruits who come along,
+//! (the jobs taken, to give up), Chimecco Assembly (who goes, each member
+//! seen, its tactic, a recruit released), the team's name,
 //! Xatu's appraisal of the treasure boxes, the café's Gummi juice, Chansey's
 //! Day Care (the eggs hatched), the bed (a new day), the world map's ways. What they do is the rules' (`rules::services`,
 //! `rules::jobs`, the `Run` of the film's game, `Playthrough`); here, a key at
@@ -10,7 +11,6 @@
 use std::collections::BTreeSet;
 
 use rules::jobs::{Job, Listing};
-use rules::run::Recruit;
 use rules::run::job_floor::{job_details, job_title};
 use rules::run::town::{Draw, Whom};
 use rules::services::{self, Input, Service};
@@ -19,6 +19,7 @@ use stage_view::ui::message::Words;
 use stage_view::ui::widgets::input;
 use stage_view::ui::{Canvas, ListCursor, Picked, UiArt};
 
+use crate::assembly::{Assembly, Naming};
 use crate::playthrough::Playthrough;
 
 /// A screen open.
@@ -30,8 +31,11 @@ pub enum GameScreen {
     Board(Listing),
     /// The Job List: the jobs held, each read in full, given up.
     JobList(Listing),
-    /// Who of the recruits comes along (two at most).
-    Recruits { cursor: ListCursor },
+    /// Chimecco Assembly: who goes exploring (four at most), each member
+    /// seen, its tactic, a recruit released (`crate::assembly`).
+    Recruits(Assembly),
+    /// The team's name typed.
+    Naming(Naming),
     /// Xatu opens the treasure boxes of the bag, one at a time, for a
     /// price: what it found told; the numbers it draws.
     Appraise { cursor: ListCursor, said: Option<String>, draw: Draw },
@@ -84,7 +88,8 @@ impl GameScreen {
             }
             "joblist" => GameScreen::JobList(Listing::board(false)),
             "cafe" => GameScreen::Cafe { cursor: ListCursor::default(), gummi: None, said: None },
-            "recruits" => GameScreen::Recruits { cursor: ListCursor::default() },
+            "recruits" => GameScreen::Recruits(Assembly::default()),
+            "name" => GameScreen::Naming(Naming::new(run)),
             "daycare" => GameScreen::DayCare { cursor: ListCursor::default(), said: None },
             "appraise" => GameScreen::Appraise { cursor: ListCursor::default(), said: None, draw: Draw(draw.below(usize::MAX >> 1) as u32) },
             "bed" => GameScreen::Bed { cursor: ListCursor::default(), sleeps: false, answer: None },
@@ -128,26 +133,13 @@ impl GameScreen {
                 let view = list.view_held(held, |job| job_title(job, &book), detail, |dungeon| book.dungeon_name(dungeon));
                 (left, Words::of_menu(view.message, view.options, view.cursor))
             }
-            GameScreen::Recruits { cursor } => {
-                let count = run.team().progress.recruits.len();
-                let left = match cursor.press(pressed, count + 1) {
-                    Picked::Chosen(row) if row < count => {
-                        run.pick_along(row);
-                        false
-                    }
-                    Picked::Chosen(_) | Picked::Left => true,
-                    _ => false,
-                };
-                let along = run.along();
-                let row = |(at, recruit): (usize, &Recruit)| {
-                    format!("{} {}  Lv. {}", if along.contains(&at) { "[CS:G]+[CR]" } else { "  " }, recruit.name, recruit.stats[0])
-                };
-                let options = run.team().progress.recruits.iter().enumerate().map(row).chain(["Done".to_string()]).collect();
-                let message = match count {
-                    0 => "Nobody has joined the team yet.",
-                    _ => "Who goes exploring with you? (two at most)",
-                };
-                (left, Words::of_menu(message.to_string(), options, cursor.at))
+            GameScreen::Recruits(assembly) => {
+                let (left, (message, options, at)) = assembly.play(pressed, run);
+                (left, Words::of_menu(message, options, at))
+            }
+            GameScreen::Naming(naming) => {
+                let (left, message) = naming.play(keys, run);
+                (left, Words::of_menu(message, Vec::new(), 0))
             }
             GameScreen::Appraise { cursor, said, draw } => {
                 if said.is_some() {
@@ -288,12 +280,7 @@ impl GameScreen {
                     }
                 } else {
                     match cursor.press(pressed, OPTIONS.len()) {
-                        Picked::Chosen(0) => {
-                            let team: Vec<String> =
-                                run.members().into_iter().map(|whom| format!("{} Lv. {}", run.member_name(whom), run.member_level(whom))).collect();
-                            let recruits = run.team().progress.recruits.len();
-                            *said = Some(format!("Team: {}.{}", team.join(", "), if recruits > 0 { format!(" Recruits: {recruits}.") } else { String::new() }));
-                        }
+                        Picked::Chosen(0) => *said = Some(team_page(run)),
                         Picked::Chosen(1) => {
                             let mut things: Vec<String> = crate::playthrough::bag_of(run).into_iter().map(|(name, count)| format!("{name} x{count}")).collect();
                             things.extend(own.iter().map(|(name, count)| format!("{name} x{count}")));
@@ -354,6 +341,27 @@ impl GameScreen {
             _ => 0,
         }
     }
+}
+
+/// The menu's Team page: the team's name and rank (the points to the next),
+/// who goes exploring, the recruits, the bag's room.
+fn team_page(run: &rules::run::Run) -> String {
+    let (progress, ranks) = (&run.team().progress, &run.book.tables.jobs);
+    let rank = match ranks.next_rank(progress.rank) {
+        Some(next) => format!("{}, {} points to {}", ranks.rank_name(progress.rank), next - progress.rank, ranks.rank_name(next)),
+        None => ranks.rank_name(progress.rank).to_string(),
+    };
+    let rank = if ranks.ranks.is_empty() { String::new() } else { format!(": {rank}") };
+    let along = run.along();
+    let goes = |whom: &Whom| match whom {
+        Whom::Partner => !progress.partner_home,
+        Whom::Recruit(at) => along.contains(at),
+        Whom::Leader => true,
+    };
+    let team: Vec<String> = run.members().into_iter().filter(goes).map(|whom| format!("{} Lv. {}", run.member_name(whom), run.member_level(whom))).collect();
+    let recruits = progress.recruits.len();
+    let recruits = if recruits > 0 { format!(" Recruits: {recruits}.") } else { String::new() };
+    format!("Team {}{rank}.\nExploring: {}.{recruits}\nBag: {} / {} items.", run.team().team_name(), team.join(", "), run.bag().items.len(), run.bag_room())
 }
 
 /// What the bed asks: to sleep, then (yes) to save first.

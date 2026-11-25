@@ -6,7 +6,8 @@
 //!
 //! It is what is true: the film reads it through the numbers it is given
 //! (`bag_<word>` and `bag_name_<word>`, `money`, `hero_level`,
-//! `partner_level`, `recruits`, the team said in `game_team`), and
+//! `partner_level`, `recruits`, `team_size`, the team said in `game_team`,
+//! its name in `team`, its rank in `rank_name`), and
 //! changes it through the game (`team`, `bag`, `getmoney`, `getitem`,
 //! `takeitem`, a dungeon gone through).
 
@@ -227,9 +228,13 @@ impl Playthrough {
         numbers.push(("hero_level".to_string(), f64::from(run.member_level(Whom::Leader))));
         numbers.push(("partner_level".to_string(), f64::from(run.member_level(Whom::Partner))));
         numbers.push(("recruits".to_string(), run.team().progress.recruits.len() as f64));
+        numbers.push(("team_size".to_string(), run.team_size() as f64));
         numbers.push(("game_played".to_string(), 1.0));
         let said: Vec<String> = run.members().into_iter().map(|whom| format!("{} Lv. {}", run.member_name(whom), run.member_level(whom))).collect();
         words.push(("game_team".to_string(), said.join(", ")));
+        // (`{team}` in a line: the team's name, Poképals till it has one.)
+        words.push(("team".to_string(), run.team().team_name().to_string()));
+        words.push(("rank_name".to_string(), run.book.tables.jobs.rank_name(run.team().progress.rank).to_string()));
         (numbers, words)
     }
 
