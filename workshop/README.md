@@ -8,7 +8,7 @@ One window, seven spaces (Home, Game, Film, Decor, Dungeon, Resources, Emulator)
 
 ## Game
 
-A game of one's own (a folder of its own, `games/<name>/<name>.game`, see `games/README.md`; `workshop/src/games.rs`), in three columns (**+ New Game** makes its folder, its `.game` and its `films/`, `decors/`, `dungeons/`… folders; a dungeon of the game's own opens in the Dungeon space only if the library has one of that name):
+A game of one's own (a folder of its own, `games/<name>/<name>.game`, see `games/README.md`; `workshop_game/`), in three columns (**+ New Game** makes its folder, its `.game` and its `films/`, `decors/`, `dungeons/`… folders; a dungeon of the game's own opens in the Dungeon space only if the library has one of that name):
 - **On the left**: the project's games (a click opens one; a title and **+ New Game** makes one); its **card**: title, author, team (hero, partner), home (a place and its entrance: where the team comes back to, K.O.), each written into the file as soon as it is let go, its comments and its order kept; under it, **the file** itself, to write the chapters (Save, Ctrl+S; • not written yet).
 - **In the middle**: the **chapters**, a box each: what it plays (`film`), the places it goes to (`place`), the dungeons and fights it sends the team to, what it opens on the map; a click opens it in its space (in red: not found in the project); its rules (`on talk kecleon if …`); **→ chapter n** (the chapter it leads to), **■ the end**, or, in red, a chapter that leads nowhere. A click on a chapter's title chooses it to play from and shows its line in the file.
 - **On the right**: **▶ Play from Chapter n** (`scene_player play <game>.game --chapter n`, a new game from that chapter at its home, in a window of its own: the file is saved first); **Export the Game…** (a `.dwpack` where one says, `dist/` at first: the game's own files, nothing of the cartridge; it says where it went or why it was refused); **Check the Game**: what `scene_player check-game` finds (names not found, flags set and never read, what the game never reaches), read again at each save; a click shows where (a line of the file, a film at its line, a decor with its line chosen, a dungeon in its editor).
@@ -367,7 +367,8 @@ The Workshop's **settings** (`settings.rs`) are a small `key = value` file of th
 The Workshop is several crates, a part each, so that a change to one part builds only that part and the window over it. In each, a module a subject; a big one is a folder, its `mod.rs` (or the crate's `lib.rs`) holding its state and what its files share. Each crate's `lib.rs` says what it holds and what it uses; `tools/rule.sh` (the building-block rule) lists the crates each may use.
 
 ```text
-workshop                       the window: menus, spaces, Home, first launch, Game space, Emulator, Tools
+workshop                       the window: menus, spaces, Home, first launch, Emulator, Tools
+├── workshop_game              the Game space
 ├── workshop_resources         the Resources space and its makings
 │   ├── workshop_picture       the painter
 │   ├── workshop_music         the music maker
@@ -385,13 +386,14 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 | Crate, module | What it holds |
 |---|---|
 | `workshop/`: `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state |
-| `workshop/`: `home.rs`, `first.rs`, `games.rs` | the Home, the first launch (the resources extracted), the Game space |
+| `workshop/`: `home.rs`, `first.rs` | the Home, the first launch (the resources extracted) |
+| `workshop_game/` | the Game space: `lib.rs` (the game open, its three columns), `game.rs` (a `.game` file as the space reads and writes it: its card, its chapters as boxes) |
 | `workshop/`: `spritecollab.rs`, `quant_tool.rs` | the Tools: SpriteCollab, an image converted |
 | `workshop/`: `emulate.rs`, `settings.rs` | the Emulator space (a libretro core through the `emulator` crate, its sound through `shell::stream`, a film put on DS), the Workshop's own settings |
 | `workshop/`: `capture.rs`, `bug.rs` | a picture of the window without a mouse; a panic told as a bug |
 | `workshop_base/`: `session.rs`, `launch.rs` | what every space works with (`Session`: the library, the data, what is read of them and kept, `reload`), how the Workshop was launched (`LaunchOptions`) |
 | `workshop_base/`: `theme.rs`, `icons.rs` | the look: colours, sizes, icons drawn with lines |
-| `workshop_base/`: `project.rs`, `game.rs`, `safe.rs`, `pick.rs` | the project's files (and the kinds of places), the `.game` file the Game space reads and writes, safe saves, the system's dialogs |
+| `workshop_base/`: `project.rs`, `safe.rs`, `pick.rs` | the project's files (and the kinds of places, the library's films by their words), safe saves, the system's dialogs |
 | `workshop_base/`: `ask.rs` | the spaces, and what a part asks of the window (`Ask`: a file opened in its space, the film played from a line, a space, a window, a word said), pushed with `Session::ask` and done by `App::answer` once a frame |
 | `workshop_base/`: `example.rs`, `tool_run.rs`, `own_sounds.rs`, `done.rs` | a line played as an example, a long piece of work on its thread, the own sounds read as samples, what a making asks of the Resources |
 | `workshop_script/` | the Film's Script: `lib.rs` (the film open, its state, the language's thread), `body.rs` (the text drawn and typed in, part after part), `head.rs` (the tabs, the head, the story view), `keys.rs` (the keys taken before the editor), `margin.rs` (the margin, the ends of lines, the ruler), `offers.rs` (what is offered as one types), `popups.rs` (the small windows over the text), `problems.rs` (the problems, the line's box, the status), `highlight.rs` (each piece in its colour), `completion.rs` (what may be typed), `knowledge.rs` (what is known of a word, portraits), `cast.rs` (who is in a scene), `text.rs` and `edits.rs` (where things are, the text changed), `plan.rs` (the film's plan), `wiki.rs` (the Wiki beside the text), `windows.rs` (the project's windows), `editor.rs` (laid out), `heard.rs` (sounds named); beside it `story.rs` (the film as a story), `typography.rs` (what is well written), `workspace.rs` (the whole project's films), `debug.rs` (a film looked into) |

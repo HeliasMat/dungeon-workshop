@@ -129,7 +129,7 @@ fn in_the_game(ui: &mut egui::Ui, decors: &mut Decors, changing: &mut Changing) 
             prop(ui, "The Film", |ui| {
                 let mut asked: Option<String> = None;
                 egui::ComboBox::from_id_salt(("talk film", number)).selected_text(film).show_ui(ui, |ui| {
-                    for known in workshop_base::game::films(&library) {
+                    for known in workshop_base::project::films(&library) {
                         if ui.selectable_label(known == film, &known).clicked() {
                             asked = Some(known);
                         }

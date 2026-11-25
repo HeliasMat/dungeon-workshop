@@ -39,7 +39,7 @@ check emulator ""
 check dungeon_lsp "assets decor film game language "
 check extractor "engine rom_formats rules shell stage_view "
 check dive "rules scenes shell stage_view "
-check workshop_base "assets decor film game preview shell spritecollab stage_view "
+check workshop_base "assets decor film preview shell spritecollab stage_view "
 check workshop_decor "assets decor film scenes shell workshop_base "
 check workshop_dungeon "assets decor dive film game media rules shell workshop_base "
 check workshop_film "engine film preview shell stage_view workshop_base workshop_decor workshop_script "
@@ -49,7 +49,8 @@ check workshop_resources "assets film game rules scenes shell spritecollab works
 check workshop_script "assets decor film rules scenes shell workshop_base workshop_wiki "
 check workshop_sound "film rules shell workshop_base "
 check workshop_wiki "engine film preview workshop_base "
-check workshop "assets decor emulator engine film game media shell spritecollab workshop_base workshop_decor workshop_dungeon workshop_film workshop_resources workshop_script "
+check workshop_game "assets decor engine game workshop_base workshop_decor "
+check workshop "assets decor emulator engine film game media shell spritecollab workshop_base workshop_decor workshop_dungeon workshop_film workshop_game workshop_resources workshop_script "
 # (The table of ARCHITECTURE.md, between <!-- rule --> and its end, is this
 # list, block for block.)
 told=$(sed -n '/^<!-- rule -->/,/^<!-- end of rule -->/p' ARCHITECTURE.md | grep '^| `' | tr -d '`,' | sed 's/^| \([a-z_]*\) | \(.*\) |$/\1: \2 /; s/: nothing $/: /' | sort)

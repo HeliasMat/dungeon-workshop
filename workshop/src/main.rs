@@ -26,7 +26,6 @@ mod bug;
 mod capture;
 mod emulate;
 mod first;
-mod games;
 mod home;
 mod quant_tool;
 mod settings;

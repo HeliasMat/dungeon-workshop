@@ -23,19 +23,6 @@ pub fn games(library: &Project) -> Vec<PathBuf> {
     library.games()
 }
 
-/// The library's films, by their words.
-pub fn films(library: &Project) -> Vec<String> {
-    let mut found: Vec<String> = std::fs::read_dir(library.films())
-        .into_iter()
-        .flatten()
-        .flatten()
-        .filter(|entry| entry.path().extension().is_some_and(|end| end == "film"))
-        .filter_map(|entry| Some(entry.path().file_stem()?.to_string_lossy().into_owned()))
-        .collect();
-    found.sort();
-    found
-}
-
 /// A new game's text: its head, one chapter to begin with.
 pub fn new_text(title: &str) -> String {
     format!(
@@ -224,7 +211,7 @@ mod tests {
 
     #[test]
     fn the_example_s_chapters_link_what_they_touch() {
-        let path = crate::session::Session::for_tests().root().join("tests/games/test_village/test_village.game");
+        let path = workshop_base::session::Session::for_tests().root().join("tests/games/test_village/test_village.game");
         let game = GameFile::open(&path).expect("the example game");
         let boxes = chapter_boxes(&game);
         assert_eq!(boxes.len(), 2);
@@ -244,7 +231,7 @@ mod tests {
         assert!(game.problems.is_empty(), "{:?}", game.problems);
         assert_eq!(game.title, "The Big Quest");
         assert_eq!(
-            file_of(crate::session::Session::for_tests().library(), "The Big Quest!")
+            file_of(workshop_base::session::Session::for_tests().library(), "The Big Quest!")
                 .and_then(|path| path.file_name().map(|name| name.to_string_lossy().into_owned()))
                 .as_deref(),
             Some("the_big_quest.game")

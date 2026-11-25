@@ -13,6 +13,11 @@
 //!   `game::pack`), and what is wrong with the whole game
 //!   (`game::project_check`, read again after each save): a click shows
 //!   where.
+//!
+//! `game`: a `.game` file as the space reads and writes it, its card and
+//! its chapters as boxes.
+
+mod game;
 
 use std::sync::Arc;
 
@@ -27,7 +32,7 @@ use eframe::egui::{self, Color32, RichText, Sense};
 use egui::text::{CCursor, CCursorRange};
 use engine::Diagnostic;
 
-use workshop_base::game::{self, ChapterBox, Link};
+use game::{ChapterBox, Link};
 use workshop_base::theme;
 
 /// A game open: its file, its text (as typed), as written, as read, its chapters.

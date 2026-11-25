@@ -12,7 +12,6 @@ publish.workspace = true
 assets = { path = "../assets" }
 decor = { path = "../decor" }
 film = { path = "../film" }
-game = { path = "../game" }
 preview = { path = "../preview" }
 shell = { path = "../shell" }
 spritecollab = { path = "../spritecollab" }

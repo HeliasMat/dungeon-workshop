@@ -167,6 +167,19 @@ fn entries(folder: &Path, extension: &str, kind: Kind) -> Vec<Entry> {
     found
 }
 
+/// The library's films, by their words.
+pub fn films(library: &assets::project::Project) -> Vec<String> {
+    let mut found: Vec<String> = std::fs::read_dir(library.films())
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|entry| entry.path().extension().is_some_and(|end| end == "film"))
+        .filter_map(|entry| Some(entry.path().file_stem()?.to_string_lossy().into_owned()))
+        .collect();
+    found.sort();
+    found
+}
+
 /// The kinds of places (`library/tables/place_kinds.txt`), read again only when the file changes.
 pub fn place_kinds(library: &assets::project::Project) -> std::sync::Arc<decor::tags::PlaceKinds> {
     type Kept = std::sync::Mutex<Option<(std::path::PathBuf, Option<std::time::SystemTime>, std::sync::Arc<decor::tags::PlaceKinds>)>>;
