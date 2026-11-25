@@ -31,7 +31,8 @@ pub(crate) struct Piece {
     pub palette: usize,
 }
 
-/// The markers of a step (`AnimFrame::flag`).
+/// The markers of a step (`AnimFrame::flag`): the step a blow lands on,
+/// the one it is back in place from.
 pub const HIT_FLAG: u8 = 2;
 pub const RETURN_FLAG: u8 = 1;
 
@@ -39,8 +40,8 @@ pub const RETURN_FLAG: u8 = 1;
 pub struct AnimFrame {
     /// In 1/60 s.
     pub duration: u8,
-    /// Its markers: 2, the step a blow lands on; 1, the one it is back in
-    /// place from (as SkyTemple reads them).
+    /// Its markers: [`HIT_FLAG`], the step a blow lands on; [`RETURN_FLAG`],
+    /// the one it is back in place from (as SkyTemple reads them).
     pub flag: u8,
     pub meta_frame: usize,
     pub offset: (i16, i16),

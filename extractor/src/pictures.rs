@@ -135,9 +135,10 @@ fn staged(data: &RomData) -> Vec<usize> {
 
 /// A monster's `sprites/<monster>.txt`: a line per animation and way,
 /// `<animation> <way> <markers> <points>`, tab-separated: a marker a step
-/// (2, the blow lands; 1, back in place; 0, neither), comma-separated; and
-/// each step's head, hands and centre from its cell's middle
-/// (`x,y;x,y;x,y;x,y`, or `-`), space-separated.
+/// ([`wan::HIT_FLAG`](rom_formats::wan::HIT_FLAG), the blow lands;
+/// [`wan::RETURN_FLAG`](rom_formats::wan::RETURN_FLAG), back in place; 0,
+/// neither), comma-separated; and each step's head, hands and centre from
+/// its cell's middle (`x,y;x,y;x,y;x,y`, or `-`), space-separated.
 fn step_lines(art: &SpriteArt) -> String {
     let point = |points: &Option<[(i32, i32); 4]>| match points {
         Some(points) => points.iter().map(|(x, y)| format!("{x},{y}")).collect::<Vec<_>>().join(";"),
