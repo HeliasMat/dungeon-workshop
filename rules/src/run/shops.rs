@@ -1,7 +1,7 @@
 //! Kecleon's shops, the thief and its hunters, what is picked up, recruits
 //! joining, and the questions the dungeon asks.
 
-use crate::dungeon::{DungeonRng, MoveSlot, Pos, Stats, Statuses, ai, money_amount, stack, status};
+use crate::dungeon::{DungeonRng, MoveSlot, Pos, Stats, Statuses, ai, iq, money_amount, stack, status};
 use crate::services::BAG_CAPACITY;
 
 use super::book::ENEMY_STATS;
@@ -11,6 +11,16 @@ use super::monster::Side;
 use super::spawning::{KECLEON, hunter_stats, spawn_enemy, spawn_thief_hunter};
 use super::team::{Experience, Recruit, known_moves};
 use super::{Book, Monster, MonsterId, Run, Sight};
+
+/// Haggler: Kecleon sells for a quarter less, and buys for a quarter more,
+/// from a leader who has it (this project's own figures).
+fn haggled(leader: &Monster, price: i32, buying: bool) -> i32 {
+    match (iq::has(&leader.stats, iq::HAGGLER), buying) {
+        (false, _) => price,
+        (true, true) => (price * 3 / 4).max(1),
+        (true, false) => price * 5 / 4,
+    }
+}
 
 /// The songs of a Kecleon shop and of its alarm (`KecleonsShop`, `Outlaw`),
 /// and how many more Kecleons the alarm brings.
@@ -170,6 +180,7 @@ impl Run {
             self.log.push(format!("The shopkeeper: I can't buy {}.", book.item_name(item)));
             return;
         }
+        let price = haggled(self.here().leader(), price, false);
         self.bag.items.remove(index);
         self.bag.money += price;
         self.log.push(format!("The shopkeeper bought {} for {price} Poké.", book.item_name(item)));
@@ -246,6 +257,7 @@ impl Run {
         let item = lying.item;
         let item_name = self.book.item_name(item);
         if let Some(price) = lying.price {
+            let price = self.dungeon.as_ref().map_or(price, |dungeon| haggled(dungeon.leader(), price, true));
             self.bag.items.push(item);
             match self.dungeon.as_mut().and_then(|dungeon| dungeon.shop.as_mut()).filter(|shop| shop.keeper.is_some()) {
                 Some(shop) => {
@@ -272,6 +284,9 @@ impl Run {
         };
         let most = dungeon.spec(&book).map_or(0, |floor| floor.max_money);
         let amount = money_amount(&mut dungeon.rng, &book.tables.money_table, most).max(1);
+        // (Coin Watcher on the team: a fifth more, the game's 1.2.)
+        let watcher = dungeon.monsters.iter().any(|monster| monster.team() && monster.alive() && iq::has(&monster.stats, iq::COIN_WATCHER));
+        let amount = if watcher { amount * 6 / 5 } else { amount };
         self.bag.money += amount;
         self.log.push(format!("{name} picked up {amount} {}.", book.item_name(item)));
         self.sights.push(Sight::Sound(MONEY_SOUND));

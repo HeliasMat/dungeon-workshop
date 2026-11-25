@@ -21,6 +21,8 @@ const STAIRS_UP: u16 = 0x130A;
 const KNOCKED_OUT: u32 = 60;
 /// What a Friend Bow adds to a recruit rate, in 1000ths.
 const FRIEND_BOW_BOOST: i32 = 150;
+/// What Fast Friend adds (the game's, read from its overlay 10).
+const FAST_FRIEND_BOOST: i32 = 50;
 /// How far from the leader a fallen foe may still ask to join.
 const JOIN_REACH: i32 = 2;
 const PLAIN_SEED: u16 = 85;
@@ -416,6 +418,8 @@ impl Run {
         let leader = dungeon.leader();
         let near = chebyshev(leader.at, enemy.at) <= JOIN_REACH && ai::can_see(&dungeon.floor, leader.at, enemy.at);
         let bow = if held::holds(&leader.stats, held::FRIEND_BOW) { FRIEND_BOW_BOOST } else { 0 };
+        // (And Fast Friend.)
+        let bow = bow + if iq::has(&leader.stats, iq::FAST_FRIEND) { FAST_FRIEND_BOOST } else { 0 };
         let chance = enemy.recruitable.map_or(0, |recruitable| recruitable.rate as i32);
         let chance = if chance > 0 { chance + bow + book.recruit_boost(leader.stats.level) } else { 0 };
         let open = dungeon.rules.recruitment && leader.alive() && near && dungeon.ask.is_none();

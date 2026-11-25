@@ -9,6 +9,10 @@ use crate::dungeon::{Belly, ItemUse, MoveEffect, REGULAR_ATTACK_ID, ability, aft
 use super::{Attack, Happened, Party, Play, Role};
 
 const FLYING: u8 = 10;
+/// Chances in 100, the game's (read from its overlay 10).
+const HIT_AND_RUNNER_CHANCE: i32 = 33;
+const COUNTER_HITTER_CHANCE: i32 = 24;
+const COUNTER_BASHER_CHANCE: i32 = 10;
 const STAGE_TOP: i32 = status::STAGE_COUNT as i32 - 1;
 
 impl Play<'_, '_> {
@@ -183,13 +187,26 @@ impl Play<'_, '_> {
         {
             self.affects(effect, user, Role::User);
         }
-        // A Counter: some of the damage goes back to who dealt it.
-        if let Some(kind) = victim.status.counter.filter(|_| victim.status.counter_turns > 0 && user.alive()) {
+        // A Counter: some of the damage goes back to who dealt it; Counter
+        // Basher (all of it) and Counter Hitter (a quarter) now and then,
+        // struck up close by a physical move (the game's chances, read from
+        // its overlay 10). Hit-and-Runner may slip away from them all.
+        let slips = iq::has(user.stats, iq::HIT_AND_RUNNER) && self.rolled(HIT_AND_RUNNER_CHANCE);
+        if let Some(kind) = victim.status.counter.filter(|_| victim.status.counter_turns > 0 && user.alive() && !slips) {
             let back = kind.returned(slot.category, damage.amount);
             if back > 0 {
                 user.stats.hp -= back;
                 self.says(Happened::Countered(back));
             }
+        }
+        let close = slot.category == 0 && chebyshev(user.at, victim.at) <= 1 && felt && user.alive() && !slips;
+        if close && iq::has(victim.stats, iq::COUNTER_BASHER) && self.rolled(COUNTER_BASHER_CHANCE) {
+            user.stats.hp -= damage.amount;
+            self.says(Happened::Countered(damage.amount));
+        } else if close && iq::has(victim.stats, iq::COUNTER_HITTER) && self.rolled(COUNTER_HITTER_CHANCE) {
+            let back = (damage.amount / 4).max(1);
+            user.stats.hp -= back;
+            self.says(Happened::Countered(back));
         }
         // Aftermath: knocked out, it may blow up around itself.
         if !victim.alive() && felt && ability::shields(user.stats, victim.stats, ability::AFTERMATH) && self.rolled(ability::AFTERMATH_CHANCE) {

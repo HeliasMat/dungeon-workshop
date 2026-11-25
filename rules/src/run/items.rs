@@ -29,8 +29,7 @@ const THROW_SOUND: u16 = 0x130E;
 /// nor by a foe the projectiles (Rescue Team's `sub_80479B8`).
 fn catches(monster: &Monster, item: u16) -> bool {
     use crate::dungeon::status::item::{DOUGH_SEED, HEAL_SEED, MIX_ELIXIR, OREN_BERRY, ZINC};
-    let seed_or_drink = (HEAL_SEED..=ZINC).contains(&item)
-        || matches!(item, MIX_ELIXIR | OREN_BERRY | DOUGH_SEED);
+    let seed_or_drink = (HEAL_SEED..=ZINC).contains(&item) || matches!(item, MIX_ELIXIR | OREN_BERRY | DOUGH_SEED);
     let able = if monster.team() { iq::has(&monster.stats, iq::ITEM_CATCHER) } else { !(1..=kind::LAST_PROJECTILE).contains(&item) };
     monster.stats.held == 0 && !seed_or_drink && able
 }
@@ -612,9 +611,31 @@ impl Run {
                 self.log.push("More Poké will turn up on the next floor!".to_string());
             }
             ItemUse::Fussy(item) => self.eat_fussy(me, item),
-            ItemUse::Done | ItemUse::Nothing => {}
+            ItemUse::Done => self.gift_nature(me, item),
+            ItemUse::Nothing => {}
         }
         true
+    }
+
+    /// Nature Gifter: a seed or a berry the leader eats does the same for
+    /// the rest of the team.
+    fn gift_nature(&mut self, leader: MonsterId, item: u16) {
+        let seed_or_berry = (kind::HEAL_SEED..=kind::VIA_SEED).contains(&item) && !matches!(item, kind::MAX_ELIXIR | kind::PROTEIN..=kind::ZINC);
+        let gifted = self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(leader)).is_some_and(|me| iq::has(&me.stats, iq::NATURE_GIFTER));
+        if !seed_or_berry || !gifted {
+            return;
+        }
+        let team: Vec<MonsterId> =
+            self.here().monsters.iter().filter(|monster| monster.side == Side::Ally && monster.alive()).map(|monster| monster.id).collect();
+        for member in &team {
+            self.work(*member, |member, rng, book, _| {
+                let Monster { stats, status, moves, .. } = member;
+                eat_item(item, rng, &book.tables.constants, stats, status, &mut Belly::full(), moves)
+            });
+        }
+        if !team.is_empty() {
+            self.log.push(format!("The effect of {} spread to the team!", self.book.item_name(item)));
+        }
     }
 
     /// A food for some species only: a Mix Elixir gives a Linoone back all

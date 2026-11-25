@@ -194,6 +194,8 @@ pub struct Dungeon {
     /// a wall Rock Smash breaks), and who set it off, spared.
     pub blasts: Vec<(Pos, i32, Option<Pos>)>,
     pub shoves: Vec<Shove>,
+    /// Who just missed with Wary Fighter, and where its target stood.
+    pub missed: Option<(MonsterId, Pos)>,
     /// The floor (its `generation`) Gravity was used on.
     pub gravity: Option<u32>,
     /// Items a move drops on the floor (Pay Day's money), where.
@@ -303,6 +305,7 @@ impl Dungeon {
             spread: Vec::new(),
             blasts: Vec::new(),
             shoves: Vec::new(),
+            missed: None,
             gravity: None,
             drops: Vec::new(),
             chain_belly: 0,

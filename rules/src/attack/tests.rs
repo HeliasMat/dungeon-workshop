@@ -64,6 +64,42 @@ fn abilities_that_answer_a_move() {
 }
 
 #[test]
+fn iq_skills_that_answer_a_blow() {
+    use crate::dungeon::iq;
+    let sturdy = || Stats { hp: 200, max_hp: 200, ..monster() };
+    let strike = Attack { slot: MoveSlot { accuracy: 125, ..slot() }, effect: None, damage_mult: FIXED_ONE, linked: false };
+    // Counter Hitter: now and then a quarter of the blow goes back.
+    let hitter = Stats { iq_skills: 1 << iq::COUNTER_HITTER, ..sturdy() };
+    let countered = |user: Stats| {
+        (1..60)
+            .filter(|&seed| {
+                let (mut one, mut other) = (user, hitter);
+                let outcome = attack_with(seed, &strike, (&mut one, &mut Statuses::default()), (&mut other, &mut Statuses::default()));
+                outcome.happened.iter().any(|happened| matches!(happened, Happened::Countered(_)))
+            })
+            .count()
+    };
+    let (plain, runner) = (countered(sturdy()), countered(Stats { iq_skills: 1 << iq::HIT_AND_RUNNER, ..sturdy() }));
+    assert!(plain > 5 && runner < plain, "{plain} {runner}");
+    // Practice Swinger: a miss, and the next blow is stronger.
+    let missing = Attack { slot: MoveSlot { accuracy: 0, accuracy2: 0, ..slot() }, ..strike };
+    let (mut swinger, mut target) = (Stats { iq_skills: 1 << iq::PRACTICE_SWINGER, ..sturdy() }, sturdy());
+    let mut status = Statuses::default();
+    let outcome = attack_with(3, &missing, (&mut swinger, &mut status), (&mut target, &mut Statuses::default()));
+    assert!(outcome.happened.contains(&Happened::Missed) && status.practice_swing);
+    let hurt = |status: &mut Statuses| {
+        let (mut swinger, mut target) = (swinger, sturdy());
+        attack_with(3, &strike, (&mut swinger, status), (&mut target, &mut Statuses::default()));
+        200 - target.hp
+    };
+    let (swung, plain) = (hurt(&mut status), hurt(&mut Statuses::default()));
+    assert!(swung > plain && !status.practice_swing, "{swung} {plain}");
+    // Time Tripper: a stage faster.
+    let tripper = Stats { iq_skills: 1 << iq::TIME_TRIPPER, ..sturdy() };
+    assert_eq!(Statuses::default().speed_stage_in(&tripper, 0), Statuses::default().speed_stage_in(&sturdy(), 0) + 1);
+}
+
+#[test]
 fn the_moves_of_their_own_handlers() {
     let (mut one, mut other) = (Stats { hp: 200, max_hp: 200, ..monster() }, Stats { hp: 200, max_hp: 200, ..monster() });
     // Pursuit strikes back as Counter; Outrage leaves its user confused.

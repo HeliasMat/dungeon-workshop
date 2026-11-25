@@ -5,7 +5,7 @@
 
 use crate::dungeon::combat::{TARGET_PARTY, TARGET_TEAMMATES};
 use crate::dungeon::{
-    FIXED_ONE, FLOOR_HEIGHT, FLOOR_WIDTH, MoveEffect, MoveSlot, Pos, Tile, ability, apply_effect, charged_multiplier, range, stack, status, weather,
+    FIXED_ONE, FLOOR_HEIGHT, FLOOR_WIDTH, MoveEffect, MoveSlot, Pos, Tile, ability, apply_effect, charged_multiplier, iq, range, stack, status, weather,
 };
 
 use super::dungeon::{Shove, Spread};
@@ -257,20 +257,37 @@ impl Arena<'_> {
         match (unleashed, charged_multiplier(&self.book.tables.constants, id)) {
             (true, multiplier) => Some(multiplier.unwrap_or(FIXED_ONE)),
             (false, Some(multiplier)) if id == status::SOLARBEAM && self.dungeon.weather.apparent() == weather::SUNNY => {
-                user.moves[index].pp -= 1;
+                self.spend_pp(user, index, 1);
+                Some(multiplier)
+            }
+            // No-Charger: let out at once, for two PP.
+            (false, Some(multiplier)) if iq::has(&user.stats, iq::NO_CHARGER) => {
+                self.spend_pp(user, index, 2);
                 Some(multiplier)
             }
             (false, Some(_)) => {
-                user.moves[index].pp -= 1;
+                self.spend_pp(user, index, 1);
                 user.status.charging = Some(id);
                 self.log.push(format!("{} gets ready for {}!", user.name, self.book.move_name(id)));
                 None
             }
             (false, None) => {
-                user.moves[index].pp -= 1;
+                self.spend_pp(user, index, 1);
                 Some(FIXED_ONE)
             }
         }
+    }
+
+    /// A move's PP spent, but now and then with PP Saver (a chance in 100,
+    /// this project's own figure).
+    fn spend_pp(&mut self, user: &mut Monster, index: usize, pp: i32) {
+        const PP_SAVER_CHANCE: i32 = 20;
+        if iq::has(&user.stats, iq::PP_SAVER) && self.dungeon.rng.rand_int(100) < PP_SAVER_CHANCE {
+            self.log.push(format!("{} saved its PP!", user.name));
+            return;
+        }
+        let slot = &mut user.moves[index];
+        slot.pp = (slot.pp - pp).max(0);
     }
 
     /// What the move becomes, or why it fails, in the order the game asks.

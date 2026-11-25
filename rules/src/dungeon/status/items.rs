@@ -98,8 +98,8 @@ pub(crate) fn use_item(item: u16, constants: &Constants, stats: &mut Stats, stat
         item::PECHA_BERRY => (statuses.poisoned, statuses.badly_poisoned) = (false, false),
         item::HEAL_SEED => statuses.cure_all(),
         // Apples: belly back, and on a belly already full a bigger belly.
-        item::APPLE => belly.eat_food(50, 3),
-        item::BIG_APPLE => belly.eat_food(100, 6),
+        item::APPLE => belly.eat_food(survived(stats, 50), 3),
+        item::BIG_APPLE => belly.eat_food(survived(stats, 100), 6),
         item::MAX_ELIXIR => moves.iter_mut().for_each(|slot| slot.pp = slot.max_pp),
         _ => return false,
     }
@@ -238,13 +238,19 @@ fn eaten_elsewhere(item: u16) -> Option<ItemUse> {
     })
 }
 
+/// Survivalist: food fills half as much again (this project's own figure).
+fn survived(stats: &Stats, points: i32) -> i32 {
+    const SURVIVALIST: u8 = 37;
+    if crate::dungeon::iq::has(stats, SURVIVALIST) { points * 3 / 2 } else { points }
+}
+
 /// Grimy Food: it fills a little, and may upset the eater's stomach (not
 /// a Survivalist's nor a Glutton's): poisoned, paralysed, burned, or
 /// weakened.
 fn grimy_food(rng: &mut DungeonRng, constants: &Constants, stats: &mut Stats, statuses: &mut Statuses, belly: &mut Belly) {
     const SURVIVALIST: u8 = 37;
     const ILLS: [MoveEffect; 4] = [MoveEffect::Poison, MoveEffect::Paralyze, MoveEffect::Burn, MoveEffect::TargetAttack(-2)];
-    belly.eat(25);
+    belly.eat(survived(stats, 25));
     let spared = crate::dungeon::iq::has(stats, SURVIVALIST) || crate::dungeon::ability::has(stats, crate::dungeon::ability::GLUTTONY);
     if !spared && rng.rand_int(100) < constants.grimy_food_chance {
         let ill = ILLS[rng.rand_int(ILLS.len() as i32) as usize];

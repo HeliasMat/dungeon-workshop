@@ -12,11 +12,18 @@ use super::{Input, MonsterId, Run, Side, Sight};
 
 /// A trap sprung.
 const TRAP_SOUND: u16 = 0x11C;
+/// Trap Buster's chance in 100 to break the trap stepped on instead (the
+/// game's, read from its overlay 10).
+const TRAP_BUSTER_CHANCE: i32 = 30;
 
 /// How a monster moves on a floor with that secondary terrain (a Mobile
 /// Scarf as a Mobile Orb).
 pub(crate) fn mobility(stats: &Stats, status: &Statuses, secondary_kind: u8) -> Mobility {
-    match (status.mobile || held::holds(stats, held::MOBILE_SCARF), status.levitating_turns > 0) {
+    use crate::dungeon::iq;
+    // (All-Terrain Hiker: over water, lava and chasms; Absolute Mover:
+    // through walls too.)
+    let hiker = iq::has(stats, iq::ALL_TERRAIN_HIKER);
+    match (status.mobile || held::holds(stats, held::MOBILE_SCARF) || iq::has(stats, iq::ABSOLUTE_MOVER), status.levitating_turns > 0 || hiker) {
         (true, _) => Mobility::Intangible,
         (false, true) => Mobility::Hovering,
         // (Slip: water is walked on, as by those that swim.)
@@ -210,6 +217,12 @@ impl Run {
             self.sights.push(Sight::Sound(TRAP_SOUND));
         }
         let rng = &mut dungeon.rng;
+        // Trap Buster: now and then the trap breaks instead.
+        if crate::dungeon::iq::has(&monster.stats, crate::dungeon::iq::TRAP_BUSTER) && rng.rand_int(100) < TRAP_BUSTER_CHANCE {
+            self.log.push(format!("{} busted the trap!", monster.name));
+            dungeon.traps.remove(trap);
+            return TrapOutcome::Done;
+        }
         watched(monster, &mut self.sights, |monster| {
             spring_trap(kind, rng, &book.tables.constants, &mut monster.stats, &mut monster.status, &mut monster.moves)
         })

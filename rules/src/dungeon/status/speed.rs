@@ -40,7 +40,9 @@ impl Statuses {
         const TYPE_ICE: u8 = 6;
         let snowy_ice = weather == weather::SNOW && (stats.types.0 == TYPE_ICE || stats.types.1 == TYPE_ICE);
         let quick_feet = ability::has(stats, ability::QUICK_FEET) && self.ailing();
-        let stage = (self.raw_speed_stage() + snowy_ice as i32 + quick_feet as i32).clamp(0, MAX_SPEED_STAGE);
+        // (Time Tripper: always a stage faster.)
+        let tripper = crate::dungeon::iq::has(stats, crate::dungeon::iq::TIME_TRIPPER);
+        let stage = (self.raw_speed_stage() + snowy_ice as i32 + quick_feet as i32 + tripper as i32).clamp(0, MAX_SPEED_STAGE);
         if ability::attacks_twice(stats, weather) { stage.max(2) } else { stage }
     }
 

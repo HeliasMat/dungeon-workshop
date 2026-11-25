@@ -74,6 +74,8 @@ impl Play<'_, '_> {
         }
         // Under Gravity, Ground moves reach what flies or floats.
         let gravity = self.field.gravity && slot.type_id == GROUND;
+        // Practice Swinger: having missed, this blow is a stage stronger.
+        let swinging = std::mem::take(&mut user.status.practice_swing) && iq::has(user.stats, iq::PRACTICE_SWINGER);
         for strike in 0..strikes as usize {
             let floating = victim.status.levitating_turns > 0 && slot.type_id == GROUND && !gravity;
             let hidden = victim.status.out_of_reach().then(|| victim.status.reached_hidden(slot.id));
@@ -88,6 +90,7 @@ impl Play<'_, '_> {
             let hit = hit && !self.forewarned(user, victim);
             if !hit {
                 self.says(Happened::Missed);
+                user.status.practice_swing = true;
                 // Jump Kick, Hi Jump Kick: missing, the kicker comes down
                 // hard, losing an eighth of its max HP (a quarter for the
                 // higher kick).
@@ -126,6 +129,10 @@ impl Play<'_, '_> {
                     let mut fighter = user.fighter();
                     let sides = self.field.sides;
                     ability::cheer(&mut fighter, &mut target, slot.category != 0, weather, sides.allies, sides.genders);
+                    // (Cheered on by a teammate next to it, or swinging
+                    // after a miss: a stage of attack and special attack.)
+                    let boost = (sides.allies.0 & super::CHEERED != 0) as i32 + swinging as i32;
+                    (fighter.attack_stage, fighter.sp_attack_stage) = (fighter.attack_stage + boost, fighter.sp_attack_stage + boost);
                     calc_damage_with(
                         self.field.rng,
                         constants,

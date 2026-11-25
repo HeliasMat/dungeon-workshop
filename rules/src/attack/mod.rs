@@ -63,11 +63,14 @@ pub struct Field<'a> {
 /// for the abilities that ask: the user's, then the victim's.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Sides {
-    /// Bits of `ability::allied`.
+    /// Bits of `ability::allied`, and [`CHEERED`].
     pub allies: (u8, u8),
     /// Their species entries' genders (1 male, 2 female; else neither).
     pub genders: (u8, u8),
 }
+
+/// Of [`Sides::allies`]: a teammate next to it has Cheerleader.
+pub const CHEERED: u8 = 128;
 
 /// A move about to land.
 #[derive(Clone, Copy)]

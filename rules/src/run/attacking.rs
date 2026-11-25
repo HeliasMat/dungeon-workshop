@@ -3,7 +3,7 @@
 //! monster picks its move is its turn's.
 
 use crate::dungeon::exclusive::effect::NO_FRIENDLY_FIRE;
-use crate::dungeon::{MoveEffect, Pos, ability, targets_in_range};
+use crate::dungeon::{MoveEffect, Pos, ability, iq, targets_in_range};
 
 use super::attack::{link_chain, unlink_spent};
 use super::dungeon::ATTACK_WAIT;
@@ -29,6 +29,7 @@ impl Run {
     /// struggles; `decoy`: one of its own side it strikes as a foe.
     pub(crate) fn use_chain(&mut self, user: MonsterId, chosen: Option<usize>, unleashed: bool, chained: bool, struggles: bool, decoy: Option<MonsterId>) {
         let dungeon = self.here();
+        dungeon.missed = None;
         let Some(monster) = dungeon.monster(user) else {
             return;
         };
@@ -57,6 +58,23 @@ impl Run {
                 self.land_attack(user, Attack { linked, ..attack }, decoy);
             }
         }
+        // Quick Striker: a regular attack strikes again; Extra Striker, now
+        // and then (a chance in 100, this project's own figure).
+        const EXTRA_STRIKER_CHANCE: i32 = 25;
+        let again = chosen.is_none() && !unleashed && {
+            let dungeon = self.here();
+            let stats = dungeon.monster(user).filter(|monster| monster.alive()).map(|monster| monster.stats);
+            stats.is_some_and(|stats| {
+                iq::has(&stats, iq::QUICK_STRIKER) || (iq::has(&stats, iq::EXTRA_STRIKER) && dungeon.rng.rand_int(100) < EXTRA_STRIKER_CHANCE)
+            })
+        };
+        if again && let Some(attack) = self.begin_attack(user, None, false, struggles) {
+            self.land_attack(user, attack, decoy);
+        }
+        // Wary Fighter: having missed, it steps back from its target.
+        if let Some((wary, from)) = self.here().missed.take().filter(|&(wary, _)| wary == user) {
+            self.step_back(wary, from);
+        }
         // Out of PP, a move comes off its chain.
         let Some(monster) = self.here().monster_mut(user) else {
             return;
@@ -69,6 +87,51 @@ impl Run {
                 _ => {}
             }
         }
+    }
+
+    /// A step away from that tile, if there is room.
+    fn step_back(&mut self, who: MonsterId, from: Pos) {
+        let book = self.book.clone();
+        let standing = self.standing();
+        let dungeon = self.here();
+        let secondary_kind = dungeon.spec(&book).map_or(0, |floor| floor.secondary_kind);
+        let Some(monster) = dungeon.monster(who).filter(|monster| monster.alive() && !monster.status.rooted()) else {
+            return;
+        };
+        let (at, walks) = (monster.at, super::leader::mobility(&monster.stats, &monster.status, secondary_kind));
+        let (dx, dy) = ((at.x - from.x).signum(), (at.y - from.y).signum());
+        let to = Pos::new(at.x + dx, at.y + dy);
+        if (dx, dy) == (0, 0) || !dungeon.floor.can_step_as(at, dx, dy, walks) || standing.contains(&to) {
+            return;
+        }
+        if let Some(monster) = dungeon.monster_mut(who) {
+            monster.at = to;
+            let name = monster.name.clone();
+            self.log.push(format!("{name} stepped back warily."));
+        }
+    }
+
+    /// Bodyguard: a team member in a pinch is struck in its stead by one
+    /// next to it that has it.
+    fn guarded(&mut self, user: MonsterId, victim: MonsterId) -> MonsterId {
+        let dungeon = self.here();
+        let Some(struck) = dungeon.monster(victim).filter(|monster| monster.team() && ability::in_a_pinch(&monster.stats)) else {
+            return victim;
+        };
+        let guard = dungeon.monsters.iter().find(|monster| {
+            monster.team()
+                && monster.alive()
+                && monster.id != victim
+                && monster.id != user
+                && iq::has(&monster.stats, iq::BODYGUARD)
+                && crate::dungeon::floor::chebyshev(monster.at, struck.at) <= 1
+        });
+        let Some((guard, name)) = guard.map(|guard| (guard.id, guard.name.clone())) else {
+            return victim;
+        };
+        let struck = struck.name.clone();
+        self.log.push(format!("{name} stepped in to protect {struck}!"));
+        guard
     }
 
     /// What a move begun does: on its user's side, or on those it reaches.
@@ -130,6 +193,7 @@ impl Run {
             self.log.push("But there is no target.".to_string());
         }
         for (victim, at) in strikable.into_iter().filter(|(_, at)| targets.contains(at)) {
+            let victim = if side == Side::Foe { self.guarded(user, victim) } else { victim };
             let dungeon = self.here();
             let user_alive = dungeon.monster(user).is_some_and(|monster| monster.alive());
             if !user_alive || !dungeon.monster(victim).is_some_and(|monster| monster.alive()) {

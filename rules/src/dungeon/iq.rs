@@ -41,10 +41,30 @@ pub(crate) const BRICK_TOUGH: u8 = 56;
 pub(crate) const MULTITALENT: u8 = 57;
 pub(crate) const EXP_GO_GETTER: u8 = 9;
 pub(crate) const EFFICIENCY_EXPERT: u8 = 10;
+pub(crate) const ALL_TERRAIN_HIKER: u8 = 12;
+pub(crate) const ABSOLUTE_MOVER: u8 = 13;
 pub(crate) const TRAP_AVOIDER: u8 = 14;
 pub(crate) const HOUSE_AVOIDER: u8 = 15;
 pub(crate) const SELF_CURER: u8 = 18;
+pub(crate) const COIN_WATCHER: u8 = 27;
+pub(crate) const FAST_FRIEND: u8 = 30;
+pub(crate) const PP_SAVER: u8 = 31;
+pub(crate) const BODYGUARD: u8 = 32;
+pub(crate) const TRAP_BUSTER: u8 = 38;
+pub(crate) const COUNTER_HITTER: u8 = 39;
+pub(crate) const EXTRA_STRIKER: u8 = 40;
+pub(crate) const HIT_AND_RUNNER: u8 = 41;
+pub(crate) const QUICK_STRIKER: u8 = 43;
+pub(crate) const NO_CHARGER: u8 = 44;
+pub(crate) const WARY_FIGHTER: u8 = 45;
 pub(crate) const GAP_PROBER: u8 = 46;
+pub(crate) const CHEERLEADER: u8 = 50;
+pub(crate) const NATURE_GIFTER: u8 = 51;
+pub(crate) const ACUTE_SNIFFER: u8 = 54;
+pub(crate) const DEEP_BREATHER: u8 = 55;
+pub(crate) const TIME_TRIPPER: u8 = 58;
+pub(crate) const PRACTICE_SWINGER: u8 = 60;
+pub(crate) const HAGGLER: u8 = 62;
 
 /// What Brick-Tough adds to the max HP and Multitalent to each move's
 /// PP while they are on (the game's, read from its arm9).
@@ -245,7 +265,22 @@ mod tests {
 
     #[test]
     fn brick_tough_and_multitalent_give_and_take_back() {
-        let mut stats = Stats { level: 5, max_hp: 30, hp: 30, attack: 9, defense: 9, sp_attack: 9, sp_defense: 9, types: (1, 0), abilities: [0, 0], held: 0, iq: 1, iq_group: 0, iq_skills: 0, female: false };
+        let mut stats = Stats {
+            level: 5,
+            max_hp: 30,
+            hp: 30,
+            attack: 9,
+            defense: 9,
+            sp_attack: 9,
+            sp_defense: 9,
+            types: (1, 0),
+            abilities: [0, 0],
+            held: 0,
+            iq: 1,
+            iq_group: 0,
+            iq_skills: 0,
+            female: false,
+        };
         let mut moves = [super::super::combat::MoveSlot { pp: 3, max_pp: 10, ..super::super::combat::MoveSlot::fallback_regular_attack() }];
         let (hp, mut tough) = (stats.max_hp, false);
         stats.iq_skills = 1 << BRICK_TOUGH | 1 << MULTITALENT;

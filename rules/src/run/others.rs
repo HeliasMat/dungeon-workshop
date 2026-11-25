@@ -7,10 +7,12 @@
 //! for one" and "Group safety" are never unlocked, see `tactic`.)
 
 use crate::dungeon::ai::{self, AiChoice, AiUser, Candidate};
-use crate::dungeon::exclusive::effect::NO_WEATHER_DAMAGE;
 use crate::dungeon::combat::TYPE_COUNT;
+use crate::dungeon::exclusive::effect::NO_WEATHER_DAMAGE;
 use crate::dungeon::status::{DEEP_SLEEP, item, problems};
-use crate::dungeon::{Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, Tile, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held, iq, stack};
+use crate::dungeon::{
+    Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, Tile, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held, iq, stack,
+};
 
 use super::attack::chebyshev;
 use super::dungeon::{DIRECTIONS, Phase, weather_name};
@@ -474,7 +476,8 @@ impl Run {
         } else {
             let at_tile = |pos: Pos| standing().find(|monster| monster.at == pos);
             let hostile = seen_foes.iter().filter_map(|&pos| at_tile(pos)).map(|monster| candidate(&book, &me, monster, true));
-            let others: Vec<Candidate> = hostile.chain(kin.iter().filter_map(|&pos| at_tile(pos)).map(|monster| candidate(&book, &me, monster, false))).collect();
+            let others: Vec<Candidate> =
+                hostile.chain(kin.iter().filter_map(|&pos| at_tile(pos)).map(|monster| candidate(&book, &me, monster, false))).collect();
             let user = ai_user(&me, direction, walks);
             ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &me.moves, &others)
         };

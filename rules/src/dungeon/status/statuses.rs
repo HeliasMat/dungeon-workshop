@@ -166,6 +166,8 @@ pub struct Statuses {
     pub(crate) no_slip_count: i32,
     /// The move it is using spent a PP more already (Pressure).
     pub(crate) pressured: bool,
+    /// It missed: its next blow is a stage stronger (Practice Swinger).
+    pub(crate) practice_swing: bool,
     /// Multipliers of attack and defense, in 8-bit fixed point.
     pub attack_multiplier: i32,
     pub defense_multiplier: i32,
@@ -284,6 +286,7 @@ impl Default for Statuses {
             warp_scarf_count: 0,
             no_slip_count: 0,
             pressured: false,
+            practice_swing: false,
             attack_multiplier: 0x100,
             defense_multiplier: 0x100,
             sp_attack_stage: NEUTRAL_STAGE,

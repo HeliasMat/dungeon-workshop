@@ -3,7 +3,7 @@
 //! fixed order, once a frame.
 
 use crate::dungeon::exclusive::{self, Exclusive};
-use crate::dungeon::{FLOOR_HEIGHT, FLOOR_WIDTH, Floor, MoveEffect, Pos, Tile, ability, ai, explosion_damage, range, stack};
+use crate::dungeon::{FLOOR_HEIGHT, FLOOR_WIDTH, Floor, MoveEffect, Pos, Tile, ability, ai, explosion_damage, iq, range, stack};
 
 use super::attack::{Arena, chebyshev};
 use super::dungeon::{FloorItem, Outcome, Shove};
@@ -407,15 +407,25 @@ impl Arena<'_> {
         dungeon.weather.suppressed = any(ability::CLOUD_NINE) || any(ability::AIR_LOCK);
         dungeon.weather.damp = any(ability::DAMP);
         let playing = dungeon.outcome.is_none();
+        // Acute Sniffer on the team: how many items lie on the new floor.
+        let sniffer = dungeon.monsters.iter().find(|monster| monster.team() && iq::has(&monster.stats, iq::ACUTE_SNIFFER)).map(|monster| monster.name.clone());
+        if let Some(name) = sniffer.filter(|_| left && playing) {
+            let count = dungeon.items.iter().filter(|item| item.price.is_none()).count();
+            self.log.push(format!("{name} sniffed out {count} item{} on this floor!", if count == 1 { "" } else { "s" }));
+        }
         for monster in &mut dungeon.monsters {
-            // A new floor: exclusive items may restore the HP or the PP.
+            // A new floor: exclusive items may restore the HP or the PP;
+            // Deep Breather a few PP of each move (this project's figure).
             if left && monster.team() && playing {
                 use exclusive::effect;
+                const DEEP_BREATH: i32 = 2;
                 if monster.status.exclusive.has(effect::RESTORE_HP_ON_NEW_FLOORS) {
                     monster.stats.hp = monster.stats.max_hp;
                 }
                 if monster.status.exclusive.has(effect::RESTORE_PP_ON_NEW_FLOORS) {
                     monster.moves.iter_mut().for_each(|slot| slot.pp = slot.max_pp);
+                } else if iq::has(&monster.stats, iq::DEEP_BREATHER) {
+                    monster.moves.iter_mut().for_each(|slot| slot.pp = (slot.pp + DEEP_BREATH).min(slot.max_pp));
                 }
             }
             // (Its species' weight, for Low Kick and Grass Knot.)

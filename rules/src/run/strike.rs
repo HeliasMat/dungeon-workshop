@@ -2,7 +2,7 @@
 //! is told, shown and left on the floor here.
 
 use crate::attack::{self, Attack, Field, Happened, Outcome, Party, Role, Sides, Tuning};
-use crate::dungeon::{MoveEffect, REGULAR_ATTACK_ID, ability, held, matchup, type_name};
+use crate::dungeon::{MoveEffect, REGULAR_ATTACK_ID, ability, held, iq, matchup, type_name};
 
 use super::attack::Arena;
 use super::dungeon::Shove;
@@ -36,8 +36,12 @@ impl Arena<'_> {
     pub(crate) fn sides(&self, monsters: &[Monster], user: MonsterId, victim: MonsterId) -> Sides {
         let of = |who: MonsterId| monsters.iter().find(|monster| monster.id == who);
         let allies = |who: MonsterId| {
-            let team = of(who).is_some_and(|monster| monster.team());
-            ability::allied(monsters.iter().filter(|monster| monster.id != who && monster.alive() && monster.team() == team).map(|monster| &monster.stats))
+            let Some(me) = of(who) else {
+                return 0;
+            };
+            let teammates = || monsters.iter().filter(|monster| monster.id != who && monster.alive() && monster.team() == me.team());
+            let cheered = teammates().any(|monster| crate::dungeon::floor::chebyshev(monster.at, me.at) <= 1 && iq::has(&monster.stats, iq::CHEERLEADER));
+            ability::allied(teammates().map(|monster| &monster.stats)) | if cheered { attack::CHEERED } else { 0 }
         };
         let gender =
             |who: MonsterId| of(who).and_then(|monster| monster.species).and_then(|species| self.book.species(species)).map_or(0, |species| species.gender);
@@ -114,6 +118,9 @@ impl Arena<'_> {
             Deaf => format!("{other} hears nothing thanks to its ability!"),
             Missed => {
                 self.sights.push(Sight::Miss(victim.id));
+                if iq::has(&user.stats, iq::WARY_FIGHTER) {
+                    self.dungeon.missed = Some((user.id, victim.at));
+                }
                 book.phrase(crate::strings::log_text::MISSED, &[("string:1", other)]).unwrap_or_else(|| format!("{one} missed {other}."))
             }
             Failed => "But it failed!".to_string(),
