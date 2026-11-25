@@ -139,8 +139,51 @@ impl<'a> Builder<'a> {
         (self.decor.width, self.decor.height) = (said.0.next_multiple_of(TILE), said.1.next_multiple_of(TILE));
         // (Every piece first: how many frames the place has.)
         let lines = self.decor.lines.clone();
+        let Pieces { frames, seconds, living } = self.frames_and_speeds(&lines)?;
+        let mut place = Place::new(self.decor.clone(), lcm(if frames.is_empty() { &[1] } else { &frames }).min(MOST_FRAMES));
+        self.base(&mut place)?;
+        paced(&mut place, &seconds, living);
+        // (Laid on from the place half laid last time, if it began the same;
+        // kept anew just before the first line changed since then.)
+        let begun = mark(format!(
+            "{:?} {:?} {:?} {:?} {} {} {:?}",
+            (self.decor.width, self.decor.height),
+            self.seed,
+            self.decor.base,
+            self.decor.plan,
+            place.lower.len(),
+            place.seconds,
+            place.levels
+        ));
+        let marks: Vec<u64> = lines.iter().map(|line| mark(format!("{line:?}"))).collect();
+        let before = self.workshop.laid_lines.replace(marks.clone());
+        let changed = match before.is_empty() {
+            true => marks.len(),
+            false => before.iter().zip(&marks).position(|(was, is)| was != is).unwrap_or(before.len().min(marks.len())),
+        };
+        let from = self.half_laid(&mut place, &lines, begun, &marks);
+        for (at, line) in lines.iter().enumerate().skip(from) {
+            if at == changed && at > from {
+                *self.workshop.half_laid.borrow_mut() = Some((begun, marks[..at].to_vec(), Rc::new(place.clone())));
+            }
+            self.lay(&mut place, line)?;
+        }
+        if changed == lines.len() && changed > from {
+            *self.workshop.half_laid.borrow_mut() = Some((begun, marks.clone(), Rc::new(place.clone())));
+        }
+        for line in lines.iter().filter(|line| matches!(line.verb.as_str(), "wall" | "free") && line.words.first().is_some_and(|word| word == "tiles")) {
+            walled(&mut place, line, &self.at(line))?;
+        }
+        crate::remarks::remark_all(self.workshop, &mut place)?;
+        place.cut_to(said.0, said.1);
+        Ok(place)
+    }
+
+    /// How many frames each piece has, and at what speed those of the game
+    /// go; whether elements live as we make them live, at their own pace
+    /// (not the game's).
+    fn frames_and_speeds(&mut self, lines: &[Line]) -> Result<Pieces, Diagnostic> {
         let (mut frames, mut seconds) = (Vec::new(), Vec::new());
-        // (Elements living as we make them live, at their own pace: not the game's.)
         let mut living = false;
         // (Walls said by hand, our own pictures: no pieces.)
         for line in lines.iter().filter(|line| line.verb == "image" && line.animation.is_some()) {
@@ -177,93 +220,44 @@ impl<'a> Builder<'a> {
             frames.push(source.frames.len());
             seconds.push((source.frames.len(), source.info.seconds as f64));
         }
-        let mut place = Place::new(self.decor.clone(), lcm(if frames.is_empty() { &[1] } else { &frames }).min(MOST_FRAMES));
-        self.base(&mut place)?;
-        // (The speed of the most frames, as `max` of pairs has it: the first of the greatest.)
-        let mut fastest: Option<(usize, f64)> = None;
-        for pair in &seconds {
-            if fastest.is_none_or(|best| pair.0 > best.0 || (pair.0 == best.0 && pair.1 > best.1)) {
-                fastest = Some(*pair);
-            }
+        Ok(Pieces { frames, seconds, living })
+    }
+
+    /// The place half laid last time, taken up again if it began the same
+    /// and its lines start the same: the line to go on from.
+    fn half_laid(&self, place: &mut Place, lines: &[Line], begun: u64, marks: &[u64]) -> usize {
+        let kept = self.workshop.half_laid.borrow();
+        let Some((known, laid, half)) = kept.as_ref() else { return 0 };
+        if *known != begun || !marks.starts_with(laid) {
+            return 0;
         }
-        place.seconds = match fastest {
-            Some((count, speed)) if count > 1 || !living => speed,
-            _ if living => crate::animate::SECONDS,
-            _ => 1.0 / 6.0,
-        };
-        let mut moving: Vec<f64> = seconds.iter().filter(|(count, _)| *count > 1).map(|(_, speed)| *speed).collect();
-        moving.sort_by(f64::total_cmp);
-        moving.dedup();
-        if moving.len() > 1 {
-            let told: Vec<String> = moving.iter().map(|speed| format!("{speed:.3}")).collect();
-            place.remark(0, format!("images of different speeds ({} s): the most animated wins", told.join(", ")));
+        // (Its own file's words as now; the spots its lines laid named, kept.)
+        let fresh = place.decor.clone();
+        let numbers: Vec<usize> = lines[..laid.len()].iter().map(|line| line.number).collect();
+        *place = (**half).clone();
+        let named: Vec<_> = place.decor.entrances.iter().filter(|spot| numbers.contains(&spot.0) && !fresh.entrances.contains(spot)).cloned().collect();
+        place.decor = fresh;
+        place.decor.entrances.extend(named);
+        laid.len()
+    }
+
+    /// One line of the decor laid on the place.
+    fn lay(&mut self, place: &mut Place, line: &Line) -> Result<(), Diagnostic> {
+        match line.verb.as_str() {
+            "ground" => self.ground(place, line)?,
+            "edge" => self.edge(place, line)?,
+            "path" => self.path_line(place, line)?,
+            "water" => self.pose(place, line, &["water", "object"])?,
+            "put" => self.pose(place, line, &["object", "water", "tree"])?,
+            "ring" => self.ring(place, line)?,
+            // (Tiles painted by hand: the last word, after all is laid.)
+            "wall" | "free" if line.words.first().is_some_and(|word| word == "tiles") => {}
+            "wall" | "free" => walled(place, line, &self.at(line))?,
+            "image" => self.image(place, line)?,
+            "terrain" => compose::lay_terrain(self.workshop, place, line, &self.at(line))?,
+            _ => self.strew(place, line)?,
         }
-        // (Laid on from the place half laid last time, if it began the same;
-        // kept anew just before the first line changed since then.)
-        let mark = |said: String| {
-            use std::hash::{Hash, Hasher};
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            said.hash(&mut hasher);
-            hasher.finish()
-        };
-        let begun = mark(format!(
-            "{:?} {:?} {:?} {:?} {} {} {:?}",
-            (self.decor.width, self.decor.height),
-            self.seed,
-            self.decor.base,
-            self.decor.plan,
-            place.lower.len(),
-            place.seconds,
-            place.levels
-        ));
-        let marks: Vec<u64> = lines.iter().map(|line| mark(format!("{line:?}"))).collect();
-        let before = self.workshop.laid_lines.replace(marks.clone());
-        let changed = match before.is_empty() {
-            true => marks.len(),
-            false => before.iter().zip(&marks).position(|(was, is)| was != is).unwrap_or(before.len().min(marks.len())),
-        };
-        let mut from = 0;
-        if let Some((known, laid, half)) = self.workshop.half_laid.borrow().as_ref()
-            && *known == begun
-            && marks.starts_with(laid)
-        {
-            // (Its own file's words as now; the spots its lines laid named, kept.)
-            let fresh = place.decor.clone();
-            let numbers: Vec<usize> = lines[..laid.len()].iter().map(|line| line.number).collect();
-            place = (**half).clone();
-            let named: Vec<_> = place.decor.entrances.iter().filter(|spot| numbers.contains(&spot.0) && !fresh.entrances.contains(spot)).cloned().collect();
-            place.decor = fresh;
-            place.decor.entrances.extend(named);
-            from = laid.len();
-        }
-        for (at, line) in lines.iter().enumerate().skip(from) {
-            if at == changed && at > from {
-                *self.workshop.half_laid.borrow_mut() = Some((begun, marks[..at].to_vec(), Rc::new(place.clone())));
-            }
-            match line.verb.as_str() {
-                "ground" => self.ground(&mut place, line)?,
-                "edge" => self.edge(&mut place, line)?,
-                "path" => self.path_line(&mut place, line)?,
-                "water" => self.pose(&mut place, line, &["water", "object"])?,
-                "put" => self.pose(&mut place, line, &["object", "water", "tree"])?,
-                "ring" => self.ring(&mut place, line)?,
-                // (Tiles painted by hand: the last word, after all is laid.)
-                "wall" | "free" if line.words.first().is_some_and(|word| word == "tiles") => {}
-                "wall" | "free" => walled(&mut place, line, &self.at(line))?,
-                "image" => self.image(&mut place, line)?,
-                "terrain" => compose::lay_terrain(self.workshop, &mut place, line, &self.at(line))?,
-                _ => self.strew(&mut place, line)?,
-            }
-        }
-        if changed == lines.len() && changed > from {
-            *self.workshop.half_laid.borrow_mut() = Some((begun, marks.clone(), Rc::new(place.clone())));
-        }
-        for line in lines.iter().filter(|line| matches!(line.verb.as_str(), "wall" | "free") && line.words.first().is_some_and(|word| word == "tiles")) {
-            walled(&mut place, line, &self.at(line))?;
-        }
-        crate::remarks::remark_all(self.workshop, &mut place)?;
-        place.cut_to(said.0, said.1);
-        Ok(place)
+        Ok(())
     }
 
     /// What is under all (`base`): a place of the game, or a dungeon's floor
@@ -878,4 +872,44 @@ pub(crate) fn ragged_zone(rows: usize, columns: usize, (x0, y0, x1, y1): (i64, i
         h: rows,
         cells: (0..rows * columns).map(|at| if if edge.cells[at] { drawn[at] < 0.5 } else { inside.cells[at] } { 0 } else { -1 }).collect(),
     }
+}
+
+/// What the pieces of a decor are made of: how many frames each has, the
+/// speed of those of the game, and whether elements live as we make them
+/// live.
+struct Pieces {
+    frames: Vec<usize>,
+    seconds: Vec<(usize, f64)>,
+    living: bool,
+}
+
+/// The place's speed: that of the most frames, as `max` of pairs has it (the
+/// first of the greatest); remarked if images go at different speeds.
+fn paced(place: &mut Place, seconds: &[(usize, f64)], living: bool) {
+    let mut fastest: Option<(usize, f64)> = None;
+    for pair in seconds {
+        if fastest.is_none_or(|best| pair.0 > best.0 || (pair.0 == best.0 && pair.1 > best.1)) {
+            fastest = Some(*pair);
+        }
+    }
+    place.seconds = match fastest {
+        Some((count, speed)) if count > 1 || !living => speed,
+        _ if living => crate::animate::SECONDS,
+        _ => 1.0 / 6.0,
+    };
+    let mut moving: Vec<f64> = seconds.iter().filter(|(count, _)| *count > 1).map(|(_, speed)| *speed).collect();
+    moving.sort_by(f64::total_cmp);
+    moving.dedup();
+    if moving.len() > 1 {
+        let told: Vec<String> = moving.iter().map(|speed| format!("{speed:.3}")).collect();
+        place.remark(0, format!("images of different speeds ({} s): the most animated wins", told.join(", ")));
+    }
+}
+
+/// A mark of what was said, to know it again.
+fn mark(said: String) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    said.hash(&mut hasher);
+    hasher.finish()
 }

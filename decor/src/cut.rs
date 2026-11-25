@@ -444,19 +444,8 @@ pub fn cut(workshop: &Workshop, piece: &Piece) -> Result<Cut, Diagnostic> {
     let lower_index = crop_index(if takes_upper { &source.indices } else { &source.merged_index });
     let upper_index = if takes_upper { crop_index(&source.upper_indices) } else { None };
     let mut shade = Shade::none(w, h);
-    // (Tiles of the lower layer, those only: nothing of the upper one.)
     if let Some(said) = piece.option("tiles") {
-        let tiles: Vec<(usize, usize)> =
-            said.split(';').filter_map(|tile| tile.split_once(',').and_then(|(column, row)| Some((column.parse().ok()?, row.parse().ok()?)))).collect();
-        for at in 0..w * h {
-            let kept = tiles.contains(&((at % w) / TILE, (at / w) / TILE));
-            for frame in lower.iter_mut().filter(|_| !kept) {
-                frame.cells[at][3] = 0;
-            }
-            for frame in upper.iter_mut() {
-                frame.cells[at][3] = 0;
-            }
-        }
+        keep_tiles(said, w, h, &mut lower, &mut upper);
     }
     if !piece.has("base") && !piece.has("over") && ["object", "water", "tree"].contains(&piece.kind.as_str()) {
         let (is_thing, made) = cut_out(workshop, piece, &source)?;
@@ -466,30 +455,72 @@ pub fn cut(workshop: &Workshop, piece: &Piece) -> Result<Cut, Diagnostic> {
             erase_crumbs(workshop, piece, &source, &mut lower, &mut upper)?;
         }
     }
-    // (An element whole: that piece of what is seen only, its neighbours left out.)
+    keep_whole_element(piece, &source, (ox, oy), &mut lower, &mut upper, &mut shade);
+    blank_tiles(piece, w, h, &mut lower, &mut upper, &mut shade);
+    replace_colours(piece, &mut lower, &mut upper);
+    let solid = walls_of(piece, &source, &lower, &upper)?;
+    let made = Cut {
+        lower,
+        upper,
+        solid,
+        level,
+        lower_index,
+        upper_index,
+        shade,
+        foot: foot_of(piece, w, h),
+        walked: walks(piece),
+        seconds: source.info.seconds as f64,
+    };
+    Ok(if piece.option("flip").unwrap_or_default().contains('h') { made.mirrored() } else { made })
+}
+
+/// Tiles of the lower layer, those only (`tiles=c,r;…`): nothing of the upper one.
+fn keep_tiles(said: &str, w: usize, h: usize, lower: &mut [Picture], upper: &mut [Picture]) {
+    let tiles: Vec<(usize, usize)> =
+        said.split(';').filter_map(|tile| tile.split_once(',').and_then(|(column, row)| Some((column.parse().ok()?, row.parse().ok()?)))).collect();
+    for at in 0..w * h {
+        let kept = tiles.contains(&((at % w) / TILE, (at / w) / TILE));
+        for frame in lower.iter_mut().filter(|_| !kept) {
+            frame.cells[at][3] = 0;
+        }
+        for frame in upper.iter_mut() {
+            frame.cells[at][3] = 0;
+        }
+    }
+}
+
+/// An element whole (`element=x,y;…`): that piece of what is seen only, its
+/// neighbours left out.
+fn keep_whole_element(piece: &Piece, source: &Source, origin: (usize, usize), lower: &mut [Picture], upper: &mut [Picture], shade: &mut Shade) {
     let seeds: Vec<(usize, usize)> = piece
         .option("element")
         .unwrap_or_default()
         .split(';')
         .filter_map(|seed| seed.split_once(',').and_then(|(x, y)| Some((x.parse().ok()?, y.parse().ok()?))))
         .collect();
-    if !seeds.is_empty() {
-        let lower_tiles: Vec<(usize, usize)> = piece
-            .option("lower")
-            .unwrap_or_default()
-            .split(';')
-            .filter_map(|tile| tile.split_once(',').and_then(|(column, row)| Some((column.parse().ok()?, row.parse().ok()?))))
-            .collect();
-        // (A tile of the place seen again elsewhere in it: of a ground.)
-        let counts = source.tile_counts();
-        let picture = source.picture();
-        let ground_tile = |column: usize, row: usize| {
-            (column + 1) * TILE <= picture.w
-                && (row + 1) * TILE <= picture.h
-                && counts.get(&tile_at(picture, column * TILE, row * TILE)).unwrap_or(0) >= GROUND_SEEN
-        };
-        keep_element(&mut lower, &mut upper, &mut shade, &seeds, &lower_tiles, (&source.upper, (ox, oy)), &ground_tile);
+    if seeds.is_empty() {
+        return;
     }
+    let lower_tiles: Vec<(usize, usize)> = piece
+        .option("lower")
+        .unwrap_or_default()
+        .split(';')
+        .filter_map(|tile| tile.split_once(',').and_then(|(column, row)| Some((column.parse().ok()?, row.parse().ok()?))))
+        .collect();
+    // (A tile of the place seen again elsewhere in it: of a ground.)
+    let counts = source.tile_counts();
+    let picture = source.picture();
+    let ground_tile = |column: usize, row: usize| {
+        (column + 1) * TILE <= picture.w
+            && (row + 1) * TILE <= picture.h
+            && counts.get(&tile_at(picture, column * TILE, row * TILE)).unwrap_or(0) >= GROUND_SEEN
+    };
+    keep_element(lower, upper, shade, &seeds, &lower_tiles, (&source.upper, origin), &ground_tile);
+}
+
+/// Tiles left out (`without=`): blank on both layers; the rows `upper=`
+/// says: of the upper layer only.
+fn blank_tiles(piece: &Piece, w: usize, h: usize, lower: &mut [Picture], upper: &mut [Picture], shade: &mut Shade) {
     let left_out = tiles_list(piece.option("without").unwrap_or_default());
     let mut top_only: Vec<(i64, i64)> = Vec::new();
     if let Some(rows) = piece.option("upper").filter(|rows| !rows.is_empty()) {
@@ -525,7 +556,11 @@ pub fn cut(workshop: &Workshop, piece: &Piece) -> Result<Cut, Diagnostic> {
             }
         }
     }
-    // (On both layers: a colour changed, from the row `replace_lower=` says down.)
+}
+
+/// On both layers: a colour changed (`replace=old>new,…`, `-` taken out),
+/// from the row `replace_lower=` says down.
+fn replace_colours(piece: &Piece, lower: &mut [Picture], upper: &mut [Picture]) {
     let from_row: usize = piece.option("replace_lower").and_then(|row| row.parse().ok()).unwrap_or(0);
     for pair in piece.option("replace").unwrap_or_default().split(',').filter(|pair| !pair.is_empty()) {
         let (old, new) = pair.split_once('>').unwrap_or((pair, ""));
@@ -546,20 +581,6 @@ pub fn cut(workshop: &Workshop, piece: &Piece) -> Result<Cut, Diagnostic> {
             }
         }
     }
-    let solid = walls_of(piece, &source, &lower, &upper)?;
-    let made = Cut {
-        lower,
-        upper,
-        solid,
-        level,
-        lower_index,
-        upper_index,
-        shade,
-        foot: foot_of(piece, w, h),
-        walked: walks(piece),
-        seconds: source.info.seconds as f64,
-    };
-    Ok(if piece.option("flip").unwrap_or_default().contains('h') { made.mirrored() } else { made })
 }
 
 /// A piece of one of the game's things: its first picture, facing down; a
