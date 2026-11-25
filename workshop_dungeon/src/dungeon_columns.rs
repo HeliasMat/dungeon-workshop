@@ -324,6 +324,11 @@ fn dungeon_rules(ui: &mut egui::Ui, form: &mut Form) {
             ui.add(egui::DragValue::new(level).range(1..=100));
         }
     });
+    ui.horizontal(|ui| {
+        ui.label("the jobs' rank");
+        ui.add(egui::TextEdit::singleline(&mut form.rank).hint_text("from the levels").desired_width(160.0))
+            .on_hover_text("how hard the boards' jobs are there: E, D, C, B, A, S, then 1* to 9*; by floors: “E floors 1-2, D floor 3”");
+    });
 }
 
 /// The fight at its end in numbers, if it has one: the boss, its level, its HP, how hard it looks.

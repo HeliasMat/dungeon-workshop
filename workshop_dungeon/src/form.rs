@@ -150,6 +150,7 @@ impl Form {
             options: Default::default(),
             retyped: Vec::new(),
             team_level: None,
+            rank: String::new(),
             boss: None,
             fight: String::new(),
         }
@@ -222,6 +223,7 @@ impl Form {
             "rules" => self.options = self.options.or(rules::rule_options::RuleOptions::read(value).0),
             "pokemontype" | "movetype" => self.retyped.push(line.to_string()),
             "level" => self.team_level = value.parse().ok(),
+            "rank" => self.rank = value.to_string(),
             "fight" => self.fight = value.to_string(),
             _ => return false,
         }
@@ -259,6 +261,9 @@ impl Form {
         }
         if let Some(level) = self.team_level {
             text.push_str(&format!("level: {level}\n"));
+        }
+        if !self.rank.trim().is_empty() {
+            text.push_str(&format!("rank: {}\n", self.rank.trim()));
         }
         if !self.fight.is_empty() {
             text.push_str(&format!("fight: {}\n", self.fight));

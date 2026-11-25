@@ -120,6 +120,9 @@ struct Form {
     retyped: Vec<String>,
     /// The level the team comes in at (none: as it is).
     team_level: Option<i32>,
+    /// The jobs' rank there, as written (`rank: E floors 1-2, D`; empty:
+    /// from the levels met there).
+    rank: String,
     /// The boss fight at the end, written in it (as dungeons were first
     /// written), if there is one.
     boss: Option<BossForm>,
