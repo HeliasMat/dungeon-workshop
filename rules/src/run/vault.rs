@@ -3,12 +3,12 @@
 //! Key opens.
 //!
 //! The game builds them into its grid as it lays the floor out; here, as
-//! the generator's floor is kept seed for seed, one is set afterwards in a
-//! room it fits in (neither the shop nor the Monster House, nor where the
-//! stairs or the leader's start are), at its middle. What the game makes
-//! secondary terrain inside one is floor here, for its item to be reached.
+//! the generator's floor is kept seed for seed, one is set afterwards at the
+//! middle of a room, the walls it covers opened up into the room. What the
+//! game makes secondary terrain inside one is floor here, for its item to be
+//! reached.
 
-use crate::dungeon::{Floor, Pos, Tile};
+use crate::dungeon::{FLOOR_HEIGHT, FLOOR_WIDTH, Floor, Pos, Tile};
 use crate::tables::{Fixed, KEY_DOOR};
 
 /// What a vault sets on its floor: its doors, with the room they open
@@ -22,22 +22,24 @@ pub(crate) struct Vault {
 /// The kinds of a fixed room's tiles (`Fixed::tiles`).
 const WALL: u8 = 1;
 
-/// Sets the vault in a room of the floor it fits in: its walls, its doors
-/// (walls until opened), what was to come there moved out. `None`: no
-/// room is big enough.
+/// Sets the vault at the middle of a room, the biggest it may go in (not
+/// the shop's nor the Monster House's, the stairs and the leader's start
+/// outside it), what it covers of the walls around opened up into the
+/// room: its walls, its doors (walls until opened), what was to come there
+/// moved out. `None`: no room for it.
 pub(crate) fn set_vault(floor: &mut Floor, vault: &Fixed) -> Option<Vault> {
     let (width, height) = (vault.width as i32, vault.height as i32);
-    let rooms = rooms(floor);
+    let mut rooms = rooms(floor);
+    rooms.sort_by_key(|&(room, x0, y0, x1, y1)| (std::cmp::Reverse((x1 - x0 + 1) * (y1 - y0 + 1)), room));
     let (room, left, top) = rooms.iter().find_map(|&(room, x0, y0, x1, y1)| {
-        let (left, top) = (x0 + (x1 - x0 + 1 - width) / 2, y0 + (y1 - y0 + 1 - height) / 2);
-        let inside = |tile: Pos| (left..left + width).contains(&tile.x) && (top..top + height).contains(&tile.y);
-        let fits = x1 - x0 + 1 >= width
-            && y1 - y0 + 1 >= height
-            && (left..left + width).all(|x| (top..top + height).all(|y| floor.tile(Pos::new(x, y)) == Tile::Floor { room: Some(room) }))
-            && !inside(floor.stairs)
-            && !inside(floor.player_spawn)
-            && floor.monster_house != Some(room)
-            && !floor.shop.is_some_and(|shop| (left..left + width).any(|x| (top..top + height).any(|y| shop.contains(Pos::new(x, y)))));
+        let left = ((x0 + x1 + 1 - width) / 2).clamp(2, FLOOR_WIDTH - 2 - width);
+        let top = ((y0 + y1 + 1 - height) / 2).clamp(2, FLOOR_HEIGHT - 2 - height);
+        let covered = (left..left + width).flat_map(|x| (top..top + height).map(move |y| Pos::new(x, y)));
+        let fits = floor.monster_house != Some(room)
+            && !covered
+                .clone()
+                .any(|tile| tile == floor.stairs || tile == floor.player_spawn || floor.in_shop(tile) || matches!(floor.tile(tile), Tile::Stairs { .. }))
+            && covered.clone().any(|tile| floor.tile(tile) == Tile::Floor { room: Some(room) });
         fits.then_some((room, left, top))
     })?;
     let inside = |tile: &Pos| (left..left + width).contains(&tile.x) && (top..top + height).contains(&tile.y);
@@ -53,6 +55,7 @@ pub(crate) fn set_vault(floor: &mut Floor, vault: &Fixed) -> Option<Vault> {
                 floor.set(tile, Tile::Wall);
                 set.doors.push((tile, Some(room)));
             }
+            _ if !floor.tile(tile).is_walkable() => floor.set(tile, Tile::Floor { room: Some(room) }),
             _ => {}
         }
     }
