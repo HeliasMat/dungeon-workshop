@@ -60,7 +60,7 @@ fn instead(word: &str) -> &'static str {
         }
         "passage" => "`exit x y width height to <place> [entrance]` after the [life] of the place's decor",
         "dungeon" => "`dungeon <name>` in a chapter of a .game, then `if won`",
-        "screen" => "`talk shop` (market, bank, storage, jobs, recruits, appraise) under a resident of a decor, or `shop <screen>` in a .game",
+        "screen" => "`talk shop` (market, bank, storage, jobs, recruits, appraise, cafe) under a resident of a decor, or `shop <screen>` in a .game",
         "village" => "`home: <place> [entrance]` in the head of the .game",
         "map" => "`open <place|dungeon>` then `map` in a .game",
         "earn" | "pay" => "`money 200` (`money -50`) in a .game",

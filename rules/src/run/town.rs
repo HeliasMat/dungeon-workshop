@@ -291,6 +291,12 @@ impl Run {
         format!("{name} drank the juice. Its IQ rose by {gain}!")
     }
 
+    /// The Gummis of the bag, by their places in it: what the café presses into juice.
+    pub fn gummis(&self) -> Vec<usize> {
+        let iq = &self.book.tables.iq;
+        (0..self.bag.items.len()).filter(|&at| iq.gummi((0, 0), stack::id(self.bag.items[at])).is_some()).collect()
+    }
+
     /// The trades that make the Project P find a new region.
     const PROJECT_REGION: i32 = 30;
 

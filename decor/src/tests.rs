@@ -451,3 +451,11 @@ fn every_element_and_place_is_labelled() {
     let unknown: Vec<&String> = kinds.by_key.keys().filter(|key| !places.contains(key) && !decors.contains(key)).collect();
     assert!(unknown.is_empty(), "kinds of no place: {unknown:?}");
 }
+
+#[test]
+fn a_resident_may_open_the_cafe_and_nothing_unknown() {
+    let text = |talk: &str| format!("decor: a 256 192\nlevel 1\nground b\nentrance 8 96 west\n\n[life]\nresident spinda 120 80 left\n{talk}\n");
+    let decor = crate::lang::parse(&text("talk cafe"), "a.decor").expect("it reads");
+    assert_eq!(decor.residents[0].talk.as_deref(), Some("cafe"));
+    assert!(crate::lang::parse(&text("talk teahouse"), "a.decor").is_err(), "no such screen");
+}

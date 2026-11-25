@@ -95,3 +95,18 @@ fn vault_floor(run: &Run) -> Option<(u16, u32)> {
         Some((id as u16, at as u32 + 1))
     })
 }
+
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn the_cafe_presses_a_gummi_of_the_bag_into_juice_that_raises_the_iq() {
+    let mut run = run().expect("the extracted data/");
+    let gummi = rules::dungeon::iq::FIRST_GUMMI;
+    run.give_items(109, 1); // (an Apple)
+    run.give_items(gummi, 1);
+    let found = run.gummis();
+    assert_eq!(found.len(), 1, "the Gummi alone, not the apple: {:?}", run.bag().items);
+    let before = run.team().kept_member(true).stats.iq;
+    let said = run.drink_juice(gummi, true);
+    assert!(run.team().kept_member(true).stats.iq > before, "{said}");
+    assert!(run.gummis().is_empty(), "the Gummi drunk");
+}

@@ -1,14 +1,14 @@
 //! The game's own screens a film one plays opens (`screen shop`, `map
 //! …`), over the scene, the film waiting until they are left: the shops,
 //! the bank, the storage, the board of jobs, the recruits who come along,
-//! Xatu's appraisal of the treasure boxes, the world map's ways. What they do is the rules' (`rules::services`,
+//! Xatu's appraisal of the treasure boxes, the café's Gummi juice, the world map's ways. What they do is the rules' (`rules::services`,
 //! `rules::jobs`, the `Run` of the film's game, `Playthrough`); here, a key at
 //! a time and what the box shows.
 
 use rules::jobs::Listing;
 use rules::run::Recruit;
 use rules::run::job_floor::job_title;
-use rules::run::town::Draw;
+use rules::run::town::{Draw, Whom};
 use rules::services::{self, Input, Service};
 use shell::Keys;
 use stage_view::ui::message::Words;
@@ -28,6 +28,9 @@ pub enum GameScreen {
     /// Xatu opens the treasure boxes of the bag, one at a time, for a
     /// price: what it found told; the numbers it draws.
     Appraise { cursor: ListCursor, said: Option<String>, draw: Draw },
+    /// The café presses a Gummi of the bag into juice for the leader or its
+    /// partner: the Gummi chosen (its place in the bag), then who drinks; what it did told.
+    Cafe { cursor: ListCursor, gummi: Option<usize>, said: Option<String> },
     /// The world map's ways, by their names; the one chosen once left (from 1; 0: none).
     Map { ways: Vec<String>, cursor: ListCursor, chosen: usize },
     /// The game's menu, M or X in a place: the team, the bag, a save, closed;
@@ -62,6 +65,7 @@ impl GameScreen {
                 });
                 GameScreen::Board(Listing::board(false))
             }
+            "cafe" => GameScreen::Cafe { cursor: ListCursor::default(), gummi: None, said: None },
             "recruits" => GameScreen::Recruits { cursor: ListCursor::default() },
             "appraise" => GameScreen::Appraise { cursor: ListCursor::default(), said: None, draw: Draw(draw.below(usize::MAX >> 1) as u32) },
             "map" => GameScreen::Map { ways, cursor: ListCursor::default(), chosen: 0 },
@@ -138,10 +142,60 @@ impl GameScreen {
                 let boxes = run.boxes();
                 let options = boxes.iter().map(|&at| book.item_name(run.bag().items[at])).chain(["Done".to_string()]).collect();
                 let message = match boxes.is_empty() {
-                    true => "Xatu: You have no treasure box for me to open.".to_string(),
-                    false => format!("Xatu: Which box shall I open? It costs {} Poké.", rules::town::APPRAISAL_PRICE),
+                    true => "You have no treasure box for me to open.".to_string(),
+                    false => format!("Which box shall I open? It costs {} Poké.", rules::town::APPRAISAL_PRICE),
                 };
                 (left, Words::of_menu(message, options, cursor.at))
+            }
+            GameScreen::Cafe { cursor, gummi, said } => {
+                if said.is_some() {
+                    if matches!(pressed, Some(Input::Confirm | Input::Cancel)) {
+                        *said = None;
+                    }
+                    return (false, Words::of_menu(said.clone().unwrap_or_default(), Vec::new(), 0));
+                }
+                let drinkers: Vec<Whom> = run.members().into_iter().filter(|whom| matches!(whom, Whom::Leader | Whom::Partner)).collect();
+                let left = match *gummi {
+                    // (Who drinks the juice of the Gummi chosen; back to the Gummis.)
+                    Some(at) => {
+                        match cursor.press(pressed, drinkers.len() + 1) {
+                            Picked::Chosen(row) if row < drinkers.len() => {
+                                let id = rules::dungeon::stack::id(run.bag().items[at]);
+                                *said = Some(run.drink_juice(id, drinkers[row] == Whom::Partner));
+                                (*gummi, *cursor) = (None, ListCursor::default());
+                            }
+                            Picked::Chosen(_) | Picked::Left => (*gummi, *cursor) = (None, ListCursor::default()),
+                            _ => {}
+                        }
+                        false
+                    }
+                    None => {
+                        let gummis = run.gummis();
+                        match cursor.press(pressed, gummis.len() + 1) {
+                            Picked::Chosen(row) if row < gummis.len() => {
+                                (*gummi, *cursor) = (Some(gummis[row]), ListCursor::default());
+                                false
+                            }
+                            Picked::Chosen(_) | Picked::Left => true,
+                            _ => false,
+                        }
+                    }
+                };
+                if let Some(said) = said {
+                    return (left, Words::of_menu(said.clone(), Vec::new(), 0));
+                }
+                if let Some(at) = *gummi {
+                    let juice = book.item_name(run.bag().items[at]);
+                    let options = drinkers.iter().map(|&whom| run.member_name(whom)).chain(["Back".to_string()]).collect();
+                    return (left, Words::of_menu(format!("{juice} juice, freshly pressed! Who drinks it?"), options, cursor.at));
+                }
+                let gummis = run.gummis();
+                let options = gummis.iter().map(|&at| book.item_name(run.bag().items[at])).chain(["Done".to_string()]).collect();
+                let message = match gummis.is_empty() {
+                    true => "Bring me a Gummi and I'll press it into juice. It sharpens the mind!",
+                    false => "Which Gummi shall I press into juice?",
+                };
+                (left, Words::of_menu(message.to_string(), options, cursor.at))
             }
             GameScreen::Map { ways, cursor, chosen } => {
                 let left = match cursor.press(pressed, ways.len() + 1) {

@@ -698,7 +698,10 @@ impl Check<'_> {
             Action::Shop(screen) => {
                 if !decor::lang::TALKS[1..].contains(&screen.as_str()) {
                     let site = at(&[Some("shop"), Some(screen)]);
-                    self.say(&site, unknown("no screen", screen, decor::lang::TALKS[1..].iter().copied(), "shop|market|bank|storage|jobs|recruits|appraise"));
+                    self.say(
+                        &site,
+                        unknown("no screen", screen, decor::lang::TALKS[1..].iter().copied(), "shop|market|bank|storage|jobs|recruits|appraise|cafe"),
+                    );
                 }
             }
             Action::Map => self.map_shown |= reached,

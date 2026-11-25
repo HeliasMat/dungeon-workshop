@@ -386,7 +386,7 @@ end
 - **The actions** (in a chapter, in a rule, in a place's `on … end`): `play <film>`,
   `set <flag>`, `clear <flag>`, `add <counter> <n>`, `chapter <n>`, `go <place> [entrance]`,
   `dungeon <name>` and `fight <name>` (then `if won`), `open <place|dungeon>` (on the map),
-  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|recruits|appraise>` (`appraise`: Xatu opens the treasure boxes of the bag),
+  `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|recruits|appraise|cafe>` (`appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
   `map`, `finish` (the game's end card, “The End” and its title, until Enter goes back to the
   title screen; the same once the last chapter has nothing left to play; headless, `the end`);
   and `if … else if … else … end`, tests as in films:
