@@ -2,7 +2,6 @@
 //! joining, and the questions the dungeon asks.
 
 use crate::dungeon::{DungeonRng, MoveSlot, Pos, Stats, Statuses, ai, iq, money_amount, stack, status};
-use crate::services::BAG_CAPACITY;
 
 use super::book::ENEMY_STATS;
 use super::dungeon::{Ask, FloorItem, Outcome, Shop, ShopTalk};
@@ -212,7 +211,7 @@ impl Run {
                 let Some(next) = self.dungeon.as_ref().and_then(|dungeon| dungeon.items.iter().find(|item| item.at == at && item.price.is_none())) else {
                     return;
                 };
-                if next.item != status::item::POKE && self.bag.items.len() >= BAG_CAPACITY {
+                if next.item != status::item::POKE && self.bag.items.len() >= self.bag_room() {
                     return;
                 }
                 let Some(item) = self.take_lying(at, false) else {

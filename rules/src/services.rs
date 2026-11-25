@@ -18,6 +18,10 @@ pub const KECLEON_WARES: u16 = 19;
 /// Most items the bag holds, and most money carried or banked, as in the
 /// original.
 pub const BAG_CAPACITY: usize = 48;
+/// The items the bag holds at each of its levels (the original's
+/// `BAG_CAPACITY_TABLE`, its level raised by the story there; here by the
+/// exploration rank, the level the rank's place: `Run::bag_room`).
+pub const BAG_SIZES: [usize; 8] = [16, 24, 32, 40, 40, 40, 48, 48];
 pub(crate) const MONEY_LIMIT: i32 = 9_999_999;
 /// Digits of an amount.
 const DIGITS: u32 = 7;
@@ -43,7 +47,7 @@ pub enum Input {
 }
 
 /// What the team owns: the bag and money it carries, what is kept safe.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Goods {
     pub bag: Vec<u16>,
     pub money: i32,
@@ -51,6 +55,16 @@ pub struct Goods {
     pub bank: i32,
     /// What the shop being visited has left to sell.
     pub stock: Vec<u16>,
+    /// The items the bag and the storage hold at most (by the rank: the
+    /// bag's level, `ExplorerRank::storage`).
+    pub bag_room: usize,
+    pub storage_room: usize,
+}
+
+impl Default for Goods {
+    fn default() -> Self {
+        Goods { bag: Vec::new(), money: 0, storage: Vec::new(), bank: 0, stock: Vec::new(), bag_room: BAG_CAPACITY, storage_room: usize::MAX }
+    }
 }
 
 /// What an item costs, and what it sells for (0: the shops do not take
@@ -254,7 +268,7 @@ impl Service {
     /// One item of the list moved: sold, bought, put away or taken back,
     /// if it may be.
     fn take(&self, store: bool, at: usize, goods: &mut Goods, prices: Prices) {
-        let room = goods.bag.len() < BAG_CAPACITY;
+        let room = goods.bag.len() < goods.bag_room;
         match (store, self.kind) {
             // Selling: what the shop gives for it, if it takes it.
             (true, Kind::Shop) => {
@@ -272,7 +286,9 @@ impl Service {
                     goods.bag.push(goods.stock.remove(at));
                 }
             }
-            (true, _) => goods.storage.push(goods.bag.remove(at)),
+            // (Kept only while the storage has room: the rank's.)
+            (true, _) if goods.storage.len() < goods.storage_room => goods.storage.push(goods.bag.remove(at)),
+            (true, _) => {}
             (false, _) if room => goods.bag.push(goods.storage.remove(at)),
             (false, _) => {}
         }
@@ -313,7 +329,7 @@ impl Service {
         let (message, options) = match (self.step, self.kind) {
             (Step::Menu, Kind::Shop) => (pocket, options(["Buy", "Sell", "Quit"])),
             (Step::Items { store: false }, Kind::Shop) => {
-                let message = match (goods.stock.is_empty(), goods.bag.len() < BAG_CAPACITY) {
+                let message = match (goods.stock.is_empty(), goods.bag.len() < goods.bag_room) {
                     (true, _) => "Everything is sold!".to_string(),
                     (_, false) => "The bag is full.".to_string(),
                     _ => told("Buy which item?"),
@@ -324,10 +340,16 @@ impl Service {
             (Step::Menu, Kind::Bank) => {
                 (format!("Poké on hand: [CS:G]{}[CR]\nPoké in the bank: [CS:G]{}[CR]", goods.money, goods.bank), options(["Deposit", "Withdraw", "Quit"]))
             }
-            (Step::Menu, Kind::Storage) => (
-                format!("Items in the bag: {} / {BAG_CAPACITY}\nItems in storage: {}", goods.bag.len(), goods.storage.len()),
-                options(["Deposit items", "Withdraw items", "Quit"]),
-            ),
+            (Step::Menu, Kind::Storage) => {
+                let kept = match goods.storage_room {
+                    usize::MAX => goods.storage.len().to_string(),
+                    room => format!("{} / {room}", goods.storage.len()),
+                };
+                (
+                    format!("Items in the bag: {} / {}\nItems in storage: {kept}", goods.bag.len(), goods.bag_room),
+                    options(["Deposit items", "Withdraw items", "Quit"]),
+                )
+            }
             (Step::Amount { deposit, amount, digit }, _) => {
                 // (The amount is shown in its own window, digit by digit:
                 // see `amount`.)
@@ -335,8 +357,11 @@ impl Service {
                 let verb = if deposit { "Deposit" } else { "Withdraw" };
                 (format!("{verb} how many Poké?\nUp/Down: digit   Left/Right: position\nSpace: all"), Vec::new())
             }
-            (Step::Items { store: true }, _) => (format!("{}\n{KEYS}", told("Deposit which item?")), names(&goods.bag)),
-            (Step::Items { store: false }, _) => match goods.bag.len() < BAG_CAPACITY {
+            (Step::Items { store: true }, _) => match goods.storage.len() < goods.storage_room {
+                true => (format!("{}\n{KEYS}", told("Deposit which item?")), names(&goods.bag)),
+                false => (format!("The storage is full. A higher rank gives it more room.\n{KEYS}"), names(&goods.bag)),
+            },
+            (Step::Items { store: false }, _) => match goods.bag.len() < goods.bag_room {
                 true => (format!("{}\n{KEYS}", told("Withdraw which item?")), names(&goods.storage)),
                 false => (format!("The bag is full.\n{KEYS}"), names(&goods.storage)),
             },
@@ -369,7 +394,7 @@ mod tests {
     }
 
     fn goods() -> Goods {
-        Goods { bag: vec![1, 2, 3], money: 350, storage: vec![9], bank: 1000, stock: vec![20, 30, 40] }
+        Goods { bag: vec![1, 2, 3], money: 350, storage: vec![9], bank: 1000, stock: vec![20, 30, 40], ..Default::default() }
     }
 
     /// Items cost ten times their number and sell for their number; item 2
@@ -380,6 +405,22 @@ mod tests {
 
     fn presses(service: &mut Service, goods: &mut Goods, inputs: &[Input]) -> bool {
         inputs.iter().any(|&input| service.press(input, goods, &prices))
+    }
+
+    #[test]
+    fn the_bag_and_the_storage_take_no_more_than_their_room() {
+        use Input::*;
+        // (A bag of 3 full: nothing withdrawn; a storage of 1 full: nothing deposited.)
+        let mut goods = Goods { bag_room: 3, storage_room: 1, ..goods() };
+        let mut storage = Service::open(KANGASKHAN_STORAGE).unwrap();
+        assert!(storage.view(&goods, |id| id.to_string(), |_| String::new(), &prices).message.contains("3 / 3"));
+        presses(&mut storage, &mut goods, &[Down, Confirm, Confirm]);
+        assert_eq!((goods.bag.len(), goods.storage.len()), (3, 1));
+        presses(&mut storage, &mut goods, &[Cancel, Confirm, Confirm]);
+        assert_eq!((goods.bag.len(), goods.storage.len()), (3, 1), "the storage is full");
+        goods.storage_room = 2;
+        presses(&mut storage, &mut goods, &[Confirm]);
+        assert_eq!((goods.bag.len(), goods.storage.len()), (2, 2));
     }
 
     #[test]

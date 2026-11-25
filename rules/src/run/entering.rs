@@ -8,7 +8,7 @@ use crate::jobs;
 const REVIVER_SEED: u16 = 73;
 /// The days an egg takes to hatch (`Progress::next_day`).
 const EGG_TRIPS: u8 = 2;
-use crate::services::{BAG_CAPACITY, MONEY_LIMIT};
+use crate::services::MONEY_LIMIT;
 
 use super::team::{Experience, Founder, Growing, Member, Recruit, Sos, known_moves};
 use super::{Dungeon, Monster, MonsterId, Outcome, Run, Side, Sight};
@@ -152,7 +152,8 @@ impl Run {
         dungeon.hero = Some(leader_id);
         // (The dungeon's limit on the team's size.)
         let mut room = (dungeon.rules.max_party.max(1) as usize).saturating_sub(1);
-        if !team.alone && room >= 1 {
+        // (Not the partner left at home: `keep_partner_home`.)
+        if !team.alone && !progress.partner_home && room >= 1 {
             room -= 1;
             let (stats, moves, experience) = member(&progress.partner, &team.partner);
             let id = dungeon.new_id();
@@ -186,7 +187,7 @@ impl Run {
             None => {
                 let recruits = &progress.recruits;
                 let first: Vec<usize> = (0..recruits.len().min(2)).collect();
-                for &at in progress.chosen.as_ref().unwrap_or(&first).iter().take(2) {
+                for &at in progress.chosen.as_ref().unwrap_or(&first).iter().take(self.along_room()) {
                     if let Some(recruit) = recruits.get(at) {
                         self.come_along(
                             dungeon,
@@ -389,6 +390,7 @@ impl Run {
     /// give them (`{item:12}`); `None`: no job was done. Each client
     /// thanks the team first, as the original's comes to.
     pub fn pay_jobs(&mut self) -> Option<String> {
+        let room = self.bag_room();
         let progress = &mut self.team.progress;
         let book = self.book.clone();
         let tables = &book.tables.jobs;
@@ -406,13 +408,20 @@ impl Run {
         progress.rank = points;
         let prizes = tables.prizes_between(before, points);
         for item in payment.items.iter().chain(&prizes).copied() {
-            match self.bag.items.len() < BAG_CAPACITY {
+            match self.bag.items.len() < room {
                 true => self.bag.items.push(item),
                 false => progress.storage.push(item),
             }
         }
         if tables.rank_name(before) != tables.rank_name(points) {
             told.push_str(&format!("\nNew exploration rank: *{}*!", tables.rank_name(points)));
+            // (What the rank gives: a bigger bag, more room in storage.)
+            if tables.bag_room(points) > tables.bag_room(before) {
+                told.push_str(&format!("\nThe Treasure Bag now holds {} items.", tables.bag_room(points)));
+            }
+            if tables.storage_room(points) > tables.storage_room(before) && tables.storage_room(points) < usize::MAX {
+                told.push_str(&format!("\nKangaskhan Storage now keeps {} items.", tables.storage_room(points)));
+            }
             told.extend(prizes.iter().map(|item| format!("\nA gift from the guild: {{item:{item}}}")));
         }
         for client in payment.joining {

@@ -16,7 +16,6 @@
 //! chests, lying there.
 
 use crate::dungeon::{DungeonRng, Floor, Pos, stack};
-use crate::services::BAG_CAPACITY;
 use crate::tables::{Fixed, FloorExtras};
 
 use super::dungeon::{Ask, Outcome};
@@ -205,7 +204,7 @@ impl Run {
         let sticky: Vec<usize> = (0..self.bag.items.len()).filter(|&at| stack::sticky(self.bag.items[at])).collect();
         let refused = match service {
             _ if self.bag.money < BAZAAR_PRICE => Some("You don't have enough money..."),
-            Bazaar::GrabBag if self.bag.items.len() >= BAG_CAPACITY => Some("Oh, too bad. Your Treasure Bag seems to be full."),
+            Bazaar::GrabBag if self.bag.items.len() >= self.bag_room() => Some("Oh, too bad. Your Treasure Bag seems to be full."),
             Bazaar::Spa if self.here().spa_used => Some("Mime Jr.: I'm sorry, I'm too tired to continue today. Come back again."),
             Bazaar::Clean if sticky.is_empty() => Some("Lickilicky: Whaaaaa? You don't have thticky itemth in your bag."),
             _ => None,

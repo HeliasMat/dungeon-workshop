@@ -133,6 +133,22 @@ impl JobTables {
         at as u32 + 1
     }
 
+    /// The items the storage holds at the rank of so many points (none
+    /// said: no end to it).
+    pub fn storage_room(&self, points: u32) -> usize {
+        self.rank_at(points).map(|rank| rank.storage as usize).filter(|&room| room > 0).unwrap_or(usize::MAX)
+    }
+
+    /// The items the bag holds at the rank of so many points: the bag's level
+    /// is the rank's place (`services::BAG_SIZES`); no ranks, the most.
+    pub fn bag_room(&self, points: u32) -> usize {
+        use crate::services::{BAG_CAPACITY, BAG_SIZES};
+        match self.ranks.is_empty() {
+            true => BAG_CAPACITY,
+            false => BAG_SIZES[(self.rank_number(points) as usize - 1).min(BAG_SIZES.len() - 1)],
+        }
+    }
+
     /// The rank of a job of that kind there: harder to take someone along or
     /// to arrest (`GetMissionRankWithCapAndModifiers`).
     fn job_rank(&self, dungeon: u16, floor: u32, kind: Kind) -> u8 {
@@ -617,6 +633,9 @@ mod tests {
         assert_eq!((tables.rank_name(0), tables.rank_name(99), tables.rank_name(100)), ("Normal", "Normal", "Bronze"));
         assert_eq!((tables.rank_name(5000), tables.next_rank(0), tables.next_rank(5000)), ("Bronze", Some(100), None));
         assert_eq!(tables.prizes_between(90, 110), [71]);
+        // (The bag grows with the rank, the storage holds the rank's room.)
+        assert_eq!((tables.bag_room(0), tables.bag_room(100), JobTables::default().bag_room(0)), (16, 24, 48));
+        assert_eq!((tables.storage_room(0), JobTables::default().storage_room(0)), (64, usize::MAX));
         let job = |rank| Job { rank, ..Job::default() };
         assert_eq!((job(1).letter(), job(6).letter(), job(8).letter()), ("E".to_string(), "S".to_string(), "2*".to_string()));
         // (Harder to arrest than to rescue, nothing past the top.)

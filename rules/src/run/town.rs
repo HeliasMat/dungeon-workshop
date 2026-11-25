@@ -5,7 +5,7 @@
 
 use crate::dungeon::{exclusive, held, iq, stack};
 use crate::jobs::{self, Job};
-use crate::services::{BAG_CAPACITY, Goods};
+use crate::services::Goods;
 use crate::town::{self, RecycleTrade, item};
 
 use super::Run;
@@ -17,8 +17,14 @@ const MOVES_KNOWN: usize = 4;
 /// Items of the day Croagunk shows, and those of the bag each costs.
 const SWAP_WARES: usize = 8;
 const SWAP_COST: u16 = 3;
-/// Recruits who may come along.
+/// Recruits who may come along with the leader and the partner; one more
+/// when the partner stays at home (a team of four at most, the original's).
 const ALONG: usize = 2;
+
+/// The team's name before it is given one (the original's, in English).
+pub const DEFAULT_TEAM_NAME: &str = "Poképals";
+/// The letters a team's name has at most, as in the original.
+pub const TEAM_NAME_LETTERS: usize = 10;
 
 /// A member of the team, for the town's services.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -49,6 +55,12 @@ impl Team {
 
     pub fn partner_name(&self) -> &str {
         if self.progress.names.1.is_empty() { &self.partner.name } else { &self.progress.names.1 }
+    }
+
+    /// The team's name: the one it was given, or the original's own
+    /// (`DEFAULT_TEAM_NAME`) until then.
+    pub fn team_name(&self) -> &str {
+        if self.progress.names.2.is_empty() { DEFAULT_TEAM_NAME } else { &self.progress.names.2 }
     }
 
     /// The tactic of a member, as kept by its name.
@@ -82,7 +94,7 @@ impl Run {
     /// An item in the bag, or in the storage when it is full; whether it
     /// went in the bag.
     pub(super) fn stow(&mut self, item: u16) -> bool {
-        let room = self.bag.items.len() < BAG_CAPACITY;
+        let room = self.bag.items.len() < self.bag_room();
         match room {
             true => self.bag.items.push(item),
             false => self.team.progress.storage.push(item),
@@ -105,6 +117,8 @@ impl Run {
             storage: std::mem::take(&mut self.team.progress.storage),
             bank: self.bank,
             stock: stock.unwrap_or_default(),
+            bag_room: self.bag_room(),
+            storage_room: self.storage_room(),
         };
         let answer = service(&mut goods);
         (self.bag.items, self.bag.money) = (goods.bag, goods.money);
@@ -473,11 +487,28 @@ impl Run {
         }
     }
 
+    /// The items the bag holds now: more as the rank rises (`services::BAG_SIZES`).
+    pub fn bag_room(&self) -> usize {
+        self.book.tables.jobs.bag_room(self.team.progress.rank)
+    }
+
+    /// The items Kangaskhan Storage holds now, by the rank (`ExplorerRank::storage`).
+    pub fn storage_room(&self) -> usize {
+        self.book.tables.jobs.storage_room(self.team.progress.rank)
+    }
+
+    /// The recruits who may come along now: two, three with the partner at home.
+    pub fn along_room(&self) -> usize {
+        ALONG + usize::from(self.team.progress.partner_home && !self.team.alone)
+    }
+
     /// The recruits who come along: those picked at the guild's bell, the
     /// first two until then.
     pub fn along(&self) -> Vec<usize> {
         let progress = &self.team.progress;
-        progress.chosen.clone().unwrap_or_else(|| (0..progress.recruits.len().min(ALONG)).collect())
+        let mut along = progress.chosen.clone().unwrap_or_else(|| (0..progress.recruits.len().min(ALONG)).collect());
+        along.truncate(self.along_room());
+        along
     }
 
     /// The guild's bell: a recruit picked, or let go.
@@ -485,10 +516,60 @@ impl Run {
         let mut chosen = self.along();
         match chosen.iter().position(|&picked| picked == at) {
             Some(place) => _ = chosen.remove(place),
-            None if chosen.len() < ALONG => chosen.push(at),
+            None if chosen.len() < self.along_room() && at < self.team.progress.recruits.len() => chosen.push(at),
             None => {}
         }
         self.team.progress.chosen = Some(chosen);
+    }
+
+    /// Whether the partner stays at home (the original lets it once the
+    /// story is over), or comes again; the recruits along cut to the room.
+    pub fn keep_partner_home(&mut self, home: bool) {
+        self.team.progress.partner_home = home && !self.team.alone;
+        let along = self.along();
+        self.team.progress.chosen = Some(along);
+    }
+
+    /// Who goes into the next dungeon: the leader, the partner unless it
+    /// stays at home, the recruits along.
+    pub fn team_size(&self) -> usize {
+        let partner = !self.team.alone && !self.team.progress.partner_home;
+        1 + usize::from(partner) + self.along().len()
+    }
+
+    /// A member's HP at most.
+    pub fn member_hp(&self, whom: Whom) -> i32 {
+        match whom {
+            Whom::Leader => self.team.kept_member(false).stats.max_hp,
+            Whom::Partner => self.team.kept_member(true).stats.max_hp,
+            Whom::Recruit(at) => self.team.progress.recruits.get(at).map_or(0, |recruit| recruit.stats[1]),
+        }
+    }
+
+    /// The moves a member knows, by id (a recruit's not kept yet: those its
+    /// species knows at its level).
+    pub fn member_moves(&self, whom: Whom) -> Vec<u16> {
+        let moves = match whom {
+            Whom::Leader => self.team.kept_member(false).moves,
+            Whom::Partner => self.team.kept_member(true).moves,
+            Whom::Recruit(at) => match self.team.progress.recruits.get(at) {
+                Some(recruit) if recruit.moves.is_empty() => {
+                    let setup = self.book.member_at(recruit.species, false, Some(recruit.stats[0]));
+                    setup.map(|setup| setup.moves.iter().map(|slot| slot.id).collect()).unwrap_or_default()
+                }
+                Some(recruit) => recruit.moves.clone(),
+                None => Vec::new(),
+            },
+        };
+        moves.into_iter().map(move_id).filter(|&id| id != 0).collect()
+    }
+
+    /// The tactic a member follows (the leader: none of its own, 0).
+    pub fn member_tactic(&self, whom: Whom) -> u8 {
+        match whom {
+            Whom::Leader => 0,
+            whom => self.team.tactic_of(&self.member_name(whom)),
+        }
     }
 
     /// The item at that place of the bag held by the leader or its partner;

@@ -103,8 +103,9 @@ impl Progress {
         let tactics = format!("{TACTICS_LINE}{}\n", tactics.join(";"));
         let rank = format!("{RANK_LINE}{}\n", self.rank);
         let day = format!("{DAY_LINE}{}{}\n", self.day, if self.evening { ",evening" } else { "" });
+        let home = if self.partner_home { format!("{HOME_LINE}partner\n") } else { String::new() };
         format!(
-            "{NAMES_LINE}{}|{}|{}\n{RECRUITS_LINE}{recruits}\n{RECRUIT_MOVES_LINE}{}\n{chosen}{tactics}{rank}{day}",
+            "{NAMES_LINE}{}|{}|{}\n{RECRUITS_LINE}{recruits}\n{RECRUIT_MOVES_LINE}{}\n{chosen}{tactics}{rank}{day}{home}",
             names.0,
             names.1,
             names.2,
@@ -134,6 +135,7 @@ impl Progress {
         self.chosen = chosen.map(|chosen| chosen.split(',').filter_map(|at| at.parse().ok()).collect());
         self.rank = text.lines().find_map(|line| line.strip_prefix(RANK_LINE)).and_then(|rank| rank.parse().ok()).unwrap_or(0);
         // (The day: absent from older saves, the first, in the morning.)
+        self.partner_home = text.lines().any(|line| line.strip_prefix(HOME_LINE) == Some("partner"));
         let day = text.lines().find_map(|line| line.strip_prefix(DAY_LINE)).unwrap_or("0");
         let (days, evening) = day.split_once(',').unwrap_or((day, ""));
         (self.day, self.evening) = (days.trim().parse().unwrap_or(0), evening.trim() == "evening");
@@ -190,6 +192,8 @@ pub(crate) const TACTICS_LINE: &str = "tactics=";
 pub(crate) const RANK_LINE: &str = "rank=";
 /// The days gone by, and `,evening` once back from a dungeon (not slept since).
 pub(crate) const DAY_LINE: &str = "day=";
+/// Who stays at the base (`home=partner`): absent, all come.
+pub(crate) const HOME_LINE: &str = "home=";
 
 /// The tactics of the team's members (`enum tactic_id`).
 pub mod tactic {
@@ -382,6 +386,8 @@ pub struct Progress {
     /// The recruits picked at the guild's bell to come along, by their
     /// place in the list; `None`: never picked, the first two do.
     pub chosen: Option<Vec<usize>>,
+    /// The partner stays at the base: a recruit more comes in its place.
+    pub partner_home: bool,
     /// Trades made at the Recycle Shop (more are offered after some).
     pub recycled: i32,
     /// The points of the team's exploration rank (see `jobs::rank_name`).
@@ -579,6 +585,17 @@ mod tests {
         assert_eq!((read.day, read.evening), (1, true));
         read.read_names("names=a|b|c\n");
         assert_eq!((read.day, read.evening), (0, false), "a save of before: the first day, morning");
+    }
+
+    #[test]
+    fn the_partner_left_at_home_and_the_team_s_name_are_saved() {
+        let mut progress = Progress { partner_home: true, ..Progress::default() };
+        progress.rename(Whose::Team, "  Thorns ");
+        let mut read = Progress::default();
+        read.read_names(&progress.names_text());
+        assert_eq!((read.partner_home, read.names.2.as_str()), (true, "Thorns"));
+        read.read_names("names=a|b|c\n");
+        assert!(!read.partner_home, "a save of before: all come");
     }
 
     #[test]

@@ -3,8 +3,6 @@
 
 use crate::dungeon::{FIXED_ONE, FLOOR_HEIGHT, FLOOR_WIDTH, Floor, MoveEffect, Pos, Tile, ability, ai, apply_effect, pick_weighted, stack, status};
 
-use crate::services::BAG_CAPACITY;
-
 use super::attack::{Attack, chebyshev};
 use super::dungeon::{FloorItem, FloorTrap, Outcome, Shove, weather_name};
 use super::monster::Side;
@@ -392,7 +390,7 @@ impl Run {
                     let attack = Attack { slot, effect: None, damage_mult: FIXED_ONE, linked: false };
                     self.strike(scene.me, foe, &attack);
                 }
-                let free = self.dungeon.as_ref().is_some_and(|dungeon| dungeon.leader().stats.held == 0) && self.bag.items.len() < BAG_CAPACITY;
+                let free = self.dungeon.as_ref().is_some_and(|dungeon| dungeon.leader().stats.held == 0) && self.bag.items.len() < self.bag_room();
                 let taken = self
                     .work(foe, |foe, _, _, _| match foe.stats.held != 0 && !ability::has(&foe.stats, ability::STICKY_HOLD) && free {
                         true => Some((std::mem::take(&mut foe.stats.held), foe.name.clone())),
