@@ -4,7 +4,7 @@ members = ["assets", "diagnostics", "rules", "extractor", "scenes", "story", "en
 
 # What every crate's manifest says alike (each takes it with `x.workspace = true`).
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/HeliasMat/dungeon-workshop"
