@@ -241,6 +241,92 @@ pub fn treasure_box(id: u16) -> Option<(u16, u16)> {
 /// What appraising a box costs.
 pub const APPRAISAL_PRICE: i32 = 150;
 
+/// Croagunk's Swap Shop: Exclusive Items put in its cauldron for another,
+/// as the original's. From the Silks on they come in fours (its
+/// `GetFirstExclusivePrerequisite`): two of one star (a Claw, a Fang), one
+/// of two, one of three; the two of one star swap for the one of two, those
+/// three for the one of three ("the easy way"); Croagunk's items of the day
+/// are each had for so many Exclusive Items, whatever they are. (Its
+/// `SYNTH/synth.bin`, which weighs and counts them, is not extracted: the
+/// counts below are the ones it has, by star, read from the ROM; the weights
+/// its pattern.)
+pub mod swap {
+    use crate::dungeon::exclusive;
+
+    /// What a swap costs, whichever it is (overlay 21's).
+    pub const PRICE: i32 = 150;
+    /// Croagunk's items of the day, at most.
+    pub const WARES: usize = 8;
+    /// The first Exclusive Item of the fours (the White Silk).
+    pub const FIRST_SET: u16 = 506;
+    /// The first of the fours made for a species (the Bulba-Claw): before
+    /// it, those for a type, which Croagunk never offers of the day.
+    pub const FIRST_SPECIES_SET: u16 = 574;
+
+    /// Whether an item is an Exclusive Item.
+    pub fn exclusive(item: u16) -> bool {
+        (exclusive::FIRST..exclusive::END).contains(&item)
+    }
+
+    /// Its stars (1 to 3): by its place in its four; those before the
+    /// fours (the Prism Ruff…) are of three.
+    pub fn stars(item: u16) -> u8 {
+        match item.checked_sub(FIRST_SET).map(|place| place % 4) {
+            Some(0 | 1) => 1,
+            Some(2) => 2,
+            _ => 3,
+        }
+    }
+
+    /// The set it is had for the easy way: the two of one star of its four
+    /// for the one of two; those and the one of two for the one of three.
+    pub fn set_for(item: u16) -> Option<Vec<u16>> {
+        let first = item.checked_sub(FIRST_SET).filter(|_| exclusive(item)).map(|place| item - place % 4)?;
+        match item - first {
+            2 => Some(vec![first, first + 1]),
+            3 => Some(vec![first, first + 1, first + 2]),
+            _ => None,
+        }
+    }
+
+    /// The Exclusive Items an item of the day is had for (`num_to_trade`).
+    pub fn to_trade(item: u16) -> usize {
+        match stars(item) {
+            1 => 2,
+            2 => 3,
+            _ => 5,
+        }
+    }
+
+    /// How often it is of the day: the rarer, the less.
+    pub fn weight(item: u16) -> usize {
+        match stars(item) {
+            1 => 16,
+            2 => 8,
+            _ => 4,
+        }
+    }
+
+    /// The Exclusive Items taken for an item of the day, among those held
+    /// (by id): `count` of them, the fewest stars first, never the one
+    /// wanted; none if there are not enough. Their places in `held`.
+    pub fn any_taken(held: &[u16], wanted: u16, count: usize) -> Option<Vec<usize>> {
+        let mut fitting: Vec<usize> = (0..held.len()).filter(|&at| exclusive(held[at]) && held[at] != wanted).collect();
+        fitting.sort_by_key(|&at| (stars(held[at]), held[at]));
+        fitting.truncate(count);
+        (fitting.len() == count).then_some(fitting)
+    }
+
+    /// The items of a set taken from those held (by id): their places, if all are there.
+    pub fn set_taken(held: &[u16], set: &[u16]) -> Option<Vec<usize>> {
+        let mut taken: Vec<usize> = Vec::new();
+        for &item in set {
+            taken.push((0..held.len()).find(|at| held[*at] == item && !taken.contains(at))?);
+        }
+        Some(taken)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -269,5 +355,20 @@ mod tests {
         assert_eq!(lottery(item::PRIZE_TICKET, 0), 3);
         assert_eq!(lottery(item::PRIZE_TICKET, 99), 0);
         assert_eq!(treasure_box(366), Some((0, 3)));
+    }
+
+    #[test]
+    fn croagunk_swaps_a_four_s_lesser_items_for_its_rarer_ones() {
+        // (The Bulba-Claw, -Fang, Grass-Guard, Leafy Tie.)
+        assert_eq!([574, 575, 576, 577].map(swap::stars), [1, 1, 2, 3]);
+        assert_eq!(swap::set_for(576), Some(vec![574, 575]));
+        assert_eq!(swap::set_for(577), Some(vec![574, 575, 576]));
+        assert_eq!((swap::set_for(574), swap::set_for(444)), (None, None));
+        assert_eq!([574, 576, 577, 444].map(swap::to_trade), [2, 3, 5, 5]);
+        assert_eq!(swap::set_taken(&[1, 575, 574], &[574, 575]), Some(vec![2, 1]));
+        assert_eq!(swap::set_taken(&[574, 1], &[574, 575]), None);
+        // (Any two Exclusive Items, the fewest stars first, never the one wanted.)
+        assert_eq!(swap::any_taken(&[577, 1, 575, 600, 576], 600, 2), Some(vec![2, 4]));
+        assert_eq!(swap::any_taken(&[577, 1], 600, 2), None);
     }
 }

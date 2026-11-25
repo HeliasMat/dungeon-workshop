@@ -6,7 +6,7 @@
 use crate::dungeon::{exclusive, held, iq, stack};
 use crate::jobs::{self, Job};
 use crate::services::Goods;
-use crate::town::{self, RecycleTrade, item};
+use crate::town::{self, item, swap};
 
 use super::Run;
 use super::team::{LINKED_MOVE, Member, Team, Whose, move_id, tactic};
@@ -14,9 +14,9 @@ use super::team::{LINKED_MOVE, Member, Team, Whose, move_id, tactic};
 /// The moves a member knows at most.
 const MOVES_KNOWN: usize = 4;
 
-/// Items of the day Croagunk shows, and those of the bag each costs.
-const SWAP_WARES: usize = 8;
-const SWAP_COST: u16 = 3;
+/// What the Link Shop asks for a session: all the links, the moves
+/// forgotten and remembered of a visit (overlay 18's).
+pub const LINK_PRICE: i32 = 500;
 /// Recruits who may come along with the leader and the partner; one more
 /// when the partner stays at home (a team of four at most, the original's).
 const ALONG: usize = 2;
@@ -32,6 +32,15 @@ pub enum Whom {
     Leader,
     Partner,
     Recruit(usize),
+}
+
+/// What Croagunk gives for a swap: an item, had for its set (the easy
+/// way), or (none) for so many Exclusive Items, whatever they are (an item
+/// of the day).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SwapOffer {
+    pub item: u16,
+    pub set: Option<Vec<u16>>,
 }
 
 /// Numbers drawn for the services (no clock in the rules: the screen gives
@@ -248,24 +257,8 @@ impl Run {
         let (Some(new), Some(old)) = (book.species(into), book.species(species)) else {
             return Err("This evolution does not happen here.".to_string());
         };
-        let (stats, iq, moves): ([i32; 6], Option<i32>, Vec<u16>) = match whom {
-            Whom::Leader | Whom::Partner => {
-                let member = self.team.kept_member(whom == Whom::Partner);
-                let stats = &member.stats;
-                (
-                    [stats.level, stats.max_hp, stats.attack, stats.defense, stats.sp_attack, stats.sp_defense],
-                    Some(stats.iq),
-                    member.moves.iter().map(|&id| move_id(id)).collect(),
-                )
-            }
-            Whom::Recruit(at) => {
-                let recruit = &self.team.progress.recruits[at];
-                (recruit.stats, None, recruit.moves.iter().map(|&id| move_id(id)).collect())
-            }
-        };
-        let bag = self.bag_ids();
-        let evolving = town::Evolving { level: stats[0], iq, attack: stats[2], defense: stats[3], gender: old.gender, moves: &moves, bag: &bag };
-        let used = town::requirement(&new.evolution, &evolving)?;
+        let used = self.evolution_needs(whom, into)?;
+        let stats = self.evolving_parts(whom).0;
         used.iter().for_each(|&used| self.take_item(used));
         let grown = town::evolved_stats([stats[1], stats[2], stats[3], stats[4], stats[5]], old.base, new.base);
         match whom {
@@ -292,6 +285,53 @@ impl Run {
             }
         }
         Ok(())
+    }
+
+    /// What a member could evolve into at Luminous Spring (by their first
+    /// entries), each with whether it may now, else what it lacks: those of
+    /// the data's that happen by level, IQ or items, with their extra
+    /// conditions (a Link Cable, a ribbon, its gender, a move known…).
+    pub fn evolution_offers(&self, whom: Whom) -> Vec<(u16, Result<(), String>)> {
+        let species = self.member_species(whom);
+        let happens = |into: &u16| {
+            let method = self.book.species(*into).map_or(town::method::NONE, |new| new.evolution.method);
+            matches!(method, town::method::LEVEL | town::method::IQ | town::method::ITEMS)
+        };
+        self.book.evolutions(species).into_iter().filter(happens).map(|into| (into, self.evolution_needs(whom, into).map(|_| ()))).collect()
+    }
+
+    /// Whether a member evolves into that species now: the items it uses
+    /// up, or what it lacks.
+    fn evolution_needs(&self, whom: Whom, into: u16) -> Result<Vec<u16>, String> {
+        let Some(new) = self.book.species(into) else {
+            return Err("This evolution does not happen here.".to_string());
+        };
+        let gender = self.book.species(self.member_species(whom)).map_or(0, |old| old.gender);
+        let (stats, iq, moves) = self.evolving_parts(whom);
+        let bag = self.bag_ids();
+        let evolving = town::Evolving { level: stats[0], iq, attack: stats[2], defense: stats[3], gender, moves: &moves, bag: &bag };
+        town::requirement(&new.evolution, &evolving)
+    }
+
+    /// A member as the conditions of evolving read it: its level and stats
+    /// (level, HP, attack, defense, special attack, special defense), its
+    /// IQ (none kept for a recruit), its moves.
+    fn evolving_parts(&self, whom: Whom) -> ([i32; 6], Option<i32>, Vec<u16>) {
+        match whom {
+            Whom::Leader | Whom::Partner => {
+                let member = self.team.kept_member(whom == Whom::Partner);
+                let stats = &member.stats;
+                (
+                    [stats.level, stats.max_hp, stats.attack, stats.defense, stats.sp_attack, stats.sp_defense],
+                    Some(stats.iq),
+                    member.moves.iter().map(|&id| move_id(id)).collect(),
+                )
+            }
+            Whom::Recruit(at) => match self.team.progress.recruits.get(at) {
+                Some(recruit) => (recruit.stats, None, recruit.moves.iter().map(|&id| move_id(id)).collect()),
+                None => ([1; 6], None, Vec::new()),
+            },
+        }
     }
 
     /// Spinda presses a Gummi for the leader or its partner.
@@ -333,17 +373,29 @@ impl Run {
         let book = self.book.clone();
         let trade = &book.tables.recycle[trade];
         let Some(places) = trade.take_from(&self.bag_ids()) else {
-            return "You are missing items for this swap.".to_string();
+            return "You don't have the items this recycle takes.".to_string();
         };
+        let found = self.project_p();
         self.take_places(places);
         self.team.progress.recycled += 1;
-        let mut said = self.receive(trade.item);
+        let mut said = format!("Thanks for recycling! {}", self.receive(trade.item));
         if let Some(ticket) = trade.bonus_ticket()
             && (draw.below(100) as i16) < trade.bonus_odds
         {
-            said = format!("{said} En prime : {}", self.receive(ticket));
+            said = format!("{said}\nCongratulations, it came with a bonus! {}", self.receive(ticket));
+        }
+        // (Project P: the trades made find more.)
+        match (found, self.project_p()) {
+            ((false, _), (true, _)) => said.push_str("\nProject P is going well: the Recycle Shop has new trades!"),
+            ((_, false), (_, true)) => said.push_str("\nProject P has found something: a land no one had seen before!"),
+            _ => {}
         }
         said
+    }
+
+    /// The lottery tickets of the bag, by their places in it.
+    pub fn tickets(&self) -> Vec<usize> {
+        (0..self.bag.items.len()).filter(|&at| item::TICKETS.contains(&stack::id(self.bag.items[at]))).collect()
     }
 
     /// The lottery: a ticket played.
@@ -361,29 +413,95 @@ impl Run {
         }
     }
 
-    /// Croagunk's items of the day: exclusive items.
+    /// Croagunk's items of the day: Exclusive Items made for the team's
+    /// species (those for a type never), drawn by the day, the rarer the
+    /// less often; those swapped for today gone (`town::swap`).
     pub fn swap_wares(&self) -> Vec<u16> {
-        let mut wares = self.exclusive_for_team();
+        let made = self.exclusive_for_team();
+        let for_species: Vec<u16> = made.iter().copied().filter(|&item| item >= swap::FIRST_SPECIES_SET).collect();
         let progress = &self.team.progress;
-        let mut day = Draw(progress.returned.len() as u32 * 7_919 + progress.jobs.len() as u32 + 1);
+        let mut pool: Vec<u16> = if for_species.is_empty() { made } else { for_species };
+        pool.retain(|item| !progress.swapped.contains(item));
+        let mut day = Draw(progress.day.max(1).wrapping_mul(7_919) + 1);
         let mut picked = Vec::new();
-        while picked.len() < SWAP_WARES && !wares.is_empty() {
-            let at = day.below(wares.len());
-            picked.push(wares.remove(at));
+        while picked.len() < swap::WARES && !pool.is_empty() {
+            let total: usize = pool.iter().map(|&item| swap::weight(item)).sum();
+            let (mut roll, mut at) = (day.below(total), 0);
+            while at + 1 < pool.len() && roll >= swap::weight(pool[at]) {
+                roll -= swap::weight(pool[at]);
+                at += 1;
+            }
+            picked.push(pool.remove(at));
         }
+        picked.sort_unstable();
         picked
     }
 
-    /// One of them, for items of the bag.
-    pub fn swap(&mut self, wanted: u16) -> String {
-        let cost = RecycleTrade { costs: vec![(0, SWAP_COST)], ..Default::default() };
-        match cost.take_from(&self.bag_ids()) {
-            None => "Three items are needed for a swap.".to_string(),
-            Some(places) => {
-                self.take_places(places);
-                self.receive(wanted)
+    /// The Exclusive Items the team owns, by id: the bag's, then the
+    /// storage's (Croagunk takes from both, as the original's).
+    fn owned_exclusives(&self) -> Vec<u16> {
+        self.bag_ids().into_iter().chain(self.team.progress.storage.iter().map(|&value| stack::id(value))).filter(|&id| swap::exclusive(id)).collect()
+    }
+
+    /// What Croagunk offers: the rarer items of a four the team holds the
+    /// set for (the easy way), then its items of the day.
+    pub fn swap_offers(&self) -> Vec<SwapOffer> {
+        let owned = self.owned_exclusives();
+        let mut offers: Vec<SwapOffer> = Vec::new();
+        for &held in &owned {
+            for item in held.checked_sub(swap::FIRST_SET).map(|place| held - place % 4).map_or(Vec::new(), |first| vec![first + 2, first + 3]) {
+                let set = swap::set_for(item).filter(|set| swap::set_taken(&owned, set).is_some());
+                if let Some(set) = set.filter(|_| !offers.iter().any(|offer| offer.item == item)) {
+                    offers.push(SwapOffer { item, set: Some(set) });
+                }
             }
         }
+        for item in self.swap_wares() {
+            if !offers.iter().any(|offer| offer.item == item) {
+                offers.push(SwapOffer { item, set: None });
+            }
+        }
+        offers
+    }
+
+    /// The Exclusive Items a swap would take (by id), if the team owns
+    /// them: its set, or so many of the fewest stars.
+    pub fn swap_takes(&self, offer: &SwapOffer) -> Option<Vec<u16>> {
+        let owned = self.owned_exclusives();
+        let places = match &offer.set {
+            Some(set) => swap::set_taken(&owned, set)?,
+            None => swap::any_taken(&owned, offer.item, swap::to_trade(offer.item))?,
+        };
+        Some(places.into_iter().map(|at| owned[at]).collect())
+    }
+
+    /// The swap made: its price paid, its items put in the cauldron (from
+    /// the bag first, then the storage), the item received; an item of the
+    /// day is gone for the day. What is told, or why not.
+    pub fn swap(&mut self, offer: &SwapOffer) -> Result<String, String> {
+        if self.bag.money < swap::PRICE {
+            return Err(format!("Croagunk: No Poké, no swap! It's {} Poké a swap.", swap::PRICE));
+        }
+        let Some(taken) = self.swap_takes(offer) else {
+            return Err("Croagunk: Nope, you don't have a set of swappable items for that one.".to_string());
+        };
+        for item in taken {
+            match self.bag_ids().iter().position(|&held| held == item) {
+                Some(at) => _ = self.bag.items.remove(at),
+                None => {
+                    let storage = &mut self.team.progress.storage;
+                    if let Some(at) = storage.iter().position(|&value| stack::id(value) == item) {
+                        storage.remove(at);
+                    }
+                }
+            }
+        }
+        self.bag.money -= swap::PRICE;
+        if offer.set.is_none() {
+            self.team.progress.swapped.push(offer.item);
+        }
+        let rare = if swap::stars(offer.item) >= 3 { " Whoa, that's beyond valuable! Treat it with care." } else { "" };
+        Ok(format!("Into the cauldron they go... The swap worked!{rare} {}", self.receive(offer.item)))
     }
 
     /// The treasure boxes of the bag, by their places in it.
@@ -417,6 +535,21 @@ impl Run {
         prize.map_or_else(|| "The box was empty...".to_string(), |prize| format!("The box opens! {}", self.receive(prize)))
     }
 
+    /// The Link Shop: the moves of the leader or its partner, each with
+    /// whether it is linked to the one above (used with it in one turn).
+    pub fn linked_moves(&self, partner: bool) -> Vec<(u16, bool)> {
+        self.team.kept_member(partner).moves.iter().map(|&kept| (move_id(kept), kept & LINKED_MOVE != 0)).filter(|(id, _)| *id != 0).collect()
+    }
+
+    /// The Link Shop's price paid for a session, if the bag has it.
+    pub fn pay_link_session(&mut self) -> bool {
+        let paid = self.bag.money >= LINK_PRICE;
+        if paid {
+            self.bag.money -= LINK_PRICE;
+        }
+        paid
+    }
+
     /// The Link Shop: that move linked to the one above, or delinked.
     /// (Moves a member knows at most: see `remember_move`.)
     pub fn link_move(&mut self, partner: bool, slot: usize) {
@@ -443,46 +576,64 @@ impl Run {
     }
 
     /// The Link Shop: a forgotten move remembered, if the member has room
-    /// (four moves at most); what is told.
-    pub fn remember_move(&mut self, partner: bool, id: u16) -> String {
-        let mut member = self.team.kept_member(partner);
+    /// (four moves at most), else in place of the move at `instead` and
+    /// those linked to it; what is told.
+    pub fn remember_move(&mut self, partner: bool, id: u16, instead: Option<usize>) -> String {
         let name = self.member_name(if partner { Whom::Partner } else { Whom::Leader });
+        let forgot = match instead {
+            Some(slot) => match self.forget_chain(partner, slot) {
+                Ok(forgot) => format!("{name} forgot {forgot}, and "),
+                Err(why) => return why,
+            },
+            None => String::new(),
+        };
+        let mut member = self.team.kept_member(partner);
         if member.moves.len() >= MOVES_KNOWN {
-            return format!("{name} already knows four moves: make it forget one first.");
+            return format!("{name} already knows four moves: it must forget one first.");
         }
         member.moves.push(id);
         self.team.keep(partner, member);
-        format!("{name} remembered {}!", self.book.move_name(id))
+        let remembered = if forgot.is_empty() { format!("{name} remembered") } else { format!("{forgot}remembered") };
+        format!("Bzzzt... Zzzat! Success! {remembered} {}!", self.book.move_name(id))
     }
 
-    /// The Link Shop: a move forgotten (one is always kept); what is told.
+    /// The Link Shop: a move forgotten, with those linked to it (one move
+    /// is always kept); what is told.
     pub fn forget_move(&mut self, partner: bool, slot: usize) -> String {
+        let name = self.member_name(if partner { Whom::Partner } else { Whom::Leader });
+        match self.forget_chain(partner, slot) {
+            Ok(forgot) => format!("Bzzzt... Zzzat! Success! {name} forgot {forgot}."),
+            Err(why) => why,
+        }
+    }
+
+    /// The move at that slot forgotten, and those linked to it: their names,
+    /// or why not (none would be left).
+    fn forget_chain(&mut self, partner: bool, slot: usize) -> Result<String, String> {
         let mut member = self.team.kept_member(partner);
         let name = self.member_name(if partner { Whom::Partner } else { Whom::Leader });
-        if member.moves.len() <= 1 || slot >= member.moves.len() {
-            return format!("{name} must keep at least one move.");
+        let chain = linked_chain(&member.moves, slot);
+        if chain.is_empty() || chain.len() >= member.moves.len() {
+            return Err(format!("{name} wouldn't have any moves left if it forgot that."));
         }
-        let id = move_id(member.moves.remove(slot));
-        // (What was linked to it is unlinked; the first links to nothing.)
-        if let Some(next) = member.moves.get_mut(slot) {
-            *next &= !LINKED_MOVE;
-        }
+        let gone: Vec<String> = member.moves.drain(chain).map(|kept| self.book.move_name(move_id(kept))).collect();
+        // (The first links to nothing.)
         if let Some(first) = member.moves.first_mut() {
             *first &= !LINKED_MOVE;
         }
         self.team.keep(partner, member);
-        format!("{name} oublie {}.", self.book.move_name(id))
+        Ok(gone.join(" and "))
     }
 
-    /// A member's move goes to another place in its order, and all come
-    /// unlinked (a link is the Link Shop's).
+    /// A member's move goes to another place in its order; the links stay
+    /// where they were (the order a chain is used in changed, as the
+    /// original's Switch).
     pub fn reorder_move(&mut self, partner: bool, from: usize, to: usize) {
         let mut member = self.team.kept_member(partner);
         if from < member.moves.len() && to < member.moves.len() {
-            member.moves.swap(from, to);
-            for id in &mut member.moves {
-                *id &= !LINKED_MOVE;
-            }
+            let (a, b) = (member.moves[from], member.moves[to]);
+            member.moves[from] = move_id(b) | (a & LINKED_MOVE);
+            member.moves[to] = move_id(a) | (b & LINKED_MOVE);
             self.team.keep(partner, member);
         }
     }
@@ -633,6 +784,14 @@ impl Run {
         }
     }
 
+    /// A shop not visited since the day began restocks with those items
+    /// (a game's own list, in place of the original's).
+    pub fn restock_with(&mut self, shop: usize, items: &[u16]) {
+        if self.team.progress.stock[shop].is_none() {
+            self.team.progress.stock[shop] = Some(items.to_vec());
+        }
+    }
+
     /// What the guild gives for sentry duty: an Oran Berry, a Gummi, a
     /// Reviver Seed, the better the more (`rating`: 0 to 3).
     pub fn sentry_reward(&mut self, rating: u8, draw: &mut Draw) -> Option<String> {
@@ -643,5 +802,39 @@ impl Run {
             _ => None,
         };
         reward.map(|item| self.receive(item))
+    }
+}
+
+/// The slots of the chain of linked moves the one at `slot` is in (none:
+/// no such slot).
+pub fn linked_chain(moves: &[u16], slot: usize) -> std::ops::Range<usize> {
+    if slot >= moves.len() {
+        return 0..0;
+    }
+    let linked = |at: usize| moves.get(at).is_some_and(|&kept| kept & LINKED_MOVE != 0);
+    let mut first = slot;
+    while first > 0 && linked(first) {
+        first -= 1;
+    }
+    let mut end = slot + 1;
+    while linked(end) {
+        end += 1;
+    }
+    first..end
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_move_forgotten_takes_the_moves_linked_to_it() {
+        // (Moves 1, 2 linked to it, 3 alone, 4 linked to 3.)
+        let moves = [1, 2 | LINKED_MOVE, 3, 4 | LINKED_MOVE];
+        assert_eq!(linked_chain(&moves, 0), 0..2);
+        assert_eq!(linked_chain(&moves, 1), 0..2);
+        assert_eq!(linked_chain(&moves, 3), 2..4);
+        assert_eq!(linked_chain(&[5], 0), 0..1);
+        assert_eq!(linked_chain(&moves, 9), 0..0);
     }
 }

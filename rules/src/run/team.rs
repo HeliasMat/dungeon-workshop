@@ -160,6 +160,7 @@ impl Progress {
         self.stock = [None, None];
         self.offers.clear();
         self.outlaws.clear();
+        self.swapped.clear();
         self.eggs.iter_mut().for_each(|(_, days)| *days = days.saturating_sub(1));
     }
 
@@ -413,6 +414,9 @@ pub struct Progress {
     pub mazes: Vec<u16>,
     /// The IQ skills switched off, by member's name (bits by skill).
     pub iq_off: HashMap<String, u128>,
+    /// Croagunk's items of the day swapped for today (gone from its list
+    /// till the next day; not saved).
+    pub swapped: Vec<u16>,
 }
 
 /// The team fainted: where, what it lost; whether its SOS is sent, and the
