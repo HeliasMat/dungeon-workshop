@@ -54,6 +54,7 @@ fn fighter(level: i32, attack: i32, defense: i32, types: (u8, u8)) -> Fighter {
         ailing: false,
         focused: false,
         lucky: false,
+        reaches: (false, false),
     }
 }
 
@@ -157,7 +158,7 @@ fn type_matchups_stack_over_both_types() {
     let chart = chart();
     let user = fighter(5, 10, 10, (1, 0)).stats;
     let target = |types| fighter(5, 10, 10, types).stats;
-    let effects = |attacker: &Stats, types, attack_type| type_effects(Some(&chart), attacker, &target(types), attack_type, 10);
+    let effects = |attacker: &Stats, types, attack_type| type_effects(Some(&chart), attacker, &target(types), attack_type, 10, (false, false));
     let (strong, weak, half) = (0x166 as f64 / 256.0, 0xB5 as f64 / 256.0, 0.5);
     assert_eq!(effects(&user, (2, 0), 3), (strong, matchup::SUPER_EFFECTIVE));
     assert_eq!(effects(&user, (2, 9), 3), (strong * strong, matchup::SUPER_EFFECTIVE));
@@ -168,8 +169,11 @@ fn type_matchups_stack_over_both_types() {
     assert_eq!(effects(&user, (2, 0), 18), (1.0, matchup::NEUTRAL));
     assert!(chart.immune(3, &target((5, 2))) && !chart.immune(3, &target((2, 0))));
     assert!(chart.immune(1, &target((14, 0))) && !chart.immune(2, &target((14, 0))));
+    // A Scrappy-like exclusive item: Normal moves reach Ghosts.
+    let reached = type_effects(Some(&chart), &user, &target((14, 0)), 1, 10, (true, false));
+    assert_eq!(reached, (1.0, matchup::NEUTRAL));
     // Without a chart everything is neutral.
-    assert_eq!(type_effects(None, &user, &target((2, 0)), 3, 10), (1.0, matchup::NEUTRAL));
+    assert_eq!(type_effects(None, &user, &target((2, 0)), 3, 10, (false, false)), (1.0, matchup::NEUTRAL));
 }
 
 #[test]

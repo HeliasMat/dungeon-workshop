@@ -97,9 +97,11 @@ impl Play<'_, '_> {
             self.says(Happened::ColorChanged(kind));
         }
         // Conversion 2: hit by a move, the monster turns to a type that
-        // stands up to it (the type data says which; none, it stays).
+        // stands up to it (the type data says which; none, it stays). An
+        // exclusive item keeps it so.
         let resisting = constants.conversion2_types.get(type_id as usize).copied().unwrap_or(0);
-        if victim.status.conversion2_turns > 0 && resisting != 0 && victim.alive() && victim.stats.types != (resisting, 0) {
+        let converts = victim.status.conversion2_turns > 0 || victim.status.exclusive.has(exclusive::effect::CONVERSION_2_WHEN_HIT);
+        if converts && resisting != 0 && victim.alive() && victim.stats.types != (resisting, 0) {
             victim.status.remember_identity(victim.stats);
             victim.stats.types = (resisting, 0);
             self.says(Happened::TypeChanged);
@@ -178,7 +180,9 @@ impl Play<'_, '_> {
                 user.stats.hp -= lost;
                 self.says(Happened::Ooze(lost));
             } else if !(aftermath == Aftermath::Recoil && guarded) {
-                let lost = aftermath.apply(user.stats, damage.amount);
+                // (An exclusive item: what is drained gives twice the HP.)
+                let doubled = aftermath == Aftermath::Drain && user.status.exclusive.has(exclusive::effect::HP_DRAIN_RECOVERY_BOOST);
+                let lost = aftermath.apply(user.stats, if doubled { damage.amount * 2 } else { damage.amount });
                 self.says(Happened::Aftermath(lost));
             }
         }
@@ -246,6 +250,25 @@ impl Play<'_, '_> {
                 true => self.affects(effect, victim, Role::Victim),
                 false => self.affects(effect, user, Role::User),
             };
+        }
+        // The striker blinded (a Blinker Seed's accuracy drop here), or one
+        // of its moves sealed (by the caller).
+        if held.has(exclusive::effect::MAY_BLINKER_ATTACKERS) && self.rolled(chance) {
+            self.affects(MoveEffect::TargetAccuracy(-2), user, Role::User);
+        }
+        if held.has(exclusive::effect::MAY_SEAL_ATTACKER_MOVES) && self.rolled(chance) {
+            user.status.item_sealing = true;
+        }
+        // Low on HP, it may warp away; hurt, it may get a PP back (by the
+        // caller; the game's chances, read from its overlay 10).
+        const ITEM_WARP_CHANCE: i32 = 50;
+        const ITEM_PP_BACK_CHANCE: i32 = 30;
+        let low = victim.stats.hp <= victim.stats.max_hp / 4;
+        if low && held.has(exclusive::effect::MAY_WARP_WHEN_ATTACKED) && self.rolled(ITEM_WARP_CHANCE) {
+            victim.status.item_warping = true;
+        }
+        if held.has(exclusive::effect::MAY_RESTORE_PP_FROM_DAMAGE) && self.rolled(ITEM_PP_BACK_CHANCE) {
+            victim.status.item_pp_back = true;
         }
     }
 }

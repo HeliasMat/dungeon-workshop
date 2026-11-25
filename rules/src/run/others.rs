@@ -8,7 +8,7 @@
 
 use crate::dungeon::ai::{self, AiChoice, AiUser, Candidate};
 use crate::dungeon::combat::TYPE_COUNT;
-use crate::dungeon::exclusive::effect::NO_WEATHER_DAMAGE;
+use crate::dungeon::exclusive::effect::{ABSORB_TEAMMATE_POISON, HEAL_STATUS_FROM_WATERY_TERRAIN, NO_WEATHER_DAMAGE, RECOVER_HP_FROM_WATERY_TERRAIN};
 use crate::dungeon::status::{DEEP_SLEEP, item, problems};
 use crate::dungeon::{
     Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, Tile, TrapOutcome, ability, apply_effect, eat_item, enemy_action, held, iq, stack,
@@ -171,9 +171,53 @@ impl Run {
         }
         self.weather_turn();
         self.held_items_turn();
+        self.exclusive_items_turn();
         self.bad_dreams_turn();
         // At half speed the others get two rounds for each of the leader's.
         Some(Phase { rounds: if speed == 0 { 2 } else { 1 }, previous, ..Phase::default() })
+    }
+
+    /// Exclusive items that act as turns pass: in water, HP back and the
+    /// status problems cured; the teammates' poison taken away, HP for it
+    /// (the game's amounts, read from its overlay 10).
+    fn exclusive_items_turn(&mut self) {
+        const WATER_HP: i32 = 20;
+        const POISON_TAKEN_HP: i32 = 10;
+        const WATER: u8 = 0;
+        let book = self.book.clone();
+        let constants = &book.tables.constants;
+        let dungeon = self.dungeon.as_mut().expect("a dungeon");
+        let watery = dungeon.spec(&book).is_some_and(|floor| floor.secondary_kind == WATER);
+        let floor = &dungeon.floor;
+        let rng = &mut dungeon.rng;
+        let mut absorbers = Vec::new();
+        for monster in dungeon.monsters.iter_mut().filter(|monster| monster.team() && monster.alive()) {
+            let held = monster.status.exclusive;
+            if held.has(ABSORB_TEAMMATE_POISON) {
+                absorbers.push(monster.id);
+            }
+            if !watery || floor.tile(monster.at) != Tile::Secondary {
+                continue;
+            }
+            if held.has(RECOVER_HP_FROM_WATERY_TERRAIN) && monster.stats.hp < monster.stats.max_hp {
+                watched(monster, &mut self.sights, |monster| monster.stats.hp = (monster.stats.hp + WATER_HP).min(monster.stats.max_hp));
+            }
+            if held.has(HEAL_STATUS_FROM_WATERY_TERRAIN) && monster.status.ailing() {
+                apply_effect(MoveEffect::CureStatus, rng, constants, &mut monster.stats, &mut monster.status);
+                self.log.push(format!("{}'s status problems were washed away!", monster.name));
+            }
+        }
+        for absorber in absorbers {
+            let mut taken = false;
+            for monster in dungeon.monsters.iter_mut().filter(|monster| monster.team() && monster.alive() && monster.status.poisoned) {
+                (monster.status.poisoned, monster.status.badly_poisoned) = (false, false);
+                taken = true;
+            }
+            if let Some(monster) = dungeon.monster_mut(absorber).filter(|_| taken) {
+                watched(monster, &mut self.sights, |monster| monster.stats.hp = (monster.stats.hp + POISON_TAKEN_HP).min(monster.stats.max_hp));
+                self.log.push(format!("{} absorbed the team's poison!", monster.name));
+            }
+        }
     }
 
     /// Bad Dreams: each turn, the foes of its bearer asleep where it sees

@@ -382,6 +382,13 @@ impl Dungeon {
         self.last_used = None;
         let mut props = spec.map(|floor| floor.props).unwrap_or_default();
         props.disarmed_lone_house = self.rules.options.disarmed_houses;
+        // (An exclusive item in the team: Kecleon shops a fifth likelier,
+        // the game's 1.2 read from its overlay 10.)
+        const KECLEON_SHOP_BOOST: i32 = 307;
+        let shops = crate::dungeon::exclusive::effect::MORE_KECLEON_SHOPS;
+        if self.monsters.iter().any(|monster| monster.team() && monster.status.exclusive.has(shops)) {
+            props.kecleon_shop_chance = props.kecleon_shop_chance * KECLEON_SHOP_BOOST / 256;
+        }
         self.floor = match spec.and_then(|floor| floor.fixed.as_ref()) {
             Some(fixed) => fixed.floor(),
             None => generate_floor(&mut self.rng, &props),

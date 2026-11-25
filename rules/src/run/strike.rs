@@ -85,8 +85,11 @@ impl Arena<'_> {
         let foes = user.team() != victim.team();
         if !regular && foes && !user.status.pressured && ability::shields(&user.stats, &victim.stats, ability::PRESSURE) {
             let used = user.status.last_move;
+            // (Stronger with its exclusive item: two PP, this project's own
+            // figure.)
+            let spent = if victim.status.exclusive.has(crate::dungeon::exclusive::effect::PRESSURE_BOOST) { 2 } else { 1 };
             if let Some(slot) = user.moves.iter_mut().find(|slot| Some(slot.id) == used && slot.pp > 0) {
-                slot.pp -= 1;
+                slot.pp = (slot.pp - spent).max(0);
                 user.status.pressured = true;
             }
         }
@@ -144,6 +147,7 @@ impl Arena<'_> {
             Shattered => "The barrier was shattered!".to_string(),
             Crashed(lost) => format!("{one} crashed and lost {lost} HP!"),
             Stood => format!("{other} held on thanks to its ability!"),
+            Endured => format!("{other} endured the hit!"),
             Absorbed => format!("{other} absorbed the attack!"),
             AbsorbedLife(healed) => format!("{other} absorbed the move and recovered {healed} HP!"),
             AbsorbedSpeed => format!("{other} absorbed the move and sped up!"),
@@ -198,10 +202,11 @@ impl Arena<'_> {
         self.log.push(said);
     }
 
-    /// A Joy Ribbon: its holder of the team, hurt and standing, earns
-    /// experience from the blow.
+    /// A Joy Ribbon (or an exclusive item that does as much): its holder
+    /// of the team, hurt and standing, earns experience from the blow.
     fn joy_ribbon(&mut self, user: &Monster, victim: &mut Monster, lost: i32) {
-        let ribbon = lost > 0 && victim.alive() && victim.team() && held::holds(&victim.stats, held::JOY_RIBBON);
+        let item = victim.status.exclusive.has(crate::dungeon::exclusive::effect::EXP_FROM_DAMAGE);
+        let ribbon = lost > 0 && victim.alive() && victim.team() && (held::holds(&victim.stats, held::JOY_RIBBON) || item);
         if !ribbon || !self.dungeon.rules.enemies_give_exp {
             return;
         }

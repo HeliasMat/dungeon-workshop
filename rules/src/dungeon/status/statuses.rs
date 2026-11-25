@@ -66,6 +66,12 @@ pub struct Statuses {
     pub vital_throw_turns: i32,
     /// What the exclusive items in the team's bag do for it.
     pub exclusive: crate::dungeon::exclusive::Exclusive,
+    /// What an exclusive item answering a blow leaves for the caller to
+    /// do, with the moves and the floor in hand: a move of it sealed, a PP
+    /// back, a warp.
+    pub(crate) item_sealing: bool,
+    pub(crate) item_pp_back: bool,
+    pub(crate) item_warping: bool,
     /// Conversion 2: hit by a move, it takes a type that resists it.
     pub conversion2_turns: i32,
     /// Turns left of Leech Seed, and the turns since its last tick.
@@ -233,6 +239,9 @@ impl Default for Statuses {
             drawing_turns: 0,
             vital_throw_turns: 0,
             exclusive: Default::default(),
+            item_sealing: false,
+            item_pp_back: false,
+            item_warping: false,
             conversion2_turns: 0,
             leech_seed_turns: 0,
             leech_seed_timer: 0,
@@ -352,6 +361,7 @@ impl Statuses {
             ailing: self.ailing(),
             focused: self.focused,
             lucky,
+            reaches: (self.exclusive.has(effect::SCRAPPY), self.exclusive.has(effect::MIRACLE_EYE)),
         }
     }
 

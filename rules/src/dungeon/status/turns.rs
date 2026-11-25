@@ -42,7 +42,11 @@ impl Statuses {
             return;
         }
         let wish = if self.shield == Some(Shield::Wish) { constants.wish_bonus_regen } else { 0 };
-        let period = (constants.regen_speed + wish).clamp(20, 600);
+        // (An exclusive item makes it shorter too: the game's -100, read
+        // from its overlay 10.)
+        const ITEM_BONUS_REGEN: i32 = -100;
+        let item = if self.exclusive.has(crate::dungeon::exclusive::effect::INCREASED_HP_RECOVERY) { ITEM_BONUS_REGEN } else { 0 };
+        let period = (constants.regen_speed + wish + item).clamp(20, 600);
         let quick = if crate::dungeon::iq::has(stats, crate::dungeon::iq::QUICK_HEALER) { 2 } else { 1 };
         let pace = crate::dungeon::held::regen_times(stats) * quick;
         self.regen_counter += stats.max_hp.min(999) * pace;

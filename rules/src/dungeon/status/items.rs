@@ -157,6 +157,14 @@ pub fn eat_item(
     if small {
         belly.eat(MOUTHFUL);
     }
+    // An exclusive item: what the game counts as apples and berries (from
+    // its list in overlay 10: the seeds, berries, apples and Gummis, but
+    // four) gives HP too, the game's 10.
+    const ITEM_FOOD_HP: i32 = 10;
+    let apple_or_berry = (69..=137).contains(&item) && ![92, 98, 113, 114].contains(&item);
+    if apple_or_berry && statuses.exclusive.has(crate::dungeon::exclusive::effect::RECOVER_HP_FROM_APPLES_AND_BERRIES) {
+        heal(stats, constants, ITEM_FOOD_HP);
+    }
     if let Some(outcome) = eaten_elsewhere(item) {
         return outcome;
     }

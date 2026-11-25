@@ -278,13 +278,17 @@ impl Arena<'_> {
         }
     }
 
-    /// A move's PP spent, but now and then with PP Saver (a chance in 100,
-    /// this project's own figure).
+    /// A move's PP spent, but now and then with PP Saver, or an exclusive
+    /// item that does as much (each its own chance in 100, the game's, read
+    /// from its overlay 10).
     fn spend_pp(&mut self, user: &mut Monster, index: usize, pp: i32) {
-        const PP_SAVER_CHANCE: i32 = 20;
-        if iq::has(&user.stats, iq::PP_SAVER) && self.dungeon.rng.rand_int(100) < PP_SAVER_CHANCE {
-            self.log.push(format!("{} saved its PP!", user.name));
-            return;
+        const PP_SAVED_CHANCE: i32 = 10;
+        let item = user.status.exclusive.has(crate::dungeon::exclusive::effect::MAY_NOT_CONSUME_PP);
+        for saves in [iq::has(&user.stats, iq::PP_SAVER), item] {
+            if saves && self.dungeon.rng.rand_int(100) < PP_SAVED_CHANCE {
+                self.log.push(format!("{} saved its PP!", user.name));
+                return;
+            }
         }
         let slot = &mut user.moves[index];
         slot.pp = (slot.pp - pp).max(0);
@@ -541,7 +545,18 @@ impl Arena<'_> {
             _ => {}
         }
         let target = slot.map_or(0, |slot| slot.target);
-        let spread = Spread { from: at, team, effect, range: slot.map_or(range::ROOM, |slot| slot.range) };
+        let mut spread = Spread { from: at, team, effect, range: slot.map_or(range::ROOM, |slot| slot.range) };
+        // (An exclusive item: what the user does for itself, it does for the
+        // whole team on the floor.)
+        const TARGET_USER: u8 = 3;
+        let extended =
+            target == TARGET_USER && effect != MoveEffect::Warp && user.status.exclusive.has(crate::dungeon::exclusive::effect::EXTEND_SELF_EFFECTS_TO_TEAM);
+        let target = if extended {
+            spread.range = range::FLOOR;
+            TARGET_PARTY
+        } else {
+            target
+        };
         match target {
             TARGET_TEAMMATES => {
                 if let MoveEffect::HealingWish { .. } = effect {

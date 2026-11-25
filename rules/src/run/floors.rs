@@ -1,7 +1,7 @@
 //! A floor's life: building it, foes coming back, the fallen, the stairs,
 //! the moves a member would learn, the traps laid, what the team sees.
 
-use crate::dungeon::exclusive::effect::EXP_BOOST;
+use crate::dungeon::exclusive::effect::{EXP_BOOST, MORE_MONEY_DROPS, PICKUP_BOOST as PICKUP_BOOSTED};
 use crate::dungeon::minimap::Explored;
 use crate::dungeon::status::item;
 use crate::dungeon::{MoveSlot, Pos, Statuses, ability, ai, defeat_exp, held, iq, pick_weighted, random_tile, stack};
@@ -177,15 +177,18 @@ impl Run {
         }
         // Pickup: a team member holding nothing may come with something of
         // the floor's.
-        let pickers: Vec<MonsterId> = dungeon
+        // (An exclusive item makes it likelier: the game's 1.35, read from
+        // its overlay 10.)
+        const PICKUP_BOOST: i32 = 345;
+        let pickers: Vec<(MonsterId, i32)> = dungeon
             .monsters
             .iter()
             .filter(|monster| monster.team() && monster.stats.held == 0 && ability::has(&monster.stats, ability::PICKUP))
-            .map(|monster| monster.id)
+            .map(|monster| (monster.id, if monster.status.exclusive.has(PICKUP_BOOSTED) { PICKUP_CHANCE * PICKUP_BOOST / 256 } else { PICKUP_CHANCE }))
             .collect();
-        for who in pickers {
+        for (who, chance) in pickers {
             let dungeon = self.here();
-            if dungeon.rng.rand_int(100) >= PICKUP_CHANCE {
+            if dungeon.rng.rand_int(100) >= chance {
                 continue;
             }
             let Some(kind) = spec.items.pick(&mut dungeon.rng).filter(|&kind| stack::id(kind) != item::POKE) else {
@@ -363,6 +366,16 @@ impl Run {
         if enemy.status.struck_by_team && enemy.stats.held == 0 && gatherer && dungeon.rng.rand_int(100) < HONEY_GATHER_CHANCE {
             dungeon.items.push(FloorItem { at: enemy.at, item: item::NECTAR, price: None });
             self.log.push(format!("{} dropped {}.", enemy.name, book.item_name(item::NECTAR)));
+        }
+        // An exclusive item in the team: now and then Poké fall instead (the
+        // game's chance, read from its overlay 10).
+        const MONEY_DROP_CHANCE: i32 = 10;
+        let dungeon = self.here();
+        let finder = dungeon.monsters.iter().any(|monster| monster.team() && monster.alive() && monster.status.exclusive.has(MORE_MONEY_DROPS));
+        let empty_handed = !dungeon.items.iter().any(|item| item.at == enemy.at);
+        if enemy.status.struck_by_team && empty_handed && finder && dungeon.rng.rand_int(100) < MONEY_DROP_CHANCE {
+            dungeon.items.push(FloorItem { at: enemy.at, item: item::POKE, price: None });
+            self.log.push(format!("{} dropped some Poké.", enemy.name));
         }
         if !enemy.status.struck_by_team {
             return;

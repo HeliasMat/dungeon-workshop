@@ -93,6 +93,9 @@ impl Run {
         let leader = dungeon.leader_mut();
         (leader.stats, leader.moves, leader.experience) = (save.stats, moves, Some(experience));
         leader.tough = crate::dungeon::iq::has(&leader.stats, crate::dungeon::iq::BRICK_TOUGH);
+        // (Its moves as the tables give them: no exclusive item's PP yet.
+        // Its max HP keep what the items gave.)
+        leader.item_pp.clear();
         leader.belly = Some(Belly::from_raw(save.belly));
         leader.status = Statuses::for_species(leader.status.movement);
         leader.status.sleep_turns = save.sleep_turns;
@@ -119,6 +122,7 @@ impl Run {
                 if let Some(ally) = dungeon.monsters.iter_mut().find(|monster| is_partner(monster)) {
                     (ally.stats, ally.moves, ally.experience) = (stats, moves, Some(experience));
                     ally.tough = crate::dungeon::iq::has(&ally.stats, crate::dungeon::iq::BRICK_TOUGH);
+                    ally.item_pp.clear();
                     ally.status = Statuses::for_species(movement);
                 }
             }

@@ -147,6 +147,8 @@ pub enum Happened {
     Crashed(i32),
     /// It stands a one-hit move.
     Stood,
+    /// Its exclusive item held it on with 1 HP.
+    Endured,
     Absorbed,
     AbsorbedLife(i32),
     AbsorbedSpeed,

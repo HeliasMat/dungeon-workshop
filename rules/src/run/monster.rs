@@ -74,7 +74,15 @@ pub struct Monster {
     pub fading: Option<u32>,
     /// Given Brick-Tough's HP (see `iq::keep_boosts`).
     pub tough: bool,
+    /// The max HP its exclusive items gave, and the moves they gave PP
+    /// (see `keep_item_boosts`).
+    pub item_hp: i32,
+    pub item_pp: Vec<u16>,
 }
+
+/// What an exclusive item adds to each move's PP (the game's, read from
+/// its arm9).
+const ITEM_PP_BOOST: i32 = 2;
 
 impl Monster {
     /// One with nothing yet of its own but what is given.
@@ -102,6 +110,8 @@ impl Monster {
             looks_like: None,
             fading: None,
             tough: false,
+            item_hp: 0,
+            item_pp: Vec::new(),
         }
     }
 
@@ -110,11 +120,38 @@ impl Monster {
     }
 
     /// What Brick-Tough and Multitalent gave taken back, as the team leaves
-    /// the dungeon.
+    /// the dungeon; and what its exclusive items gave.
     pub(crate) fn unboost(&mut self) {
         let skills = std::mem::take(&mut self.stats.iq_skills);
         crate::dungeon::iq::keep_boosts(&mut self.stats, &mut self.moves, &mut self.tough);
         self.stats.iq_skills = skills;
+        let exclusive = std::mem::take(&mut self.status.exclusive);
+        self.keep_item_boosts();
+        self.status.exclusive = exclusive;
+    }
+
+    /// The max HP and each move's PP its exclusive items add, given or
+    /// taken back as they come and go (and to a move learnt meanwhile).
+    pub(crate) fn keep_item_boosts(&mut self) {
+        let hp = self.status.exclusive.max_hp_boost();
+        if hp != self.item_hp {
+            let by = hp - std::mem::replace(&mut self.item_hp, hp);
+            self.stats.max_hp = (self.stats.max_hp + by).max(1);
+            self.stats.hp = match by > 0 && self.stats.hp > 0 {
+                true => self.stats.hp + by,
+                false => self.stats.hp.min(self.stats.max_hp),
+            };
+        }
+        let boosted = self.status.exclusive.has(crate::dungeon::exclusive::effect::MAX_PP_BOOST);
+        for slot in &mut self.moves {
+            if self.item_pp.contains(&slot.id) == boosted {
+                continue;
+            }
+            let by = if boosted { ITEM_PP_BOOST } else { -ITEM_PP_BOOST };
+            slot.max_pp = (slot.max_pp + by).max(1);
+            slot.pp = if boosted { slot.pp + by } else { slot.pp.min(slot.max_pp) };
+        }
+        self.item_pp = if boosted { self.moves.iter().map(|slot| slot.id).collect() } else { Vec::new() };
     }
 
     /// One of the player's team.

@@ -88,7 +88,8 @@ pub fn spring_trap(
         trap::SPIKED_TILE => stats.hp -= constants.spiked_tile_damage,
         // Pointed stones: Rock types shrug them off.
         trap::STEALTH_ROCK if !of_type(stats, ROCK) => stats.hp -= constants.stealth_rock_damage,
-        trap::SEAL => seal_a_move(rng, moves),
+        // (An exclusive item keeps its moves from being sealed.)
+        trap::SEAL if !statuses.exclusive.has(crate::dungeon::exclusive::effect::NO_MOVE_DISABLING) => seal_a_move(rng, moves),
         trap::PP_ZERO => drain_a_move(rng, moves),
         trap::WONDER_TILE => statuses.reset_stages(),
         trap::PITFALL => {

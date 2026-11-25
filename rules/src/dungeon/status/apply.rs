@@ -86,7 +86,8 @@ fn kept_by_exclusive(effect: MoveEffect, statuses: &Statuses) -> bool {
     use crate::dungeon::exclusive::effect::*;
     use MoveEffect::*;
     let has = |effect| statuses.exclusive.has(effect);
-    let any_status = has(NO_STATUS);
+    // (Always, or in one weather.)
+    let any_status = statuses.exclusive.no_status();
     match effect {
         Poison | BadlyPoison | Burn => any_status,
         Paralyze => any_status || has(NO_PARALYSIS),

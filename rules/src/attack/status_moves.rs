@@ -72,7 +72,7 @@ impl Play<'_, '_> {
             }
             // A Pass Scarf shrugs the effect off onto someone next to it.
             _ if held::holds(victim.stats, held::PASS_SCARF) => self.says(Happened::Passed(effect)),
-            _ if victim.status.bouncing_turns > 0 => {
+            _ if victim.status.bouncing_turns > 0 || self.item_bounces(victim) => {
                 self.says(Happened::Bounced);
                 self.affects(effect, user, Role::User);
             }
@@ -93,6 +93,16 @@ impl Play<'_, '_> {
             }
         }
         true
+    }
+
+    /// An exclusive item sends the move back now and then, as Magic Coat
+    /// or Mirror Move would (the game's chance for the Chatot Scarf, read
+    /// from its overlay 10; the same for the other, this project's own).
+    fn item_bounces(&mut self, victim: &Party) -> bool {
+        use crate::dungeon::exclusive::effect;
+        const ITEM_BOUNCE_CHANCE: i32 = 20;
+        let held = victim.status.exclusive;
+        (held.has(effect::MAY_BOUNCE_MOVES) || held.has(effect::MAY_BOUNCE_STATUS_MOVES)) && self.rolled(ITEM_BOUNCE_CHANCE)
     }
 
     /// Mimic: the target's last move, on it in turn; Sketch: learnt.

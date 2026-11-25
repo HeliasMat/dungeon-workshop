@@ -37,6 +37,9 @@ pub struct Fighter {
     pub focused: bool,
     /// No critical hit lands on it (Lucky Chant).
     pub lucky: bool,
+    /// Its Normal and Fighting moves reach Ghosts, its Psychic moves
+    /// Darks (exclusive items).
+    pub reaches: (bool, bool),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -190,14 +193,21 @@ fn defense_abilities(attacker: &Fighter, defender: &Fighter, special: bool, weat
 
 /// What the type matchups make of a move against both of the defender's
 /// types, and the overall matchup. Without a chart, everything is neutral.
-fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats, attack_type: u8) -> (f64, u8) {
+fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats, attack_type: u8, (ghosts, darks): (bool, bool)) -> (f64, u8) {
     let Some(chart) = chart else {
         return (1.0, matchup::NEUTRAL);
     };
+    const TYPE_NORMAL: u8 = 1;
+    const TYPE_FIGHTING: u8 = 7;
+    const TYPE_PSYCHIC: u8 = 11;
+    const TYPE_GHOST: u8 = 14;
+    const TYPE_DARK: u8 = 16;
     let erratic = iq::has(attacker, iq::ERRATIC_PLAYER);
     let one = |kind: u8| {
+        let reached =
+            (ghosts && kind == TYPE_GHOST && matches!(attack_type, TYPE_NORMAL | TYPE_FIGHTING)) || (darks && kind == TYPE_DARK && attack_type == TYPE_PSYCHIC);
         let value = match chart.matchup(attack_type, kind) {
-            matchup::IMMUNE if ability::scrappy(attacker, attack_type, kind) => matchup::NEUTRAL,
+            matchup::IMMUNE if reached || ability::scrappy(attacker, attack_type, kind) => matchup::NEUTRAL,
             value => value,
         };
         let table = if erratic && chart.erratic[value as usize] != 0 { &chart.erratic } else { &chart.multipliers };
@@ -210,8 +220,8 @@ fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats,
 
 /// The type matchups, then what abilities do with the move's type: the
 /// damage multiplier and the overall matchup.
-pub(super) fn type_effects(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats, attack_type: u8, power: i32) -> (f64, u8) {
-    let (mut factor, overall) = matchup_factor(chart, attacker, defender, attack_type);
+pub(super) fn type_effects(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats, attack_type: u8, power: i32, reaches: (bool, bool)) -> (f64, u8) {
+    let (mut factor, overall) = matchup_factor(chart, attacker, defender, attack_type, reaches);
     let shielded = |which: u8| shields(attacker, defender, which);
     // Flash Fire and Levitate take the move in whole.
     if (attack_type == TYPE_FIRE && shielded(ability::FLASH_FIRE)) || (attack_type == TYPE_GROUND && shielded(ability::LEVITATE)) {
@@ -328,7 +338,7 @@ pub fn calc_damage_with(
     if !attacker.team_member {
         base *= OUTSIDER_SHARE;
     }
-    let (by_type, matchup) = type_effects(chart, a, d, attack_type, power);
+    let (by_type, matchup) = type_effects(chart, a, d, attack_type, power, attacker.reaches);
     let mut factor = by_type * same_type_bonus(a, attack_type) * weather_factor(weather, attack_type) * fixed(damage_mult);
     if attacker.burned && !special {
         factor *= HALVED;

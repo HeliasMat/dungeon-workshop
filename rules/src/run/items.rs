@@ -348,8 +348,13 @@ impl Run {
         for (foe, foe_at) in foes.into_iter().filter(|foe| hit.contains(&foe.1)) {
             // A Dodge Scarf: nothing thrown hits its holder; a Bounce Band
             // sends it back.
-            let foe_holds = |which| self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(foe)).is_some_and(|foe| held::holds(&foe.stats, which));
-            let (dodges, bounces) = (foe_holds(held::DODGE_SCARF), foe_holds(held::BOUNCE_BAND));
+            // (Or an exclusive item that does as much.)
+            let foe_holds = |which, instead| {
+                let target = self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(foe));
+                target.is_some_and(|foe| held::holds(&foe.stats, which) || foe.status.exclusive.has(instead))
+            };
+            use exclusive::effect::{BOUNCE_THROWN_ITEMS, THROWN_ITEM_PROTECTION};
+            let (dodges, bounces) = (foe_holds(held::DODGE_SCARF, THROWN_ITEM_PROTECTION), foe_holds(held::BOUNCE_BAND, BOUNCE_THROWN_ITEMS));
             let catcher = self.dungeon.as_ref().and_then(|dungeon| dungeon.monster(foe)).filter(|foe| catches(foe, item)).map(|foe| foe.name.clone());
             if let Some(catcher) = catcher {
                 if let Some(foe) = self.here().monster_mut(foe) {

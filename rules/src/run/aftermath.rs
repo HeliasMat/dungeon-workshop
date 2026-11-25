@@ -48,6 +48,7 @@ impl Run {
         arena.blasts();
         arena.shoves();
         arena.spite_moves();
+        arena.items_answered();
         arena.learn_sketched();
         arena.keep_identity(new_floor);
         arena.destiny_bonds();
@@ -377,6 +378,43 @@ impl Arena<'_> {
         }
     }
 
+    /// What exclusive items answering blows left to do: one of the
+    /// striker's moves sealed (unless an item of its own keeps them), a PP
+    /// back to a move of the one struck, the one struck warped away.
+    fn items_answered(&mut self) {
+        let book = self.book;
+        let dungeon = &mut *self.dungeon;
+        let mut warping = Vec::new();
+        for monster in &mut dungeon.monsters {
+            let kept = monster.status.exclusive.has(exclusive::effect::NO_MOVE_DISABLING);
+            if std::mem::take(&mut monster.status.item_sealing) && !kept {
+                let open: Vec<usize> = (0..monster.moves.len()).filter(|&at| !monster.moves[at].sealed).collect();
+                if let Some(&at) = open.get(dungeon.rng.rand_int(open.len().max(1) as i32) as usize) {
+                    monster.moves[at].sealed = true;
+                    self.log.push(format!("{}'s {} was sealed!", monster.name, book.move_name(monster.moves[at].id)));
+                }
+            }
+            if std::mem::take(&mut monster.status.item_pp_back) {
+                let short: Vec<usize> = (0..monster.moves.len()).filter(|&at| monster.moves[at].pp < monster.moves[at].max_pp).collect();
+                if let Some(&at) = short.get(dungeon.rng.rand_int(short.len().max(1) as i32) as usize) {
+                    monster.moves[at].pp += 1;
+                    self.log.push(format!("{}'s {} got a PP back!", monster.name, book.move_name(monster.moves[at].id)));
+                }
+            }
+            if std::mem::take(&mut monster.status.item_warping) && monster.alive() {
+                warping.push(monster.id);
+            }
+        }
+        for who in warping {
+            let taken: Vec<Pos> = dungeon.monsters.iter().filter(|monster| monster.alive()).map(|monster| monster.at).collect();
+            let tile = dungeon.warp_tile(&taken);
+            if let (Some(tile), Some(monster)) = (tile, dungeon.monster_mut(who)) {
+                monster.at = tile;
+                self.log.push(format!("{} warped away!", monster.name));
+            }
+        }
+    }
+
     /// Sketch: the move sketched takes Sketch's place.
     fn learn_sketched(&mut self) {
         const SKETCH: u16 = 138;
@@ -406,6 +444,7 @@ impl Arena<'_> {
         let any = |which: u8| dungeon.monsters.iter().any(|monster| monster.alive() && ability::has(&monster.stats, which));
         dungeon.weather.suppressed = any(ability::CLOUD_NINE) || any(ability::AIR_LOCK);
         dungeon.weather.damp = any(ability::DAMP);
+        let weather = dungeon.weather.apparent();
         let playing = dungeon.outcome.is_none();
         // Acute Sniffer on the team: how many items lie on the new floor.
         let sniffer = dungeon.monsters.iter().find(|monster| monster.team() && iq::has(&monster.stats, iq::ACUTE_SNIFFER)).map(|monster| monster.name.clone());
@@ -435,6 +474,8 @@ impl Arena<'_> {
                     true => Exclusive::of(&book.tables.exclusive, items.iter().copied(), species, book.family(species), monster.stats.types),
                     false => Default::default(),
                 };
+                monster.status.exclusive.weather = weather;
+                monster.keep_item_boosts();
             }
             match (monster.identity, left) {
                 (Some(identity), true) => {

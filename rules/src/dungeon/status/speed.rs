@@ -42,8 +42,13 @@ impl Statuses {
         let quick_feet = ability::has(stats, ability::QUICK_FEET) && self.ailing();
         // (Time Tripper: always a stage faster.)
         let tripper = crate::dungeon::iq::has(stats, crate::dungeon::iq::TIME_TRIPPER);
-        let stage = (self.raw_speed_stage() + snowy_ice as i32 + quick_feet as i32 + tripper as i32).clamp(0, MAX_SPEED_STAGE);
-        if ability::attacks_twice(stats, weather) { stage.max(2) } else { stage }
+        // (Exclusive items: a stage faster, or two attacks a turn, in their
+        // weather.)
+        use crate::dungeon::exclusive::InWeather;
+        let item_speed = self.exclusive.in_weather(InWeather::MovementSpeed, weather);
+        let stage = (self.raw_speed_stage() + snowy_ice as i32 + quick_feet as i32 + tripper as i32 + item_speed as i32).clamp(0, MAX_SPEED_STAGE);
+        let twice = ability::attacks_twice(stats, weather) || self.exclusive.in_weather(InWeather::AttackSpeed, weather);
+        if twice { stage.max(2) } else { stage }
     }
 
     pub(crate) fn speed_stage(&self) -> i32 {

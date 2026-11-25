@@ -359,6 +359,15 @@ fn multipliers_heals_and_protections() {
     assert_eq!(statuses.speed_stage_in(&ice, weather::SNOW), 2);
     assert_eq!(statuses.speed_stage_in(&ice, weather::CLEAR), 1);
     assert_eq!(statuses.speed_stage_in(&stats, weather::SNOW), 1);
+    // Exclusive items: a stage faster in the rain (51), status problems
+    // kept off in the sun (41).
+    let mut held = statuses;
+    held.exclusive.effects[0] |= 1 << 51 | 1 << 41;
+    assert_eq!((held.speed_stage_in(&stats, weather::RAIN), held.speed_stage_in(&stats, weather::SUNNY)), (2, 1));
+    held.exclusive.weather = weather::SUNNY;
+    assert!(!apply(MoveEffect::Poison, &mut stats, &mut held) && !held.poisoned);
+    held.exclusive.weather = weather::CLEAR;
+    assert!(apply(MoveEffect::Poison, &mut stats, &mut held) && held.poisoned);
     assert_eq!(RULES.heal_amount(0, weather::SUNNY), 80);
     assert_eq!(RULES.heal_amount(4, weather::SUNNY), 10);
     assert_eq!(RULES.weather_ball(weather::RAIN), (3, 0x200));

@@ -30,6 +30,8 @@ impl Play<'_, '_> {
         if iq::has(victim.stats, iq::CLUTCH_PERFORMER) && ability::in_a_pinch(victim.stats) {
             evasion += 2;
         }
+        // (An exclusive item: a stage of evasion in its weather.)
+        evasion += victim.status.exclusive.in_weather(exclusive::InWeather::Evasion, self.field.weather) as i32;
         let mut aimed = slot;
         let drop = if held::holds(victim.stats, held::DETECT_BAND) { constants.detect_band_drop } else { 0 }
             + if iq::has(victim.stats, iq::QUICK_DODGER) { constants.quick_dodger_drop } else { 0 };
@@ -76,6 +78,7 @@ impl Play<'_, '_> {
         let gravity = self.field.gravity && slot.type_id == GROUND;
         // Practice Swinger: having missed, this blow is a stage stronger.
         let swinging = std::mem::take(&mut user.status.practice_swing) && iq::has(user.stats, iq::PRACTICE_SWINGER);
+        let bypass = user.status.exclusive.has(exclusive::effect::BYPASS_REFLECT_LIGHT_SCREEN);
         for strike in 0..strikes as usize {
             let floating = victim.status.levitating_turns > 0 && slot.type_id == GROUND && !gravity;
             let hidden = victim.status.out_of_reach().then(|| victim.status.reached_hidden(slot.id));
@@ -127,6 +130,11 @@ impl Play<'_, '_> {
                 None => {
                     let mut target = victim.status.fighter(&if gravity { grounded(victim.stats) } else { *victim.stats }, victim.team);
                     let mut fighter = user.fighter();
+                    // (An exclusive item's blows go through Reflect and
+                    // Light Screen.)
+                    if bypass {
+                        (target.halves_physical, target.halves_special) = (false, false);
+                    }
                     let sides = self.field.sides;
                     ability::cheer(&mut fighter, &mut target, slot.category != 0, weather, sides.allies, sides.genders);
                     // (Cheered on by a teammate next to it, or swinging
@@ -178,7 +186,17 @@ impl Play<'_, '_> {
             victim.status.struck();
             self.struck(user, victim, attack, damage, type_id);
             victim.status.endure(victim.stats);
+            // (An exclusive item may hold it on with 1 HP: the game's
+            // chance, read from its overlay 10.)
+            const ITEM_ENDURE_CHANCE: i32 = 50;
+            let endured = !victim.alive() && victim.status.exclusive.has(exclusive::effect::MAY_ENDURE) && self.rolled(ITEM_ENDURE_CHANCE);
+            if endured {
+                victim.stats.hp = 1;
+            }
             self.says(Happened::Hurt(damage));
+            if endured {
+                self.says(Happened::Endured);
+            }
             self.answers(user, victim, attack, damage);
             if !victim.alive() || !user.alive() {
                 break;
@@ -207,9 +225,12 @@ impl Play<'_, '_> {
         if given.has(effect::DAMAGE_BOOST_50_PCT) {
             damage.amount += damage.amount / 2;
         }
+        // (What halves physical or special blows, as Reflect and Light
+        // Screen, does not stop who goes through them.)
+        let through = given.has(effect::BYPASS_REFLECT_LIGHT_SCREEN);
         if taken.has(effect::HALVED_DAMAGE)
-            || (physical && taken.has(effect::HALVED_PHYSICAL_DAMAGE))
-            || (!physical && taken.has(effect::HALVED_SPECIAL_DAMAGE))
+            || (physical && !through && taken.has(effect::HALVED_PHYSICAL_DAMAGE))
+            || (!physical && !through && taken.has(effect::HALVED_SPECIAL_DAMAGE))
         {
             damage.amount = (damage.amount / 2).max(1);
         }
