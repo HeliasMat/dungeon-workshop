@@ -149,7 +149,7 @@ pub fn check(context: &film::Context, path: &Path) -> Result<Report, crate::Erro
     let mut game = GameFile::read(&text);
     game.name = path.file_stem().map_or_else(|| "game".to_string(), |stem| stem.to_string_lossy().into_owned());
     game.folder = path.parent().map_or_else(PathBuf::new, Path::to_path_buf);
-    let book = crate::playthrough::book(data).ok();
+    let book = crate::book::read(data).ok();
     let mut report = check_game(context, &game, &text, path, book.as_ref());
     if book.is_none() {
         report.notes.push(format!("no data in {data} (the extractor): the items, the Pokémon and the dungeons were not checked"));

@@ -15,10 +15,10 @@ use std::sync::Arc;
 
 use assets::project::Project;
 use rules::own::plain;
+use rules::run::Run;
 use rules::run::options::Options;
 use rules::run::saves::Place;
 use rules::run::town::Whom;
-use rules::run::{Book, Run};
 
 use crate::dive::{Carried, bag_number};
 
@@ -40,14 +40,6 @@ pub struct Playthrough {
     pub dungeons: Vec<(String, u16)>,
 }
 
-/// The game's book of rules, read from the folder of its files.
-pub fn book(data: &str) -> Result<Book, crate::Error> {
-    let bytes = shell::data::read(data, "dungeons.bin").ok_or(crate::Error::NoBook)?;
-    let mut book = Book::read(&bytes).ok_or(crate::Error::BookUnread)?;
-    book.strings = stage_view::ui::UiArt::load(data).map(|ui| ui.strings.clone());
-    Ok(book)
-}
-
 /// What a bag holds, by the items' names, how many of each.
 pub fn bag_of(run: &Run) -> Vec<(String, u16)> {
     use rules::dungeon::stack;
@@ -67,7 +59,8 @@ pub fn bag_of(run: &Run) -> Vec<(String, u16)> {
 impl Playthrough {
     /// A new game, its team as the game starts it.
     pub fn new(data: &str, project: &Project) -> Result<Self, crate::Error> {
-        let mut playthrough = Playthrough { run: Some(Run::new(Arc::new(book(data)?), Options::default())), own: Vec::new(), dungeons: Vec::new() };
+        let mut playthrough =
+            Playthrough { run: Some(Run::new(Arc::new(crate::book::read(data)?), Options::default())), own: Vec::new(), dungeons: Vec::new() };
         playthrough.know_dungeons(project);
         Ok(playthrough)
     }

@@ -16,7 +16,7 @@ pub fn dungeon(context: &Context, path: &Path, out: &Path) -> Result<String, Str
     // (Its game's folder: the one above `dungeons/`, for its fight's file.)
     let game_folder = path.parent().and_then(Path::parent).unwrap_or(Path::new("."));
     let project = context.library.at(game_folder);
-    let book = game::playthrough::book(&context.data).map_err(|error| error.to_string())?;
+    let book = game::book::read(&context.data).map_err(|error| error.to_string())?;
     let own = rules::own::read(&game::dive::resolved_for(&project, &text), &book.tables)
         .map_err(|wrong| format!("{shown}: {}", wrong.iter().map(ToString::to_string).collect::<Vec<_>>().join("; ")))?;
     let boss = own.boss.as_ref().map(|says| {

@@ -21,9 +21,11 @@
 //! - `game_screens`: the game's screens (shops, bank, storage, jobs,
 //!   recruits, the world map), over the scene;
 //! - `dungeon_check`, `project_check`: what is wrong in a dungeon, in a whole game;
-//! - `pack`: a game shared as a `.dwpack`;
+//! - `pack`: a game shared as a `.dwpack`, its manifest in `manifest`;
+//! - `book`: the rules' book, read from the data;
 //! - `drive`: a game played by a script at the keys, with no window (the end-to-end tests).
 
+pub mod book;
 pub mod dive;
 #[cfg(test)]
 mod dive_tests;
@@ -34,6 +36,7 @@ mod e2e_tests;
 mod error;
 pub mod game_file;
 pub mod game_screens;
+pub mod manifest;
 pub mod pack;
 pub mod playthrough;
 pub mod project_check;

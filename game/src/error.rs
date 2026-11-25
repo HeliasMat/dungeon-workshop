@@ -91,9 +91,9 @@ impl fmt::Display for Error {
                     PackWrong::NotZipped => write!(out, "{pack}: could not be zipped (tar with zip, or zip, is needed)"),
                     PackWrong::Missing => write!(out, "{pack}: no such pack"),
                     PackWrong::NotUnpacked => write!(out, "{pack}: could not be unpacked (tar or unzip is needed)"),
-                    PackWrong::NoManifest => write!(out, "{pack}: not a game's pack (no {})", crate::pack::MANIFEST),
+                    PackWrong::NoManifest => write!(out, "{pack}: not a game's pack (no {})", crate::manifest::MANIFEST),
                     PackWrong::Later(format) => {
-                        write!(out, "{pack}: a pack of a later version ({format}; this one reads {}): a newer scene_player is needed", crate::pack::FORMAT)
+                        write!(out, "{pack}: a pack of a later version ({format}; this one reads {}): a newer scene_player is needed", crate::manifest::FORMAT)
                     }
                     PackWrong::NoGame(game) => write!(out, "{pack}: its manifest names no game (“game: {game}”)"),
                 }

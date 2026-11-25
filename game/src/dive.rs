@@ -190,7 +190,7 @@ impl Diving {
     /// gone through by that team, carrying that (a game of its own, left
     /// when it ends).
     pub fn of_text(data: &str, project: &Project, text: &str, said: &str, team: Team, carried: &Carried) -> Result<Self, crate::Error> {
-        let mut run = Run::new(Arc::new(crate::playthrough::book(data)?), Options::default());
+        let mut run = Run::new(Arc::new(crate::book::read(data)?), Options::default());
         let known = |name: &str| run.book.tables.items.iter().position(|item| rules::own::plain(item) == rules::own::plain(name)).map(|item| item as u16);
         let items: Vec<(u16, u16)> = carried.items.iter().filter_map(|(name, count)| Some((known(name)?, *count))).collect();
         for (item, count) in items {
@@ -244,7 +244,7 @@ impl Diving {
         let alone = floors == 1 && boss.is_some();
         let says = boss.as_ref().map(|fight| &fight.says).filter(|_| alone);
         if lent && says.is_some_and(|says| says.hero.is_some()) {
-            let mut fresh = match crate::playthrough::book(data) {
+            let mut fresh = match crate::book::read(data) {
                 Ok(book) => Run::new(Arc::new(book), Options::default()),
                 Err(why) => return Err((why.to_string(), Box::new(run))),
             };
