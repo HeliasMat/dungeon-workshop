@@ -82,6 +82,16 @@ pub struct Monster {
     /// (see `keep_item_boosts`).
     pub item_hp: i32,
     pub item_pp: Vec<u16>,
+    /// Who brought it down, if a monster did (what it may drop, whether
+    /// that one evolves: `Restrictions`).
+    pub felled_by: Option<MonsterId>,
+    /// A foe that defeated someone, to evolve as the turn ends
+    /// (`Restrictions::enemies_evolve`).
+    pub evolves: bool,
+    /// A foe that wanders at random (`Restrictions::random_movement`).
+    pub wanders: bool,
+    /// A guest of the story's (`guests`): with the team for this dungeon only.
+    pub guest: bool,
 }
 
 /// What an exclusive item adds to each move's PP (the game's, read from
@@ -117,6 +127,10 @@ impl Monster {
             tough: false,
             item_hp: 0,
             item_pp: Vec::new(),
+            felled_by: None,
+            evolves: false,
+            wanders: false,
+            guest: false,
         }
     }
 

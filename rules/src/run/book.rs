@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::dungeon::{Floor as Map, MoveEffect, MoveSlot, Pos, Stats, Tile, stack};
 use crate::strings::UiStrings;
-use crate::tables::{Fixed, Species, Tables};
+use crate::tables::{Extras, Fixed, Species, Tables};
 
 use super::team::Growing;
 
@@ -62,6 +62,10 @@ pub struct Book {
     pub tables: Tables,
     /// The game's words, when there are any.
     pub strings: Option<Arc<UiStrings>>,
+    /// What `dungeon_extras.bin` adds (empty without it).
+    pub extras: Extras,
+    /// The story's guests (`guests.txt`).
+    pub guests: super::guests::Guests,
 }
 
 impl Book {
@@ -72,7 +76,26 @@ impl Book {
         if tables.dungeons.len() > crate::dojo::FINAL as usize {
             tables.playable.extend(crate::dojo::FIRST..=crate::dojo::FINAL);
         }
-        Some(Self { tables, strings: None })
+        Some(Self { tables, strings: None, extras: Extras::default(), guests: Default::default() })
+    }
+
+    /// The tables `dungeon_extras.bin` adds, from its bytes: each dungeon's
+    /// other rules go into its `Rules`. Whether they were read.
+    pub fn add_extras(&mut self, bytes: &[u8]) -> bool {
+        let Ok(extras) = bincode::deserialize::<Extras>(bytes) else {
+            return false;
+        };
+        for (dungeon, more) in self.tables.dungeons.iter_mut().zip(&extras.restrictions) {
+            dungeon.rules.more = *more;
+        }
+        self.extras = extras;
+        true
+    }
+
+    /// What a floor of a dungeon has past its tables (hidden stairs, a
+    /// vault), if anything.
+    pub fn floor_extras(&self, dungeon: u16, floor: u32) -> Option<&crate::tables::FloorExtras> {
+        self.extras.floors.get(dungeon as usize)?.get(floor.checked_sub(1)? as usize)
     }
 
     pub fn species(&self, monster: u16) -> Option<&Species> {

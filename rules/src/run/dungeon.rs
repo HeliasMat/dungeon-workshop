@@ -262,6 +262,8 @@ pub struct Dungeon {
     /// The Exp. the members waiting at the base get on leaving
     /// (`RuleOptions::exp_share`).
     pub shared_exp: i32,
+    /// Hidden Land's rules hold (`guests`): the leader cannot change.
+    pub hidden_land: bool,
 }
 
 impl Dungeon {
@@ -338,6 +340,7 @@ impl Dungeon {
             jobs: false,
             hero: None,
             shared_exp: 0,
+            hidden_land: false,
         }
     }
 

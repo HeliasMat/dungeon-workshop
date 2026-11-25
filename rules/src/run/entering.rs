@@ -96,6 +96,11 @@ impl Run {
         self.dungeon = Some(dungeon);
         self.show(Sight::Music(song));
         self.new_floor();
+        // A dungeon the game saves before (`Restrictions::enter_without_saving`
+        // unset): a quicksave as it begins.
+        if !self.here().rules.more.enter_without_saving {
+            self.quicksave();
+        }
     }
 
     /// A name given, or the one of the species.
@@ -311,8 +316,9 @@ impl Run {
                     }
                     kept
                 });
-                // (What is lost may come back by an SOS: see `send_sos`.)
-                if let Some(id) = dungeon.id {
+                // (What is lost may come back by an SOS: see `send_sos`; not
+                // from a dungeon where no rescue is allowed.)
+                if let Some(id) = dungeon.id.filter(|_| dungeon.rules.more.max_rescues != crate::tables::NO_RESCUE) {
                     progress.sos = Some(Sos { dungeon: id, floor: dungeon.floor_number, items: lost, money: lost_money, ..Sos::default() });
                 }
             }

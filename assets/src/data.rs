@@ -175,8 +175,10 @@ pub mod film_files {
         "points.txt",
         "numbers.png",
     ];
-    /// Those a film can do without (`decor`'s lists: none before a place is built).
-    pub const IF_ANY: [&str; 6] = ["credits.txt", "variants.txt", "rod_tips.txt", "decor_backdrops.txt", "decor_town.txt", "decor_ground.txt"];
+    /// Those a film can do without (`decor`'s lists: none before a place is
+    /// built; what the dungeons' rules add to `dungeons.bin`).
+    pub const IF_ANY: [&str; 8] =
+        ["credits.txt", "variants.txt", "rod_tips.txt", "decor_backdrops.txt", "decor_town.txt", "decor_ground.txt", "dungeon_extras.bin", "guests.txt"];
     /// The folders taken whole.
     pub const WHOLE: [&str; 2] = ["effects", "status"];
     /// The folders of numbered files: those of the Pokémon, the places shown.

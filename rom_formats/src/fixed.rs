@@ -28,6 +28,8 @@ pub enum FixedTile {
     Floor,
     Wall,
     Secondary,
+    /// A door the Key opens (actions 12 and 13), a wall until then.
+    KeyDoor,
 }
 
 /// A monster a fixed room places.
@@ -93,6 +95,7 @@ fn terrain(action: u16) -> FixedTile {
     match action {
         1..=3 => FixedTile::Wall,
         5..=7 | 10 => FixedTile::Secondary,
+        12 | 13 => FixedTile::KeyDoor,
         _ => FixedTile::Floor,
     }
 }

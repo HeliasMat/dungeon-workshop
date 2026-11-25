@@ -55,6 +55,11 @@ pub struct Species {
     /// How it evolves: from what, by which method (`town::method`) and
     /// with what.
     pub evolution: rules::town::Evolution,
+    /// Its two 1-star exclusive items (0x34, 0x36; `GetExclusiveItem`).
+    pub exclusive_items: [u16; 2],
+    /// The weights of what it drops in a treasure box (0x3C: none, an item,
+    /// its first exclusive item, its second; `GetTreasureBoxChances`).
+    pub treasure: [i16; 4],
 }
 
 pub struct MonsterData {
@@ -102,6 +107,8 @@ impl MonsterData {
                 base_sp_defense: e[0x27],
                 spawn_asleep_chance: e[0x2F],
                 hp_regeneration: e[0x30],
+                exclusive_items: [u16::from_le_bytes([e[0x34], e[0x35]]), u16::from_le_bytes([e[0x36], e[0x37]])],
+                treasure: std::array::from_fn(|at| i16::from_le_bytes([e[0x3C + at * 2], e[0x3D + at * 2]])),
             });
         }
 

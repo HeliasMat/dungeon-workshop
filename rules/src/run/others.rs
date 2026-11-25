@@ -819,6 +819,14 @@ fn foe_action(
             }
         }
         None if terrified => crate::dungeon::roam(floor, rng, at, occupied, walks, Roaming { facing: me.facing, goal }),
+        // One that wanders at random steps any way it can.
+        None if me.wanders => {
+            let (dx, dy) = DIRECTIONS[rng.rand_int(8) as usize];
+            match floor.can_step_as(at, dx, dy, walks) && !occupied(Pos::new(at.x + dx, at.y + dy)) {
+                true => Action::Move(dx, dy),
+                false => Action::Wait,
+            }
+        }
         None => enemy_action(floor, rng, at, target, occupied, walks, Roaming { facing: me.facing, goal }),
     };
     let action = match action {

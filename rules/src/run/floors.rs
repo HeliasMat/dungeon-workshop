@@ -644,8 +644,16 @@ impl Run {
     }
 
     /// The member chosen leads the team from now on (the dungeon menu's
-    /// "Leader"): one of the team standing, not a client.
+    /// "Leader"): one of the team standing, not a client, where the
+    /// dungeon lets the leader change (`Restrictions::leader_change`, or
+    /// the option to control the whole team), never under Hidden Land's
+    /// rules.
     fn make_leader(&mut self, who: MonsterId) {
+        let rules = &self.here().rules;
+        if !(rules.more.leader_change || rules.options.team_control) || self.here().hidden_land {
+            self.log.push("The leader can't be changed in this dungeon.".to_string());
+            return;
+        }
         let able =
             |monster: &Monster| monster.team() && monster.alive() && monster.fading.is_none() && monster.experience.is_some() && monster.escorted.is_none();
         if self.here().monster(who).is_some_and(able) {

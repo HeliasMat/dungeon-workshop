@@ -141,6 +141,9 @@ impl Run {
                 self.log.push(format!("{name} lost {recoil} HP."));
             }
             self.use_chain(id, chosen, unleash.is_some(), sleep_use.is_none(), false, None);
+            if chosen.is_none() && !struggling {
+                self.uncover_trap(id);
+            }
             true
         } else if way != (0, 0) {
             match self.walk(stray.unwrap_or(way), walks) {
@@ -199,6 +202,32 @@ impl Run {
             }
         }
         Some(true)
+    }
+
+    /// A regular attack at no one uncovers a trap hidden in front, but where
+    /// the dungeon keeps them hidden (`Restrictions::no_trap_uncovering`).
+    fn uncover_trap(&mut self, who: MonsterId) {
+        let dungeon = self.here();
+        let Some(me) = dungeon.monster(who) else {
+            return;
+        };
+        let front = Pos::new(me.at.x + me.facing.0, me.at.y + me.facing.1);
+        if dungeon.at(front).is_none() {
+            self.uncover_trap_at(front);
+        }
+    }
+
+    /// A trap hidden on that tile shows, as a blow or a thrown item finds
+    /// it, where the dungeon allows it.
+    pub(crate) fn uncover_trap_at(&mut self, at: Pos) {
+        let dungeon = self.here();
+        if dungeon.rules.more.no_trap_uncovering {
+            return;
+        }
+        if let Some(trap) = dungeon.traps.iter_mut().find(|trap| trap.at == at && !trap.seen) {
+            trap.seen = true;
+            self.log.push("A trap was uncovered!".to_string());
+        }
     }
 
     /// Who steps on a trap sets it off. What it does beyond changing them

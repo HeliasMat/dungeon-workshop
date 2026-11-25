@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::dungeon::{Constants, FloorProperties, ItemTable, LevelGain, MoveSlot, Stats, TypeChart};
 
 /// A monster of a floor: what is its own there; the rest is its species'.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Enemy {
     pub species: u16,
     pub recruit_rate: i16,
@@ -17,10 +17,12 @@ pub struct Enemy {
 }
 
 /// See `FixedFloor`.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Fixed {
     pub width: usize,
     pub height: usize,
+    /// Row by row: 0 floor, 1 wall, 2 secondary terrain, 3 a key door
+    /// (`KEY_DOOR`).
     pub tiles: Vec<u8>,
     pub leader: Option<(usize, usize)>,
     /// Foes, those who stand with the team, those who only watch.
@@ -39,7 +41,7 @@ pub struct Fixed {
 
 /// Someone a fixed room places: where, as what, the way it faces (0: down,
 /// then turning as `DIRECTIONS`).
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Placed {
     pub at: (usize, usize),
     pub enemy: Enemy,
@@ -194,6 +196,86 @@ pub struct Rules {
     /// tables, only a dungeon of one's own or the settings have them.
     #[serde(skip)]
     pub options: crate::rule_options::RuleOptions,
+    /// The rest of the game's rules (`Extras`: not in `dungeons.bin`).
+    #[serde(skip)]
+    pub more: Restrictions,
+}
+
+/// A tile of a fixed room the Key opens.
+pub const KEY_DOOR: u8 = 3;
+
+/// The flags of `struct dungeon_restriction` that `Rules` does not keep
+/// (`dungeon_extras.bin`); without that file, those that change nothing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Restrictions {
+    /// A foe that defeats someone evolves.
+    pub enemies_evolve: bool,
+    /// The leader may be changed in the dungeon.
+    pub leader_change: bool,
+    /// No save as the team enters.
+    pub enter_without_saving: bool,
+    /// Traps are not revealed by a blow or a thrown item.
+    pub no_trap_uncovering: bool,
+    /// Defeated foes may drop treasure boxes.
+    pub treasure_boxes: bool,
+    /// How many times the team may be rescued (`NO_RESCUE`: never).
+    pub max_rescues: u8,
+    /// The chance in 100 that a foe appears wandering at random.
+    pub random_movement: i16,
+}
+
+/// `Restrictions::max_rescues` where no rescue is allowed.
+pub const NO_RESCUE: u8 = 0xFF;
+
+impl Default for Restrictions {
+    fn default() -> Self {
+        Self {
+            enemies_evolve: false,
+            leader_change: true,
+            enter_without_saving: true,
+            no_trap_uncovering: false,
+            treasure_boxes: false,
+            max_rescues: 10,
+            random_movement: 0,
+        }
+    }
+}
+
+/// What the game counts with past `dungeons.bin` (`dungeon_extras.bin`,
+/// a file of its own: `Tables` keeps its shape, bincode reading by place).
+#[derive(Clone, Default, Serialize, Deserialize)]
+pub struct Extras {
+    /// By dungeon.
+    pub restrictions: Vec<Restrictions>,
+    /// By dungeon, by floor.
+    pub floors: Vec<Vec<FloorExtras>>,
+    /// The floors the hidden stairs lead to: the Secret Bazaar, the Secret
+    /// Room (fixed rooms 112 and 113).
+    pub secret_floors: Vec<Fixed>,
+    /// By species: its four treasure weights (none, an item, its first
+    /// exclusive item, its second; `GetTreasureBoxChances`) and those two
+    /// exclusive items.
+    pub drops: Vec<([i16; 4], [u16; 2])>,
+    /// The item lists by job rank (`GetItemIdFromList`): the first for ranks
+    /// 0 and 1, then rank `r` at `r - 1`.
+    pub rank_lists: Vec<ItemTable>,
+}
+
+/// A floor's hidden stairs and what goes with them, and the vault a key
+/// opens there.
+#[derive(Clone, Default, Serialize, Deserialize)]
+pub struct FloorExtras {
+    /// `floor_properties::hidden_stairs_type` (0 the Bazaar, 1 the Secret
+    /// Room, 255 either) and its chance in 100 (0: none).
+    pub hidden_kind: u8,
+    pub hidden_chance: u8,
+    /// The Bazaar's grab bags and the Secret Room's chests, where there are
+    /// hidden stairs.
+    pub grab_bag: ItemTable,
+    pub chests: ItemTable,
+    /// A room set inside the floor (fixed rooms from 165), behind a key
+    /// door.
+    pub vault: Option<Fixed>,
 }
 
 /// How a move's user moves as it uses the move (skytemple-files'
@@ -242,6 +324,7 @@ impl Default for Rules {
             max_party: 4,
             turn_limit: 0,
             options: crate::rule_options::RuleOptions::default(),
+            more: Restrictions::default(),
         }
     }
 }

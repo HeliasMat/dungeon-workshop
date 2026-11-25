@@ -41,6 +41,9 @@ pub(crate) fn spawn_enemy_holding(dungeon: &mut Dungeon, book: &Book, at: Pos, d
         Some(enemy) => wild_monster(dungeon, book, enemy, at, statuses),
         None => Monster::new(dungeon.new_id(), Side::Foe, "Ennemi".to_string(), None, ENEMY_STATS, Vec::new(), statuses, at),
     };
+    // (Now and then one that wanders at random, where the dungeon says.)
+    let wandering = dungeon.rules.more.random_movement;
+    monster.wanders = wandering > 0 && dungeon.rng.rand_int(100) < wandering as i32;
     if dormant {
         // Asleep until the leader walks into the Monster House.
         monster.status = Statuses::for_species(movement);

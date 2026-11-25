@@ -1,6 +1,6 @@
 //! What the game counts with: `dungeons.bin`, and the tilesets of its floors.
 
-use rules::tables::{DungeonTable, Species, Tables};
+use rules::tables::{DungeonTable, Extras, FloorExtras, Species, Tables};
 use shell::art::{CHUNK, CHUNKS_IN_ROW as ROW};
 
 use super::pictures::episode_characters;
@@ -122,6 +122,7 @@ pub fn dungeons(data: &RomData, interface: &Interface, folder: &str) -> std::io:
     };
     let packed = bincode::serialize(&tables).map_err(|error| std::io::Error::other(error.to_string()))?;
     std::fs::write(format!("{folder}/dungeons.bin"), packed)?;
+    std::fs::write(format!("{folder}/dungeon_extras.bin"), bincode::serialize(&extras(data, &lists)).map_err(wrong)?)?;
     // The tilesets the floors use.
     let mut used: Vec<u8> = tables.dungeons.iter().flat_map(|dungeon| dungeon.floors.iter().map(|floor| floor.tileset)).collect();
     used.sort();
@@ -147,4 +148,43 @@ pub fn dungeons(data: &RomData, interface: &Interface, folder: &str) -> std::io:
         written += 1;
     }
     Ok((tables.dungeons.len(), tables.dungeons.iter().map(|dungeon| dungeon.floors.len()).sum(), written))
+}
+
+/// An item list of the game, each item with its category.
+fn item_table(data: &RomData, list: &rom_formats::mappa::ItemList) -> rules::dungeon::ItemTable {
+    let with_category = |&(id, weight): &(u16, u16)| Some((id, data.items.category(id as usize)?, weight));
+    rules::dungeon::ItemTable { categories: list.categories.clone(), items: list.items.iter().filter_map(with_category).collect() }
+}
+
+/// What `dungeons.bin` does not keep (`dungeon_extras.bin`): the rest of
+/// each dungeon's rules, the hidden stairs and vaults of the floors, the
+/// Secret Bazaar and the Secret Room, what the foes drop, the item lists
+/// by rank. `lists`: the game's item lists.
+fn extras(data: &RomData, lists: &[rom_formats::mappa::ItemList]) -> Extras {
+    /// The fixed rooms of the Secret Bazaar and the Secret Room, and the
+    /// first set inside a generated floor.
+    const SECRET_FLOORS: [u8; 2] = [112, 113];
+    const FIRST_VAULT: u8 = 165;
+    /// Item lists by job rank: ranks 1 to 15 (`GetItemIdFromList`).
+    const RANK_LISTS: usize = 15;
+    let floor = |floor: &rom_formats::mappa::FloorData| {
+        let hidden = floor.layout.hidden_stairs_chance > 0;
+        let fixed = floor.layout.fixed_room_id;
+        FloorExtras {
+            hidden_kind: floor.layout.hidden_stairs_type,
+            hidden_chance: floor.layout.hidden_stairs_chance,
+            grab_bag: if hidden { item_table(data, &floor.grab_bag) } else { Default::default() },
+            chests: if hidden { item_table(data, &floor.chests) } else { Default::default() },
+            vault: (fixed >= FIRST_VAULT).then(|| data.fixed_room(fixed)).flatten(),
+        }
+    };
+    Extras {
+        restrictions: data.dungeons.rules.iter().map(|rules| rules.more).collect(),
+        floors: (0..data.dungeons.dungeons.len()).map(|id| RomData::floor_range(&data.mappa, &data.dungeons, id).iter().map(floor).collect()).collect(),
+        secret_floors: SECRET_FLOORS.iter().filter_map(|&id| data.fixed_room(id)).collect(),
+        drops: (0..data.monsters.species_count())
+            .map(|monster| data.monsters.species(monster).map_or(([0; 4], [0; 2]), |species| (species.treasure, species.exclusive_items)))
+            .collect(),
+        rank_lists: lists.iter().take(RANK_LISTS).map(|list| item_table(data, list)).collect(),
+    }
 }

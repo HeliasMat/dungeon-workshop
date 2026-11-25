@@ -350,7 +350,7 @@ impl RomData {
                     {
                         *cell = match tile {
                             rom_formats::fixed::FixedTile::Floor => Terrain::Floor,
-                            rom_formats::fixed::FixedTile::Wall => Terrain::Wall,
+                            rom_formats::fixed::FixedTile::Wall | rom_formats::fixed::FixedTile::KeyDoor => Terrain::Wall,
                             rom_formats::fixed::FixedTile::Secondary => Terrain::Secondary,
                         };
                     }

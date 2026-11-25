@@ -20,6 +20,7 @@ pub mod book;
 pub mod dungeon;
 pub mod entering;
 pub mod floors;
+pub mod guests;
 pub mod items;
 pub mod job_floor;
 pub mod leader;

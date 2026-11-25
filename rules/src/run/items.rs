@@ -348,6 +348,7 @@ impl Run {
                 return true;
             }
             self.sights.push(Sight::Thrown(item, here, at));
+            self.uncover_trap_at(at);
             self.drop_item(at, item);
             return false;
         };

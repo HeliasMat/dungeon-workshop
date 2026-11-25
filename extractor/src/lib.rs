@@ -100,11 +100,17 @@ pub fn run(arguments: &[String]) {
     // (Only what the game counts with, to try a change of its tables.)
     if arguments.iter().any(|argument| argument == "--tables-only") {
         match dungeons(&data, &Interface::of(&data), folder) {
-            Ok((dungeons, floors, tilesets)) => println!("{folder}/dungeons.bin: {dungeons} dungeons, {floors} floors, {tilesets} tilesets"),
+            Ok((dungeons, floors, tilesets)) => {
+                println!("{folder}/dungeons.bin, dungeon_extras.bin: {dungeons} dungeons, {floors} floors, {tilesets} tilesets")
+            }
             Err(error) => eprintln!("--extract: {error}"),
         }
         if let Err(error) = levels(&data, folder) {
             eprintln!("--extract: {error}");
+        }
+        match people::guests(&data, folder) {
+            Ok((guests, dungeons)) => println!("{folder}/guests.txt: {guests} guests, {dungeons} dungeons adding them"),
+            Err(error) => eprintln!("--extract: {error}"),
         }
         return;
     }

@@ -192,8 +192,14 @@ impl RomData {
     /// The floor laid out by hand, if the floor is one: its tiles, and its
     /// monsters as the floor's enemies are described.
     pub(crate) fn fixed_floor(&self, id: u8) -> Option<Fixed> {
-        // (From 165 on, rooms set inside a generated floor: not made.)
-        let room = (1..165).contains(&id).then(|| rom_formats::fixed::load_room(&self.rom, id))??;
+        // (From 165 on, rooms set inside a generated floor: `fixed_room`,
+        // in `dungeon_extras.bin`.)
+        (1..165).contains(&id).then(|| self.fixed_room(id))?
+    }
+
+    /// Fixed room `id`, whatever it is used for.
+    pub(crate) fn fixed_room(&self, id: u8) -> Option<Fixed> {
+        let room = rom_formats::fixed::load_room(&self.rom, id)?;
         let enemy = |placed: &rom_formats::fixed::FixedMonster| {
             let md_index = placed.monster as usize;
             let species = self.monsters.species(md_index)?;

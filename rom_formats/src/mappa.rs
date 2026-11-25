@@ -52,6 +52,10 @@ pub struct FloorLayout {
     /// Which tiles of a Kecleon shop always have an item, the others a
     /// chance (`enum shop_item_positions`).
     pub shop_item_positions: u8,
+    /// Where hidden stairs lead (0 the Secret Bazaar, 1 the Secret Room,
+    /// 255 either), and their chance in 100.
+    pub hidden_stairs_type: u8,
+    pub hidden_stairs_chance: u8,
 }
 
 impl FloorLayout {
@@ -82,6 +86,8 @@ impl FloorLayout {
             max_money_div_5: b[0x17],
             shop_item_positions: b[0x18],
             itemless_monster_house_chance: b[0x19],
+            hidden_stairs_type: b[0x1A],
+            hidden_stairs_chance: b[0x1B],
             enemy_iq: i16::from_le_bytes([b[0x1C], b[0x1D]]),
         }
     }
@@ -141,6 +147,10 @@ pub struct FloorData {
     /// Those a Kecleon shop sells there (the list after the floor's in the
     /// floor's entry).
     pub shop_items: ItemList,
+    /// The Secret Bazaar's grab bags and the Secret Room's chests, for
+    /// the floor's hidden stairs (the entry's last two lists).
+    pub grab_bag: ItemList,
+    pub chests: ItemList,
 }
 
 pub struct Mappa {
@@ -190,12 +200,18 @@ impl Mappa {
                 let item_list = offset_at(data, item_lists + item_idx * 4)?;
                 let shop_idx = u16_le(data, entry + 8)? as usize;
                 let shop_list = offset_at(data, item_lists + shop_idx * 4)?;
+                let list_at = |at: usize| -> Result<ItemList, RomError> {
+                    let index = u16_le(data, entry + at)? as usize;
+                    parse_items(data, offset_at(data, item_lists + index * 4)?)
+                };
                 floors.push(FloorData {
                     layout: FloorLayout::parse(bytes),
                     spawns: parse_spawns(data, list)?,
                     traps,
                     items: parse_items(data, item_list)?,
                     shop_items: parse_items(data, shop_list).unwrap_or_default(),
+                    grab_bag: list_at(14).unwrap_or_default(),
+                    chests: list_at(16).unwrap_or_default(),
                 });
             }
             groups.push(floors);

@@ -5,7 +5,7 @@
 
 use crate::sym;
 pub use rules::tables::NO_MUSIC;
-use rules::tables::Rules;
+use rules::tables::{Restrictions, Rules};
 
 use super::nds::{NdsRom, RomError};
 
@@ -35,6 +35,15 @@ fn parse_rules(entry: &[u8]) -> Rules {
         max_party: entry[6],
         turn_limit: u16::from_le_bytes([entry[8], entry[9]]),
         options: Default::default(),
+        more: Restrictions {
+            enemies_evolve: bit(1),
+            leader_change: bit(6),
+            enter_without_saving: bit(7),
+            no_trap_uncovering: bit(9),
+            treasure_boxes: bit(10),
+            max_rescues: entry[4],
+            random_movement: i16::from_le_bytes([entry[10], entry[11]]),
+        },
     }
 }
 
