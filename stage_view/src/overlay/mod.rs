@@ -222,14 +222,3 @@ fn draw_bands(canvas: &mut Canvas, stage: &Stage, below: i32) {
         canvas.fill(0, below + ui::SCREEN_HEIGHT as i32 - band, ui::SCREEN_WIDTH, band as usize, [0, 0, 0, 255]);
     }
 }
-
-/// The lines said lately (L), the last at the bottom, over the lower
-/// screen.
-pub fn draw_backlog(canvas: &mut Canvas, art: &UiArt, said: &[String], below: i32) {
-    canvas.fill(0, below, ui::SCREEN_WIDTH, ui::SCREEN_HEIGHT, [0, 0, 0, 215]);
-    let rows: Vec<&str> = said.iter().flat_map(|line| line.split('\n')).collect();
-    let fit = ((ui::SCREEN_HEIGHT as i32 - 8) / PITCH) as usize;
-    for (row, line) in rows[rows.len().saturating_sub(fit)..].iter().enumerate() {
-        canvas.markup(art, 6, below + 4 + row as i32 * PITCH, ui::SCREEN_WIDTH - 12, line);
-    }
-}

@@ -50,11 +50,6 @@ impl Canvas {
         self.blit(x - *width as i32 / 2, bottom, *width, *height, rgba);
     }
 
-    /// The top menu's windows: green frame, plain grey.
-    pub fn menu_window(&mut self, art: &UiArt, x: usize, y: usize, width: usize, height: usize) {
-        self.window_with(&art.frame_green, true, 0, x, y, width, height);
-    }
-
     /// A picture covering one screen (`top` is its first pixel row).
     pub fn picture(&mut self, top: usize, rgba: &[u8]) {
         self.blit(0, top as i32, SCREEN_WIDTH, SCREEN_HEIGHT, rgba);

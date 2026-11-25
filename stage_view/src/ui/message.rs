@@ -34,13 +34,6 @@ pub struct Said {
     pub timed: bool,
 }
 
-impl Said {
-    /// The column its portrait shows at, in tiles.
-    pub fn face_column(&self) -> Option<usize> {
-        self.portrait.map(|(_, _, right)| if right { PORTRAIT_RIGHT } else { 2 })
-    }
-}
-
 /// A face on screen, and its column in tiles. (Its row is the box's: see
 /// `Words::draw`.)
 #[derive(Clone)]

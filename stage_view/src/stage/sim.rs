@@ -241,11 +241,6 @@ impl Sim {
         );
     }
 
-    /// Whether that one lies on the ground (those who stand walk over it).
-    pub fn lies_flat(&self, who: Who) -> bool {
-        self.shown.get(&who).is_none_or(|shown| shown.flat)
-    }
-
     /// The name of what someone shows now.
     pub fn pose(&self, who: Who) -> Option<&'static str> {
         const USUAL: [&str; SCENE_ANIMATIONS] = ["Walk", "Idle", "Hurt", "Sleep", "Attack"];

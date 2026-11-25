@@ -120,24 +120,6 @@ impl Play {
         self.ground.as_ref().map(|(_, ground)| ground)
     }
 
-    /// The whole place as it is now, at its own size, a pixel of it a
-    /// pixel: its lower layer at the frame its animation is on, its upper
-    /// one over it (for an editor, which shows it as large as it likes).
-    pub fn place_picture(&self) -> Option<(usize, usize, Vec<u8>)> {
-        let ground = self.ground()?;
-        let seconds = self.sim.clock / 60.0;
-        let at = |count: usize| (seconds / ground.frame_seconds.max(0.01)) as usize % count.max(1);
-        let mut rgba = ground.frames.get(at(ground.frames.len()))?.clone();
-        if let Some(upper) = ground.upper.get(at(ground.upper.len())) {
-            for (pixel, over) in rgba.as_chunks_mut::<4>().0.iter_mut().zip(upper.as_chunks::<4>().0) {
-                if over[3] > 0 {
-                    *pixel = *over;
-                }
-            }
-        }
-        Some((ground.wide, ground.high, rgba))
-    }
-
     /// Puts a place on the screen, whatever a scene asked.
     pub fn set_ground(&mut self, art: &Art, level: u16) -> bool {
         self.sim.place = Some(level);

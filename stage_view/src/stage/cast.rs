@@ -53,23 +53,6 @@ impl Cast {
         }
     }
 
-    /// The team as it is now. (Those who were it change picture.)
-    pub fn set_team(&mut self, team: (u16, u16), names: &(String, String, String)) {
-        let team = if team.0 == 0 || team.1 == 0 { TEAM } else { team };
-        if self.team != team {
-            self.sprites.clear();
-        }
-        self.team = team;
-        if self.names != *names {
-            self.names = names.clone();
-        }
-    }
-
-    /// Whether that character of the scripts is the hero or the partner.
-    pub fn of_the_team(&self, entity: u16) -> bool {
-        self.entities.get(entity as usize).is_some_and(|entity| entity.1 == 0)
-    }
-
     /// The name of a monster.
     pub fn species_name(&self, monster: u16) -> String {
         self.monsters.get(&monster).cloned().unwrap_or_default()
@@ -159,11 +142,6 @@ impl Cast {
         self.sprites.remove(&who);
     }
 
-    /// The file of a picture of a film's own, by its number there.
-    pub fn drawing_file(&self, picture: u16) -> Option<&str> {
-        self.drawings.get(&picture).map(|(file, ..)| file.as_str())
-    }
-
     /// The sprite sheet of a character of a film's own: its file, a cell's
     /// size, how many ways.
     pub fn sheet_of(&self, who: Who) -> Option<(&str, (u16, u16), u8)> {
@@ -174,11 +152,6 @@ impl Cast {
     /// pictures side by side, their pace.
     pub fn drawing(&self, picture: u16) -> Option<(&str, u16, &[u32])> {
         self.drawings.get(&picture).map(|(file, cells, ticks)| (file.as_str(), *cells, ticks.as_slice()))
-    }
-
-    /// The animations of a character of a film's own, from its sprite sheet.
-    pub fn sheet_cells(&self, who: Who) -> Option<&[shell::sheet::Cells]> {
-        self.sheets.get(&who).map(|(.., anims)| anims.as_slice())
     }
 
     /// Whether it is drawn from a sprite sheet of a film's own.
