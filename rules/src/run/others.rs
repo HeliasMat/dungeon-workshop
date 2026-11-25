@@ -9,7 +9,7 @@
 use crate::dungeon::ai::{self, AiChoice, AiUser, Candidate};
 use crate::dungeon::exclusive::effect::NO_WEATHER_DAMAGE;
 use crate::dungeon::status::DEEP_SLEEP;
-use crate::dungeon::{Action, Belly, DungeonRng, MoveEffect, Pos, TrapOutcome, ability, apply_effect, eat_item, enemy_action};
+use crate::dungeon::{Action, Belly, DungeonRng, Floor, Mobility, MoveEffect, Pos, TrapOutcome, ability, apply_effect, eat_item, enemy_action};
 
 use super::attack::chebyshev;
 use super::dungeon::{DIRECTIONS, Phase, weather_name};
@@ -282,65 +282,8 @@ impl Run {
             return Acted::Done;
         }
         let confused = me.status.confused();
-        // Towards the closest enemy in sight, or back to the leader.
-        let floor = &dungeon.floor;
-        let free = |(dx, dy): (i32, i32)| {
-            let to = Pos::new(at.x + dx, at.y + dy);
-            (dx, dy) != (0, 0) && floor.can_step_as(at, dx, dy, walks) && to != leader_at && !foes.contains(&to) && !beside.contains(&to)
-        };
-        let towards = |goal: Pos| ((goal.x - at.x).signum(), (goal.y - at.y).signum());
-        let chase = |foe: Pos| {
-            let (sx, sy) = towards(foe);
-            [(sx, sy), (sx, 0), (0, sy)].into_iter().find(|&step| free(step))
-        };
-        let in_sight = || foes.iter().copied().filter(|&foe| ai::can_see(floor, at, foe));
-        // (The team goes together: an enemy is gone for only close by, and
-        // close to the leader.)
-        let seen = in_sight().filter(|&foe| chebyshev(at, foe) <= 3 && chebyshev(leader_at, foe) <= 4).min_by_key(|&foe| chebyshev(at, foe));
-        let footstep = previous.filter(|&tile| tile != leader_at && chebyshev(at, tile) == 1).map(towards).filter(|&step| free(step));
-        // Any foe in sight, however far, for those that go after them or
-        // their own way.
-        let hunted = in_sight().min_by_key(|&foe| chebyshev(at, foe));
-        let nearest = hunted.filter(|&foe| chebyshev(at, foe) <= 2);
-        // Away from a foe: the free step that leaves it farthest.
-        let after_step = |(dx, dy): (i32, i32), from: Pos| chebyshev(Pos::new(at.x + dx, at.y + dy), from);
-        let away = |from: Pos| {
-            ai::DIRECTIONS
-                .iter()
-                .copied()
-                .filter(|&step| free(step))
-                .max_by_key(|&step| after_step(step, from))
-                .filter(|&step| after_step(step, from) > chebyshev(at, from))
-        };
-        let wander = |rng: &mut DungeonRng| {
-            let steps: Vec<(i32, i32)> = ai::DIRECTIONS.iter().copied().filter(|&step| free(step)).collect();
-            (!steps.is_empty()).then(|| steps[rng.rand_int(steps.len() as i32) as usize])
-        };
-        let back = || ai::step_towards(floor, at, leader_at, walks, |tile| foes.contains(&tile) || beside.contains(&tile));
-        let rng = &mut dungeon.rng;
-        let step = match tactic {
-            tactic::WAIT_THERE => None,
-            tactic::BE_PATIENT if low => None,
-            _ if flees => nearest.and_then(away),
-            tactic::KEEP_DISTANCE if nearest.is_some_and(|foe| chebyshev(at, foe) <= 1) => nearest.and_then(away),
-            tactic::GO_AFTER_FOES | tactic::OWN_WAY => match hunted {
-                Some(foe) => chase(foe),
-                None if tactic == tactic::OWN_WAY => wander(rng),
-                None => back(),
-            },
-            _ => match seen {
-                None if chebyshev(at, leader_at) <= 1 => None,
-                None if footstep.is_some() => footstep,
-                Some(foe) => chase(foe),
-                // Lost sight of the leader: the shortest way back.
-                None => back(),
-            },
-        };
-        // Confused, it steps any way it can.
-        let step = match step {
-            Some(_) if confused => Some(DIRECTIONS[rng.rand_int(8) as usize]).filter(|&way| free(way)),
-            step => step,
-        };
+        let around = Around { at, leader_at, walks, foes: &foes, beside: &beside };
+        let step = around.ally_step(&dungeon.floor, &mut dungeon.rng, tactic, low, flees, previous, confused);
         let Some((dx, dy)) = step else {
             return Acted::Done;
         };
@@ -417,19 +360,8 @@ impl Run {
             return Acted::Over;
         }
         // Hurt, it eats the berry it holds.
-        const ORAN_BERRY: u16 = 70;
-        const SITRUS_BERRY: u16 = 71;
         if matches!(me.stats.held, ORAN_BERRY | SITRUS_BERRY) && me.stats.hp * 2 <= me.stats.max_hp && me.status.embargo_turns == 0 {
-            let Dungeon { rng, monsters, .. } = dungeon;
-            let Some(eater) = monsters.iter_mut().find(|monster| monster.id == who) else {
-                return Acted::Over;
-            };
-            let berry = std::mem::take(&mut eater.stats.held);
-            watched(eater, &mut self.sights, |eater| {
-                eat_item(berry, rng, constants, &mut eater.stats, &mut eater.status, &mut Belly::full(), &mut eater.moves)
-            });
-            self.log.push(format!("{} ate {}!", me.name, book.item_name(berry)));
-            return Acted::Done;
+            return self.foe_eats_berry(who, &me.name);
         }
         let walks = mobility(&me.status, secondary_kind);
         let occupied = |tile: Pos| tile == at || foes.contains(&tile) || kin.contains(&tile) || Some(tile) == keeper;
@@ -449,47 +381,30 @@ impl Run {
             let user = AiUser { pos: at, facing: direction, mobility: walks, full_hp: me.stats.hp >= me.stats.max_hp };
             ai::choose_move(&mut dungeon.rng, &dungeon.floor, &constants.ai_regular_attack_weights, &user, &me.moves, &others)
         };
-        let floor = &dungeon.floor;
-        let action = match choice {
-            Some(choice) => {
-                let (dx, dy) = ai::DIRECTIONS[choice.direction];
-                Action::Attack(dx, dy)
-            }
-            None if me.status.cannot_act() => Action::Wait,
-            // Terrified, it flees from the closest of the team.
-            None if terrified => {
-                let steps =
-                    ai::DIRECTIONS.iter().copied().filter(|&(dx, dy)| floor.can_step_as(at, dx, dy, walks) && !occupied(Pos::new(at.x + dx, at.y + dy)));
-                let away = |(dx, dy): (i32, i32)| chebyshev(Pos::new(at.x + dx, at.y + dy), target);
-                match steps.max_by_key(|&step| away(step)) {
-                    Some(step) if away(step) > chebyshev(at, target) => Action::Move(step.0, step.1),
-                    _ => Action::Wait,
-                }
-            }
-            None => enemy_action(floor, &mut dungeon.rng, at, target, occupied, walks),
+        let action = foe_action(&dungeon.floor, &mut dungeon.rng, &me, target, choice, occupied, &foes, walks);
+        self.foe_does(who, act, at, action, choice, decoy.map(|(id, _)| id))
+    }
+
+    /// A hurt foe eats the Oran or Sitrus Berry it holds.
+    fn foe_eats_berry(&mut self, who: MonsterId, name: &str) -> Acted {
+        let book = self.book.clone();
+        let constants = &book.tables.constants;
+        let dungeon = self.dungeon.as_mut().expect("a dungeon");
+        let Dungeon { rng, monsters, .. } = dungeon;
+        let Some(eater) = monsters.iter_mut().find(|monster| monster.id == who) else {
+            return Acted::Over;
         };
-        let action = match action {
-            // Confusion sends moves and steps in a random direction.
-            Action::Attack(..) | Action::Move(..) if me.status.confused() => {
-                let (dx, dy) = DIRECTIONS[dungeon.rng.rand_int(8) as usize];
-                let tile = Pos::new(at.x + dx, at.y + dy);
-                if !floor.can_step_as(at, dx, dy, walks) {
-                    Action::Wait
-                } else if foes.contains(&tile) {
-                    Action::Attack(dx, dy)
-                } else if occupied(tile) {
-                    Action::Wait
-                } else {
-                    Action::Move(dx, dy)
-                }
-            }
-            action => action,
-        };
-        let action = match action {
-            Action::Attack(..) if me.status.cannot_attack() => Action::Wait,
-            Action::Move(..) if me.status.rooted() => Action::Wait,
-            action => action,
-        };
+        let berry = std::mem::take(&mut eater.stats.held);
+        watched(eater, &mut self.sights, |eater| eat_item(berry, rng, constants, &mut eater.stats, &mut eater.status, &mut Belly::full(), &mut eater.moves));
+        self.log.push(format!("{name} ate {}!", book.item_name(berry)));
+        Acted::Done
+    }
+
+    /// A foe's action done: its turn's end on its first action, then its
+    /// attack (the move the AI chose, or the regular attack) or its step.
+    fn foe_does(&mut self, who: MonsterId, act: i32, at: Pos, action: Action, choice: Option<AiChoice>, decoy: Option<MonsterId>) -> Acted {
+        let book = self.book.clone();
+        let constants = &book.tables.constants;
         if act == 0 {
             self.change(who, |me| me.status.end_turn(&mut me.stats, constants));
         }
@@ -509,7 +424,7 @@ impl Run {
                 // attack.
                 let unleash = me.status.charging.take().and_then(|id| me.moves.iter().position(|slot| slot.id == id));
                 let pick = choice.and_then(|choice| choice.slot);
-                self.use_chain(who, unleash.or(pick), unleash.is_some(), false, true, decoy.map(|(id, _)| id));
+                self.use_chain(who, unleash.or(pick), unleash.is_some(), false, true, decoy);
                 Acted::Attacked
             }
             Action::Move(dx, dy) => {
@@ -536,5 +451,141 @@ impl Run {
                 self.log.push(book.knocked_out(&name));
             }
         }
+    }
+}
+
+/// Where a team member stands, and who stands around it: what its step is
+/// chosen by.
+struct Around<'a> {
+    at: Pos,
+    leader_at: Pos,
+    walks: Mobility,
+    /// The foes still standing.
+    foes: &'a [Pos],
+    /// The other team members, and a shopkeeper.
+    beside: &'a [Pos],
+}
+
+impl Around<'_> {
+    /// A team member's step, as its tactic says: towards the closest enemy
+    /// in sight, or back to the leader; away from a foe; none. Confused, it
+    /// steps any way it can.
+    fn ally_step(&self, floor: &Floor, rng: &mut DungeonRng, tactic: u8, low: bool, flees: bool, previous: Option<Pos>, confused: bool) -> Option<(i32, i32)> {
+        let Around { at, leader_at, walks, foes, beside } = *self;
+        let free = |(dx, dy): (i32, i32)| {
+            let to = Pos::new(at.x + dx, at.y + dy);
+            (dx, dy) != (0, 0) && floor.can_step_as(at, dx, dy, walks) && to != leader_at && !foes.contains(&to) && !beside.contains(&to)
+        };
+        let towards = |goal: Pos| ((goal.x - at.x).signum(), (goal.y - at.y).signum());
+        let chase = |foe: Pos| {
+            let (sx, sy) = towards(foe);
+            [(sx, sy), (sx, 0), (0, sy)].into_iter().find(|&step| free(step))
+        };
+        let in_sight = || foes.iter().copied().filter(|&foe| ai::can_see(floor, at, foe));
+        // (The team goes together: an enemy is gone for only close by, and
+        // close to the leader.)
+        let seen = in_sight().filter(|&foe| chebyshev(at, foe) <= 3 && chebyshev(leader_at, foe) <= 4).min_by_key(|&foe| chebyshev(at, foe));
+        let footstep = previous.filter(|&tile| tile != leader_at && chebyshev(at, tile) == 1).map(towards).filter(|&step| free(step));
+        // Any foe in sight, however far, for those that go after them or
+        // their own way.
+        let hunted = in_sight().min_by_key(|&foe| chebyshev(at, foe));
+        let nearest = hunted.filter(|&foe| chebyshev(at, foe) <= 2);
+        // Away from a foe: the free step that leaves it farthest.
+        let after_step = |(dx, dy): (i32, i32), from: Pos| chebyshev(Pos::new(at.x + dx, at.y + dy), from);
+        let away = |from: Pos| {
+            ai::DIRECTIONS
+                .iter()
+                .copied()
+                .filter(|&step| free(step))
+                .max_by_key(|&step| after_step(step, from))
+                .filter(|&step| after_step(step, from) > chebyshev(at, from))
+        };
+        let wander = |rng: &mut DungeonRng| {
+            let steps: Vec<(i32, i32)> = ai::DIRECTIONS.iter().copied().filter(|&step| free(step)).collect();
+            (!steps.is_empty()).then(|| steps[rng.rand_int(steps.len() as i32) as usize])
+        };
+        let back = || ai::step_towards(floor, at, leader_at, walks, |tile| foes.contains(&tile) || beside.contains(&tile));
+        let step = match tactic {
+            tactic::WAIT_THERE => None,
+            tactic::BE_PATIENT if low => None,
+            _ if flees => nearest.and_then(away),
+            tactic::KEEP_DISTANCE if nearest.is_some_and(|foe| chebyshev(at, foe) <= 1) => nearest.and_then(away),
+            tactic::GO_AFTER_FOES | tactic::OWN_WAY => match hunted {
+                Some(foe) => chase(foe),
+                None if tactic == tactic::OWN_WAY => wander(rng),
+                None => back(),
+            },
+            _ => match seen {
+                None if chebyshev(at, leader_at) <= 1 => None,
+                None if footstep.is_some() => footstep,
+                Some(foe) => chase(foe),
+                // Lost sight of the leader: the shortest way back.
+                None => back(),
+            },
+        };
+        match step {
+            Some(_) if confused => Some(DIRECTIONS[rng.rand_int(8) as usize]).filter(|&way| free(way)),
+            step => step,
+        }
+    }
+}
+
+/// The berries a hurt foe eats.
+const ORAN_BERRY: u16 = 70;
+const SITRUS_BERRY: u16 = 71;
+
+/// A foe's action: the attack the AI chose, else fleeing the closest of the
+/// team if terrified, else a step towards `target`; confusion sends it any
+/// way, and what it cannot do it waits instead of.
+fn foe_action(
+    floor: &Floor,
+    rng: &mut DungeonRng,
+    me: &Monster,
+    target: Pos,
+    choice: Option<AiChoice>,
+    occupied: impl Fn(Pos) -> bool + Copy,
+    foes: &[Pos],
+    walks: Mobility,
+) -> Action {
+    let at = me.at;
+    let terrified = me.status.terrified_turns > 0;
+    let action = match choice {
+        Some(choice) => {
+            let (dx, dy) = ai::DIRECTIONS[choice.direction];
+            Action::Attack(dx, dy)
+        }
+        None if me.status.cannot_act() => Action::Wait,
+        // Terrified, it flees from the closest of the team.
+        None if terrified => {
+            let steps = ai::DIRECTIONS.iter().copied().filter(|&(dx, dy)| floor.can_step_as(at, dx, dy, walks) && !occupied(Pos::new(at.x + dx, at.y + dy)));
+            let away = |(dx, dy): (i32, i32)| chebyshev(Pos::new(at.x + dx, at.y + dy), target);
+            match steps.max_by_key(|&step| away(step)) {
+                Some(step) if away(step) > chebyshev(at, target) => Action::Move(step.0, step.1),
+                _ => Action::Wait,
+            }
+        }
+        None => enemy_action(floor, rng, at, target, occupied, walks),
+    };
+    let action = match action {
+        // Confusion sends moves and steps in a random direction.
+        Action::Attack(..) | Action::Move(..) if me.status.confused() => {
+            let (dx, dy) = DIRECTIONS[rng.rand_int(8) as usize];
+            let tile = Pos::new(at.x + dx, at.y + dy);
+            if !floor.can_step_as(at, dx, dy, walks) {
+                Action::Wait
+            } else if foes.contains(&tile) {
+                Action::Attack(dx, dy)
+            } else if occupied(tile) {
+                Action::Wait
+            } else {
+                Action::Move(dx, dy)
+            }
+        }
+        action => action,
+    };
+    match action {
+        Action::Attack(..) if me.status.cannot_attack() => Action::Wait,
+        Action::Move(..) if me.status.rooted() => Action::Wait,
+        action => action,
     }
 }
