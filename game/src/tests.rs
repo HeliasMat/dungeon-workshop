@@ -430,3 +430,85 @@ fn chimecco_s_assembly_sends_four_at_most_and_the_team_is_named() {
     let (_, words) = game.playthrough.as_ref().expect("a game").numbers();
     assert!(words.contains(&("team".to_string(), "Thorns".to_string())), "{words:?}");
 }
+
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn the_town_s_other_shops_swap_link_evolve_draw_and_keep_the_bag() {
+    use rules::run::town::Whom;
+    use rules::services::Input::{self, Confirm, Down, Up};
+    let data = data().expect("the extracted data/");
+    let rescue = crate::testing::root().join("tests/games/test_rescue/test_rescue.game");
+    let mut game = Game::open(&crate::testing::context_on(&data), &rescue, None).expect("the game opens");
+    (game.title, game.story.chapter) = (None, 2);
+    game.enter("test_square", super::roam::Arrival::Entrance(None), true);
+    game.make_team();
+    standing(&mut game);
+    let playthrough = game.playthrough.as_mut().expect("a game");
+    playthrough.money(2000);
+    playthrough.recruit(133);
+    for (item, count) in [("Bulba-Claw", 1), ("Bulba-Fang", 1), ("Fire Stone", 1), ("Prize Ticket", 1)] {
+        playthrough.give(item, count);
+    }
+    let run = playthrough.run_mut().expect("its rules");
+    fn press<S>(
+        screen: &mut S,
+        keys: &[Input],
+        run: &mut rules::run::Run,
+        play: impl Fn(&mut S, Option<Input>, &mut rules::run::Run) -> (bool, crate::assembly::Shown),
+    ) -> (bool, crate::assembly::Shown) {
+        keys.iter().map(|&key| play(screen, Some(key), run)).last().unwrap_or_default()
+    }
+
+    // (Croagunk: the Claw and the Fang for the Grass-Guard, 150 Poké.)
+    let mut shop = crate::town_shops::SwapShop::default();
+    let (_, (asked, ..)) = press(&mut shop, &[Confirm], run, crate::town_shops::SwapShop::play);
+    assert!(asked.starts_with("Swap your Bulba-Claw, Bulba-Fang for the Grass-Guard"), "{asked}");
+    let (_, (said, ..)) = press(&mut shop, &[Confirm], run, crate::town_shops::SwapShop::play);
+    assert!(said.contains("The swap worked"), "{said}");
+    assert!(run.bag_ids().contains(&576) && !run.bag_ids().contains(&574), "{:?}", run.bag_ids());
+    assert_eq!(run.bag().money, 2000 - rules::town::swap::PRICE);
+
+    // (The Link Shop: the leader's second move linked to its first, a session paid.)
+    let mut link = crate::town_shops::LinkShop::default();
+    let before = run.bag().money;
+    press(&mut link, &[Confirm, Down, Confirm, Confirm], run, crate::town_shops::LinkShop::play);
+    assert!(run.linked_moves(false)[1].1, "{:?}", run.linked_moves(false));
+    assert_eq!(run.bag().money, before - rules::run::town::LINK_PRICE);
+
+    // (Luminous Spring: Eevee and its Fire Stone; the leader not before graduating.)
+    let mut spring = crate::town_shops::Spring::default();
+    let (_, (said, ..)) = press(&mut spring, &[Confirm], run, crate::town_shops::Spring::play);
+    assert!(said.contains("doesn't reach"), "{said}");
+    let flareon = run.evolution_offers(Whom::Recruit(0)).iter().position(|(into, may)| *into == 136 && may.is_ok()).expect("Flareon, by its stone");
+    let mut keys = vec![Confirm, Down, Down, Confirm];
+    keys.extend(std::iter::repeat_n(Down, flareon));
+    keys.extend([Confirm, Confirm]);
+    let (left, _) = press(&mut spring, &keys, run, crate::town_shops::Spring::play);
+    assert!(left, "left for the light");
+    let evolved = spring.evolved.clone().expect("evolved");
+    assert_eq!((evolved.from, evolved.into, run.member_species(Whom::Recruit(0))), (133, 136, 136));
+    assert!(!run.bag_ids().contains(&146), "its stone used up");
+
+    // (The prize drawing: the ticket played.)
+    let mut drawing = crate::town_shops::Lottery::new(rules::run::town::Draw(7));
+    let (_, (said, ..)) = press(&mut drawing, &[Confirm], run, crate::town_shops::Lottery::play);
+    assert!(said.contains("drum"), "{said}");
+    assert!(run.tickets().is_empty());
+    let mut recycle = crate::town_shops::Recycle::new(rules::run::town::Draw(7));
+    let (_, (message, ..)) = press(&mut recycle, &[Up, Down], run, crate::town_shops::Recycle::play);
+    assert!(message.contains("Recycle Shop"), "{message}");
+
+    // (The bag: an item thrown away once asked, the bag sorted.)
+    let mut bag = crate::town_shops::Bag::default();
+    let count = run.bag().items.len();
+    let bag_play = |bag: &mut crate::town_shops::Bag, key, run: &mut rules::run::Run| bag.play(key, run, &[]);
+    let (_, (asked, ..)) = press(&mut bag, &[Confirm], run, bag_play);
+    assert!(asked.starts_with("Throw away"), "{asked}");
+    press(&mut bag, &[Up, Confirm, Confirm], run, bag_play);
+    assert_eq!(run.bag().items.len(), count - 1);
+
+    // (The light of the films' evolution, in the place, then the place again.)
+    game.evolution_scene(&evolved);
+    assert!(game.cutscene.is_some() && game.said.is_none(), "{:?} {:?}", game.said, game.log);
+    assert!(game.log.iter().any(|line| line.starts_with("evolved ") && line.ends_with("flareon")), "{:?}", game.log);
+}

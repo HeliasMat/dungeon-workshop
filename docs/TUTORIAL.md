@@ -329,6 +329,21 @@ scene_player play my_first_game.dwpack
   The rank grows with the jobs: the bag holds 16 items at Normal Rank, more at each rank (48 at most), and
   Kangaskhan Storage keeps more too; M › Team tells the rank and the points to the next, `if team_size >= 3`
   how many go.
+- **The town's other shops**, each under a resident of yours: `talk swap` (Exclusive Items swapped for a rarer one,
+  150 Poké), `talk link` (moves linked, forgotten, remembered, 500 Poké a visit), `talk evolve` (a spring where a
+  member ready to evolve does, its light played where the team stands; the leader and the partner once `set
+  graduated`), `talk recycle` and `talk lottery` (a café's Recycle Shop and its prize drawing; `if project_p >= 10`
+  counts the trades made), `talk bag` (the bag sorted, an item thrown away). Put each resident behind its counter
+  or at its door:
+
+  ```text
+  resident croagunk 300 140 down
+  says Heh heh... Got Exclusive Items? Throw them in my cauldron.
+  talk swap
+  ```
+
+  What the shop sells can be the game's own, in its head: `shop_stock: Oran Berry, Apple, Reviver Seed`
+  (`wares_stock:` for the market; `shop_stock_3:` from chapter 3 on).
 - Bigger fights: `fight: <word>` and a `.fight` file made in the **Dungeon** space (+ New Boss Fight).
 - How a game's folder is laid out: [games/README.md](../games/README.md).
 - Every word of a film, a game, a dungeon: [film/FILMS.md](../film/FILMS.md); of a decor:

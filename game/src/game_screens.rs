@@ -4,7 +4,9 @@
 //! (the jobs taken, to give up), Chimecco Assembly (who goes, each member
 //! seen, its tactic, a recruit released), the team's name,
 //! Xatu's appraisal of the treasure boxes, the café's Gummi juice, Chansey's
-//! Day Care (the eggs hatched), the bed (a new day), the world map's ways. What they do is the rules' (`rules::services`,
+//! Day Care (the eggs hatched), the bed (a new day), the world map's ways;
+//! Croagunk's Swap Shop, the Link Shop, Luminous Spring, the Recycle Shop
+//! and its prize drawing, the bag (`crate::town_shops`). What they do is the rules' (`rules::services`,
 //! `rules::jobs`, the `Run` of the film's game, `Playthrough`); here, a key at
 //! a time and what the box shows.
 
@@ -21,11 +23,15 @@ use stage_view::ui::{Canvas, ListCursor, Picked, UiArt};
 
 use crate::assembly::{Assembly, Naming};
 use crate::playthrough::Playthrough;
+use crate::town_shops::{Bag, Evolved, LinkShop, Lottery, Recycle, Spring, SwapShop};
 
 /// A screen open.
 pub enum GameScreen {
     /// The bank, the storage, a shop (which: 0 the shop, 1 the wares).
-    Service { service: Service, shop: Option<usize> },
+    Service {
+        service: Service,
+        shop: Option<usize>,
+    },
     /// A board of jobs (the outlaws' if it says): those offered, those the
     /// team holds; one read in full, then taken.
     Board(Listing),
@@ -38,22 +44,56 @@ pub enum GameScreen {
     Naming(Naming),
     /// Xatu opens the treasure boxes of the bag, one at a time, for a
     /// price: what it found told; the numbers it draws.
-    Appraise { cursor: ListCursor, said: Option<String>, draw: Draw },
+    Appraise {
+        cursor: ListCursor,
+        said: Option<String>,
+        draw: Draw,
+    },
     /// The café presses a Gummi of the bag into juice for the leader or its
     /// partner: the Gummi chosen (its place in the bag), then who drinks; what it did told.
-    Cafe { cursor: ListCursor, gummi: Option<usize>, said: Option<String> },
+    Cafe {
+        cursor: ListCursor,
+        gummi: Option<usize>,
+        said: Option<String>,
+    },
     /// Chansey's Day Care: the eggs the jobs' clients gave, each hatched
     /// once it has waited its days, the one born joining the
     /// recruits; what it did told.
-    DayCare { cursor: ListCursor, said: Option<String> },
+    DayCare {
+        cursor: ListCursor,
+        said: Option<String>,
+    },
+    /// Croagunk's Swap Shop: Exclusive Items swapped for a rarer one.
+    Swap(SwapShop),
+    /// The Link Shop: moves linked, switched, forgotten, remembered.
+    Link(LinkShop),
+    /// Luminous Spring: a member evolved.
+    Spring(Spring),
+    /// The Recycle Shop (Project P), and its prize drawing.
+    Recycle(Recycle),
+    Lottery(Lottery),
+    /// The bag: sorted, an item thrown away.
+    Bag(Bag),
     /// The bed: "Go to sleep?", then "Save your adventure?" (as the
     /// original asks before the night); what was answered once left.
-    Bed { cursor: ListCursor, sleeps: bool, answer: Option<Slept> },
+    Bed {
+        cursor: ListCursor,
+        sleeps: bool,
+        answer: Option<Slept>,
+    },
     /// The world map's ways, by their names; the one chosen once left (from 1; 0: none).
-    Map { ways: Vec<String>, cursor: ListCursor, chosen: usize },
+    Map {
+        ways: Vec<String>,
+        cursor: ListCursor,
+        chosen: usize,
+    },
     /// The game's menu, M or X in a place: the team, the bag, a save, closed;
     /// what it tells shown; a save asked for (the game writes it).
-    Menu { cursor: ListCursor, said: Option<String>, save: bool },
+    Menu {
+        cursor: ListCursor,
+        said: Option<String>,
+        save: bool,
+    },
 }
 
 /// What the bed was told: to sleep, the game saved first or not.
@@ -65,17 +105,28 @@ pub struct Slept {
 impl GameScreen {
     /// The screen of that word (`ways`: the map's), made ready in the film's
     /// game; the boards' jobs in the dungeons of `jobs_in` only, if it says;
+    /// a shop's wares those of `stock` if the game has a list (`shop_stock:`);
     /// none if there is no such screen.
-    pub fn open(word: &str, ways: Vec<String>, playthrough: &mut Playthrough, draw: &mut Draw, jobs_in: Option<&BTreeSet<String>>) -> Option<GameScreen> {
+    pub fn open(
+        word: &str,
+        ways: Vec<String>,
+        playthrough: &mut Playthrough,
+        draw: &mut Draw,
+        jobs_in: Option<&BTreeSet<String>>,
+        stock: Option<&[String]>,
+    ) -> Option<GameScreen> {
         let open = playthrough.open_dungeons(None);
         let for_jobs = playthrough.open_dungeons(jobs_in);
+        let stock: Option<Vec<u16>> = stock.map(|names| names.iter().filter_map(|name| playthrough.item_named(name)).collect());
         let run = playthrough.run_mut()?;
         Some(match word {
             "shop" | "market" => {
                 let menu = if word == "market" { services::KECLEON_WARES } else { services::KECLEON_SHOP };
                 let shop = Service::shop(menu).map(usize::from);
-                if let Some(shop) = shop {
-                    run.restock(shop, open.len(), draw.below(usize::MAX >> 1) as u32);
+                match (shop, &stock) {
+                    (Some(shop), Some(stock)) => run.restock_with(shop, stock),
+                    (Some(shop), None) => run.restock(shop, open.len(), draw.below(usize::MAX >> 1) as u32),
+                    (None, _) => {}
                 }
                 GameScreen::Service { service: Service::open(menu)?, shop }
             }
@@ -91,6 +142,12 @@ impl GameScreen {
             "recruits" => GameScreen::Recruits(Assembly::default()),
             "name" => GameScreen::Naming(Naming::new(run)),
             "daycare" => GameScreen::DayCare { cursor: ListCursor::default(), said: None },
+            "swap" => GameScreen::Swap(SwapShop::default()),
+            "link" => GameScreen::Link(LinkShop::default()),
+            "evolve" => GameScreen::Spring(Spring::default()),
+            "recycle" => GameScreen::Recycle(Recycle::new(Draw(draw.below(usize::MAX >> 1) as u32))),
+            "lottery" => GameScreen::Lottery(Lottery::new(Draw(draw.below(usize::MAX >> 1) as u32))),
+            "bag" => GameScreen::Bag(Bag::default()),
             "appraise" => GameScreen::Appraise { cursor: ListCursor::default(), said: None, draw: Draw(draw.below(usize::MAX >> 1) as u32) },
             "bed" => GameScreen::Bed { cursor: ListCursor::default(), sleeps: false, answer: None },
             "map" => GameScreen::Map { ways, cursor: ListCursor::default(), chosen: 0 },
@@ -137,6 +194,12 @@ impl GameScreen {
                 let (left, (message, options, at)) = assembly.play(pressed, run);
                 (left, Words::of_menu(message, options, at))
             }
+            GameScreen::Swap(shop) => shown(shop.play(pressed, run)),
+            GameScreen::Link(shop) => shown(shop.play(pressed, run)),
+            GameScreen::Spring(spring) => shown(spring.play(pressed, run)),
+            GameScreen::Recycle(shop) => shown(shop.play(pressed, run)),
+            GameScreen::Lottery(drawing) => shown(drawing.play(pressed, run)),
+            GameScreen::Bag(bag) => shown(bag.play(pressed, run, &own)),
             GameScreen::Naming(naming) => {
                 let (left, message) = naming.play(keys, run);
                 (left, Words::of_menu(message, Vec::new(), 0))
@@ -273,7 +336,7 @@ impl GameScreen {
             }
             GameScreen::Menu { cursor, said, save } => {
                 const OPTIONS: [&str; 5] = ["Team", "Bag", "Save", "Job List", "Close"];
-                let (mut left, mut job_list) = (false, false);
+                let (mut left, mut job_list, mut bag) = (false, false, false);
                 if said.is_some() {
                     if matches!(pressed, Some(Input::Confirm | Input::Cancel)) {
                         *said = None;
@@ -281,15 +344,7 @@ impl GameScreen {
                 } else {
                     match cursor.press(pressed, OPTIONS.len()) {
                         Picked::Chosen(0) => *said = Some(team_page(run)),
-                        Picked::Chosen(1) => {
-                            let mut things: Vec<String> = crate::playthrough::bag_of(run).into_iter().map(|(name, count)| format!("{name} x{count}")).collect();
-                            things.extend(own.iter().map(|(name, count)| format!("{name} x{count}")));
-                            let money = run.bag().money;
-                            *said = Some(match things.is_empty() {
-                                true => format!("The bag is empty. {money} Poké."),
-                                false => format!("Bag: {}. {money} Poké.", things.join(", ")),
-                            });
-                        }
+                        Picked::Chosen(1) => bag = true,
                         Picked::Chosen(2) => *save = true,
                         Picked::Chosen(3) => job_list = true,
                         Picked::Chosen(_) | Picked::Left => left = true,
@@ -303,6 +358,11 @@ impl GameScreen {
                 // (The Job List, in place of the menu.)
                 if job_list {
                     *self = GameScreen::JobList(Listing::board(false));
+                }
+                // (The bag, its items each thrown away or not, sorted.)
+                if bag {
+                    *self = GameScreen::Bag(Bag::default());
+                    return self.play(&Keys::default(), playthrough);
                 }
                 (left, words)
             }
@@ -334,6 +394,14 @@ impl GameScreen {
         }
     }
 
+    /// Who evolved at Luminous Spring, once it is left for the light.
+    pub fn evolved(&self) -> Option<Evolved> {
+        match self {
+            GameScreen::Spring(spring) => spring.evolved.clone(),
+            _ => None,
+        }
+    }
+
     /// The way chosen on the map (from 1; 0: none).
     pub fn chosen(&self) -> usize {
         match self {
@@ -341,6 +409,11 @@ impl GameScreen {
             _ => 0,
         }
     }
+}
+
+/// What a shop of `town_shops` shows, as the box shows it.
+fn shown((left, (message, options, at)): (bool, crate::assembly::Shown)) -> (bool, Words) {
+    (left, Words::of_menu(message, options, at))
 }
 
 /// The menu's Team page: the team's name and rank (the points to the next),

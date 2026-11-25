@@ -400,6 +400,19 @@ impl Check<'_> {
         if let Some((place, entrance)) = self.game.home.clone() {
             self.name_place(&place, entrance.as_deref(), self.game_site(home_line), true);
         }
+        // (What the shops sell, by the game's lists: items of the game's only.)
+        for stock in self.game.stock.clone() {
+            let key = match (stock.wares, stock.from) {
+                (false, 1) => "shop_stock".to_string(),
+                (true, 1) => "wares_stock".to_string(),
+                (false, from) => format!("shop_stock_{from}"),
+                (true, from) => format!("wares_stock_{from}"),
+            };
+            let site = self.game_site(head(&key));
+            for item in &stock.items {
+                self.sold(item, &site);
+            }
+        }
         let mut numbers = BTreeSet::new();
         for chapter in &self.game.chapters {
             if !numbers.insert(chapter.number) {
@@ -712,7 +725,7 @@ impl Check<'_> {
                             "no screen",
                             screen,
                             decor::lang::TALKS[1..].iter().copied(),
-                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name",
+                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name|swap|link|evolve|recycle|lottery|bag",
                         ),
                     );
                 }
@@ -743,6 +756,19 @@ impl Check<'_> {
         if !near.is_empty() {
             self.say(site, format!("“{item}” is not an item of the game (it becomes a thing of one's own). Near: {}", near.join(", ")));
         }
+    }
+
+    /// An item a shop's list sells: one of the game's, or the shop cannot.
+    fn sold(&mut self, item: &str, site: &Site) {
+        let Some(known) = &self.known else {
+            return;
+        };
+        if known.items.iter().any(|name| plain(name) == plain(item)) {
+            return;
+        }
+        let near = film::check::closest_of(item, known.items.iter().map(String::as_str));
+        let near = if near.is_empty() { String::new() } else { format!(" Near: {}", near.join(", ")) };
+        self.say(site, format!("“{item}” is not an item of the game: the shop cannot sell it.{near}"));
     }
 
     /// `open <place|dungeon>`: whichever it is.

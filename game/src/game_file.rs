@@ -32,7 +32,7 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
     (
         "shop",
-        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `recruits`: Chimecco Assembly, who goes, each member's tactic, a recruit released; `daycare`: the eggs hatched; `bed`: “Go to sleep?”, then “Save your adventure?”, and `sleep`; `name`: the team's name typed)",
+        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name|swap|link|evolve|recycle|lottery|bag>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `recruits`: Chimecco Assembly, who goes, each member's tactic, a recruit released; `daycare`: the eggs hatched; `bed`: “Go to sleep?”, then “Save your adventure?”, and `sleep`; `name`: the team's name typed; `swap`: Croagunk's Swap Shop; `link`: the Link Shop; `evolve`: Luminous Spring; `recycle`: the Recycle Shop, Project P; `lottery`: its prize drawing; `bag`: the bag sorted, an item thrown away)",
     ),
     ("name_team", "name_team: the team's name typed (as `shop name`), shown in `{team}`; Poképals till then"),
     ("map", "map [dungeons]: the world map, the places and dungeons opened (`map dungeons`: the dungeons only); the one chosen is gone to"),
@@ -140,9 +140,37 @@ pub struct GameFile {
     /// `autosave: yes`: the game is saved each time the team is back from
     /// a dungeon, once what its return plays has played.
     pub autosave: bool,
+    /// What the shops sell, in place of the original's lists: each
+    /// `shop_stock:` (the Kecleon Shop) or `wares_stock:` (the Kecleon
+    /// Wares), `shop_stock_3:` from chapter 3 on.
+    pub stock: Vec<Stock>,
     pub chapters: Vec<Chapter>,
     /// What does not read, a line each (`line n: …`).
     pub problems: Vec<Diagnostic>,
+}
+
+/// A list of what a shop sells (`shop_stock: Oran Berry, Apple`).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Stock {
+    /// The Kecleon Wares' (else the Kecleon Shop's).
+    pub wares: bool,
+    /// From that chapter on (1: from the start).
+    pub from: u16,
+    /// The items, by their names, each sold once a day.
+    pub items: Vec<String>,
+}
+
+/// A head's key of a shop's list: whether it is the wares', from which chapter.
+fn stock_key(key: &str) -> Option<(bool, u16)> {
+    let (wares, rest) = match key {
+        _ if key.starts_with("shop_stock") => (false, &key["shop_stock".len()..]),
+        _ if key.starts_with("wares_stock") => (true, &key["wares_stock".len()..]),
+        _ => return None,
+    };
+    match rest {
+        "" => Some((wares, 1)),
+        rest => rest.strip_prefix('_').and_then(|from| from.parse().ok()).map(|from| (wares, from)),
+    }
 }
 
 /// A `key: value` of the head, as the language reads it (a said line).
@@ -204,6 +232,11 @@ impl GameFile {
                     "author" => game.author = value,
                     "team" => game.team = value.split_whitespace().map(str::to_string).collect(),
                     "home" => game.home = place_said(&value),
+                    key if stock_key(key).is_some() => {
+                        let (wares, from) = stock_key(key).expect("a shop's list");
+                        let items = value.split(',').map(str::trim).filter(|item| !item.is_empty()).map(str::to_string).collect();
+                        game.stock.push(Stock { wares, from, items });
+                    }
                     "guild_cut" | "autosave" => match value.as_str() {
                         "yes" | "no" if key == "guild_cut" => game.guild_cut = value == "yes",
                         "yes" | "no" => game.autosave = value == "yes",
@@ -211,7 +244,7 @@ impl GameFile {
                     },
                     _ => game.problems.push(Diagnostic::at(
                         line_of(text, stmt.span.start),
-                        format!("“{key}:” is not a line of a game's head (title, author, team, home, guild_cut, autosave)"),
+                        format!("“{key}:” is not a line of a game's head (title, author, team, home, guild_cut, autosave, shop_stock, wares_stock)"),
                     )),
                 }
                 continue;
@@ -240,7 +273,7 @@ impl GameFile {
                 }
                 _ => game.problems.push(Diagnostic::at(
                     line_of(text, stmt.span.start),
-                    "before the chapters, only the head (title:, author:, team:, home:, guild_cut:, autosave:); then “chapter 1” … “end”",
+                    "before the chapters, only the head (title:, author:, team:, home:, guild_cut:, autosave:, shop_stock:, wares_stock:); then “chapter 1” … “end”",
                 )),
             }
         }
@@ -248,6 +281,12 @@ impl GameFile {
             game.problems.push(Diagnostic::said("a game has chapters, not scenes: “chapter 1” … “end”"));
         }
         game
+    }
+
+    /// What a shop sells in that chapter, if the game says (the list of the
+    /// latest chapter reached); else the original's lists.
+    pub fn stock_for(&self, wares: bool, chapter: u16) -> Option<&Stock> {
+        self.stock.iter().filter(|stock| stock.wares == wares && stock.from <= chapter.max(1)).max_by_key(|stock| stock.from)
     }
 
     /// The chapter of that number.
@@ -645,6 +684,21 @@ mod tests {
         assert!(matches!(rules[3].actions.as_slice(), [Action::Sleep { save: false }]), "{:?}", rules[3].actions);
         assert!(game.names().is_empty(), "day and evening are the game's own: {:?}", game.names());
         assert!(!GameFile::read("title: X\nautosave: often\n").problems.is_empty());
+    }
+
+    #[test]
+    fn a_game_says_what_its_shops_sell_chapter_by_chapter() {
+        let game = GameFile::read(
+            "title: X\nshop_stock: Oran Berry, Apple\nshop_stock_3: Max Elixir, Reviver Seed\nwares_stock: Blast Seed\nchapter 1\n  if project_p >= 10\n    shop recycle\n  end\nend\n",
+        );
+        assert!(game.problems.is_empty(), "{:?}", game.problems);
+        let items = |wares, chapter| game.stock_for(wares, chapter).map(|stock| stock.items.clone());
+        assert_eq!(items(false, 1), Some(vec!["Oran Berry".to_string(), "Apple".to_string()]));
+        assert_eq!(items(false, 4), Some(vec!["Max Elixir".to_string(), "Reviver Seed".to_string()]));
+        assert_eq!(items(true, 9), Some(vec!["Blast Seed".to_string()]));
+        assert!(GameFile::read("title: X\n").stock_for(false, 1).is_none(), "the original's lists");
+        assert!(game.names().is_empty(), "project_p is the game's own: {:?}", game.names());
+        assert!(!GameFile::read("title: X\nshop_stock_x: Apple\n").problems.is_empty());
     }
 
     #[test]

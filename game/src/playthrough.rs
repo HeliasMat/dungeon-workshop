@@ -157,6 +157,12 @@ impl Playthrough {
 
     /// So many of a thing given (or taken, below 0), by its name: an item of
     /// the game into the bag, else a thing of one's own.
+    /// The item of the rules of that name (spaces and case aside), if one is.
+    pub fn item_named(&self, name: &str) -> Option<u16> {
+        let items = &self.run.as_ref()?.book().tables.items;
+        items.iter().position(|item| !item.is_empty() && plain(item) == plain(name)).map(|item| item as u16)
+    }
+
     pub fn give(&mut self, name: &str, count: i32) {
         let Some(run) = self.run.as_mut() else {
             return;

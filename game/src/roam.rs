@@ -66,6 +66,51 @@ pub fn standing(decor: &Decor, arrival: &Arrival) -> ((i32, i32), (i32, i32), &'
     (step(28.0), step(8.0), facing(toward))
 }
 
+/// A species' word as the films call it (`treecko`): the one written if it
+/// is that species, else the first of the tables'.
+pub fn species_word(tables: &film::tables::Tables, species: u16, written: Option<&String>) -> Option<String> {
+    let number = |word: &str| tables.monsters.get(word).and_then(|(number, _)| number.parse::<u16>().ok());
+    if let Some(written) = written.filter(|written| number(written) == Some(species)) {
+        return Some(written.clone());
+    }
+    tables.monsters.iter().find(|(_, (number, _))| number.parse::<u16>().ok() == Some(species)).map(|(word, _)| word.clone())
+}
+
+/// The scene of a member evolving in the place (Luminous Spring): who
+/// lives there and the team put as they stand (a recruit, `beside`, by the
+/// hero), then `from evolve into`, the films' evolution and its sentence.
+pub fn evolution_text(place: &str, decor: &Decor, making: &Making, from: &str, into: &str, beside: bool) -> String {
+    let hero = making.team.first().cloned().unwrap_or_else(|| from.to_string());
+    let partner = making.team.get(1).cloned().filter(|partner| *partner != hero);
+    let recruit = beside.then(|| from.to_string()).filter(|recruit| *recruit != hero && Some(recruit) != partner.as_ref());
+    let team: Vec<String> = std::iter::once(hero.clone()).chain(partner.clone()).chain(recruit.clone()).collect();
+    let mut residents: Vec<&decor::lang::Resident> = Vec::new();
+    for resident in &decor.residents {
+        let taken = residents.iter().any(|one| one.name == resident.name) || team.contains(&resident.name);
+        if !taken && (making.holds)(resident.condition.as_deref()) {
+            residents.push(resident);
+        }
+    }
+    let names: Vec<String> = team.iter().cloned().chain(residents.iter().map(|one| one.name.clone())).collect();
+    let mut text = format!("transition: cut\nscene: {place} {}\n", names.join(" "));
+    if making.evening {
+        text.push_str("daytime evening 1f\n");
+    }
+    for resident in &residents {
+        text.push_str(&format!("{} put {} {} facing {}\n", resident.name, resident.x, resident.y, resident.facing));
+    }
+    let (at, behind, _) = standing(decor, &making.arrival);
+    text.push_str(&format!("{hero} put {} {} facing down\n", at.0, at.1));
+    if let Some(partner) = &partner {
+        text.push_str(&format!("{partner} put {} {} facing down\n", behind.0, behind.1));
+    }
+    if let Some(recruit) = &recruit {
+        text.push_str(&format!("{recruit} put {} {} facing left\n", at.0 + 24, at.1));
+    }
+    text.push_str(&format!("wait 0.4s\n{from} evolve {into}\n"));
+    text
+}
+
 /// How much larger than written an exit's rectangle is, on each side.
 const EXIT_MARGIN: i64 = 8;
 

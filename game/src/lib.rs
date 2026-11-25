@@ -19,7 +19,8 @@
 //!   money), kept from one scene, one dungeon, one save to the next;
 //! - `dive`: a dungeon of one's own gone through (`.dungeon`, `.fight`);
 //! - `game_screens`: the game's screens (shops, bank, storage, jobs,
-//!   recruits, the world map), over the scene;
+//!   recruits, the world map), over the scene; the town's other shops in
+//!   `town_shops` (swap, link, evolve, recycle, lottery, the bag);
 //! - `dungeon_check`, `project_check`: what is wrong in a dungeon, in a whole game;
 //! - `pack`: a game shared as a `.dwpack`, its manifest in `manifest`;
 //! - `book`: the rules' book, read from the data;
@@ -50,6 +51,7 @@ pub mod story;
 mod testing;
 #[cfg(test)]
 mod tests;
+pub mod town_shops;
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -68,6 +70,7 @@ use crate::playthrough::Playthrough;
 use game_file::{Action, GameFile, Rule, When};
 use roam::Arrival;
 use rules::jobs::Job;
+use rules::run::town::Whom;
 use story::Story;
 
 pub use assets::project::Project;
@@ -407,6 +410,10 @@ impl Game {
             match left {
                 true => {
                     self.screen_left(screen.chosen());
+                    // (Evolved at the spring: its light, in the place.)
+                    if let Some(evolved) = screen.evolved() {
+                        self.evolution_scene(&evolved);
+                    }
                     // (The bed told to: the night.)
                     if let Some(slept) = screen.slept() {
                         self.push(vec![Action::Sleep { save: slept.save }]);
@@ -780,7 +787,8 @@ impl Game {
         let rank = run.book.tables.jobs.rank_number(progress.rank);
         let (day, evening) = run.day();
         let (money, recruits, team_size) = (run.bag().money, progress.recruits.len() as u32, run.team_size() as u32);
-        self.story.team = story::TeamNumbers { rank, money, recruits, team_size, day, evening };
+        let project_p = progress.recycled.max(0) as u32;
+        self.story.team = story::TeamNumbers { rank, money, recruits, team_size, day, evening, project_p };
     }
 
     /// The team goes to bed: the night's rules (`on night`: the guild's
@@ -840,11 +848,21 @@ impl Game {
         let graduated = self.story.flags.contains(game_file::GRADUATED);
         let mut opened = match self.nobody {
             true => None,
-            false => self.playthrough_mut().and_then(|playthrough| GameScreen::open(word, ways, playthrough, &mut draw, jobs_in.as_ref())),
+            false => {
+                // (The game's own list of what that shop sells now, if it has one.)
+                let chapter = self.story.chapter;
+                let stock = self.project.as_ref().and_then(|project| project.stock_for(word == "market", chapter)).map(|stock| stock.items.clone());
+                let playthrough = self.playthrough_mut();
+                playthrough.and_then(|playthrough| GameScreen::open(word, ways, playthrough, &mut draw, jobs_in.as_ref(), stock.as_deref()))
+            }
         };
         // (Chimecco lets the partner stay home once the team has graduated, as the original once its story is over.)
         if let Some(GameScreen::Recruits(assembly)) = &mut opened {
             assembly.free = graduated;
+        }
+        // (The leader and its partner evolve at the spring once the team has graduated, as the original once its story is over.)
+        if let Some(GameScreen::Spring(spring)) = &mut opened {
+            spring.free = graduated;
         }
         self.draw = draw;
         match opened {
@@ -1312,7 +1330,7 @@ impl Game {
 
     /// The text of the place's scene, as the story has it now.
     fn place_text(&self, word: &str, arrival: &Arrival, back: bool) -> Result<String, String> {
-        let project = self.project.as_ref().ok_or("no game")?;
+        self.project.as_ref().ok_or("no game")?;
         let decor = roam::decor_of(&self.folders.decor(word))?;
         let story = &self.story;
         let talking = |who: &str| self.talks_to_the_game(who);
@@ -1320,8 +1338,89 @@ impl Game {
             |test: Option<&str>| test.is_none_or(|test| game_file::test_of(test).is_ok_and(|test| game_file::value(&test, &|name| story.value(name)) != 0.0));
         let told = self.place.as_ref().map(|place| place.told.clone()).unwrap_or_default();
         let evening = story.team.evening;
-        let making = roam::Making { team: &project.team, arrival: arrival.clone(), talking: &talking, holds: &holds, told: &told, cut: back, evening };
+        let team = self.team_words();
+        let making = roam::Making { team: &team, arrival: arrival.clone(), talking: &talking, holds: &holds, told: &told, cut: back, evening };
         Ok(roam::scene_text(word, &decor, &making))
+    }
+
+    /// The hero and the partner as the places show them: the species they
+    /// are now (evolved at the spring), by their words; the game's `team:` else.
+    fn team_words(&self) -> Vec<String> {
+        let team = self.project.as_ref().map(|project| project.team.clone()).unwrap_or_default();
+        let Some(run) = self.playthrough.as_ref().and_then(Playthrough::run) else {
+            return team;
+        };
+        let (hero, partner) = run.team().species;
+        let tables = self.tables();
+        let word = |species: u16, written: Option<&String>| roam::species_word(&tables, species, written).or_else(|| written.cloned());
+        let mut words: Vec<String> = [word(hero, team.first())].into_iter().flatten().collect();
+        if team.len() > 1
+            && let Some(partner) = word(partner, team.get(1))
+        {
+            words.push(partner);
+        }
+        if words.is_empty() { team } else { words }
+    }
+
+    /// A member evolved at the spring: the films' evolution (`who evolve
+    /// into`: slowed, white, growing and shrinking, a flash, the game's
+    /// sentence) played in the place where the team stands, a recruit
+    /// beside the hero; then the place again, the team as it is now.
+    fn evolution_scene(&mut self, evolved: &town_shops::Evolved) {
+        let Some(word) = self.place.as_ref().map(|place| place.word.clone()) else {
+            return;
+        };
+        let tables = self.tables();
+        let (Some(from), Some(into)) = (roam::species_word(&tables, evolved.from, None), roam::species_word(&tables, evolved.into, None)) else {
+            return;
+        };
+        let Ok(decor) = roam::decor_of(&self.folders.decor(&word)) else {
+            return;
+        };
+        let place = self.place.as_ref().expect("a place");
+        let at = place.film.as_ref().and_then(Film::walked_at).map(|at| (at.x as i32, at.y as i32)).or(place.at);
+        let arrival = at.map_or(Arrival::Entrance(self.story.entrance.clone()), |(x, y)| Arrival::At(x, y));
+        // (The team as it was: the one evolving shows its old self first.)
+        let mut team = self.team_words();
+        let slot = match evolved.whom {
+            Whom::Leader => Some(0),
+            Whom::Partner => Some(1),
+            Whom::Recruit(_) => None,
+        };
+        if let Some(member) = slot.and_then(|slot| team.get_mut(slot)) {
+            *member = from.clone();
+        }
+        let story = &self.story;
+        let holds =
+            |test: Option<&str>| test.is_none_or(|test| game_file::test_of(test).is_ok_and(|test| game_file::value(&test, &|name| story.value(name)) != 0.0));
+        let making = roam::Making { team: &team, arrival, talking: &|_| false, holds: &holds, told: &[], cut: true, evening: story.team.evening };
+        let text = roam::evolution_text(&word, &decor, &making, &from, &into, slot.is_none());
+        self.log.push(format!("evolved {from} into {into}"));
+        let Some(art) = self.take_art() else {
+            return;
+        };
+        let written = film::compile_place_with(&text, tables);
+        if let Some(problem) = written.problems.iter().find(|problem| !problem.is_remark()) {
+            self.said = Some(format!("the evolution's scene: {problem}\n{text}"));
+            self.art = Some(art);
+            return;
+        }
+        match Film::of_written(&written, art) {
+            Ok(mut film) => {
+                film.hosted = true;
+                film.curtain = false;
+                (film.auto, film.debug) = (self.auto, self.debug.clone());
+                film.audio = self.take_audio();
+                told(&mut film, self.playthrough.as_ref());
+                self.words_gone();
+                self.cutscene = Some((film, "evolution".to_string()));
+            }
+            Err(failed) => {
+                let (art, why) = *failed;
+                self.art = Some(art);
+                self.said = Some(why);
+            }
+        }
     }
 
     /// Whether talking to that one tells the game (a rule, a service, a film).
