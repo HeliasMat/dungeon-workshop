@@ -309,6 +309,7 @@ impl Run {
         self.respawn_enemies();
         self.job_targets();
         self.resolve_deaths();
+        self.evolve_foes();
         self.descend_stairs();
         self.take_hidden_stairs();
         self.lay_traps();

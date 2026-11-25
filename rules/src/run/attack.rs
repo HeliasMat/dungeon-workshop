@@ -454,7 +454,8 @@ impl Arena<'_> {
             // (Who brought it down: what it drops; a foe that did may evolve.)
             if standing && !victim.alive() {
                 victim.felled_by = Some(user.id);
-                user.evolves |= user.side == super::Side::Foe && self.dungeon.rules.more.enemies_evolve;
+                let rules = &self.dungeon.rules;
+                user.evolves |= user.side == super::Side::Foe && (rules.more.enemies_evolve || rules.options.enemies_evolve);
             }
             watch_user.show(user, self.sights);
             watch_victim.show(victim, self.sights);

@@ -4,7 +4,7 @@
 //! settings file with `rules=`; both are merged as a dungeon is entered.
 //!
 //! ```text
-//! rules: fairy, team_control, push_allies, exp_share, lasting_weather, disarmed_houses
+//! rules: fairy, team_control, push_allies, exp_share, lasting_weather, disarmed_houses, enemies_evolve
 //! ```
 
 /// The options of a dungeon's rules (the words of the `rules:` line).
@@ -26,16 +26,21 @@ pub struct RuleOptions {
     /// `disarmed_houses`: a floor made of one single room is no Monster
     /// House.
     pub disarmed_houses: bool,
+    /// `enemies_evolve`: a foe that defeats someone evolves, as the game's
+    /// flag for it has it (`Restrictions::enemies_evolve`, which none of
+    /// its dungeons sets).
+    pub enemies_evolve: bool,
 }
 
 /// Each option: its word, and what the Workshop says of it.
-pub const WORDS: [(&str, &str); 6] = [
+pub const WORDS: [(&str, &str); 7] = [
     ("fairy", "Fairy type: an 18th type, for its Pokémon and its moves"),
     ("team_control", "control of the whole team: Tab changes the Pokémon you lead"),
     ("push_allies", "push your allies: walking into an ally pushes it one tile on"),
     ("exp_share", "Exp. share: those left at the base gain some too"),
     ("lasting_weather", "the weather does not stop: a move's weather stays"),
     ("disarmed_houses", "no Monster House on a floor of one single room"),
+    ("enemies_evolve", "foes evolve: one that defeats someone evolves"),
 ];
 
 impl RuleOptions {
@@ -48,6 +53,7 @@ impl RuleOptions {
             "expshare" | "exp_share" => &mut self.exp_share,
             "lastingweather" | "lasting_weather" => &mut self.lasting_weather,
             "disarmedhouses" | "disarmed_houses" => &mut self.disarmed_houses,
+            "enemiesevolve" | "enemies_evolve" => &mut self.enemies_evolve,
             _ => return None,
         })
     }
@@ -81,6 +87,7 @@ impl RuleOptions {
             exp_share: self.exp_share || other.exp_share,
             lasting_weather: self.lasting_weather || other.lasting_weather,
             disarmed_houses: self.disarmed_houses || other.disarmed_houses,
+            enemies_evolve: self.enemies_evolve || other.enemies_evolve,
         }
     }
 }

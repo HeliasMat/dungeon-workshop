@@ -416,6 +416,40 @@ impl Run {
         }
     }
 
+    /// The foes that defeated someone evolve (`Monster::evolves`), as the
+    /// game's `EnemyEvolution`: into one of what their species becomes that
+    /// the floor has, as the floor has it, at their own level.
+    pub(crate) fn evolve_foes(&mut self) {
+        let book = self.book.clone();
+        let Some(dungeon) = self.dungeon.as_mut() else {
+            return;
+        };
+        let on_floor = dungeon.id.map_or(Vec::new(), |id| book.floor_species(id, dungeon.floor_number));
+        for at in 0..dungeon.monsters.len() {
+            let foe = &mut dungeon.monsters[at];
+            let ready = std::mem::take(&mut foe.evolves) && foe.alive() && foe.side == Side::Foe;
+            let Some(species) = foe.species.filter(|_| ready) else {
+                continue;
+            };
+            let Some(into) = evolution_of(&mut dungeon.rng, &book.evolutions(species), &on_floor) else {
+                continue;
+            };
+            let Some(enemy) = dungeon.spec(&book).and_then(|floor| floor.enemies.iter().find(|enemy| enemy.species == into)) else {
+                continue;
+            };
+            let growth = book.species(into).map_or(&[][..], |species| &species.growth[..]);
+            let foe = &mut dungeon.monsters[at];
+            let (before, hurt) = (foe.name.clone(), foe.stats.max_hp - foe.stats.hp);
+            let stats = crate::own::at_level(enemy.stats, growth, foe.stats.level);
+            foe.stats = crate::dungeon::Stats { hp: (stats.max_hp - hurt).max(1), held: foe.stats.held, iq: foe.stats.iq, ..stats };
+            (foe.species, foe.name, foe.exp_value) = (Some(into), book.species_name(into), enemy.exp);
+            if let Some(recruitable) = foe.recruitable.as_mut() {
+                (recruitable.species, recruitable.rate) = (into, enemy.recruit_rate);
+            }
+            self.log.push(format!("{before} evolved into {}!", foe.name));
+        }
+    }
+
     /// An enemy the team brought down is worth experience to each member.
     fn foe_falls(&mut self, foe: MonsterId) {
         let book = self.book.clone();
@@ -822,5 +856,32 @@ impl Run {
         moves[at].linked = linking;
         let what = if linking { "is linked to the one before" } else { "is unlinked" };
         self.log.push(format!("Move {} {what}.", at + 1));
+    }
+}
+
+/// What a foe evolves into, as the game picks it: from one of its
+/// evolutions drawn at random, the first on, in turn, that the floor has.
+pub(crate) fn evolution_of(rng: &mut crate::dungeon::DungeonRng, evolutions: &[u16], on_floor: &[u16]) -> Option<u16> {
+    if evolutions.is_empty() {
+        return None;
+    }
+    let first = rng.rand_int(evolutions.len() as i32) as usize;
+    (0..evolutions.len()).map(|step| evolutions[(first + step) % evolutions.len()]).find(|into| on_floor.contains(into))
+}
+
+#[cfg(test)]
+mod evolution_tests {
+    use super::*;
+
+    #[test]
+    fn a_foe_evolves_into_one_of_its_evolutions_the_floor_has() {
+        let mut rng = crate::dungeon::DungeonRng::new(5);
+        // (Eevee: of its evolutions, only two live on the floor.)
+        let evolutions = [134, 135, 136, 196, 197];
+        let picked: Vec<u16> = (0..200).filter_map(|_| evolution_of(&mut rng, &evolutions, &[136, 197, 25])).collect();
+        assert_eq!(picked.len(), 200);
+        assert!(picked.contains(&136) && picked.contains(&197) && picked.iter().all(|into| [136, 197].contains(into)));
+        assert_eq!(evolution_of(&mut rng, &evolutions, &[25]), None);
+        assert_eq!(evolution_of(&mut rng, &[], &[25]), None);
     }
 }
