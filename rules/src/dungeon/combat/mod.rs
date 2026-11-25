@@ -1,8 +1,8 @@
 //! Monster stats, damage calculation and enemy decision making.
 //!
-//! The rules are this project's own, written to play like the mystery
-//! dungeon games without copying them: see [`calc_damage_with`] for the
-//! damage, [`move_hits`] for accuracy, [`targets_in_range`] for reach.
+//! The damage and accuracy are the game's formulas and tables (see
+//! [`calc_damage_with`], [`move_hits`]); the reach of moves and the way
+//! foes walk are this project's ([`targets_in_range`], [`enemy_action`]).
 
 mod moves;
 pub use moves::*;
@@ -47,8 +47,8 @@ pub struct Stats {
     pub iq: i32,
     pub iq_group: u8,
     pub iq_skills: u128,
-    /// A female. Saved with the monster; the rules of blows and aim treat
-    /// both genders alike.
+    /// A female. Saved with the monster; females aim and dodge by the
+    /// game's female tables, and land critical hits a little less often.
     #[serde(default)]
     pub female: bool,
 }

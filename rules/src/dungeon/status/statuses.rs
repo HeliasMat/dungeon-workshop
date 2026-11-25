@@ -368,6 +368,7 @@ impl Statuses {
             focused: self.focused,
             lucky,
             reaches: (self.exclusive.has(effect::SCRAPPY), self.exclusive.has(effect::MIRACLE_EYE)),
+            cheered: false,
         }
     }
 

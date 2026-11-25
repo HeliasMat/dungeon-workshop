@@ -219,11 +219,25 @@ pub fn resolve(user: &mut Party, victim: &mut Party, attack: &Attack, tuning: Tu
 }
 
 /// What a blow takes, about: rolled apart from any chance of a fight or a
-/// floor, with nothing touched. For who weighs its moves.
-pub fn foreseen(constants: &Constants, chart: Option<&TypeChart>, user: &Fighter, victim: &Fighter, slot: &MoveSlot, weather: u8) -> i32 {
+/// floor, with nothing touched, by the formula a blow lands with (the
+/// abilities that answer the sides counted). For who weighs its moves.
+pub fn foreseen(constants: &Constants, chart: Option<&TypeChart>, user: &Fighter, victim: &Fighter, slot: &MoveSlot, weather: u8, sides: Sides) -> i32 {
+    let (mut user, mut victim) = (*user, *victim);
+    let special = slot.category != 0;
+    readied(&mut user, &mut victim, special, weather, sides, false);
     let mut rng = DungeonRng::new(1);
-    let mut roll = || calc_damage_with(&mut rng, constants, chart, user, victim, slot.type_id, slot.power, 0, FIXED_ONE, slot.category == 1, weather).amount;
+    let mut roll = || calc_damage_with(&mut rng, constants, chart, &user, &victim, slot.type_id, slot.power, 0, FIXED_ONE, special, weather).amount;
     (0..FORESEEN_ROLLS).map(|_| roll()).sum::<i32>() / FORESEEN_ROLLS as i32
+}
+
+/// The two as a blow finds them: what the abilities that answer the sides
+/// make of them (Rivalry, Flower Gift, Plus and Minus), then a stage of
+/// attack and special attack for one cheered on by a teammate next to it,
+/// and another for one `swinging` after a miss.
+fn readied(user: &mut Fighter, victim: &mut Fighter, special: bool, weather: u8, sides: Sides, swinging: bool) {
+    crate::dungeon::ability::cheer(user, victim, special, weather, sides.allies, sides.genders);
+    let boost = (sides.allies.0 & CHEERED != 0) as i32 + swinging as i32;
+    (user.attack_stage, user.sp_attack_stage) = (user.attack_stage + boost, user.sp_attack_stage + boost);
 }
 
 /// An attack being played out.

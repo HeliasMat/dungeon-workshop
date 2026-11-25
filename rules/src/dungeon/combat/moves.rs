@@ -188,30 +188,39 @@ fn first_along(floor: &Floor, from: Pos, facing: (i32, i32), length: i32, enemie
         .find(|tile| enemies.contains(tile))
 }
 
-/// How much a stage (0 to 20, 10 neutral) of accuracy or evasion weighs: a
-/// quarter more for each stage up, as much less for each stage down.
-fn aim_factor(stage: i32) -> f64 {
-    let from_neutral = (stage.clamp(0, STAGE_COUNT as i32 - 1) - 10) as f64;
-    if from_neutral >= 0.0 { (4.0 + from_neutral) / 4.0 } else { 4.0 / (4.0 - from_neutral) }
-}
-
-/// One accuracy check: an accuracy above 100 never misses; otherwise the
-/// chance is the accuracy, raised by the attacker's accuracy stage and
-/// lowered by the target's evasion stage. The roll is always drawn, so a
-/// sure hit does not change what the dice say next.
-pub(crate) fn move_hit_check(rng: &mut DungeonRng, accuracy: i32, (accuracy_stage, evasion_stage): (i32, i32)) -> bool {
+/// One accuracy check, as the game's: an accuracy above 100 never misses;
+/// otherwise the chance is the accuracy, times the multiplier of the
+/// attacker's accuracy stage, times that of the target's evasion stage,
+/// from the game's tables (its female ones for a female, on either side).
+/// The roll is always drawn, so a sure hit does not change what the dice
+/// say next.
+pub(crate) fn move_hit_check(
+    rng: &mut DungeonRng,
+    constants: &Constants,
+    accuracy: i32,
+    (accuracy_stage, evasion_stage): (i32, i32),
+    females: (bool, bool),
+) -> bool {
     let roll = rng.rand_int(100);
     if accuracy > 100 {
         return true;
     }
-    let chance = accuracy as f64 * aim_factor(accuracy_stage) / aim_factor(evasion_stage);
-    (roll as f64) < chance
+    let aiming = if females.0 { &constants.female_accuracy_stages } else { &constants.accuracy_stages };
+    let dodging = if females.1 { &constants.female_evasion_stages } else { &constants.evasion_stages };
+    let aim = stage_multiplier(aiming, accuracy_stage).clamp(0, 100 * FIXED_ONE);
+    // (Without the game's table, evasion weighs as accuracy the other way.)
+    let dodge = match dodging[STAGE_COUNT / 2] {
+        0 => stage_multiplier(dodging, STAGE_COUNT as i32 - 1 - evasion_stage),
+        _ => stage_multiplier(dodging, evasion_stage),
+    };
+    let chance = accuracy * aim / FIXED_ONE * dodge.clamp(0, 100 * FIXED_ONE) / FIXED_ONE;
+    roll < chance
 }
 
 /// Whether a move lands on a target: both of its accuracy values must
 /// pass. Thunder never misses in the rain and aims worse in the sun;
-/// Blizzard never misses in hail. (Monsters of either gender aim alike.)
-pub fn move_hits(rng: &mut DungeonRng, _constants: &Constants, slot: &MoveSlot, stages: (i32, i32), weather: u8, _females: (bool, bool)) -> bool {
+/// Blizzard never misses in hail. `females`: the attacker, the target.
+pub fn move_hits(rng: &mut DungeonRng, constants: &Constants, slot: &MoveSlot, stages: (i32, i32), weather: u8, females: (bool, bool)) -> bool {
     const THUNDER: u16 = 64;
     const BLIZZARD: u16 = 270;
     let sure = matches!((slot.id, weather), (THUNDER, weather::RAIN) | (BLIZZARD, weather::HAIL));
@@ -219,7 +228,7 @@ pub fn move_hits(rng: &mut DungeonRng, _constants: &Constants, slot: &MoveSlot, 
         (THUNDER, weather::SUNNY) => (stages.0 - 2, stages.1),
         _ => stages,
     };
-    let first = move_hit_check(rng, slot.accuracy, stages);
-    let second = move_hit_check(rng, slot.accuracy2, stages);
+    let first = move_hit_check(rng, constants, slot.accuracy, stages, females);
+    let second = move_hit_check(rng, constants, slot.accuracy2, stages, females);
     sure || (first && second)
 }

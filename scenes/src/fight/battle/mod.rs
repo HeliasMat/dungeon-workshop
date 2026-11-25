@@ -368,7 +368,7 @@ impl Battle {
         if !known.strikes() {
             return 0;
         }
-        attack::foreseen(&self.rules.constants, self.rules.chart.as_ref(), &me.fighter(), &other.fighter(), &struck_with(known), self.sky)
+        attack::foreseen(&self.rules.constants, self.rules.chart.as_ref(), &me.fighter(), &other.fighter(), &struck_with(known), self.sky, Default::default())
     }
 
     /// What gives a fight one plays a fair chance, whoever is in it: both

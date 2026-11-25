@@ -1,9 +1,17 @@
-//! The damage formula: this project's own, in the spirit of the games.
+//! The damage formula: the game's own, as pmdsky-debug documents its
+//! `CalcDamage` and the decompilation shows it, in floating point where the
+//! game counts in fixed point (the same to a unit or so).
 //!
-//! A blow's base damage grows with the attacker's level and with its
-//! attack plus the move's power, against the target's defense. Then multipliers
-//! pile up: type matchups, the same-type bonus, abilities, the weather,
-//! screens, a critical hit, and a random spread of 85 % to 100 %.
+//! The attack A and the defense D are the stats through their stages (the
+//! game's tables), multipliers, held items and abilities; P is the move's
+//! power through the same attack stage; L the attacker's level. The base is
+//!
+//! `153/256 (A + P) - D/2 + 50 ln(10 [L + (A - D)/8 + 50]) - 311`,
+//!
+//! divided by 85/64 for those outside the team, kept between 1 and 999.
+//! Then multipliers pile up: type matchups, the same-type bonus, abilities,
+//! the weather, a burn, screens, a critical hit, the move's own, and a
+//! random spread of 7/8 to 9/8.
 
 use super::*;
 use crate::dungeon::ability::{self, has, shields};
@@ -29,7 +37,7 @@ pub struct Fighter {
     pub halves_special: bool,
     /// Attackers outside the team deal less damage.
     pub team_member: bool,
-    /// Burned attackers deal less physical damage.
+    /// Burned attackers deal less damage.
     pub burned: bool,
     /// It has a status problem: Guts and Marvel Scale come into play.
     pub ailing: bool,
@@ -40,6 +48,9 @@ pub struct Fighter {
     /// Its Normal and Fighting moves reach Ghosts, its Psychic moves
     /// Darks (exclusive items).
     pub reaches: (bool, bool),
+    /// Plus beside a Minus, or Minus beside a Plus: its special attack is
+    /// worth half again (see `ability::cheer`).
+    pub cheered: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,42 +61,58 @@ pub struct Damage {
     pub critical: bool,
 }
 
-/// The move's power adds to the attack (powers run from a few units to a
-/// few tens, so the attacker's own strength matters as much); this brings
-/// the result to the scale of HP.
-const BLOW_SCALE: f64 = 1.6;
-/// Every blow does at least this much on top of the formula.
-const FLAT_DAMAGE: f64 = 2.0;
-/// The most a single blow deals.
+/// The game's damage formula constants (pmdsky-debug's `DAMAGE_FORMULA_*`).
+const AT_PREFACTOR: f64 = 153.0 / 256.0;
+const DEF_PREFACTOR: f64 = -0.5;
+const FLV_DEFICIT_DIVISOR: f64 = 8.0;
+const FLV_SHIFT: f64 = 50.0;
+const LN_ARG_PREFACTOR: f64 = 10.0;
+const LN_PREFACTOR: f64 = 50.0;
+const CONSTANT_SHIFT: f64 = -311.0;
+/// What the base of a blow from outside the team is divided by.
+const NON_TEAM_DIVISOR: f64 = 85.0 / 64.0;
+/// The base of a blow, and a blow, at most; the attack, at most.
 const MAX_DAMAGE: f64 = 999.0;
-/// What foes of the team deal, as a share of what a team member would.
-const OUTSIDER_SHARE: f64 = 0.8;
+const MAX_ATTACK: i32 = 999;
+/// The natural logarithm's domain in the game's table.
+const LN_DOMAIN: (i32, i32) = (1, 0x7FF);
 
 const SAME_TYPE_BONUS: f64 = 1.5;
 const ADAPTABILITY_BONUS: f64 = 2.0;
 const CRITICAL_BONUS: f64 = 1.5;
 const SNIPER_BONUS: f64 = 2.0;
-/// Reflect, Light Screen, Thick Fat, Heatproof and a burn each halve.
+/// Reflect, Light Screen, Thick Fat, Heatproof, the weather against a
+/// type, Fog on Electric moves each halve.
 const HALVED: f64 = 0.5;
-/// Sun on Fire, rain on Water; the other way round they are halved.
+/// A burn, on any blow (0xCC in 8-bit fixed point).
+const BURNED: f64 = 204.0 / 256.0;
+/// Sun on Fire, rain on Water.
 const WEATHER_BONUS: f64 = 1.5;
 /// Clouds dampen every move but Normal ones.
-const CLOUDY_DAMPING: f64 = 0.8;
+const CLOUDY_DAMPING: f64 = 0.75;
 /// Solid Rock and Filter on a super-effective move.
 const SOFTENED: f64 = 0.75;
-/// The pinch abilities, Technician, Guts, Hustle, the power abilities and
-/// Marvel Scale.
-const ABILITY_BONUS: f64 = 1.5;
-/// Dry Skin on a Fire move.
-const DRY_SKIN_PENALTY: f64 = 1.25;
-/// Intimidate on a physical attacker.
-const INTIMIDATED: f64 = 0.75;
-/// A sandstorm hardens Rock types against special moves.
-const SANDSTORM_SP_DEFENSE: f64 = 1.5;
-/// Critical hit chance with Type-Advantage Master on a super-effective move.
+/// Technician; Dry Skin on a Fire move.
+const BOOSTED: f64 = 1.5;
+/// The pinch abilities.
+const PINCH_BONUS: f64 = 2.0;
+/// Marvel Scale's defense, as a fraction.
+const MARVEL_SCALE: (i32, i32) = (3, 2);
+/// The stages Solar Power adds to the special attack in the sun, and a
+/// sandstorm to a Rock type's special defense.
+const SOLAR_POWER_STAGES: i32 = 2;
+const SANDSTORM_SP_DEFENSE_STAGES: i32 = 2;
+/// Huge Power and Pure Power's chance in 100 to work on a blow.
+const HUGE_POWER_CHANCE: i32 = 33;
+/// The critical hit chance with Type-Advantage Master on a super-effective
+/// move, and a sure one (Focus Energy).
 const TYPE_ADVANTAGE_CRIT: i32 = 40;
-/// The random spread: from this percentage up to 100.
-const SPREAD_LOW: i32 = 85;
+const SURE_CRIT: i32 = 999;
+/// The random spread, in 16-bit fixed point: from 0xE000 for 0x4000.
+const SPREAD_LOW: i32 = 0xE000;
+const SPREAD_WIDTH: i32 = 0x4000;
+/// The neutral stage.
+const NEUTRAL: i32 = 10;
 
 pub(super) const TYPE_NORMAL: u8 = 1;
 pub(super) const TYPE_FIRE: u8 = 2;
@@ -97,11 +124,24 @@ pub(super) const TYPE_GROUND: u8 = 9;
 pub(super) const TYPE_BUG: u8 = 12;
 pub(super) const TYPE_ROCK: u8 = 13;
 
-/// What a stat stage (0 to 20, 10 neutral) multiplies the stat by: a
+/// The multiplier of a stage (0 to 20, 10 neutral) in a table of the game,
+/// in 8-bit fixed point. Without the game's data (an empty table), a
 /// quarter more for each stage up, as much less for each stage down.
-pub(super) fn stage_factor(stage: i32) -> f64 {
-    let from_neutral = (stage.clamp(0, STAGE_COUNT as i32 - 1) - 10) as f64;
-    if from_neutral >= 0.0 { (4.0 + from_neutral) / 4.0 } else { 4.0 / (4.0 - from_neutral) }
+pub(crate) fn stage_multiplier(table: &[i32; STAGE_COUNT], stage: i32) -> i32 {
+    let stage = stage.clamp(0, STAGE_COUNT as i32 - 1);
+    if table[NEUTRAL as usize] != 0 {
+        return table[stage as usize];
+    }
+    let from_neutral = stage - NEUTRAL;
+    match from_neutral >= 0 {
+        true => FIXED_ONE * (4 + from_neutral) / 4,
+        false => FIXED_ONE * 4 / (4 - from_neutral),
+    }
+}
+
+/// `a` times `b`, `b` in 8-bit fixed point, as the game multiplies them.
+fn times(a: i32, b: i32) -> i32 {
+    ((a as i64 * b as i64) >> 8) as i32
 }
 
 /// A multiplier in 8-bit fixed point, as a plain number.
@@ -109,11 +149,27 @@ fn fixed(multiplier: i32) -> f64 {
     multiplier as f64 / FIXED_ONE as f64
 }
 
-/// The base damage before any multiplier: it grows with the level, and
-/// with the attack plus the move's power against the defense.
-fn base_damage(level: i32, power: i32, attack: f64, defense: f64) -> f64 {
-    let level_factor = 2.0 * level.max(1) as f64 / 5.0 + 2.0;
-    level_factor * (attack + power.max(0) as f64) / defense.max(1.0) * BLOW_SCALE + FLAT_DAMAGE
+/// The natural logarithm as the game takes it: of a whole number clamped
+/// to its table's domain, from the table where the data has it.
+fn game_ln(chart: Option<&TypeChart>, x: f64) -> f64 {
+    let x = (x + 0.5).floor().clamp(LN_DOMAIN.0 as f64, LN_DOMAIN.1 as f64);
+    match chart.and_then(|chart| chart.ln_table.get(x as usize)) {
+        Some(&value) if value != 0 => value as f64 / 4096.0,
+        _ => x.ln(),
+    }
+}
+
+/// The game's base damage, before any multiplier: from the attack and the
+/// power (both through their stages), the defense and the level.
+pub(crate) fn base_damage(chart: Option<&TypeChart>, level: i32, attack: i32, power: f64, defense: i32, team_member: bool) -> f64 {
+    let at = power + attack as f64;
+    let flv = level as f64 + (attack - defense) as f64 / FLV_DEFICIT_DIVISOR;
+    let ln = game_ln(chart, LN_ARG_PREFACTOR * (flv + FLV_SHIFT));
+    let mut base = AT_PREFACTOR * at + DEF_PREFACTOR * defense as f64 + LN_PREFACTOR * ln + CONSTANT_SHIFT;
+    if !team_member {
+        base /= NON_TEAM_DIVISOR;
+    }
+    base.clamp(1.0, MAX_DAMAGE)
 }
 
 /// One side's stat as a blow uses it: the raw stat, its stage, its
@@ -125,15 +181,10 @@ struct Stat {
     multiplier: i32,
 }
 
-impl Stat {
-    fn worth(self) -> f64 {
-        self.value.max(0) as f64 * stage_factor(self.stage) * fixed(self.multiplier)
-    }
-}
-
-/// The attack and the defense a blow pits against each other, stages,
-/// held items and abilities counted.
-fn attack_and_defense(attacker: &Fighter, defender: &Fighter, special: bool, weather: u8) -> (f64, f64) {
+/// The attack, the power through the attack's stage (a plain number) and
+/// the defense a blow pits against each other, stages, held items and
+/// abilities counted. `huge`: Huge Power's roll came up.
+fn attack_and_defense(constants: &Constants, attacker: &Fighter, defender: &Fighter, power: i32, special: bool, weather: u8, huge: bool) -> (i32, f64, i32) {
     let (a, d) = (&attacker.stats, &defender.stats);
     let mut attack = match special {
         true => Stat { value: a.sp_attack, stage: attacker.sp_attack_stage, multiplier: attacker.sp_attack_multiplier },
@@ -155,45 +206,54 @@ fn attack_and_defense(attacker: &Fighter, defender: &Fighter, special: bool, wea
     if !special && iq::has(d, iq::COUNTER_BASHER) {
         defense.stage -= 1;
     }
+    // Solar Power in the sun; a sandstorm hardens Rock types against
+    // special moves.
+    if special && has(a, ability::SOLAR_POWER) && weather == weather::SUNNY {
+        attack.stage += SOLAR_POWER_STAGES;
+    }
+    let rock = d.types.0 == TYPE_ROCK || d.types.1 == TYPE_ROCK;
+    if special && rock && weather == weather::SANDSTORM {
+        defense.stage += SANDSTORM_SP_DEFENSE_STAGES;
+    }
     // Unaware looks past the other side's changes.
     if has(a, ability::UNAWARE) {
-        (defense.stage, defense.multiplier) = (10, FIXED_ONE);
+        (defense.stage, defense.multiplier) = (NEUTRAL, FIXED_ONE);
     } else if shields(a, d, ability::UNAWARE) {
-        (attack.stage, attack.multiplier) = (10, FIXED_ONE);
+        (attack.stage, attack.multiplier) = (NEUTRAL, FIXED_ONE);
     }
-    let attack = (attack.worth() + held::stat_boost(a, special as usize) as f64) * attack_abilities(attacker, defender, special, weather);
-    let defense = (defense.worth() + held::stat_boost(d, 2 + special as usize) as f64) * defense_abilities(attacker, defender, special, weather);
-    (attack.clamp(0.0, MAX_DAMAGE), defense.max(1.0))
+    let attack_stage = stage_multiplier(&constants.offensive_stages, attack.stage);
+    let defense_stage = stage_multiplier(&constants.defensive_stages, defense.stage);
+    let through = |value: i32, stage: i32, multiplier: i32| times(times(value.max(0) << 8, stage), multiplier);
+    let mut attack_value = (through(attack.value, attack_stage, attack.multiplier) >> 8) + held::stat_boost(a, special as usize);
+    let mut defense_value = (through(defense.value, defense_stage, defense.multiplier) >> 8) + held::stat_boost(d, 2 + special as usize);
+    let power = through(power, attack_stage, attack.multiplier) as f64 / FIXED_ONE as f64;
+    let (numerator, denominator) = attack_abilities(attacker, defender, special, huge);
+    attack_value = attack_value * numerator / denominator;
+    if !special && defender.ailing && shields(a, d, ability::MARVEL_SCALE) {
+        defense_value = defense_value * MARVEL_SCALE.0 / MARVEL_SCALE.1;
+    }
+    (attack_value.clamp(0, MAX_ATTACK), power, defense_value)
 }
 
-/// What abilities (and the weather through them) multiply the attack by.
-fn attack_abilities(attacker: &Fighter, defender: &Fighter, special: bool, weather: u8) -> f64 {
+/// What abilities multiply the attack by, as a fraction: Guts, Huge Power
+/// (on its roll), Hustle, Plus and Minus, and the target's Intimidate.
+fn attack_abilities(attacker: &Fighter, defender: &Fighter, special: bool, huge: bool) -> (i32, i32) {
     let (a, d) = (&attacker.stats, &defender.stats);
-    let boosts = match special {
-        true => vec![has(a, ability::SOLAR_POWER) && weather == weather::SUNNY],
-        false => vec![has(a, ability::GUTS) && attacker.ailing, has(a, ability::HUGE_POWER) || has(a, ability::PURE_POWER), has(a, ability::HUSTLE)],
-    };
-    let mut factor = boosts.into_iter().filter(|&on| on).fold(1.0, |factor, _| factor * ABILITY_BONUS);
-    if !special && shields(a, d, ability::INTIMIDATE) {
-        factor *= INTIMIDATED;
-    }
-    factor
-}
-
-/// What abilities and the weather multiply the defense by.
-fn defense_abilities(attacker: &Fighter, defender: &Fighter, special: bool, weather: u8) -> f64 {
-    let d = &defender.stats;
-    let rock = d.types.0 == TYPE_ROCK || d.types.1 == TYPE_ROCK;
-    match special {
-        true if rock && weather == weather::SANDSTORM => SANDSTORM_SP_DEFENSE,
-        false if defender.ailing && shields(&attacker.stats, d, ability::MARVEL_SCALE) => ABILITY_BONUS,
-        _ => 1.0,
-    }
+    let boosts = [
+        (!special && has(a, ability::GUTS) && attacker.ailing, (2, 1)),
+        (!special && huge && (has(a, ability::HUGE_POWER) || has(a, ability::PURE_POWER)), (3, 2)),
+        (!special && has(a, ability::HUSTLE), (3, 2)),
+        (special && attacker.cheered, (15, 10)),
+        (!special && shields(a, d, ability::INTIMIDATE), (4, 5)),
+    ];
+    boosts.iter().filter(|(on, _)| *on).fold((1, 1), |(n, d), (_, (by_n, by_d))| (n * by_n, d * by_d))
 }
 
 /// What the type matchups make of a move against both of the defender's
 /// types, and the overall matchup. Without a chart, everything is neutral.
-fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats, attack_type: u8, (ghosts, darks): (bool, bool)) -> (f64, u8) {
+/// Erratic Player on either side changes the multipliers, on all but the
+/// regular attack; the attacker's even the neutral one.
+fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats, attack_type: u8, (ghosts, darks): (bool, bool), regular: bool) -> (f64, u8) {
     let Some(chart) = chart else {
         return (1.0, matchup::NEUTRAL);
     };
@@ -202,7 +262,8 @@ fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats,
     const TYPE_PSYCHIC: u8 = 11;
     const TYPE_GHOST: u8 = 14;
     const TYPE_DARK: u8 = 16;
-    let erratic = iq::has(attacker, iq::ERRATIC_PLAYER);
+    let erratic = !regular && iq::has(attacker, iq::ERRATIC_PLAYER);
+    let erratic_table = (erratic || (!regular && iq::has(defender, iq::ERRATIC_PLAYER))) && chart.erratic != [0; 4];
     let one = |kind: u8| {
         let reached =
             (ghosts && kind == TYPE_GHOST && matches!(attack_type, TYPE_NORMAL | TYPE_FIGHTING)) || (darks && kind == TYPE_DARK && attack_type == TYPE_PSYCHIC);
@@ -210,7 +271,7 @@ fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats,
             matchup::IMMUNE if reached || ability::scrappy(attacker, attack_type, kind) => matchup::NEUTRAL,
             value => value,
         };
-        let table = if erratic && chart.erratic[value as usize] != 0 { &chart.erratic } else { &chart.multipliers };
+        let table = if erratic_table { &chart.erratic } else { &chart.multipliers };
         let factor = if value == matchup::NEUTRAL && !erratic { 1.0 } else { fixed(table[value as usize]) };
         (factor, value)
     };
@@ -219,9 +280,18 @@ fn matchup_factor(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats,
 }
 
 /// The type matchups, then what abilities do with the move's type: the
-/// damage multiplier and the overall matchup.
-pub(super) fn type_effects(chart: Option<&TypeChart>, attacker: &Stats, defender: &Stats, attack_type: u8, power: i32, reaches: (bool, bool)) -> (f64, u8) {
-    let (mut factor, overall) = matchup_factor(chart, attacker, defender, attack_type, reaches);
+/// damage multiplier and the overall matchup. `regular`: the regular
+/// attack, which Technician and Erratic Player leave alone.
+pub(super) fn type_effects(
+    chart: Option<&TypeChart>,
+    attacker: &Stats,
+    defender: &Stats,
+    attack_type: u8,
+    power: i32,
+    reaches: (bool, bool),
+    regular: bool,
+) -> (f64, u8) {
+    let (mut factor, overall) = matchup_factor(chart, attacker, defender, attack_type, reaches, regular);
     let shielded = |which: u8| shields(attacker, defender, which);
     // Flash Fire and Levitate take the move in whole.
     if (attack_type == TYPE_FIRE && shielded(ability::FLASH_FIRE)) || (attack_type == TYPE_GROUND && shielded(ability::LEVITATE)) {
@@ -232,13 +302,13 @@ pub(super) fn type_effects(chart: Option<&TypeChart>, attacker: &Stats, defender
         factor = 0.0;
     }
     if overall == matchup::NOT_VERY_EFFECTIVE && has(attacker, ability::TINTED_LENS) {
-        factor *= ability::TINTED_LENS_BOOST;
+        factor *= fixed(ability::TINTED_LENS_BOOST);
     }
     if overall == matchup::SUPER_EFFECTIVE && (shielded(ability::SOLID_ROCK) || shielded(ability::FILTER)) {
         factor *= SOFTENED;
     }
-    if power <= ability::TECHNICIAN_POWER && has(attacker, ability::TECHNICIAN) {
-        factor *= ABILITY_BONUS;
+    if !regular && power <= ability::TECHNICIAN_POWER && has(attacker, ability::TECHNICIAN) {
+        factor *= BOOSTED;
     }
     let halving = [(TYPE_FIRE, ability::THICK_FAT), (TYPE_ICE, ability::THICK_FAT), (TYPE_FIRE, ability::HEATPROOF)];
     for (kind, which) in halving {
@@ -247,11 +317,11 @@ pub(super) fn type_effects(chart: Option<&TypeChart>, attacker: &Stats, defender
         }
     }
     if attack_type == TYPE_FIRE && shielded(ability::DRY_SKIN) {
-        factor *= DRY_SKIN_PENALTY;
+        factor *= BOOSTED;
     }
     let pinch = [(TYPE_WATER, ability::TORRENT), (TYPE_GRASS, ability::OVERGROW), (TYPE_BUG, ability::SWARM), (TYPE_FIRE, ability::BLAZE)];
     if ability::in_a_pinch(attacker) && pinch.iter().any(|&(kind, which)| attack_type == kind && has(attacker, which)) {
-        factor *= ABILITY_BONUS;
+        factor *= PINCH_BONUS;
     }
     (factor, overall)
 }
@@ -278,6 +348,7 @@ pub(super) fn weather_factor(weather: u8, attack_type: u8) -> f64 {
 }
 
 /// The chance in percent of a critical hit, or `None` when none can land.
+/// Females keep the move's chance; the others have half again.
 fn critical_chance(attacker: &Fighter, defender: &Fighter, crit_chance: i32, overall: u8) -> Option<i32> {
     let (a, d) = (&attacker.stats, &defender.stats);
     let armored = shields(a, d, ability::BATTLE_ARMOR) || shields(a, d, ability::SHELL_ARMOR);
@@ -285,17 +356,18 @@ fn critical_chance(attacker: &Fighter, defender: &Fighter, crit_chance: i32, ove
         return None;
     }
     if attacker.focused {
-        return Some(100);
+        return Some(SURE_CRIT);
     }
     if overall == matchup::SUPER_EFFECTIVE && iq::has(a, iq::TYPE_ADVANTAGE_MASTER) {
-        return Some(TYPE_ADVANTAGE_CRIT.max(crit_chance));
+        return Some(TYPE_ADVANTAGE_CRIT);
     }
+    let chance = if a.female { crit_chance } else { crit_chance + crit_chance / 2 };
     let boosts = [
         (held::holds(a, held::SCOPE_LENS) || iq::has(a, iq::SHARPSHOOTER), held::CRIT_BOOST),
         (has(a, ability::SUPER_LUCK), ability::SUPER_LUCK_CRIT),
         (held::holds(d, held::PATSY_BAND), held::CRIT_BOOST),
     ];
-    Some(crit_chance + boosts.iter().filter(|(on, _)| *on).map(|(_, by)| by).sum::<i32>())
+    Some(chance + boosts.iter().filter(|(on, _)| *on).map(|(_, by)| by).sum::<i32>())
 }
 
 /// [`calc_damage_with`] for a physical move in clear weather.
@@ -316,11 +388,12 @@ pub(crate) fn calc_damage(
 
 /// The damage of one blow. `crit_chance` is the move's, in percent;
 /// `damage_mult` is a multiplier in 8-bit fixed point ([`FIXED_ONE`] for
-/// none). `special` moves use the special attack and the special defense.
-/// Two rolls are drawn each time: the critical hit, then the spread.
+/// none). `special` moves use the special attack and the special defense;
+/// the typeless move (type 0) is the regular attack. Three rolls are drawn
+/// each time, as in the game: Huge Power's, the critical hit, the spread.
 pub fn calc_damage_with(
     rng: &mut DungeonRng,
-    _constants: &Constants,
+    constants: &Constants,
     chart: Option<&TypeChart>,
     attacker: &Fighter,
     defender: &Fighter,
@@ -332,17 +405,20 @@ pub fn calc_damage_with(
     weather: u8,
 ) -> Damage {
     let (a, d) = (&attacker.stats, &defender.stats);
+    let regular = attack_type == 0;
     let attack_type = ability::attack_type(a, attack_type);
-    let (attack, defense) = attack_and_defense(attacker, defender, special, weather);
-    let mut base = base_damage(a.level, power, attack, defense);
-    if !attacker.team_member {
-        base *= OUTSIDER_SHARE;
+    let huge = rng.rand_int(100) < HUGE_POWER_CHANCE;
+    let (attack, stepped_power, defense) = attack_and_defense(constants, attacker, defender, power, special, weather, huge);
+    let base = base_damage(chart, a.level.max(1), attack, stepped_power, defense, attacker.team_member);
+    let (by_type, matchup) = type_effects(chart, a, d, attack_type, power, attacker.reaches, regular);
+    let mut factor = by_type;
+    if attacker.burned {
+        factor *= BURNED;
     }
-    let (by_type, matchup) = type_effects(chart, a, d, attack_type, power, attacker.reaches);
-    let mut factor = by_type * same_type_bonus(a, attack_type) * weather_factor(weather, attack_type) * fixed(damage_mult);
-    if attacker.burned && !special {
-        factor *= HALVED;
+    if factor > 0.0 {
+        factor *= same_type_bonus(a, attack_type);
     }
+    factor *= weather_factor(weather, attack_type);
     if (special && defender.halves_special) || (!special && defender.halves_physical) {
         factor *= HALVED;
     }
@@ -351,9 +427,9 @@ pub fn calc_damage_with(
     if critical {
         factor *= if has(a, ability::SNIPER) { SNIPER_BONUS } else { CRITICAL_BONUS };
     }
-    let spread = (SPREAD_LOW + rng.rand_int(101 - SPREAD_LOW)) as f64 / 100.0;
+    let spread = (SPREAD_LOW + rng.rand_int(SPREAD_WIDTH)) as f64 / 65536.0;
     let amount = match factor > 0.0 {
-        true => (base.min(MAX_DAMAGE) * factor * spread).round().clamp(1.0, MAX_DAMAGE) as i32,
+        true => (base * factor * fixed(damage_mult) * spread + 0.5).floor().clamp(1.0, MAX_DAMAGE) as i32,
         false => 0,
     };
     Damage { amount, matchup, critical }

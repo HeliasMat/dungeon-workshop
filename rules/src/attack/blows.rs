@@ -135,12 +135,7 @@ impl Play<'_, '_> {
                     if bypass {
                         (target.halves_physical, target.halves_special) = (false, false);
                     }
-                    let sides = self.field.sides;
-                    ability::cheer(&mut fighter, &mut target, slot.category != 0, weather, sides.allies, sides.genders);
-                    // (Cheered on by a teammate next to it, or swinging
-                    // after a miss: a stage of attack and special attack.)
-                    let boost = (sides.allies.0 & super::CHEERED != 0) as i32 + swinging as i32;
-                    (fighter.attack_stage, fighter.sp_attack_stage) = (fighter.attack_stage + boost, fighter.sp_attack_stage + boost);
+                    super::readied(&mut fighter, &mut target, slot.category != 0, weather, self.field.sides, swinging);
                     calc_damage_with(
                         self.field.rng,
                         constants,

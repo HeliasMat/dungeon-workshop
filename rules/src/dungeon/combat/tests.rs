@@ -77,6 +77,7 @@ fn fighter(level: i32, attack: i32, defense: i32, types: (u8, u8)) -> Fighter {
         focused: false,
         lucky: false,
         reaches: (false, false),
+        cheered: false,
     }
 }
 
@@ -134,7 +135,9 @@ fn damage_grows_with_level_power_and_attack() {
 #[test]
 fn accuracy_stages_and_weather_change_hits() {
     let mut rng = DungeonRng::new(3);
-    let hits = |rng: &mut DungeonRng, accuracy, acc, eva| (0..2000).filter(|_| move_hit_check(rng, accuracy, (acc, eva))).count();
+    let plain_tables = Constants::default();
+    let hits =
+        |rng: &mut DungeonRng, accuracy, acc, eva| (0..2000).filter(|_| move_hit_check(rng, &plain_tables, accuracy, (acc, eva), (false, false))).count();
     // At neutral stages, the plain percentage; above 100 never misses.
     assert_eq!(hits(&mut rng, 125, 0, 20), 2000);
     assert_eq!(hits(&mut rng, 100, 10, 10), 2000);
@@ -142,7 +145,7 @@ fn accuracy_stages_and_weather_change_hits() {
     assert!((1100..1300).contains(&plain), "{plain}");
     // The roll is drawn even for a sure hit.
     let state = rng.state();
-    move_hit_check(&mut rng, 125, (10, 10));
+    move_hit_check(&mut rng, &plain_tables, 125, (10, 10), (false, false));
     assert_ne!(rng.state(), state);
     // Four stages down halve the aim; four stages of evasion halve it again.
     let lowered = hits(&mut rng, 100, 6, 10);
@@ -167,12 +170,72 @@ fn accuracy_stages_and_weather_change_hits() {
 }
 
 #[test]
-fn stages_follow_quarter_steps() {
-    assert_eq!(stage_factor(10), 1.0);
-    assert_eq!(stage_factor(14), 2.0);
-    assert_eq!(stage_factor(6), 0.5);
-    assert_eq!(stage_factor(99), stage_factor(20));
-    assert!(stage_factor(0) > 0.0);
+fn stages_read_the_game_tables_or_go_by_quarters() {
+    // Without the game's data: a quarter more or less a stage.
+    let empty = [0; STAGE_COUNT];
+    assert_eq!([stage_multiplier(&empty, 10), stage_multiplier(&empty, 14), stage_multiplier(&empty, 6)], [0x100, 0x200, 0x80]);
+    assert_eq!(stage_multiplier(&empty, 99), stage_multiplier(&empty, 20));
+    assert!(stage_multiplier(&empty, 0) > 0);
+    // With it, the table's, out-of-range stages clamped.
+    let table: [i32; STAGE_COUNT] = std::array::from_fn(|stage| 100 + 10 * stage as i32);
+    assert_eq!([stage_multiplier(&table, 3), stage_multiplier(&table, 99), stage_multiplier(&table, -4)], [130, 300, 100]);
+}
+
+#[test]
+fn aim_goes_by_the_game_tables_and_genders() {
+    let mut rng = DungeonRng::new(11);
+    let constants = Constants {
+        accuracy_stages: [0x80; STAGE_COUNT],
+        female_accuracy_stages: [0x100; STAGE_COUNT],
+        evasion_stages: [0x100; STAGE_COUNT],
+        female_evasion_stages: [0x40; STAGE_COUNT],
+        ..Constants::default()
+    };
+    let mut hits = |females| (0..2000).filter(|_| move_hit_check(&mut rng, &constants, 100, (10, 10), females)).count();
+    // A male aims at half its accuracy here, a female at all of it; a
+    // female target dodges three blows in four.
+    assert!((900..1100).contains(&hits((false, false))));
+    assert_eq!(hits((true, false)), 2000);
+    assert!((400..600).contains(&hits((true, true))));
+}
+
+#[test]
+fn the_base_damage_is_the_documented_formula() {
+    // 153/256 (A + P) - D/2 + 50 ln(10 [L + (A - D)/8 + 50]) - 311, worked
+    // out by hand: L 10, A 20, P 6, D 20 (ln 600), then L 50, A 100, P 18,
+    // D 80 (ln 1025).
+    let first = 153.0 / 256.0 * 26.0 - 10.0 + 50.0 * 600f64.ln() - 311.0;
+    assert!((first - 14.3856).abs() < 1e-3);
+    assert!((base_damage(None, 10, 20, 6.0, 20, true) - first).abs() < 1e-9);
+    let second = 153.0 / 256.0 * 118.0 - 40.0 + 50.0 * 1025f64.ln() - 311.0;
+    assert!((second - 66.1454).abs() < 1e-3);
+    assert!((base_damage(None, 50, 100, 18.0, 80, true) - second).abs() < 1e-9);
+    // From outside the team, divided by 85/64; never below 1 nor past 999.
+    assert!((base_damage(None, 10, 20, 6.0, 20, false) - first * 64.0 / 85.0).abs() < 1e-9);
+    assert_eq!(base_damage(None, 1, 1, 0.0, 255, true), 1.0);
+    assert_eq!(base_damage(None, 100, 999, 999.0, 1, true), 999.0);
+    // The game's logarithm table, where the data has one (12 fraction bits).
+    let mut chart = chart();
+    chart.ln_table = (0..0x800).map(|x: i32| ((x.max(1) as f64).ln() * 4096.0).round() as i16).collect();
+    assert!((base_damage(Some(&chart), 10, 20, 6.0, 20, true) - first).abs() < 0.01);
+    // A whole blow: that base, times the spread of 7/8 to 9/8.
+    let (attacker, defender) = (fighter(10, 20, 20, (1, 0)), fighter(10, 20, 20, (1, 0)));
+    let mut rng = DungeonRng::new(4);
+    for _ in 0..200 {
+        let amount = plain_blow(&mut rng, &attacker, &defender).amount;
+        assert!((13..=16).contains(&amount), "{amount}");
+    }
+    // A stage of the game's table raises the attack and the power alike:
+    // A 20 x 332/256 = 25 (truncated), P 6 x 332/256 = 7.78.
+    let mut constants = Constants::default();
+    constants.offensive_stages[12] = 332;
+    constants.offensive_stages[10] = 0x100;
+    let raised = Fighter { attack_stage: 12, ..attacker };
+    let expected = base_damage(None, 10, 25, 1992.0 / 256.0, 20, true);
+    for _ in 0..50 {
+        let amount = calc_damage(&mut rng, &constants, None, &raised, &defender, 0, 6, 0, FIXED_ONE).amount;
+        assert!(((expected * 0.875).round() as i32..=(expected * 1.125).round() as i32).contains(&amount), "{amount} {expected}");
+    }
 }
 
 #[test]
@@ -180,7 +243,7 @@ fn type_matchups_stack_over_both_types() {
     let chart = chart();
     let user = fighter(5, 10, 10, (1, 0)).stats;
     let target = |types| fighter(5, 10, 10, types).stats;
-    let effects = |attacker: &Stats, types, attack_type| type_effects(Some(&chart), attacker, &target(types), attack_type, 10, (false, false));
+    let effects = |attacker: &Stats, types, attack_type| type_effects(Some(&chart), attacker, &target(types), attack_type, 10, (false, false), false);
     let (strong, weak, half) = (0x166 as f64 / 256.0, 0xB5 as f64 / 256.0, 0.5);
     assert_eq!(effects(&user, (2, 0), 3), (strong, matchup::SUPER_EFFECTIVE));
     assert_eq!(effects(&user, (2, 9), 3), (strong * strong, matchup::SUPER_EFFECTIVE));
@@ -192,10 +255,10 @@ fn type_matchups_stack_over_both_types() {
     assert!(chart.immune(3, &target((5, 2))) && !chart.immune(3, &target((2, 0))));
     assert!(chart.immune(1, &target((14, 0))) && !chart.immune(2, &target((14, 0))));
     // A Scrappy-like exclusive item: Normal moves reach Ghosts.
-    let reached = type_effects(Some(&chart), &user, &target((14, 0)), 1, 10, (true, false));
+    let reached = type_effects(Some(&chart), &user, &target((14, 0)), 1, 10, (true, false), false);
     assert_eq!(reached, (1.0, matchup::NEUTRAL));
     // Without a chart everything is neutral.
-    assert_eq!(type_effects(None, &user, &target((2, 0)), 3, 10, (false, false)), (1.0, matchup::NEUTRAL));
+    assert_eq!(type_effects(None, &user, &target((2, 0)), 3, 10, (false, false), false), (1.0, matchup::NEUTRAL));
 }
 
 #[test]
@@ -264,9 +327,9 @@ fn stages_criticals_and_multipliers_change_damage() {
     assert!((ratio(special(&attacker, &screened)) - 0.5).abs() < 0.03);
     assert_eq!(total(&attacker, &screened), plain);
     assert!((ratio(total(&attacker, &Fighter { halves_physical: true, ..defender })) - 0.5).abs() < 0.03);
-    // A burn weakens physical blows only.
-    assert!((ratio(total(&Fighter { burned: true, ..attacker }, &defender)) - 0.5).abs() < 0.03);
-    assert_eq!(special(&Fighter { burned: true, ..attacker }, &defender), plain);
+    // A burn weakens every blow, to about 0.8.
+    assert!((ratio(total(&Fighter { burned: true, ..attacker }, &defender)) - 0.8).abs() < 0.03);
+    assert!((ratio(special(&Fighter { burned: true, ..attacker }, &defender)) - 0.8).abs() < 0.03);
     // Charm lowers the attack, Screech the defense.
     assert!(total(&Fighter { attack_multiplier: 0x80, ..attacker }, &defender) < plain);
     assert!(total(&attacker, &Fighter { defense_multiplier: 0x40, ..defender }) > plain);

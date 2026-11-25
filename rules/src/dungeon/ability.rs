@@ -144,14 +144,16 @@ pub(crate) const PUNCH_MOVES: [u16; 15] = [65, 75, 103, 126, 136, 246, 264, 292,
 const CONTACT_CHANCE: i32 = 15;
 /// Chance out of 100 that Shed Skin cures its bearer at the end of a turn.
 const SHED_SKIN_CHANCE: i32 = 33;
-/// Critical hit chance, in percent, Super Luck adds.
-pub(crate) const SUPER_LUCK_CRIT: i32 = 12;
-/// The highest move power Technician strengthens.
-pub(crate) const TECHNICIAN_POWER: i32 = 6;
-/// What Tinted Lens multiplies a not very effective move by.
-pub(crate) const TINTED_LENS_BOOST: f64 = 1.5;
-/// What Reckless and Iron Fist multiply the moves they favour by.
-const FAVOURED_MOVE_BOOST: f64 = 1.25;
+/// Critical hit chance, in percent, Super Luck adds (the game's).
+pub(crate) const SUPER_LUCK_CRIT: i32 = 10;
+/// The highest move power Technician strengthens (the game's).
+pub(crate) const TECHNICIAN_POWER: i32 = 4;
+/// What Tinted Lens multiplies a not very effective move by, in 8-bit
+/// fixed point (the game's: about 1.2).
+pub(crate) const TINTED_LENS_BOOST: i32 = 0x133;
+/// What Reckless and Iron Fist multiply the moves they favour by (the
+/// game's).
+const FAVOURED_MOVE_BOOST: f64 = 1.5;
 /// The share of the damage Rough Skin sends back, in quarters.
 const ROUGH_SKIN_QUARTERS: i32 = 1;
 /// Chances out of 100, the game's (read from its overlay 10): Magnet Pull
@@ -169,8 +171,6 @@ pub(crate) const BAD_DREAMS_DAMAGE: i32 = 15;
 /// game's); those that last until cured are left alone.
 const NATURAL_CURE_TURNS: i32 = 5;
 const LASTING: i32 = 100;
-/// What Plus and Minus multiply the special attack by.
-const PLUS_MINUS_BOOST: i32 = 3;
 
 /// Bits of the abilities a monster's teammates have, for those that help
 /// the side (Plus and Minus, Flower Gift): see [`allied`].
@@ -454,8 +454,8 @@ pub fn allied<'a>(teammates: impl IntoIterator<Item = &'a Stats>) -> u8 {
 /// the stages of a blow: Rivalry (a stage more against the same gender, one
 /// less against the other), Flower Gift on either side in the sun (a stage
 /// of attack, of special defense), Plus beside a Minus and the other way
-/// round (half again the special attack). `allies` and `genders`: the
-/// attacker's, then the defender's.
+/// round (half again the special attack: [`Fighter::cheered`]). `allies`
+/// and `genders`: the attacker's, then the defender's.
 pub(crate) fn cheer(attacker: &mut Fighter, defender: &mut Fighter, special: bool, weather: u8, allies: (u8, u8), genders: (u8, u8)) {
     let sunny = weather == weather::SUNNY;
     let blooming = |fighter: &Fighter, allies: u8| sunny && (has(&fighter.stats, FLOWER_GIFT) || allies & ALLY_FLOWER_GIFT != 0);
@@ -463,10 +463,7 @@ pub(crate) fn cheer(attacker: &mut Fighter, defender: &mut Fighter, special: boo
         if blooming(defender, allies.1) {
             defender.sp_defense_stage += 1;
         }
-        let cheered = (has(&attacker.stats, PLUS) && allies.0 & ALLY_MINUS != 0) || (has(&attacker.stats, MINUS) && allies.0 & ALLY_PLUS != 0);
-        if cheered {
-            attacker.sp_attack_multiplier = attacker.sp_attack_multiplier * PLUS_MINUS_BOOST / 2;
-        }
+        attacker.cheered = (has(&attacker.stats, PLUS) && allies.0 & ALLY_MINUS != 0) || (has(&attacker.stats, MINUS) && allies.0 & ALLY_PLUS != 0);
         return;
     }
     if has(&attacker.stats, RIVALRY) {
@@ -574,11 +571,10 @@ mod tests {
         assert_eq!(blooming.sp_defense_stage, stage + 1);
         // Plus beside a Minus: special attack half again; alone, nothing.
         let mut plus = fighter([PLUS, 0]);
-        let multiplier = plus.sp_attack_multiplier;
         cheer(&mut plus, &mut target, true, weather::CLEAR, (ALLY_PLUS, 0), (0, 0));
-        assert_eq!(plus.sp_attack_multiplier, multiplier);
+        assert!(!plus.cheered);
         cheer(&mut plus, &mut target, true, weather::CLEAR, (ALLY_MINUS, 0), (0, 0));
-        assert_eq!(plus.sp_attack_multiplier, multiplier * 3 / 2);
+        assert!(plus.cheered);
         assert_eq!(allied([&with([MINUS, 0]), &with([FLOWER_GIFT, 0])]), ALLY_MINUS | ALLY_FLOWER_GIFT);
     }
 

@@ -1,9 +1,9 @@
 //! Items a monster holds (one each), and what they do while held. Item
 //! numbers follow the item list of the extracted data. The stat items, the
-//! Scope Lens and the Patsy Band are this project's own rules (see
-//! `stat_boost`, `CRIT_BOOST`); the others follow the well-known
-//! rules of the games. (The Gold Ribbon and the Plain Ribbon do nothing,
-//! as in the game: the first sells well.)
+//! Scope Lens and the Patsy Band add the game's figures (see `stat_boost`,
+//! `CRIT_BOOST`); the others follow the well-known rules of the games.
+//! (The Gold Ribbon and the Plain Ribbon do nothing, as in the game: the
+//! first sells well.)
 
 use super::combat::Stats;
 use super::status::MoveEffect;
@@ -65,17 +65,20 @@ fn working(stats: &Stats) -> u16 {
 }
 
 /// Critical hit chance, in percent, a Scope Lens adds to its holder's
-/// blows, and a Patsy Band to the blows its holder takes.
-pub(crate) const CRIT_BOOST: i32 = 12;
+/// blows, and a Patsy Band to the blows its holder takes (the game's).
+pub(crate) const CRIT_BOOST: i32 = 15;
 
 /// What a stat item adds to its holder's stat (0 attack, 1 special
-/// attack, 2 defense, 3 special defense): a band or a scarf raises one
-/// stat well, the Munch Belt both attacks a little.
+/// attack, 2 defense, 3 special defense), after its stage: a band raises
+/// an attack, a scarf or the Zinc Band a defense, the Munch Belt both
+/// attacks. The game's figures (`POWER_BAND_STAT_BOOST` and its like).
 pub(crate) fn stat_boost(stats: &Stats, stat: usize) -> i32 {
-    const BAND: i32 = 8;
-    const BELT: i32 = 5;
+    const BAND: i32 = 12;
+    const SCARF: i32 = 8;
+    const BELT: i32 = 8;
     match (working(stats), stat) {
-        (POWER_BAND, 0) | (SPECIAL_BAND, 1) | (DEF_SCARF, 2) | (ZINC_BAND, 3) => BAND,
+        (POWER_BAND, 0) | (SPECIAL_BAND, 1) => BAND,
+        (DEF_SCARF, 2) | (ZINC_BAND, 3) => SCARF,
         (MUNCH_BELT, 0 | 1) => BELT,
         _ => 0,
     }
