@@ -11,7 +11,7 @@
 //! In the Bazaar, the game's five: Kirlia greets the team; Swalot sells
 //! grab bags (an item of the floor's list), Shedinja shows the way out,
 //! Mime Jr. heals the team (once a visit), Lickilicky cleans the sticky
-//! items, each for the game's 100 Poké. In the Secret Room, the game's six
+//! items, each for the game's 100 Poké. In the Secret Room, the game's five
 //! Deluxe Boxes stand for what they hold: items of the floor's list of
 //! chests, lying there.
 

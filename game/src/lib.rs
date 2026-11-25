@@ -32,6 +32,8 @@ mod dive_tests;
 pub mod drive;
 pub mod dungeon_check;
 #[cfg(test)]
+mod dungeon_rules_tests;
+#[cfg(test)]
 mod e2e_tests;
 mod error;
 pub mod game_file;

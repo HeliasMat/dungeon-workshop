@@ -564,13 +564,16 @@ impl Run {
                 continue;
             }
             self.sights.push(Sight::Fainted(monster.id));
-            if matches!(monster.extra, Some(Some(_))) {
+            if matches!(monster.extra, Some(Some(_))) || monster.guest {
                 // A recruit that faints goes back to the guild, as in the
-                // original, once it blinked out; the player moves the hero
-                // again if it was the one moved.
+                // original, once it blinked out; a guest leaves the team; the
+                // player moves the hero again if it was the one moved.
                 monster.fading = Some(FAINT_FRAMES);
                 controlled_fell |= monster.side == Side::Leader;
-                self.log.push(format!("{} returned to the base.", monster.name));
+                match monster.guest {
+                    true => self.log.push(format!("{} had to leave the team...", monster.name)),
+                    false => self.log.push(format!("{} returned to the base.", monster.name)),
+                }
             } else {
                 // (The run ends once the blow is seen: `knock_out`.)
                 monster.fading = Some(u32::MAX);

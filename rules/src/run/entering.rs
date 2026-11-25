@@ -75,7 +75,16 @@ impl Run {
         dungeon.jobs = jobs;
         // (The settings' options of the rules, on top of the dungeon's.)
         dungeon.rules.options = dungeon.rules.options.or(self.options.rules);
-        self.place_members(&mut dungeon);
+        // A dungeon of the story: its guests join on the story's visit, its
+        // rules hold then (Hidden Land's, no recruiting), some of them after
+        // too (`guests`).
+        let story = book.guests.dungeon(id).cloned().unwrap_or_default();
+        dungeon.hidden_land = story.hidden_land_cleared || (!jobs && story.hidden_land);
+        if !jobs && story.no_recruiting {
+            dungeon.rules.recruitment = false;
+        }
+        let guests = if jobs { Vec::new() } else { story.guests.clone() };
+        self.place_members(&mut dungeon, &guests);
         self.log.clear();
         // A maze of the Dojo takes the bag's items (its door says so).
         if crate::dojo::is_maze(id) {
@@ -111,7 +120,7 @@ impl Run {
     /// The team as its last dungeon left it; where the dungeon brings it
     /// back to level 1, as its species is at level 1 (what it grows into
     /// there is not kept).
-    fn place_members(&self, dungeon: &mut Dungeon) {
+    fn place_members(&self, dungeon: &mut Dungeon, guests: &[usize]) {
         let team = &self.team;
         let progress = &team.progress;
         let level_one = dungeon.rules.level_one;
@@ -155,6 +164,12 @@ impl Run {
             partner.experience = Some(experience);
             dungeon.monsters.push(partner);
         }
+        // The story's guests, as the story makes them.
+        for &guest in guests {
+            if let Some(guest) = self.book.guests.guests.get(guest) {
+                self.guest_joins(dungeon, &mut room, guest);
+            }
+        }
         // Up to two more come along: a special episode's third (once the
         // episode has shown it), or the first of the recruits.
         let third = team.third.and_then(|row| self.book.tables.episode_characters.get(row));
@@ -194,6 +209,34 @@ impl Run {
                 }
             }
         }
+    }
+
+    /// A guest of the story's joins, if there is room: its level, stats,
+    /// IQ and moves the story's; for this dungeon only (`Monster::guest`).
+    fn guest_joins(&self, dungeon: &mut Dungeon, room: &mut usize, guest: &super::guests::Guest) {
+        let Some(setup) = self.book.member_at(guest.monster, false, Some(guest.level)).filter(|_| *room > 0) else {
+            return;
+        };
+        *room -= 1;
+        let stats = crate::dungeon::Stats {
+            level: guest.level,
+            max_hp: guest.hp,
+            hp: guest.hp,
+            attack: guest.attack,
+            defense: guest.defense,
+            sp_attack: guest.sp_attack,
+            sp_defense: guest.sp_defense,
+            iq: guest.iq,
+            ..setup.stats
+        };
+        let known: Vec<MoveSlot> = guest.moves.iter().filter_map(|&id| self.book.move_slot(id)).collect();
+        let moves = if known.is_empty() { setup.moves } else { known };
+        let id = dungeon.new_id();
+        let mut member =
+            Monster::new(id, Side::Ally, setup.name, Some(guest.monster), stats, moves, Statuses::for_species(setup.movement), dungeon.floor.player_spawn);
+        member.experience = Some(Experience::new(&setup.growth, guest.level));
+        (member.extra, member.guest) = (Some(None), true);
+        dungeon.monsters.push(member);
     }
 
     /// One more member, if there is room: as its species is at that level;
