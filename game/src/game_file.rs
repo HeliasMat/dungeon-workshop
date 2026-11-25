@@ -31,7 +31,7 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("money", "money <n>: so many Poké given (taken, below 0)"),
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
     ("shop", "shop <shop|market|bank|storage|jobs|recruits|appraise|cafe>: that screen of the game"),
-    ("map", "map: the world map, the places and dungeons opened"),
+    ("map", "map [dungeons]: the world map, the places and dungeons opened (`map dungeons`: the dungeons only); the one chosen is gone to"),
     ("finish", "finish: the game ends (The End)"),
 ];
 
@@ -44,6 +44,10 @@ pub enum When {
     Talk(String),
     /// The player walks into that zone of the place.
     Zone(String),
+    /// That dungeon (or fight) was cleared, however it was gone into (`dungeon`, the map).
+    Won(String),
+    /// The team fell in that dungeon (or fight), and was taken home.
+    Lost(String),
 }
 
 /// `on talk kecleon [if …]` … `end`: what plays when that happens.
@@ -70,7 +74,10 @@ pub enum Action {
     Money(i32),
     Recruit(String),
     Shop(String),
-    Map,
+    /// `map`, `map dungeons`: the world map, of the dungeons only when it says so.
+    Map {
+        dungeons_only: bool,
+    },
     Finish,
     /// `if … else if … else … end`: each test and what it plays (none: `else`).
     If(Vec<(Option<Expr>, Vec<Action>)>),
@@ -342,7 +349,7 @@ fn branches(text: &str, block: &Block, problems: &mut Vec<Diagnostic>) -> Vec<(O
     said
 }
 
-/// `on enter`, `on talk kecleon`, `on zone pier` (`if …` after) … `end`.
+/// `on enter`, `on talk kecleon`, `on zone pier`, `on won forest`, `on lost forest` (`if …` after) … `end`.
 fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) -> Result<Rule, String> {
     let written = &text[block.opening_span.start..block.opening_span.end.min(text.len())];
     let (head, test) = match written.split_once(" if ") {
@@ -354,7 +361,9 @@ fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) 
         ["enter"] => When::Enter,
         ["talk", who] => When::Talk(who.to_string()),
         ["zone", name] => When::Zone(name.to_string()),
-        _ => return Err("on enter | on talk <resident> | on zone <name> [if …] … end".to_string()),
+        ["won", dungeon] => When::Won(dungeon.to_string()),
+        ["lost", dungeon] => When::Lost(dungeon.to_string()),
+        _ => return Err("on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> [if …] … end".to_string()),
     };
     let _ = stmt;
     let (actions, inner) = read_body(text, &block.body, problems);
@@ -405,7 +414,11 @@ fn action(call: &language::ast::Call) -> Result<Action, String> {
         "money" => Action::Money(number(0).ok_or_else(|| usage(word))?),
         "recruit" => Action::Recruit(one()?),
         "shop" => Action::Shop(one()?),
-        "map" => Action::Map,
+        "map" => match words.first().map(String::as_str) {
+            None => Action::Map { dungeons_only: false },
+            Some("dungeons") => Action::Map { dungeons_only: true },
+            Some(_) => return Err(usage(word)),
+        },
         "finish" => Action::Finish,
         _ => {
             let known: Vec<&str> = ACTIONS.iter().map(|(word, _)| *word).collect();
@@ -474,6 +487,21 @@ mod tests {
         let test = second.rules[0].test.as_ref().expect("a test");
         assert_eq!((value(test, &met(0.0)), value(test, &met(1.0))), (1.0, 0.0));
         assert_eq!(game.names().into_iter().collect::<Vec<_>>(), ["forest_done", "met"]);
+    }
+
+    #[test]
+    fn a_dungeon_won_or_lost_has_its_rules_and_the_map_its_dungeons() {
+        let game = GameFile::read(
+            "title: X\nchapter 1\n  open forest\n  on zone trails\n    map dungeons\n  end\n  on won forest if not done\n    set done\n  end\n  on lost forest\n    map\n  end\nend\n",
+        );
+        assert!(game.problems.is_empty(), "{:?}", game.problems);
+        let rules = &game.chapter(1).expect("chapter 1").rules;
+        let whens: Vec<&When> = rules.iter().map(|rule| &rule.when).collect();
+        assert_eq!(whens, [&When::Zone("trails".into()), &When::Won("forest".into()), &When::Lost("forest".into())]);
+        assert!(matches!(rules[0].actions.as_slice(), [Action::Map { dungeons_only: true }]), "{:?}", rules[0].actions);
+        assert!(matches!(rules[2].actions.as_slice(), [Action::Map { dungeons_only: false }]), "{:?}", rules[2].actions);
+        assert!(rules[1].test.is_some());
+        assert!(!GameFile::read("title: X\nchapter 1\n  map everywhere\nend\n").problems.is_empty());
     }
 
     #[test]

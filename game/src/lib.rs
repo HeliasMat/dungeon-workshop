@@ -179,6 +179,12 @@ pub struct Game {
     /// Nobody at the keys: the ways out walked in each chapter (from where, which), and the places seen.
     walked: BTreeSet<(u16, String, usize)>,
     seen: BTreeSet<(u16, String)>,
+    /// Nobody at the keys: the zones walked into in each chapter (where, which).
+    zoned: BTreeSet<(u16, String, String)>,
+    /// The dungeon (or fight) the team is in, by its word, for its `on won` / `on lost`.
+    dived: Option<String>,
+    /// The words of the ways the map open now shows, in its order.
+    map_ways: Vec<String>,
     /// Nothing changed since the place was last made as the story has it.
     settled: bool,
     /// Nobody at the keys, and nothing left to do in the place: the game rests there.
@@ -225,6 +231,9 @@ impl Game {
             talked: BTreeSet::new(),
             walked: BTreeSet::new(),
             seen: BTreeSet::new(),
+            zoned: BTreeSet::new(),
+            dived: None,
+            map_ways: Vec::new(),
             settled: false,
             rested: false,
             saves: PathBuf::from("saves"),
@@ -630,6 +639,7 @@ impl Game {
     /// through by the game's own team, lent; one that cannot be read is
     /// said, and the story goes on as if it failed.
     fn dive(&mut self, word: &str) {
+        self.dived = Some(word.to_string());
         // (Nobody at the keys: passed, as cleared, to see what follows.)
         if self.nobody {
             self.dive_told(true, String::new());
@@ -707,6 +717,10 @@ impl Game {
         } else if !told.is_empty() {
             self.said = Some(told);
         }
+        // (Its `on won <it>` / `on lost <it>`, played before what follows the `dungeon` that went in, if one did.)
+        if let Some(word) = self.dived.take() {
+            self.rules_of(&if cleared { When::Won(word) } else { When::Lost(word) });
+        }
     }
 
     /// K.O.: back to the game's home (else the place it was in), what was lost said.
@@ -745,17 +759,67 @@ impl Game {
         }
     }
 
+    /// The world map (`map`, `map dungeons`): the ways opened (the dungeons
+    /// only, when it says so), by their names; nobody at the keys, the one
+    /// the story waits for gone to at once (`nobody_maps`).
+    fn open_map(&mut self, dungeons_only: bool) {
+        let ways: Vec<String> = self.story.opened.iter().filter(|word| !dungeons_only || self.is_dive(word)).cloned().collect();
+        if self.nobody {
+            let chosen = self.nobody_maps(&ways);
+            self.map_ways = ways;
+            return self.screen_left(chosen);
+        }
+        let names = ways.iter().map(|word| self.way_name(word)).collect();
+        self.map_ways = ways;
+        self.open_screen("map", names);
+    }
+
+    /// Whether that word is a dungeon or a fight of the game's (else a place).
+    fn is_dive(&self, word: &str) -> bool {
+        self.folders.dungeon(word).is_file() || self.folders.fight(word).is_file()
+    }
+
+    /// A way of the map as it is shown: the dungeon's `name:`, the place's
+    /// `name`; else its word.
+    fn way_name(&self, word: &str) -> String {
+        let named = match self.is_dive(word) {
+            true => [self.folders.dungeon(word), self.folders.fight(word)].iter().find_map(|file| {
+                let text = std::fs::read_to_string(file).ok()?;
+                text.lines().find_map(|line| line.trim().strip_prefix("name:").map(|name| name.trim().to_string()))
+            }),
+            false => roam::decor_of(&self.folders.decor(word)).ok().map(|decor| decor.name),
+        };
+        named.filter(|name| !name.is_empty()).unwrap_or_else(|| word.to_string())
+    }
+
+    /// Nobody at the keys, on the map: the way whose `on won` moves the
+    /// story on (a chapter, the end), else one whose `on won` plays, else
+    /// the first (from 1; 0: none).
+    fn nobody_maps(&self, ways: &[String]) -> usize {
+        let rules = self.rules_now();
+        let story = &self.story;
+        let holds = |rule: &Rule| rule.test.as_ref().is_none_or(|test| game_file::value(test, &|name| story.value(name)) != 0.0);
+        let won = |way: &String| rules.iter().filter(|rule| rule.when == When::Won(way.clone()) && holds(rule)).collect::<Vec<_>>();
+        let moves = ways.iter().position(|way| won(way).iter().any(|rule| moves_on(&rule.actions)));
+        let plays = ways.iter().position(|way| !won(way).is_empty());
+        moves.or(plays).map_or(usize::from(!ways.is_empty()), |at| at + 1)
+    }
+
     /// The screen left (the way chosen on a map, from 1): the story goes on.
     fn screen_left(&mut self, chosen: usize) {
         (self.screen, self.settled) = (None, false);
         self.tell_film();
-        if chosen > 0 {
-            let way = self.story.opened.iter().nth(chosen - 1).cloned();
-            match way {
-                Some(word) if self.folders.dungeon(&word).is_file() => self.push(vec![Action::Dungeon(word)]),
-                Some(word) => self.push(vec![Action::Go(word, None)]),
-                None => {}
+        let way = chosen.checked_sub(1).and_then(|at| self.map_ways.get(at).cloned());
+        match way {
+            Some(word) if self.is_dive(&word) => {
+                self.log.push(format!("map: {word}"));
+                self.push(vec![Action::Dungeon(word)]);
             }
+            Some(word) => {
+                self.log.push(format!("map: {word}"));
+                self.push(vec![Action::Go(word, None)]);
+            }
+            None => {}
         }
     }
 
@@ -844,7 +908,8 @@ impl Game {
         (self.ended, self.settled, self.rested) = (false, false, false);
         self.running.clear();
         self.talked.clear();
-        (self.walked, self.seen) = (BTreeSet::new(), BTreeSet::new());
+        (self.walked, self.seen, self.zoned) = (BTreeSet::new(), BTreeSet::new(), BTreeSet::new());
+        (self.dived, self.map_ways) = (None, Vec::new());
         self.log.push("title".to_string());
     }
 
@@ -898,10 +963,7 @@ impl Game {
                 }
             }
             Action::Shop(word) => self.open_screen(&word, Vec::new()),
-            Action::Map => {
-                let ways = self.story.opened.iter().cloned().collect();
-                self.open_screen("map", ways);
-            }
+            Action::Map { dungeons_only } => self.open_map(dungeons_only),
             Action::Finish => self.finished(),
             Action::If(branches) => {
                 let story = &self.story;
@@ -1208,7 +1270,8 @@ impl Game {
     }
 
     /// Nobody at the keys: each one of the place who tells the game when
-    /// talked to, talked to once in this chapter; none left, a way out of
+    /// talked to, talked to once in this chapter; none left, each zone with
+    /// an `on zone` walked into, once (a map there: `nobody_maps`); then a way out of
     /// the place walked, once in this chapter (to a place not seen yet
     /// first); none left either, the game rests.
     fn nobody_talks(&mut self) {
@@ -1220,13 +1283,20 @@ impl Game {
             decor.residents.iter().filter(|resident| self.holds(resident.condition.as_deref())).map(|resident| resident.name.clone()).collect()
         });
         let next = here.into_iter().find(|who| self.talks_to_the_game(who) && !self.talked.contains(&(self.story.chapter, word.clone(), who.clone())));
-        match next {
-            Some(who) => {
+        let zone = if next.is_none() { self.zone_not_walked(&word) } else { None };
+        match (next, zone) {
+            (Some(who), _) => {
                 self.talked.insert((self.story.chapter, word, who.clone()));
                 self.talk(&who);
                 self.advance();
             }
-            None => match self.way_not_walked(&word) {
+            (None, Some(zone)) => {
+                self.zoned.insert((self.story.chapter, word, zone.clone()));
+                self.log.push(format!("zone {zone}"));
+                self.request(GameRequest::Ask(GameAsk::Zone(zone)));
+                self.advance();
+            }
+            (None, None) => match self.way_not_walked(&word) {
                 Some((at, place, entrance)) => {
                     self.walked.insert((self.story.chapter, word, at));
                     // (Played on the next frame: the story goes on from the place's scene.)
@@ -1238,6 +1308,20 @@ impl Game {
                 }
             },
         }
+    }
+
+    /// A zone of that place with an `on zone` that plays now, not walked
+    /// into yet in this chapter.
+    fn zone_not_walked(&self, word: &str) -> Option<String> {
+        let chapter = self.story.chapter;
+        let zones = self.place_decor().map(|decor| decor.zones).unwrap_or_default();
+        let rules = self.rules_now();
+        let story = &self.story;
+        let plays = |zone: &str| {
+            let when = When::Zone(zone.to_string());
+            rules.iter().any(|rule| rule.when == when && rule.test.as_ref().is_none_or(|test| game_file::value(test, &|name| story.value(name)) != 0.0))
+        };
+        zones.into_iter().map(|zone| zone.name).find(|zone| !self.zoned.contains(&(chapter, word.to_string(), zone.clone())) && plays(zone))
     }
 
     /// A way out of that place not walked yet in this chapter, to a place of
@@ -1350,6 +1434,15 @@ fn end_card(name: &str, canvas: &mut Canvas, ui: &stage_view::ui::UiArt, world: 
     card(canvas, ui, 8, &[("The End", color::YELLOW), (name, color::WHITE), ("", color::WHITE), (back, color::WHITE)]);
     world.rgba.fill(0);
     world.over(&canvas.data);
+}
+
+/// Whether these actions move the story on: a chapter, the end.
+fn moves_on(actions: &[Action]) -> bool {
+    actions.iter().any(|action| match action {
+        Action::Chapter(_) | Action::Finish => true,
+        Action::If(branches) => branches.iter().any(|(_, inner)| moves_on(inner)),
+        _ => false,
+    })
 }
 
 /// The counters actions add to.

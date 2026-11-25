@@ -403,7 +403,9 @@ action that goes on to chapter 3. In a chapter: actions, one a line (`play`, `se
 `add`, `chapter`, `go`, `dungeon`, `fight`, `open`, `give`, `take`, `money`, `shop`, `map`,
 `finish`), `if … else if … else … end` with the tests of the films (`chapter >= 2 and not met`:
 the flags are 1 or 0, `won` how the last dungeon ended), and rules: `on enter`, `on talk
-<resident>`, `on zone <name>`, maybe `if <test>`, their actions, `end`.
+<resident>`, `on zone <name>`, `on won <dungeon>`, `on lost <dungeon>` (that dungeon cleared, or fallen in,
+however it was gone into: a `dungeon` line or the map, `map dungeons` showing the dungeons only), maybe
+`if <test>`, their actions, `end`.
 
 A place's `on … end` (after the `[life]` of its decor) holds the same actions; its `resident … if
 <test>` and `says if <test>: …` the same tests.

@@ -214,6 +214,11 @@ A chapter plays its lines in order (the film, then the orchard), then waits for 
 `on talk sunflora` — talking to Sunflora sends the team into the cave; won, it sets a flag and goes on
 to chapter 2. In chapter 2, talking to her ends the game (`finish`).
 
+Several dungeons to choose from, as at a crossroads? `open orchard_cave` (one line per dungeon) in a
+chapter; in the place's decor a zone and its rule, `zone trails 400 160 24 48` then `on zone trails`,
+`map dungeons`, `end` (walking there opens the list of the dungeons opened); and in the chapter, for
+each dungeon, what winning it does: `on won orchard_cave` … `end` (`on lost orchard_cave` too).
+
 **You see** two boxes in the middle: *Chapter 1 · The Lost Hat* with the chips `play a_new_friend`,
 `go orchard`, `dungeon orchard_cave` and "→ chapter 2"; *Chapter 2 · A Hat in the Sun*, "■ the end".
 A chip in red is a name not found: check its spelling.

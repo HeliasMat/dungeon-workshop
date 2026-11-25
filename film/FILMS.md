@@ -387,12 +387,18 @@ end
   `set <flag>`, `clear <flag>`, `add <counter> <n>`, `chapter <n>`, `go <place> [entrance]`,
   `dungeon <name>` and `fight <name>` (then `if won`), `open <place|dungeon>` (on the map),
   `give [n] <item>`, `take [n] <item>`, `money <n>`, `recruit <pokemon>` (it joins the team's recruits, as the rules make one of its species, and stays in the save), `shop <shop|market|bank|storage|jobs|recruits|appraise|cafe>` (`appraise`: the treasure boxes of the bag opened, for a price; `cafe`: a Gummi of the bag pressed into juice, the leader or its partner drinks it and its IQ rises),
-  `map`, `finish` (the game's end card, “The End” and its title, until Enter goes back to the
+  `map` (the world map of what was opened; `map dungeons`: the dungeons only, as at a crossroads; the one chosen is gone into), `finish` (the game's end card, “The End” and its title, until Enter goes back to the
   title screen; the same once the last chapter has nothing left to play; headless, `the end`);
   and `if … else if … else … end`, tests as in films:
   `if chapter >= 2 and not met_kecleon`.
-- **The rules**: `on talk <resident>`, `on enter`, `on zone <name>`, each maybe `if <test>`,
-  then actions, then `end`. Those of the place where the team is play first, then the chapter's.
+- **The rules**: `on talk <resident>`, `on enter`, `on zone <name>`, `on won <dungeon>`, `on lost <dungeon>`,
+  each maybe `if <test>`, then actions, then `end`. Those of the place where the team is play first, then the chapter's.
+  `on won <dungeon>` plays once that dungeon (or fight) is cleared, however the team went in: a `dungeon` line
+  (before what follows it) or the map; `on lost <dungeon>` once it fell there and was taken home. A dungeon
+  menu at a crossroads: `open` each dungeon, a zone of the place whose `on zone` says `map dungeons`, and an
+  `on won` per dungeon for what it does to the story. Headless, each zone with an `on zone` is walked into once
+  a chapter, and the map chooses the way whose `on won` moves the story on (a chapter, `finish`), else one
+  with an `on won`, else the first.
 - **The places** are decors (`decors/<place>.decor`, the game's, else the library's; one not built yet is built
   as the game first shows it, into `data/built/`, and said once in the log); after `[life]`:
 

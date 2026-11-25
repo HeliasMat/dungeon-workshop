@@ -600,6 +600,8 @@ impl Check<'_> {
             When::Enter => vec![Some("on"), Some("enter")],
             When::Talk(who) => vec![Some("on"), Some("talk"), Some(who.as_str())],
             When::Zone(zone) => vec![Some("on"), Some("zone"), Some(zone.as_str())],
+            When::Won(dungeon) => vec![Some("on"), Some("won"), Some(dungeon.as_str())],
+            When::Lost(dungeon) => vec![Some("on"), Some("lost"), Some(dungeon.as_str())],
         };
         let line = locate(within.text, within.from, &head);
         let site = Site { file: within.file.to_path_buf(), line };
@@ -622,6 +624,7 @@ impl Check<'_> {
                     self.say(&site, unknown("no zone here named", zone, zones.iter().map(String::as_str), "zone <name> x y width height"));
                 }
             }
+            (When::Won(dungeon) | When::Lost(dungeon), _) => self.name_dungeon(dungeon, site.clone(), false),
             (When::Enter, _) => {}
         }
         let inner = Within { from: line, ..within.clone() };
@@ -704,7 +707,7 @@ impl Check<'_> {
                     );
                 }
             }
-            Action::Map => self.map_shown |= reached,
+            Action::Map { .. } => self.map_shown |= reached,
             Action::If(branches) => {
                 let site = at(&[Some("if")]);
                 for (test, actions) in branches {

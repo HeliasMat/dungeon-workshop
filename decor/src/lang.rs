@@ -54,7 +54,7 @@ pub const COMMANDS: [(&str, &str); 33] = [
     ("zone", "zone name x y width height: a zone of the place; walking into it plays the game's `on zone name`"),
     (
         "on",
-        "on enter | on talk <resident> | on zone <name> [if test] … end: what the game does then (play, set, chapter, go, dungeon…: the actions of a .game)",
+        "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> [if test] … end: what the game does then (play, set, chapter, go, dungeon…: the actions of a .game)",
     ),
     ("music", "music n: the number of the place's music in the game"),
     (
@@ -768,7 +768,7 @@ impl Parsing<'_> {
             "layout" => self.planning = true,
             "on" => {
                 let head = raw.split('#').next().unwrap_or_default().trim().to_string();
-                if !matches!(rest.first().map(String::as_str), Some("enter" | "talk" | "zone")) {
+                if !matches!(rest.first().map(String::as_str), Some("enter" | "talk" | "zone" | "won" | "lost")) {
                     return Err(told.usage());
                 }
                 self.rule = Some((LifeRule { head, body: String::new(), line: number }, 1));

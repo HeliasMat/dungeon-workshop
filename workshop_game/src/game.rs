@@ -134,6 +134,8 @@ fn rule_head(rule: &Rule) -> String {
         When::Enter => "on enter".to_string(),
         When::Talk(who) => format!("on talk {who}"),
         When::Zone(name) => format!("on zone {name}"),
+        When::Won(name) => format!("on won {name}"),
+        When::Lost(name) => format!("on lost {name}"),
     };
     if rule.test.is_some() { format!("{when} if …") } else { when }
 }
