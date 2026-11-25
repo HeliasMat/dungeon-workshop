@@ -30,7 +30,7 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("take", "take [n] <item>: out of the bag"),
     ("money", "money <n>: so many Poké given (taken, below 0)"),
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
-    ("shop", "shop <shop|market|bank|storage|jobs|recruits>: that screen of the game"),
+    ("shop", "shop <shop|market|bank|storage|jobs|recruits|appraise>: that screen of the game"),
     ("map", "map: the world map, the places and dungeons opened"),
     ("finish", "finish: the game ends (The End)"),
 ];

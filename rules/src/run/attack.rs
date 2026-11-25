@@ -449,7 +449,13 @@ impl Arena<'_> {
         let sides = self.sides(&monsters, user, victim);
         if let Some((user, victim)) = pair(&mut monsters, user, victim) {
             let (watch_user, watch_victim) = (Watch::of(user), Watch::of(victim));
+            let standing = victim.alive();
             landed = self.land(user, victim, attack, sides);
+            // (Who brought it down: what it drops; a foe that did may evolve.)
+            if standing && !victim.alive() {
+                victim.felled_by = Some(user.id);
+                user.evolves |= user.side == super::Side::Foe && self.dungeon.rules.more.enemies_evolve;
+            }
             watch_user.show(user, self.sights);
             watch_victim.show(victim, self.sights);
         }

@@ -37,6 +37,7 @@ pub mod story;
 pub mod strike;
 pub mod team;
 pub mod town;
+pub mod treasure;
 pub mod watch;
 pub mod words;
 

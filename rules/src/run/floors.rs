@@ -12,6 +12,7 @@ use super::dungeon::{Ask, DIRECTIONS, FAINT_FRAMES, FloorItem, FloorTrap, Outcom
 use super::shops::piled;
 use super::spawning::{KECLEON, hunter_stats, spawn_enemy, wild_monster};
 use super::team::earn;
+use super::treasure;
 use super::watch::watched;
 use super::{Dungeon, Input, Monster, MonsterId, Recruit, Run, Side, Sight};
 
@@ -29,12 +30,9 @@ const PLAIN_SEED: u16 = 85;
 /// The piles of Poké a Dough Seed adds to the next floor (this project's
 /// own figure).
 const DOUGH_SEED_POKE: usize = 4;
-/// Chances in 100 that Pickup finds an item as a floor begins, and that
-/// Honey Gather makes a beaten foe drop Nectar (this project's own
-/// figures: the game has Nectar in Treasure Boxes, which foes here do not
-/// drop).
+/// The chance in 100 that Pickup finds an item as a floor begins (this
+/// project's own figure).
 const PICKUP_CHANCE: i32 = 30;
-const HONEY_GATHER_CHANCE: i32 = 10;
 
 impl Run {
     /// On to the next floor; past the last one the dungeon is cleared. (A
@@ -344,6 +342,40 @@ impl Run {
         self.team_falls();
     }
 
+    /// What a defeated foe drops where the dungeon lets it
+    /// (`Restrictions::treasure_boxes`; never on a floor laid out for a
+    /// fight nor in a maze of the Dojo): by its species' weights, more with
+    /// what the one who brought it down has (`treasure`).
+    fn treasure_drop(&mut self, enemy: &Monster) {
+        use crate::dungeon::exclusive::effect::MORE_TREASURE_DROPS;
+        let book = self.book.clone();
+        let dungeon = self.here();
+        let fight = dungeon.spec(&book).and_then(|floor| floor.fixed.as_ref()).is_some_and(|fixed| fixed.ends_with_enemies && !fixed.monsters.is_empty());
+        let maze = dungeon.id.is_some_and(crate::dojo::is_maze);
+        let Some(species) = enemy.species.filter(|_| dungeon.rules.more.treasure_boxes && !fight && !maze) else {
+            return;
+        };
+        let by = enemy.felled_by.and_then(|id| dungeon.monster(id));
+        let felled = by.map_or_else(treasure::Felled::default, |by| treasure::Felled {
+            bonus: i32::from(iq::has(&by.stats, iq::COLLECTOR)) + i32::from(by.status.exclusive.has(MORE_TREASURE_DROPS)),
+            honey_gather: ability::has(&by.stats, ability::HONEY_GATHER),
+            money: by.status.exclusive.has(MORE_MONEY_DROPS),
+        });
+        let rank = dungeon.id.map_or(0, |id| book.tables.jobs.floor_rank(id, dungeon.floor_number));
+        let at = enemy.at;
+        match treasure::drop_of(&mut dungeon.rng, &book.extras, species, rank, felled) {
+            Some(treasure::Drop::Item(item)) => {
+                dungeon.items.push(FloorItem { at, item, price: None });
+                self.log.push(format!("{} dropped {}.", enemy.name, book.item_name(item)));
+            }
+            Some(treasure::Drop::Money) => {
+                dungeon.items.push(FloorItem { at, item: item::POKE, price: None });
+                self.log.push(format!("{} dropped some Poké.", enemy.name));
+            }
+            None => {}
+        }
+    }
+
     /// An enemy the team brought down is worth experience to each member.
     fn foe_falls(&mut self, foe: MonsterId) {
         let book = self.book.clone();
@@ -360,23 +392,9 @@ impl Run {
             self.here().items.push(FloorItem { at: enemy.at, item: enemy.stats.held, price: None });
             self.log.push(format!("{} dropped {}.", enemy.name, book.item_name(enemy.stats.held)));
         }
-        // Honey Gather in the team: now and then Nectar falls instead.
-        let dungeon = self.here();
-        let gatherer = dungeon.monsters.iter().any(|monster| monster.team() && monster.alive() && ability::has(&monster.stats, ability::HONEY_GATHER));
-        if enemy.status.struck_by_team && enemy.stats.held == 0 && gatherer && dungeon.rng.rand_int(100) < HONEY_GATHER_CHANCE {
-            dungeon.items.push(FloorItem { at: enemy.at, item: item::NECTAR, price: None });
-            self.log.push(format!("{} dropped {}.", enemy.name, book.item_name(item::NECTAR)));
-        }
-        // An exclusive item in the team: now and then Poké fall instead (the
-        // game's chance, read from its overlay 10).
-        const MONEY_DROP_CHANCE: i32 = 10;
-        let dungeon = self.here();
-        let finder = dungeon.monsters.iter().any(|monster| monster.team() && monster.alive() && monster.status.exclusive.has(MORE_MONEY_DROPS));
-        let empty_handed = !dungeon.items.iter().any(|item| item.at == enemy.at);
-        if enemy.status.struck_by_team && empty_handed && finder && dungeon.rng.rand_int(100) < MONEY_DROP_CHANCE {
-            dungeon.items.push(FloorItem { at: enemy.at, item: item::POKE, price: None });
-            self.log.push(format!("{} dropped some Poké.", enemy.name));
-        }
+        // Where the dungeon lets them, a treasure box now and then (an
+        // Unown's stone; Poké for an exclusive item).
+        self.treasure_drop(&enemy);
         if !enemy.status.struck_by_team {
             return;
         }

@@ -70,6 +70,8 @@ pub mod effect {
     /// Its moves on itself reach the whole team.
     pub(crate) const EXTEND_SELF_EFFECTS_TO_TEAM: u8 = 85;
     /// Its draining moves give twice the HP back.
+    /// Defeated foes drop treasure more often (`run::treasure`).
+    pub(crate) const MORE_TREASURE_DROPS: u8 = 86;
     pub(crate) const HP_DRAIN_RECOVERY_BOOST: u8 = 87;
     /// Its Pressure costs its strikers more PP.
     pub(crate) const PRESSURE_BOOST: u8 = 88;

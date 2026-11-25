@@ -101,10 +101,15 @@ impl JobTables {
         self.ranks.iter().filter(|rank| before < rank.points && rank.points <= after && rank.prize != 0).map(|rank| rank.prize).collect()
     }
 
+    /// The rank a floor has in the tables (0: none).
+    pub(crate) fn floor_rank(&self, dungeon: u16, floor: u32) -> u8 {
+        self.floor_ranks.get(dungeon as usize).and_then(|floors| floors.get(floor.saturating_sub(1) as usize)).copied().unwrap_or(0)
+    }
+
     /// The rank of a job of that kind there: harder to take someone along or
     /// to arrest (`GetMissionRankWithCapAndModifiers`).
     fn job_rank(&self, dungeon: u16, floor: u32, kind: Kind) -> u8 {
-        let listed = self.floor_ranks.get(dungeon as usize).and_then(|floors| floors.get(floor.saturating_sub(1) as usize)).copied().unwrap_or(0);
+        let listed = self.floor_rank(dungeon, floor);
         let more = matches!(kind, Kind::Escort | Kind::Outlaw | Kind::Stolen) as u8;
         (listed.max(1) + more).min(TOP_RANK)
     }

@@ -1,7 +1,7 @@
 //! The game's own screens a film one plays opens (`screen shop`, `map
 //! …`), over the scene, the film waiting until they are left: the shops,
 //! the bank, the storage, the board of jobs, the recruits who come along,
-//! the world map's ways. What they do is the rules' (`rules::services`,
+//! Xatu's appraisal of the treasure boxes, the world map's ways. What they do is the rules' (`rules::services`,
 //! `rules::jobs`, the `Run` of the film's game, `Playthrough`); here, a key at
 //! a time and what the box shows.
 
@@ -25,6 +25,9 @@ pub enum GameScreen {
     Board(Listing),
     /// Who of the recruits comes along (two at most).
     Recruits { cursor: ListCursor },
+    /// Xatu opens the treasure boxes of the bag, one at a time, for a
+    /// price: what it found told; the numbers it draws.
+    Appraise { cursor: ListCursor, said: Option<String>, draw: Draw },
     /// The world map's ways, by their names; the one chosen once left (from 1; 0: none).
     Map { ways: Vec<String>, cursor: ListCursor, chosen: usize },
     /// The game's menu, M or X in a place: the team, the bag, a save, closed;
@@ -60,6 +63,7 @@ impl GameScreen {
                 GameScreen::Board(Listing::board(false))
             }
             "recruits" => GameScreen::Recruits { cursor: ListCursor::default() },
+            "appraise" => GameScreen::Appraise { cursor: ListCursor::default(), said: None, draw: Draw(draw.below(usize::MAX >> 1) as u32) },
             "map" => GameScreen::Map { ways, cursor: ListCursor::default(), chosen: 0 },
             "menu" => GameScreen::Menu { cursor: ListCursor::default(), said: None, save: false },
             _ => return None,
@@ -111,6 +115,33 @@ impl GameScreen {
                     _ => "Who goes exploring with you? (two at most)",
                 };
                 (left, Words::of_menu(message.to_string(), options, cursor.at))
+            }
+            GameScreen::Appraise { cursor, said, draw } => {
+                if said.is_some() {
+                    if matches!(pressed, Some(Input::Confirm | Input::Cancel)) {
+                        *said = None;
+                    }
+                    return (false, Words::of_menu(said.clone().unwrap_or_default(), Vec::new(), 0));
+                }
+                let boxes = run.boxes();
+                let left = match cursor.press(pressed, boxes.len() + 1) {
+                    Picked::Chosen(row) if row < boxes.len() => {
+                        *said = Some(run.appraise(boxes[row], draw));
+                        false
+                    }
+                    Picked::Chosen(_) | Picked::Left => true,
+                    _ => false,
+                };
+                if let Some(said) = said {
+                    return (left, Words::of_menu(said.clone(), Vec::new(), 0));
+                }
+                let boxes = run.boxes();
+                let options = boxes.iter().map(|&at| book.item_name(run.bag().items[at])).chain(["Done".to_string()]).collect();
+                let message = match boxes.is_empty() {
+                    true => "Xatu: You have no treasure box for me to open.".to_string(),
+                    false => format!("Xatu: Which box shall I open? It costs {} Poké.", rules::town::APPRAISAL_PRICE),
+                };
+                (left, Words::of_menu(message, options, cursor.at))
             }
             GameScreen::Map { ways, cursor, chosen } => {
                 let left = match cursor.press(pressed, ways.len() + 1) {

@@ -65,6 +65,8 @@ pub(crate) const DEEP_BREATHER: u8 = 55;
 pub(crate) const TIME_TRIPPER: u8 = 58;
 pub(crate) const PRACTICE_SWINGER: u8 = 60;
 pub(crate) const HAGGLER: u8 = 62;
+/// Defeated foes drop treasure more often (`run::treasure`).
+pub(crate) const COLLECTOR: u8 = 67;
 
 /// What Brick-Tough adds to the max HP and Multitalent to each move's
 /// PP while they are on (the game's, read from its arm9).

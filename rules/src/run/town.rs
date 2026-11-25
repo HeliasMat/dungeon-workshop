@@ -74,7 +74,7 @@ impl Run {
     pub fn receive(&mut self, given: u16) -> String {
         let name = self.book.item_name(given);
         match self.stow(given) {
-            true => format!("Vous recevez {name}."),
+            true => format!("You received {name}."),
             false => format!("The bag is full: {name} was sent to storage."),
         }
     }
@@ -366,17 +366,33 @@ impl Run {
         }
     }
 
-    /// Xatu opens the treasure box at that place of the bag.
+    /// The treasure boxes of the bag, by their places in it.
+    pub fn boxes(&self) -> Vec<usize> {
+        (0..self.bag.items.len()).filter(|&at| town::treasure_box(stack::id(self.bag.items[at])).is_some()).collect()
+    }
+
+    /// Xatu opens the treasure box at that place of the bag: what it holds
+    /// (`treasure::content`); without the game's lists, an exclusive item
+    /// made for the team or something of a good price.
     pub fn appraise(&mut self, at: usize, draw: &mut Draw) -> String {
+        let Some(&value) = self.bag.items.get(at).filter(|&&value| town::treasure_box(stack::id(value)).is_some()) else {
+            return "That is no treasure box.".to_string();
+        };
         if self.bag.money < town::APPRAISAL_PRICE {
             return "You don't have enough Poké.".to_string();
         }
-        let found = self.exclusive_for_team();
         self.bag.money -= town::APPRAISAL_PRICE;
         self.bag.items.remove(at);
-        let prize = match found.is_empty() {
-            true => self.prize(500..5000, draw),
-            false => Some(found[draw.below(found.len())]),
+        let mut rng = crate::dungeon::DungeonRng::new(draw.below(usize::MAX >> 1) as u32);
+        let prize = match self.book.extras.rank_lists.is_empty() {
+            false => super::treasure::content(value, &self.book.extras, self.book.tables.items.len(), &mut rng),
+            true => {
+                let found = self.exclusive_for_team();
+                match found.is_empty() {
+                    true => self.prize(500..5000, draw),
+                    false => Some(found[draw.below(found.len())]),
+                }
+            }
         };
         prize.map_or_else(|| "The box was empty...".to_string(), |prize| format!("The box opens! {}", self.receive(prize)))
     }

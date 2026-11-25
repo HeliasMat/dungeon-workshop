@@ -52,9 +52,13 @@ pub(crate) fn recycled(value: u16) -> Option<u16> {
     (id(value) == USED_TM && value & USED != 0).then_some(value & ID_MASK)
 }
 
-/// How many a pile holds (1 for an item that does not pile up).
+/// How many a pile holds (1 for an item that does not pile up, whatever
+/// else its value keeps: sticky, a Used TM's, a box's content).
 pub fn count(value: u16) -> u16 {
-    (value >> ID_BITS).max(1)
+    match piles(value) {
+        true => (value >> ID_BITS).max(1),
+        false => 1,
+    }
 }
 
 /// Whether the item piles up.
