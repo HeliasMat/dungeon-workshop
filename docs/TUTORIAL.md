@@ -344,6 +344,18 @@ scene_player play my_first_game.dwpack
 
   What the shop sells can be the game's own, in its head: `shop_stock: Oran Berry, Apple, Reviver Seed`
   (`wares_stock:` for the market; `shop_stock_3:` from chapter 3 on).
+- **The guild's extras**: `talk sentry` (sentry duty: whose footprints these are, ten visitors, once a day, a reward
+  by the score; `if sentry_score >= 6000`), `talk dojo` (a training maze by type, gone into as a short dungeon, the
+  bag left at its door, nothing lost fainting; `if mazes >= 3`), `talk rescue` (the SOS of a team that fainted sent,
+  a friendly team's A-OK Mail read after the next exploration, what was lost given back). `team: quiz` in the head
+  lets the personality test choose the hero and its partner as the game begins. `on rank up … end` plays once the
+  team is back at a new rank (a ceremony, a gift); once `set graduated`, Chimecco lets the partner lead the team.
+
+  ```text
+  resident loudred 120 96 down
+  says On sentry duty! Look at the footprints!
+  talk sentry
+  ```
 - Bigger fights: `fight: <word>` and a `.fight` file made in the **Dungeon** space (+ New Boss Fight).
 - How a game's folder is laid out: [games/README.md](../games/README.md).
 - Every word of a film, a game, a dungeon: [film/FILMS.md](../film/FILMS.md); of a decor:

@@ -15,6 +15,9 @@ use language::Diagnostic;
 pub use language::ast::Expr;
 use language::ast::{BinOp, Block, ExprKind, Kind, Opening, PartKind, Stmt, UnOp};
 
+/// `team: quiz`, in place of the hero and the partner.
+pub const QUIZ: &str = "quiz";
+
 /// The words of the actions, and what each does.
 pub const ACTIONS: &[(&str, &str)] = &[
     ("play", "play <film>: the film plays (from the project's films/), then the game goes on"),
@@ -32,7 +35,7 @@ pub const ACTIONS: &[(&str, &str)] = &[
     ("recruit", "recruit <pokemon>: that Pokémon joins the team's recruits (as the rules make one of its species), kept in the save"),
     (
         "shop",
-        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name|swap|link|evolve|recycle|lottery|bag>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `recruits`: Chimecco Assembly, who goes, each member's tactic, a recruit released; `daycare`: the eggs hatched; `bed`: “Go to sleep?”, then “Save your adventure?”, and `sleep`; `name`: the team's name typed; `swap`: Croagunk's Swap Shop; `link`: the Link Shop; `evolve`: Luminous Spring; `recycle`: the Recycle Shop, Project P; `lottery`: its prize drawing; `bag`: the bag sorted, an item thrown away)",
+        "shop <shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name|swap|link|evolve|recycle|lottery|bag|sentry|dojo|rescue>: that screen of the game (`jobs`, `outlaws`: the boards; `joblist`: the jobs taken; `recruits`: Chimecco Assembly, who goes, each member's tactic, a recruit released; `daycare`: the eggs hatched; `bed`: “Go to sleep?”, then “Save your adventure?”, and `sleep`; `name`: the team's name typed; `swap`: Croagunk's Swap Shop; `link`: the Link Shop; `evolve`: Luminous Spring; `recycle`: the Recycle Shop, Project P; `lottery`: its prize drawing; `bag`: the bag sorted, an item thrown away; `sentry`: sentry duty, whose footprints, once a day; `dojo`: Marowak's Dojo, a training maze; `rescue`: the SOS sent, the A-OK Mail read)",
     ),
     ("name_team", "name_team: the team's name typed (as `shop name`), shown in `{team}`; Poképals till then"),
     ("map", "map [dungeons]: the world map, the places and dungeons opened (`map dungeons`: the dungeons only); the one chosen is gone to"),
@@ -66,6 +69,8 @@ pub enum When {
     Night,
     /// A new day has begun, the team awake (the guild's morning briefing).
     Morning,
+    /// Back from a dungeon at a new exploration rank (after its `on job done`).
+    RankUp,
 }
 
 /// `on talk kecleon [if …]` … `end`: what plays when that happens.
@@ -283,6 +288,12 @@ impl GameFile {
         game
     }
 
+    /// `team: quiz`: the personality test chooses the hero and its partner
+    /// as the game begins.
+    pub fn quiz(&self) -> bool {
+        self.team.first().is_some_and(|first| first == QUIZ)
+    }
+
     /// What a shop sells in that chapter, if the game says (the list of the
     /// latest chapter reached); else the original's lists.
     pub fn stock_for(&self, wares: bool, chapter: u16) -> Option<&Stock> {
@@ -468,10 +479,9 @@ fn branches(text: &str, block: &Block, problems: &mut Vec<Diagnostic>) -> Vec<(O
 }
 
 /// How the rules are written.
-const RULE_HEADS: &str =
-    "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> | on job done [kind|dungeon] | on night | on morning [if …] … end";
+const RULE_HEADS: &str = "on enter | on talk <resident> | on zone <name> | on won <dungeon> | on lost <dungeon> | on job done [kind|dungeon] | on night | on morning | on rank up [if …] … end";
 
-/// `on enter`, `on talk kecleon`, `on zone pier`, `on won forest`, `on lost forest`, `on job done [kind|dungeon]`, `on night`, `on morning` (`if …` after) … `end`.
+/// `on enter`, `on talk kecleon`, `on zone pier`, `on won forest`, `on lost forest`, `on job done [kind|dungeon]`, `on night`, `on morning`, `on rank up` (`if …` after) … `end`.
 fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) -> Result<Rule, String> {
     let written = &text[block.opening_span.start..block.opening_span.end.min(text.len())];
     let (head, test) = match written.split_once(" if ") {
@@ -489,6 +499,7 @@ fn rule(text: &str, stmt: &Stmt, block: &Block, problems: &mut Vec<Diagnostic>) 
         ["job", "done", which] => When::JobDone(Some(which.to_string())),
         ["night"] => When::Night,
         ["morning"] => When::Morning,
+        ["rank", "up"] => When::RankUp,
         _ => return Err(RULE_HEADS.to_string()),
     };
     let _ = stmt;
@@ -669,6 +680,17 @@ mod tests {
         assert_eq!(whens, [&When::JobDone(None), &When::JobDone(Some("rescue".into())), &When::JobDone(Some("forest".into()))]);
         assert_eq!(game.names().into_iter().collect::<Vec<_>>(), ["lucky"]);
         assert!(!GameFile::read("title: X\nchapter 1\n  on job finished\n  end\nend\n").problems.is_empty());
+    }
+
+    #[test]
+    fn a_rank_up_has_its_rule_and_the_quiz_chooses_the_team() {
+        let game = GameFile::read(
+            "title: X\nteam: quiz\nchapter 1\n  on rank up if rank >= 3 and sentry_score > 5000 and mazes > 0\n    play ceremony\n    shop sentry\n  end\nend\n",
+        );
+        assert!(game.problems.is_empty(), "{:?}", game.problems);
+        assert_eq!(game.chapter(1).expect("chapter 1").rules[0].when, When::RankUp);
+        assert!(game.quiz() && !GameFile::read("title: X\nteam: treecko shinx\n").quiz());
+        assert!(game.names().is_empty(), "the game's own: {:?}", game.names());
     }
 
     #[test]

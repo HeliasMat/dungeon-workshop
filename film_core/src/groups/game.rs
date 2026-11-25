@@ -61,7 +61,7 @@ fn instead(word: &str) -> &'static str {
         "passage" => "`exit x y width height to <place> [entrance]` after the [life] of the place's decor",
         "dungeon" => "`dungeon <name>` in a chapter of a .game, then `if won`",
         "screen" => {
-            "`talk shop` (market, bank, storage, jobs, recruits, appraise, cafe, swap, link, evolve, recycle, lottery, bag…) under a resident of a decor, or `shop <screen>` in a .game"
+            "`talk shop` (market, bank, storage, jobs, recruits, appraise, cafe, swap, link, evolve, recycle, lottery, bag, sentry, dojo, rescue…) under a resident of a decor, or `shop <screen>` in a .game"
         }
         "village" => "`home: <place> [entrance]` in the head of the .game",
         "map" => "`open <place|dungeon>` then `map` in a .game",

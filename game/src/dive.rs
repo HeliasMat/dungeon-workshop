@@ -324,13 +324,30 @@ impl Diving {
                 }
             }
         }
+        Ok(Self::entered(data, project, run, lent, id, jobs, floors, boss))
+    }
+
+    /// A maze of Marowak's Dojo (`rules::dojo`), gone through by the game
+    /// of the film, lent: the rules' own table, no text of one's own; no
+    /// job counts there.
+    pub fn maze(data: &str, project: &Project, run: Run, maze: u16) -> Result<Self, Refused> {
+        let floors = run.book.tables.dungeons.get(maze as usize).filter(|_| rules::dojo::is_maze(maze)).map(|table| table.floors.len());
+        match floors {
+            Some(floors) => Ok(Self::entered(data, project, run, true, maze, false, floors, None)),
+            None => Err((format!("no maze {maze} in the game's data"), Box::new(run))),
+        }
+    }
+
+    /// Into the dungeon of that number of the rules' tables, its frame made.
+    #[allow(clippy::too_many_arguments)]
+    fn entered(data: &str, project: &Project, mut run: Run, lent: bool, id: u16, jobs: bool, floors: usize, boss: Option<BossFight>) -> Self {
         let ui = UiArt::load(data).map(Arc::new);
         let mut frame = Frame::new(data, shell::art::Art::open_in(data, project.clone()), ui, None);
         frame.scratch = true;
         let mut dive = Dive::default();
         let mut done = None;
         dive::enter(&mut Turn { run: &mut run, show: &mut frame, here: &mut dive, next: &mut done }, id, jobs);
-        Ok(Diving {
+        Diving {
             project: project.clone(),
             run,
             lent,
@@ -350,7 +367,7 @@ impl Diving {
             flash: 0,
             shake: 0,
             held_end: None,
-        })
+        }
     }
 
     /// So much time gone by (in frames of the game, sixty a second): as many

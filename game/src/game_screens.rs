@@ -6,7 +6,8 @@
 //! Xatu's appraisal of the treasure boxes, the café's Gummi juice, Chansey's
 //! Day Care (the eggs hatched), the bed (a new day), the world map's ways;
 //! Croagunk's Swap Shop, the Link Shop, Luminous Spring, the Recycle Shop
-//! and its prize drawing, the bag (`crate::town_shops`). What they do is the rules' (`rules::services`,
+//! and its prize drawing, the bag (`crate::town_shops`); sentry duty,
+//! Marowak's Dojo, Pelipper's SOS, the personality test (`crate::guild`). What they do is the rules' (`rules::services`,
 //! `rules::jobs`, the `Run` of the film's game, `Playthrough`); here, a key at
 //! a time and what the box shows.
 
@@ -22,6 +23,7 @@ use stage_view::ui::widgets::input;
 use stage_view::ui::{Canvas, ListCursor, Picked, UiArt};
 
 use crate::assembly::{Assembly, Naming};
+use crate::guild::{Dojo, Face, QuizScreen, Rescue, SentryDuty};
 use crate::playthrough::Playthrough;
 use crate::town_shops::{Bag, Evolved, LinkShop, Lottery, Recycle, Spring, SwapShop};
 
@@ -74,6 +76,12 @@ pub enum GameScreen {
     Lottery(Lottery),
     /// The bag: sorted, an item thrown away.
     Bag(Bag),
+    /// Sentry duty: whose footprints, ten visitors; Marowak's Dojo, its
+    /// mazes; Pelipper's SOS and A-OK Mail; the personality test.
+    Sentry(SentryDuty),
+    Dojo(Dojo),
+    Rescue(Rescue),
+    Quiz(QuizScreen),
     /// The bed: "Go to sleep?", then "Save your adventure?" (as the
     /// original asks before the night); what was answered once left.
     Bed {
@@ -148,6 +156,9 @@ impl GameScreen {
             "recycle" => GameScreen::Recycle(Recycle::new(Draw(draw.below(usize::MAX >> 1) as u32))),
             "lottery" => GameScreen::Lottery(Lottery::new(Draw(draw.below(usize::MAX >> 1) as u32))),
             "bag" => GameScreen::Bag(Bag::default()),
+            "sentry" => GameScreen::Sentry(SentryDuty::new(run, Draw(draw.below(usize::MAX >> 1) as u32))),
+            "dojo" => GameScreen::Dojo(Dojo::default()),
+            "rescue" => GameScreen::Rescue(Rescue::default()),
             "appraise" => GameScreen::Appraise { cursor: ListCursor::default(), said: None, draw: Draw(draw.below(usize::MAX >> 1) as u32) },
             "bed" => GameScreen::Bed { cursor: ListCursor::default(), sleeps: false, answer: None },
             "map" => GameScreen::Map { ways, cursor: ListCursor::default(), chosen: 0 },
@@ -200,6 +211,10 @@ impl GameScreen {
             GameScreen::Recycle(shop) => shown(shop.play(pressed, run)),
             GameScreen::Lottery(drawing) => shown(drawing.play(pressed, run)),
             GameScreen::Bag(bag) => shown(bag.play(pressed, run, &own)),
+            GameScreen::Sentry(duty) => shown(duty.play(pressed, run)),
+            GameScreen::Dojo(dojo) => shown(dojo.play(pressed, run)),
+            GameScreen::Rescue(rescue) => shown(rescue.play(pressed, run)),
+            GameScreen::Quiz(quiz) => shown(quiz.play(pressed, run)),
             GameScreen::Naming(naming) => {
                 let (left, message) = naming.play(keys, run);
                 (left, Words::of_menu(message, Vec::new(), 0))
@@ -390,6 +405,37 @@ impl GameScreen {
     pub fn slept(&self) -> Option<Slept> {
         match self {
             GameScreen::Bed { answer, .. } => *answer,
+            _ => None,
+        }
+    }
+
+    /// The personality test, if the game's data has it.
+    pub fn quiz(playthrough: &Playthrough, draw: &mut Draw) -> Option<GameScreen> {
+        QuizScreen::new(playthrough.run()?, Draw(draw.below(usize::MAX >> 1) as u32)).map(GameScreen::Quiz)
+    }
+
+    /// The portrait beside the box: the visitor of sentry duty (in shadow
+    /// until told), the partner on show in the personality test.
+    pub fn face(&self) -> Option<Face> {
+        match self {
+            GameScreen::Sentry(duty) => duty.face(),
+            GameScreen::Quiz(quiz) => quiz.face(),
+            _ => None,
+        }
+    }
+
+    /// The Dojo's maze chosen, once left.
+    pub fn maze(&self) -> Option<u16> {
+        match self {
+            GameScreen::Dojo(dojo) => dojo.chosen,
+            _ => None,
+        }
+    }
+
+    /// The hero and its partner the personality test chose, once left.
+    pub fn quizzed(&self) -> Option<(u16, u16)> {
+        match self {
+            GameScreen::Quiz(quiz) => quiz.chosen,
             _ => None,
         }
     }

@@ -20,7 +20,9 @@
 //! - `dive`: a dungeon of one's own gone through (`.dungeon`, `.fight`);
 //! - `game_screens`: the game's screens (shops, bank, storage, jobs,
 //!   recruits, the world map), over the scene; the town's other shops in
-//!   `town_shops` (swap, link, evolve, recycle, lottery, the bag);
+//!   `town_shops` (swap, link, evolve, recycle, lottery, the bag); the
+//!   guild's extras in `guild` (sentry duty, the Dojo, the SOS, the
+//!   personality test);
 //! - `dungeon_check`, `project_check`: what is wrong in a dungeon, in a whole game;
 //! - `pack`: a game shared as a `.dwpack`, its manifest in `manifest`;
 //! - `book`: the rules' book, read from the data;
@@ -40,6 +42,7 @@ mod e2e_tests;
 mod error;
 pub mod game_file;
 pub mod game_screens;
+pub mod guild;
 pub mod manifest;
 pub mod pack;
 pub mod playthrough;
@@ -212,6 +215,10 @@ pub struct Game {
     pub auto: bool,
     /// The places built on demand (or tried), each once.
     built: BTreeSet<String>,
+    /// The maze of the Dojo the team is in (a dungeon of the rules' own).
+    maze: Option<u16>,
+    /// The portrait a screen shows (`GameScreen::face`), read once.
+    face: Option<(guild::Face, Vec<u8>)>,
 }
 
 impl Game {
@@ -253,6 +260,8 @@ impl Game {
             debug: preview::debug::Debug::default(),
             auto: false,
             built: BTreeSet::new(),
+            maze: None,
+            face: None,
         }
     }
 
@@ -394,7 +403,8 @@ impl Game {
                 self.screen_left(0);
                 return;
             };
-            let (left, shown) = screen.play(&keys, playthrough);
+            let (left, mut shown) = screen.play(&keys, playthrough);
+            shown.portrait = self.face_of(screen.face());
             // (Saved from the menu: written now, said on it.)
             if let GameScreen::Menu { save, said, .. } = &mut screen
                 && std::mem::take(save)
@@ -418,6 +428,11 @@ impl Game {
                     if let Some(slept) = screen.slept() {
                         self.push(vec![Action::Sleep { save: slept.save }]);
                     }
+                    // (A maze of the Dojo chosen: into it; the personality test taken: the team it made.)
+                    if let Some(maze) = screen.maze() {
+                        self.into_maze(maze);
+                    }
+                    self.quizzed(&screen);
                 }
                 false => self.screen = Some((screen, shown)),
             }
@@ -509,8 +524,12 @@ impl Game {
         Ok(())
     }
 
-    /// The team of the game's file, in its game.
+    /// The team of the game's file, in its game; `team: quiz`, the
+    /// personality test chooses it.
     fn make_team(&mut self) {
+        if self.project.as_ref().is_some_and(GameFile::quiz) {
+            return self.take_quiz();
+        }
         let team = self.project.as_ref().map(|project| project.team.clone()).unwrap_or_default();
         let tables = self.tables();
         let species = |name: &str| tables.monsters.get(name).and_then(|(number, _)| number.parse::<u16>().ok());
@@ -520,6 +539,45 @@ impl Game {
         if let Some(playthrough) = self.playthrough_mut() {
             playthrough.team(hero, partner.unwrap_or(hero));
         }
+    }
+
+    /// The personality test (`team: quiz`), as the game begins: the hero and
+    /// its partner chosen; nobody at the keys, its first answers taken.
+    fn take_quiz(&mut self) {
+        let mut draw = self.draw;
+        let screen = self.playthrough_mut().and_then(|playthrough| GameScreen::quiz(playthrough, &mut draw));
+        self.draw = draw;
+        let Some(mut screen) = screen else {
+            self.said = Some("the game's data has no personality test: the team is the rules' own".to_string());
+            return;
+        };
+        if !self.nobody {
+            self.words_gone();
+            self.screen = Some((screen, Words::default()));
+            return;
+        }
+        let Some(playthrough) = self.playthrough.as_mut() else {
+            return;
+        };
+        let enter = Keys { enter: true, ..Keys::default() };
+        for _ in 0..1000 {
+            if screen.play(&enter, playthrough).0 {
+                break;
+            }
+        }
+        self.quizzed(&screen);
+    }
+
+    /// The team the personality test chose, if it was taken.
+    fn quizzed(&mut self, screen: &GameScreen) {
+        let Some((hero, partner)) = screen.quizzed() else {
+            return;
+        };
+        if let Some(playthrough) = self.playthrough.as_mut() {
+            playthrough.team(hero, partner);
+        }
+        self.settled = false;
+        self.log.push(format!("quiz {hero} {partner}"));
     }
 
     /// A game saved, taken up: its story, its team and bag, where it stood.
@@ -720,7 +778,10 @@ impl Game {
         }
         self.give_audio(audio);
         self.tell_film();
-        self.dive_told(end, left_said, &paid);
+        match self.maze.take() {
+            Some(maze) => self.maze_told(maze, end, &left_said),
+            None => self.dive_told(end, left_said, &paid),
+        }
         if let Some(film) = self.film_mut() {
             film.music_again();
         }
@@ -745,7 +806,9 @@ impl Game {
             run.evening();
         }
         self.autosave_due = !self.nobody && self.project.as_ref().is_some_and(|project| project.autosave);
+        let rank = self.story.team.rank;
         self.sync_team();
+        let ranked_up = rank > 0 && self.story.team.rank > rank;
         let how = match end {
             DiveEnd::Won => "won",
             DiveEnd::Lost => "lost",
@@ -759,8 +822,14 @@ impl Game {
         } else if !told.is_empty() {
             self.said = Some(told);
         }
-        // (Its `on won <it>` / `on lost <it>`, then its `on job done`, played before what follows the `dungeon` that went in, if one did.)
+        // (Its `on won <it>` / `on lost <it>`, then its `on job done`, then
+        // `on rank up`, played before what follows the `dungeon` that went
+        // in, if one did: the last pushed plays first.)
         let word = self.dived.take();
+        if ranked_up {
+            self.log.push("rank up".to_string());
+            self.rules_of(&When::RankUp);
+        }
         if !paid.is_empty() {
             let kinds: BTreeSet<&str> = paid.iter().map(|job| job.kind.word()).collect();
             let there = word.clone();
@@ -776,6 +845,71 @@ impl Game {
         }
     }
 
+    /// Into a maze of Marowak's Dojo (`shop dojo`): the rules' own table,
+    /// gone through by the game's team, lent; nobody at the keys, passed.
+    fn into_maze(&mut self, maze: u16) {
+        if self.nobody {
+            return;
+        }
+        let (folder, folders) = (self.data.clone(), self.folders.clone());
+        let Some(run) = self.playthrough_mut().and_then(Playthrough::lend) else {
+            return;
+        };
+        let audio = self.take_audio();
+        match Diving::maze(&folder, &folders, run, maze) {
+            Ok(mut diving) => {
+                diving.frame.audio = audio;
+                self.words_gone();
+                self.diving = Some(diving);
+                self.maze = Some(maze);
+                self.log.push(format!("maze {}", rules::dojo::name(maze)));
+            }
+            Err((why, run)) => {
+                self.give_audio(audio);
+                if let Some(playthrough) = self.playthrough.as_mut() {
+                    playthrough.put_back(*run);
+                }
+                self.said = Some(why);
+            }
+        }
+    }
+
+    /// Back from a maze of the Dojo, where the team went in from, however
+    /// it ended: cleared, it counts (`mazes`, the Final Maze once all are);
+    /// fainted, nothing is lost; no rule plays.
+    fn maze_told(&mut self, maze: u16, end: DiveEnd, left_said: &str) {
+        self.settled = false;
+        if let Some(run) = self.playthrough.as_mut().and_then(Playthrough::run_mut)
+            && end == DiveEnd::Won
+        {
+            run.cleared(maze);
+        }
+        self.sync_team();
+        self.log.push(format!("maze {}", if end == DiveEnd::Won { "cleared" } else { "left" }));
+        let told = match end {
+            DiveEnd::Lost => format!("{}\nBack at the Dojo. Fainting in a maze costs nothing.", left_said.trim()),
+            _ => left_said.trim().to_string(),
+        };
+        self.said = Some(told.trim().to_string()).filter(|told| !told.is_empty());
+    }
+
+    /// The portrait a screen shows (its `face`): the monster's, in shadow
+    /// if it says (the footprints of sentry duty), read once.
+    fn face_of(&mut self, face: Option<guild::Face>) -> Option<stage_view::ui::message::Portrait> {
+        let face = face?;
+        if self.face.as_ref().is_none_or(|(kept, _)| *kept != face) {
+            let art = self.art.as_ref().or_else(|| self.film().map(|film| &film.art))?;
+            let mut rgba = art.portrait(face.0, 0)?;
+            if face.1 {
+                for pixel in rgba.chunks_exact_mut(4).filter(|pixel| pixel[3] > 0) {
+                    pixel[..3].copy_from_slice(&SHADOW);
+                }
+            }
+            self.face = Some((face, rgba));
+        }
+        self.face.as_ref().map(|(_, rgba)| stage_view::ui::message::Portrait { rgba: rgba.clone(), x: 2 })
+    }
+
     /// The team as the tests read it (`rank`, `money`, `recruits`, `day`,
     /// `evening`), from the game's rules while it has them (not while lent
     /// to a dungeon).
@@ -788,7 +922,8 @@ impl Game {
         let (day, evening) = run.day();
         let (money, recruits, team_size) = (run.bag().money, progress.recruits.len() as u32, run.team_size() as u32);
         let project_p = progress.recycled.max(0) as u32;
-        self.story.team = story::TeamNumbers { rank, money, recruits, team_size, day, evening, project_p };
+        let (sentry_score, mazes) = (progress.sentry_points.max(0) as u32, progress.mazes.len() as u32);
+        self.story.team = story::TeamNumbers { rank, money, recruits, team_size, day, evening, project_p, sentry_score, mazes };
     }
 
     /// The team goes to bed: the night's rules (`on night`: the guild's
@@ -1354,9 +1489,8 @@ impl Game {
         let tables = self.tables();
         let word = |species: u16, written: Option<&String>| roam::species_word(&tables, species, written).or_else(|| written.cloned());
         let mut words: Vec<String> = [word(hero, team.first())].into_iter().flatten().collect();
-        if team.len() > 1
-            && let Some(partner) = word(partner, team.get(1))
-        {
+        let pair = team.len() > 1 || self.project.as_ref().is_some_and(GameFile::quiz);
+        if pair && let Some(partner) = word(partner, team.get(1)) {
             words.push(partner);
         }
         if words.is_empty() { team } else { words }
@@ -1637,6 +1771,12 @@ impl Game {
         let Some(film) = film else {
             canvas.clear();
             world.rgba.fill(0);
+            // (A screen with no place behind it yet: the personality test, as the game begins.)
+            if let (Some((screen, shown)), Some(playthrough), Some(art)) = (screen, playthrough, self.art.as_ref()) {
+                canvas.backdrop_rows(&art.ui, 0..stage_view::ui::SCREEN_HEIGHT * 2);
+                screen.draw(canvas, &art.ui, shown, playthrough);
+                world.over(&canvas.data);
+            }
             return;
         };
         match (screen, playthrough) {
@@ -1656,6 +1796,9 @@ fn end_card(name: &str, canvas: &mut Canvas, ui: &stage_view::ui::UiArt, world: 
     world.rgba.fill(0);
     world.over(&canvas.data);
 }
+
+/// The colour of a monster in shadow (the footprints of sentry duty).
+const SHADOW: [u8; 3] = [16, 16, 24];
 
 /// Whether these actions move the story on: a chapter, the end.
 fn moves_on(actions: &[Action]) -> bool {

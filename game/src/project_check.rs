@@ -391,7 +391,8 @@ impl Check<'_> {
         let tables = self.tables.clone();
         let monsters = &tables.monsters;
         // (No data: no Pokémon known, none checked.)
-        for member in self.game.team.clone() {
+        // (`team: quiz`: the personality test chooses them.)
+        for member in self.game.team.clone().into_iter().filter(|_| !self.game.quiz()) {
             if !monsters.is_empty() && !monsters.contains_key(member.as_str()) {
                 let site = self.game_site(team_line);
                 self.say(&site, unknown("unknown Pokémon", &member, monsters.keys().map(String::as_str), "team: the hero, the partner"));
@@ -618,6 +619,7 @@ impl Check<'_> {
             When::JobDone(which) => vec![Some("on"), Some("job"), Some("done"), which.as_deref()],
             When::Night => vec![Some("on"), Some("night")],
             When::Morning => vec![Some("on"), Some("morning")],
+            When::RankUp => vec![Some("on"), Some("rank"), Some("up")],
         };
         let line = locate(within.text, within.from, &head);
         let site = Site { file: within.file.to_path_buf(), line };
@@ -643,7 +645,7 @@ impl Check<'_> {
             (When::Won(dungeon) | When::Lost(dungeon), _) => self.name_dungeon(dungeon, site.clone(), false),
             (When::JobDone(Some(which)), _) if rules::jobs::Kind::named(which).is_none() => self.name_dungeon(which, site.clone(), false),
             (When::JobDone(_), _) => {}
-            (When::Enter | When::Night | When::Morning, _) => {}
+            (When::Enter | When::Night | When::Morning | When::RankUp, _) => {}
         }
         let inner = Within { from: line, ..within.clone() };
         self.actions(&rule.actions, &inner);
@@ -725,7 +727,7 @@ impl Check<'_> {
                             "no screen",
                             screen,
                             decor::lang::TALKS[1..].iter().copied(),
-                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name|swap|link|evolve|recycle|lottery|bag",
+                            "shop|market|bank|storage|jobs|outlaws|joblist|recruits|appraise|cafe|daycare|bed|name|swap|link|evolve|recycle|lottery|bag|sentry|dojo|rescue",
                         ),
                     );
                 }

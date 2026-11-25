@@ -2,8 +2,10 @@
 //! the team goes exploring (four at most: the leader, the partner, the
 //! recruits along), each member seen (level, HP, moves, tactic), its tactic
 //! changed, a recruit sent away for good once asked twice; the partner
-//! may stay home once the team has graduated (`set graduated`), as the
-//! original lets it once its story is over. And the team named, letter by
+//! may stay home once the team has graduated (`set graduated`), or lead
+//! the team (the leader becoming its partner), as the original lets it
+//! once its story is over; a recruit cannot lead (the rules keep it as a
+//! recruit, not as a member that grows). And the team named, letter by
 //! letter. What they do is the rules' (`rules::run::Run`).
 
 use rules::run::Run;
@@ -47,6 +49,8 @@ enum Choice {
     Along,
     /// Its next tactic.
     Tactic,
+    /// The partner leads, the leader becomes its partner.
+    Lead,
     Release,
     Back,
 }
@@ -57,7 +61,7 @@ enum Choice {
 fn choices(whom: Whom, free: bool) -> Vec<Choice> {
     match whom {
         Whom::Leader => vec![Choice::Back],
-        Whom::Partner if free => vec![Choice::Along, Choice::Tactic, Choice::Back],
+        Whom::Partner if free => vec![Choice::Along, Choice::Lead, Choice::Tactic, Choice::Back],
         Whom::Partner => vec![Choice::Tactic, Choice::Back],
         Whom::Recruit(_) => vec![Choice::Along, Choice::Tactic, Choice::Release, Choice::Back],
     }
@@ -108,6 +112,12 @@ impl Assembly {
                                 Whom::Leader => 0,
                             };
                             run.next_tactic(who);
+                        }
+                        Choice::Lead => {
+                            if run.swap_leader() {
+                                self.said = Some(format!("{} leads the team now!", run.member_name(Whom::Leader)));
+                                (self.page, self.cursor) = (Page::Team, ListCursor::default());
+                            }
                         }
                         Choice::Release => {
                             if let Whom::Recruit(at) = whom {
@@ -191,6 +201,7 @@ impl Assembly {
                     Choice::Along if along => "Stay home".to_string(),
                     Choice::Along => "Come along".to_string(),
                     Choice::Tactic => format!("Tactic: {tactic}"),
+                    Choice::Lead => "Lead the team".to_string(),
                     Choice::Release => "Release".to_string(),
                     Choice::Back => "Back".to_string(),
                 };
@@ -301,6 +312,8 @@ mod tests {
         assert_eq!(choices(Whom::Leader, true), [Choice::Back]);
         assert!(!choices(Whom::Partner, false).contains(&Choice::Along));
         assert!(choices(Whom::Partner, true).contains(&Choice::Along));
+        assert!(choices(Whom::Partner, true).contains(&Choice::Lead) && !choices(Whom::Partner, false).contains(&Choice::Lead), "leads once free");
+        assert!(!choices(Whom::Recruit(0), true).contains(&Choice::Lead), "a recruit does not lead");
         assert!(choices(Whom::Recruit(0), false).contains(&Choice::Release));
     }
 }

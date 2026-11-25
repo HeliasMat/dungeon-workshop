@@ -26,8 +26,9 @@ const JOBS_DONE: &str = "jobs_done";
 /// how many go exploring (`team_size`: the leader, the partner, the recruits
 /// along); the day (1 the first) and whether it is evening (1: back from a
 /// dungeon, not slept since); the trades made at the Recycle Shop
-/// (`project_p`: what the café's Project P counts).
-pub const OWN_NAMES: [&str; 10] = ["chapter", WON, JOBS_DONE, "rank", "money", "recruits", "team_size", "day", "evening", "project_p"];
+/// (`project_p`: what the café's Project P counts); the points of the
+/// last sentry duty (`sentry_score`), the Dojo's mazes cleared (`mazes`).
+pub const OWN_NAMES: [&str; 12] = ["chapter", WON, JOBS_DONE, "rank", "money", "recruits", "team_size", "day", "evening", "project_p", "sentry_score", "mazes"];
 
 /// What the team is now, as tests read it (not saved: the rules' game is).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -39,6 +40,8 @@ pub struct TeamNumbers {
     pub day: u32,
     pub evening: bool,
     pub project_p: u32,
+    pub sentry_score: u32,
+    pub mazes: u32,
 }
 
 /// Where the story stands.
@@ -78,6 +81,8 @@ impl Story {
             "day" => f64::from(self.team.day),
             "evening" => f64::from(u8::from(self.team.evening)),
             "project_p" => f64::from(self.team.project_p),
+            "sentry_score" => f64::from(self.team.sentry_score),
+            "mazes" => f64::from(self.team.mazes),
             name if self.flags.contains(name) => 1.0,
             name => self.counters.get(name).map_or(0.0, |count| f64::from(*count)),
         }
@@ -214,8 +219,9 @@ mod tests {
         assert_eq!(Story::read(&story.written_alone()), story);
         assert_eq!(Story::of_place(&story.place_saved()), story);
         assert_eq!((story.value("chapter"), story.value("met_kecleon"), story.value("apples"), story.value("nothing")), (2.0, 1.0, 3.0, 0.0));
-        story.team = TeamNumbers { rank: 2, money: 350, recruits: 1, team_size: 3, day: 3, evening: true, project_p: 12 };
+        story.team = TeamNumbers { rank: 2, money: 350, recruits: 1, team_size: 3, day: 3, evening: true, project_p: 12, sentry_score: 4200, mazes: 2 };
         assert_eq!([story.value("jobs_done"), story.value("rank"), story.value("money"), story.value("recruits")], [4.0, 2.0, 350.0, 1.0]);
         assert_eq!([story.value("day"), story.value("evening"), story.value("team_size"), story.value("project_p")], [3.0, 1.0, 3.0, 12.0]);
+        assert_eq!([story.value("sentry_score"), story.value("mazes")], [4200.0, 2.0]);
     }
 }

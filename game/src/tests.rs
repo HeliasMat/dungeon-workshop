@@ -512,3 +512,100 @@ fn the_town_s_other_shops_swap_link_evolve_draw_and_keep_the_bag() {
     assert!(game.cutscene.is_some() && game.said.is_none(), "{:?} {:?}", game.said, game.log);
     assert!(game.log.iter().any(|line| line.starts_with("evolved ") && line.ends_with("flareon")), "{:?}", game.log);
 }
+
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn the_guild_s_extras_sentry_duty_the_dojo_the_sos_the_quiz_and_a_new_leader() {
+    use rules::run::town::Whom;
+    use rules::services::Input::{Confirm, Down};
+    let data = data().expect("the extracted data/");
+    let rescue = crate::testing::root().join("tests/games/test_rescue/test_rescue.game");
+    let mut game = Game::open(&crate::testing::context_on(&data), &rescue, None).expect("the game opens");
+    (game.title, game.story.chapter) = (None, 2);
+    game.enter("test_square", super::roam::Arrival::Entrance(None), true);
+    game.make_team();
+    standing(&mut game);
+    let run = game.playthrough.as_mut().and_then(crate::playthrough::Playthrough::run_mut).expect("its rules");
+
+    // (Sentry duty: each visitor told right, quickly; then not again today.)
+    let mut duty = crate::guild::SentryDuty::new(run, rules::run::town::Draw(5));
+    let (_, (asked, ..)) = duty.play(None, run);
+    assert!(asked.starts_with("Sentry duty!"), "{asked}");
+    let mut said = duty.play(Some(Confirm), run).1;
+    for _ in 0..rules::sentry::ROUNDS {
+        let (visitor, hidden) = duty.face().expect("footprints on show");
+        assert!(hidden, "in shadow till told");
+        let at = said.1.iter().position(|name| *name == run.book.species_name(visitor)).expect("the visitor among the four");
+        for _ in 0..at {
+            duty.play(Some(Down), run);
+        }
+        duty.play(Some(Confirm), run);
+        assert_eq!(duty.face(), Some((visitor, false)), "told: the visitor as it is");
+        said = duty.play(Some(Confirm), run).1;
+    }
+    assert!(said.0.contains("Perfect!") && said.0.contains("You received"), "{}", said.0);
+    assert!(!run.sentry_free() && run.team().progress.sentry_points > 10_000);
+    let (_, (refused, ..)) = crate::guild::SentryDuty::new(run, rules::run::town::Draw(5)).play(None, run);
+    assert!(refused.contains("today"), "{refused}");
+
+    // (The Dojo: its mazes by type, the first chosen.)
+    let mut dojo = crate::guild::Dojo::default();
+    let (_, (welcome, mazes, _)) = dojo.play(None, run);
+    assert!(welcome.contains("Dojo") && mazes.first().map(String::as_str) == Some("Normal Maze"), "{welcome} {mazes:?}");
+    assert_eq!(mazes.len(), rules::dojo::TYPES.len() + 1, "the Final Maze not yet: {mazes:?}");
+    assert!(dojo.play(Some(Confirm), run).0 && dojo.chosen == Some(rules::dojo::FIRST));
+
+    // (Pelipper: the SOS sent, then its A-OK Mail read, what was lost given back.)
+    run.read_save(
+        "sos=12:4:250:0:0:70
+",
+    );
+    let mut sos = crate::guild::Rescue::default();
+    let (_, (asked, ..)) = sos.play(None, run);
+    assert!(asked.starts_with("Your team fainted at") && asked.contains("1 items and 250"), "{asked}");
+    let (_, (sent, ..)) = sos.play(Some(Confirm), run);
+    assert!(sent.contains("SOS") && run.sos().is_some_and(|sos| sos.sent), "{sent}");
+    run.read_save(
+        "sos=12:4:250:1:0:70
+",
+    );
+    let money = run.bag().money;
+    let mut sos = crate::guild::Rescue::default();
+    let (_, (read, ..)) = sos.play(Some(Confirm), run);
+    assert!(read.contains("A-OK Mail") && !read.contains("{item:"), "{read}");
+    assert!(run.bag().money == money + 250 && run.sos().is_none());
+
+    // (A new leader at the assembly, once graduated: the partner leads.)
+    let (leader, partner) = run.team().species;
+    let mut assembly = crate::assembly::Assembly::default();
+    assembly.free = true;
+    for key in [Down, Confirm, Down, Confirm] {
+        assembly.play(Some(key), run);
+    }
+    assert_eq!(run.team().species, (partner, leader), "{}", run.member_name(Whom::Leader));
+
+    // (The personality test, its pages read: no word of the game's left unsaid.)
+    let mut quiz = crate::guild::QuizScreen::new(run, rules::run::town::Draw(3)).expect("the test in the data");
+    let mut pages = vec![quiz.play(None, run).1.0];
+    while quiz.chosen.is_none() && pages.len() < 200 {
+        pages.push(quiz.play(Some(Confirm), run).1.0);
+    }
+    let tags: Vec<&String> = pages.iter().filter(|page| page.contains("[kind") || page.contains("[hero") || page.contains("[partner")).collect();
+    assert!(quiz.chosen.is_some() && tags.is_empty(), "{tags:?}");
+    let (_, partner) = quiz.chosen.expect("chosen");
+    let asked = format!("Is [CS:N]{}[CR] who you want?", run.book.species_name(partner));
+    assert!(pages.iter().any(|page| page.contains(&asked)), "{pages:?}");
+
+    // (The personality test chooses the team: nobody at the keys, its first answers.)
+    if let Some(project) = game.project.as_mut() {
+        project.team = vec![crate::game_file::QUIZ.to_string()];
+    }
+    game.nobody = true;
+    game.make_team();
+    assert!(game.log.iter().any(|line| line.starts_with("quiz ")), "{:?} {:?}", game.log, game.said);
+
+    // (Into the maze chosen: a dungeon of the rules' own, the team lent.)
+    game.nobody = false;
+    game.into_maze(rules::dojo::FIRST);
+    assert!(game.diving.is_some() && game.log.last().map(String::as_str) == Some("maze Normal Maze"), "{:?} {:?}", game.log, game.said);
+}
