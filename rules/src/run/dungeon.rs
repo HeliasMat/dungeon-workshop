@@ -80,6 +80,10 @@ pub enum Ask {
     Recruit(Recruit),
     /// A job done: whether to leave the dungeon at once.
     Leave,
+    /// Whether to take the hidden stairs the leader found.
+    HiddenStairs,
+    /// Whether to pay for what one of the Secret Bazaar offers.
+    Bazaar(super::secret::Bazaar),
 }
 
 /// A move on the user's side reaching the teammates around it.
@@ -264,6 +268,13 @@ pub struct Dungeon {
     pub shared_exp: i32,
     /// Hidden Land's rules hold (`guests`): the leader cannot change.
     pub hidden_land: bool,
+    /// The floor's hidden stairs, if it has some; the secret floor they led
+    /// to, while the team is on it; they are to be taken; Mime Jr.'s spa
+    /// was used there (`secret`).
+    pub hidden_stairs: Option<super::secret::HiddenStairs>,
+    pub secret: Option<super::secret::Secret>,
+    pub take_hidden: bool,
+    pub spa_used: bool,
 }
 
 impl Dungeon {
@@ -341,6 +352,10 @@ impl Dungeon {
             hero: None,
             shared_exp: 0,
             hidden_land: false,
+            hidden_stairs: None,
+            secret: None,
+            take_hidden: false,
+            spa_used: false,
         }
     }
 
@@ -377,9 +392,10 @@ impl Dungeon {
         self.monsters.iter().find(|monster| monster.at == tile && monster.alive())
     }
 
-    /// Generates the floor of `spec` from the current RNG state: those on
-    /// it and what lies there are the caller's to place.
-    pub(crate) fn enter_floor(&mut self, spec: Option<&FloorTable>) {
+    /// Generates the floor of `spec` from the current RNG state, or lays
+    /// out the one `fixed` by hand: those on it and what lies there are the
+    /// caller's to place.
+    pub(crate) fn enter_floor(&mut self, spec: Option<&FloorTable>, fixed: Option<&crate::tables::Fixed>) {
         self.floor_seed = self.rng.state();
         self.floor_turns = 0;
         self.last_used = None;
@@ -392,7 +408,8 @@ impl Dungeon {
         if self.monsters.iter().any(|monster| monster.team() && monster.status.exclusive.has(shops)) {
             props.kecleon_shop_chance = props.kecleon_shop_chance * KECLEON_SHOP_BOOST / 256;
         }
-        self.floor = match spec.and_then(|floor| floor.fixed.as_ref()) {
+        self.hidden_stairs = None;
+        self.floor = match fixed {
             Some(fixed) => fixed.floor(),
             None => generate_floor(&mut self.rng, &props),
         };
@@ -405,7 +422,6 @@ impl Dungeon {
         let natural = spec.map_or(weather::CLEAR, |floor| floor.weather);
         self.weather = Weather::new(natural, &mut self.rng);
         self.weather.lasting = self.rules.options.lasting_weather;
-        let fixed = spec.and_then(|floor| floor.fixed.as_ref());
         (self.lit, self.radar, self.thief_alert) = (false, false, false);
         (self.silence, self.no_orbs) = fixed.map_or((false, false), |fixed| (!fixed.moves_allowed, !fixed.orbs_allowed));
         self.banner = FLOOR_BANNER;

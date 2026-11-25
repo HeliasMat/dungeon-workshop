@@ -31,6 +31,7 @@ pub mod orbs;
 pub mod others;
 pub mod quicksave;
 pub mod saves;
+pub mod secret;
 pub mod shops;
 pub mod spawning;
 pub mod story;
@@ -308,6 +309,7 @@ impl Run {
         self.job_targets();
         self.resolve_deaths();
         self.descend_stairs();
+        self.take_hidden_stairs();
         self.lay_traps();
         self.keep_iq();
         self.see_floor();

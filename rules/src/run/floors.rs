@@ -46,6 +46,7 @@ impl Run {
             return;
         }
         dungeon.floor_number += 1;
+        dungeon.secret = None;
         self.new_floor();
     }
 
@@ -81,8 +82,18 @@ impl Run {
     /// The floor `floor_number` from the RNG's state, the team on it.
     pub(crate) fn new_floor(&mut self) {
         let book = self.book.clone();
+        let fixed = self.fixed_room().cloned();
         let dungeon = self.here();
-        dungeon.enter_floor(dungeon.spec(&book));
+        dungeon.enter_floor(dungeon.spec(&book), fixed.as_ref());
+        // Hidden stairs, now and then, on a floor of the generator's with at
+        // least two floors left (`secret`).
+        let floors = dungeon.id.and_then(|id| book.tables.dungeons.get(id as usize)).map_or(0, |table| table.floors.len());
+        let extras = dungeon.id.and_then(|id| book.floor_extras(id, dungeon.floor_number));
+        if let Some(extras) = extras.filter(|_| fixed.is_none() && dungeon.floor_number as usize + 1 < floors) {
+            use crate::dungeon::exclusive::effect::MORE_HIDDEN_STAIRS;
+            let boosted = dungeon.monsters.iter().any(|monster| monster.team() && monster.status.exclusive.has(MORE_HIDDEN_STAIRS));
+            dungeon.hidden_stairs = super::secret::hidden_stairs(&dungeon.floor, dungeon.floor_seed, extras, boosted);
+        }
         self.build_floor();
         // A new floor plays its own song (the shop's own aside).
         let dungeon = self.here();
@@ -124,13 +135,13 @@ impl Run {
         }
         // A floor laid out by hand places its own.
         let spec = dungeon.spec(&book);
-        if let Some(fixed) = spec.and_then(|floor| floor.fixed.as_ref()) {
-            self.place_fixed(fixed);
+        if let Some(fixed) = self.fixed_room().cloned() {
+            self.place_fixed(&fixed);
         }
         self.slow_start();
         let dungeon = self.here();
-        // The jobs of a dungeon the team chose.
-        if dungeon.jobs {
+        // The jobs of a dungeon the team chose (not on a secret floor).
+        if dungeon.jobs && dungeon.secret.is_none() {
             self.place_job_targets();
         }
         self.show(Sight::NewFloor);
@@ -240,7 +251,15 @@ impl Run {
             monster.facing = facing(placed);
             dungeon.monsters.push(monster);
         }
+        // (In the Secret Room, what its Deluxe Boxes hold: items of the
+        // floor's list of chests.)
+        let chests = dungeon.id.and_then(|id| book.floor_extras(id, dungeon.floor_number)).map(|extras| &extras.chests);
+        let chests = chests.filter(|_| dungeon.secret == Some(super::secret::Secret::Room));
         for &(at, item) in &fixed.items {
+            let item = match chests {
+                Some(chests) => chests.pick(&mut dungeon.rng).filter(|&found| found != item::POKE).map_or(item, |found| piled(&book, found, &mut dungeon.rng)),
+                None => item,
+            };
             dungeon.items.push(FloorItem { at: Fixed::tile(at), item, price: None });
         }
         for &(at, kind, seen) in &fixed.traps {
@@ -283,6 +302,10 @@ impl Run {
         if dungeon.spawn_turn == dungeon.turn {
             return;
         }
+        // (None come onto a secret floor.)
+        if dungeon.secret.is_some() {
+            return;
+        }
         dungeon.spawn_turn = dungeon.turn;
         dungeon.spawn_count += 1;
         // (Illuminate hit: one comes now, whatever the count.)
@@ -322,7 +345,6 @@ impl Run {
     /// without one goes back to the guild, and the run is over for the
     /// others (the leader, its partner).
     pub(crate) fn resolve_deaths(&mut self) {
-        let book = self.book.clone();
         let dungeon = self.here();
         let fallen: Vec<MonsterId> = dungeon
             .monsters
@@ -331,7 +353,8 @@ impl Run {
             .map(|monster| monster.id)
             .collect();
         // A floor laid out for a fight is left once nobody is left to fight.
-        let fight = dungeon.spec(&book).and_then(|floor| floor.fixed.as_ref()).is_some_and(|fixed| fixed.ends_with_enemies && !fixed.monsters.is_empty());
+        let fight = self.fixed_room().is_some_and(|fixed| fixed.ends_with_enemies && !fixed.monsters.is_empty());
+        let dungeon = self.here();
         let standing = dungeon.monsters.iter().any(|monster| monster.side == Side::Foe && monster.alive());
         if fight && !standing && !fallen.is_empty() {
             dungeon.fight_won = true;
@@ -349,8 +372,8 @@ impl Run {
     fn treasure_drop(&mut self, enemy: &Monster) {
         use crate::dungeon::exclusive::effect::MORE_TREASURE_DROPS;
         let book = self.book.clone();
+        let fight = self.fixed_room().is_some_and(|fixed| fixed.ends_with_enemies && !fixed.monsters.is_empty());
         let dungeon = self.here();
-        let fight = dungeon.spec(&book).and_then(|floor| floor.fixed.as_ref()).is_some_and(|fixed| fixed.ends_with_enemies && !fixed.monsters.is_empty());
         let maze = dungeon.id.is_some_and(crate::dojo::is_maze);
         let Some(species) = enemy.species.filter(|_| dungeon.rules.more.treasure_boxes && !fight && !maze) else {
             return;

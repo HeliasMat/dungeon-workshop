@@ -67,6 +67,12 @@ pub fn draw(game: &mut Turn<'_, Dive>) {
     {
         world.sprite(stairs, on_screen(tile_middle(dungeon.floor.stairs)), close, [255.0; 3], 1.0);
     }
+    // (Hidden stairs, once found: the stairs' picture.)
+    if let Some(hidden) = dungeon.hidden_stairs.filter(|hidden| hidden.found && near(hidden.at))
+        && let Some(stairs) = looks.trap(tables.stairs_tile, tables)
+    {
+        world.sprite(stairs, on_screen(tile_middle(hidden.at)), close, [255.0; 3], 1.0);
+    }
     let seer = iq::has(&leader.stats, iq::TRAP_SEER);
     for trap in dungeon.traps.iter().filter(|trap| (trap.seen || seer) && near(trap.at)) {
         if let Some(picture) = looks.trap(trap.kind, tables) {

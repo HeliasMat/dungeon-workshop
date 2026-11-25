@@ -78,6 +78,8 @@ pub fn draw(canvas: &mut Canvas, ui: &UiArt, run: &Run, talk: &Talk) {
             Ask::Stairs => "Stairs: go on?".to_string(),
             Ask::Recruit(recruit) => format!("Welcome {}?", recruit.name),
             Ask::Leave => "Job done: leave the dungeon?".to_string(),
+            Ask::HiddenStairs => "Hidden Stairs: go on?".to_string(),
+            Ask::Bazaar(service) => service.question().to_string(),
         };
         canvas.titled_menu(ui, (2, BOTTOM + 2, 26), (&title, color::WHITE), &YesNo::ROWS, 2, chosen, 12);
     }

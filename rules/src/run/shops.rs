@@ -309,6 +309,9 @@ impl Run {
                 self.log.push("The team left the dungeon.".to_string());
             }
             Ask::Leave => {}
+            Ask::HiddenStairs => dungeon.take_hidden = yes,
+            Ask::Bazaar(service) if yes => self.bazaar(service),
+            Ask::Bazaar(_) => self.log.push("Come back anytime.".to_string()),
         }
     }
 

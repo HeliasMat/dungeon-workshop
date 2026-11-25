@@ -84,6 +84,8 @@ pub mod effect {
     pub(crate) const RECOVER_HP_FROM_APPLES_AND_BERRIES: u8 = 93;
     /// Kecleon shops are likelier on the floors of its team.
     pub(crate) const MORE_KECLEON_SHOPS: u8 = 94;
+    /// Hidden stairs are likelier on the floors of its team (`run::secret`).
+    pub(crate) const MORE_HIDDEN_STAIRS: u8 = 95;
     pub(crate) const NO_FRIENDLY_FIRE: u8 = 96;
     /// Pickup finds more; beaten foes now and then drop Poké.
     pub(crate) const PICKUP_BOOST: u8 = 97;

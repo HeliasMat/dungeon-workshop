@@ -168,6 +168,12 @@ impl Run {
         leader.facing = (dx, dy);
         let (from, name, rooted) = (leader.at, leader.name.clone(), leader.status.rooted());
         let target = Pos::new(from.x + dx, from.y + dy);
+        // Walking into one of the Secret Bazaar is talking to it.
+        if self.talk_in_bazaar(target) {
+            self.here().cooldown = STEP_FRAMES;
+            return None;
+        }
+        let dungeon = self.here();
         let blocked = dungeon.monsters.iter().any(|monster| monster.at == target && monster.alive() && monster.side == Side::Foe);
         // Walking into Kecleon is talking to it: to pay, or to sell.
         if let Some(shop) = dungeon.shop.as_mut().filter(|shop| shop.keeper == Some(target)) {
@@ -268,6 +274,7 @@ impl Run {
         }
         dungeon.stood = Some(at);
         self.pick_up(id);
+        self.step_on_hidden_stairs();
         if let Some(trap) = self.here().traps.iter().position(|trap| trap.at == at && !trap.team) {
             let outcome = self.spring(id, trap);
             self.trap_outcome(outcome);
