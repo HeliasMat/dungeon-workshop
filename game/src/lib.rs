@@ -173,9 +173,12 @@ pub struct Game {
     pub screen: Option<(GameScreen, Words)>,
     running: Vec<Running>,
     /// Nobody at the keys: films go by themselves, dungeons as cleared, a
-    /// place's talks once each.
+    /// place's talks once each, then its ways out.
     pub nobody: bool,
     talked: BTreeSet<(u16, String, String)>,
+    /// Nobody at the keys: the ways out walked in each chapter (from where, which), and the places seen.
+    walked: BTreeSet<(u16, String, usize)>,
+    seen: BTreeSet<(u16, String)>,
     /// Nothing changed since the place was last made as the story has it.
     settled: bool,
     /// Nobody at the keys, and nothing left to do in the place: the game rests there.
@@ -220,6 +223,8 @@ impl Game {
             running: Vec::new(),
             nobody: false,
             talked: BTreeSet::new(),
+            walked: BTreeSet::new(),
+            seen: BTreeSet::new(),
             settled: false,
             rested: false,
             saves: PathBuf::from("saves"),
@@ -839,6 +844,7 @@ impl Game {
         (self.ended, self.settled, self.rested) = (false, false, false);
         self.running.clear();
         self.talked.clear();
+        (self.walked, self.seen) = (BTreeSet::new(), BTreeSet::new());
         self.log.push("title".to_string());
     }
 
@@ -1202,11 +1208,14 @@ impl Game {
     }
 
     /// Nobody at the keys: each one of the place who tells the game when
-    /// talked to, talked to once in this chapter; none left, the game rests.
+    /// talked to, talked to once in this chapter; none left, a way out of
+    /// the place walked, once in this chapter (to a place not seen yet
+    /// first); none left either, the game rests.
     fn nobody_talks(&mut self) {
         let Some(word) = self.place.as_ref().map(|place| place.word.clone()) else {
             return;
         };
+        self.seen.insert((self.story.chapter, word.clone()));
         let here: Vec<String> = self.place_decor().map_or(Vec::new(), |decor| {
             decor.residents.iter().filter(|resident| self.holds(resident.condition.as_deref())).map(|resident| resident.name.clone()).collect()
         });
@@ -1217,11 +1226,32 @@ impl Game {
                 self.talk(&who);
                 self.advance();
             }
-            None => {
-                self.rested = true;
-                self.log.push(format!("rests in {word}"));
-            }
+            None => match self.way_not_walked(&word) {
+                Some((at, place, entrance)) => {
+                    self.walked.insert((self.story.chapter, word, at));
+                    // (Played on the next frame: the story goes on from the place's scene.)
+                    self.request(GameRequest::Ask(GameAsk::Go { place, entrance }));
+                }
+                None => {
+                    self.rested = true;
+                    self.log.push(format!("rests in {word}"));
+                }
+            },
         }
+    }
+
+    /// A way out of that place not walked yet in this chapter, to a place of
+    /// the game's (one not seen yet in it first): which, where to, by which entrance.
+    fn way_not_walked(&self, word: &str) -> Option<(usize, String, Option<String>)> {
+        let chapter = self.story.chapter;
+        let ways = self.place_decor().map(|decor| decor.ways_out).unwrap_or_default();
+        let open: Vec<(usize, &decor::lang::WayOut)> = ways
+            .iter()
+            .enumerate()
+            .filter(|(at, way)| !self.walked.contains(&(chapter, word.to_string(), *at)) && self.folders.decor(&way.to).is_file())
+            .collect();
+        let new = open.iter().find(|(_, way)| !self.seen.contains(&(chapter, way.to.clone())));
+        new.or(open.first()).map(|(at, way)| (*at, way.to.clone(), way.entrance.clone()))
     }
 
     /// The place's scene made of that text, played.

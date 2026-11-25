@@ -425,7 +425,8 @@ end
 - `scene_player play my_game` (a name: `games/<name>/<name>.game`; or a path): its title screen (Continue, New
   game, Quit); `--new` from its start; `--headless` with nobody at the keys and no window,
   what happens told in order (films go by themselves, dungeons count as won, each resident
-  who tells the game something talked to once a chapter).
+  who tells the game something talked to once a chapter; then each way out of the place walked
+  once a chapter, to a place not seen yet first).
 - `scene_player check-game my_game` (a name, or the path of a `.game`) checks the whole game
   without playing it: the game file, each film it plays (as `check` reads them), each place (its
   decor), each dungeon and fight (as the Workshop's "Check the dungeon"); then, walking from the

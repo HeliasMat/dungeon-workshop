@@ -54,6 +54,28 @@ fn the_example_game_plays_to_its_end_with_nobody_at_the_keys() {
     assert_eq!(game.story.place.as_deref(), Some("test_market"));
 }
 
+#[test]
+#[ignore = "needs the extracted data/ (run with --ignored)"]
+fn nobody_at_the_keys_walks_out_of_a_place_once_its_talks_are_done() {
+    let data = data().expect("the extracted data/");
+    let folder = std::env::temp_dir().join(format!("dungeon_workshop_walk_{}", std::process::id()));
+    _ = std::fs::remove_dir_all(&folder);
+    std::fs::create_dir_all(folder.join("decors")).expect("a folder");
+    for place in ["test_market", "test_harbour"] {
+        let file = format!("{place}.decor");
+        std::fs::copy(scenes().join("decors").join(&file), folder.join("decors").join(&file)).expect("a place");
+    }
+    // (Wingull lives in the harbour: the market's talks done, its way out to the harbour is walked.)
+    let game =
+        "title: Walk\nteam: pikachu piplup\nhome: test_market south\n\nchapter 1 \"One\"\n  go test_market south\n  on talk wingull\n    finish\n  end\nend\n";
+    std::fs::write(folder.join("walk.game"), game).expect("the game");
+    let mut game = Game::open(&crate::testing::context_on(&data), &folder.join("walk.game"), None).expect("the game opens");
+    game.play_alone(200_000);
+    let order = ["go test_market", "talk kecleon", "go test_harbour", "talk wingull", "the end"];
+    assert!(in_order(&game.log, &order), "in order {order:?}: {:?} {:?}", game.log, game.said);
+    _ = std::fs::remove_dir_all(&folder);
+}
+
 /// A copy of the example game in a folder of its own, to change its films.
 fn copied(to: &Path) {
     let from = scenes();
