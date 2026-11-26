@@ -254,3 +254,50 @@ pub(super) fn spot_lines(text: &str) -> Vec<(String, usize, [f32; 2])> {
         })
         .collect()
 }
+
+/// A `scene:` line with one more of its cast, after the others (a remark after `#` kept at the end).
+pub(super) fn with_cast(scene: &str, word: &str) -> String {
+    match scene.split_once('#') {
+        Some((said, remark)) => format!("{} {word} #{remark}", said.trim_end()),
+        None => format!("{} {word}", scene.trim_end()),
+    }
+}
+
+/// The film's text with a Pokémon dropped at a point, at the line playing:
+/// one of the scene's cast if they were not (its `scene:` line), then their
+/// last line of the scene up to it that puts them at a point written again
+/// (as `moved_to`), else `who put x y [facing other]` after the line playing.
+/// Its line, or why not.
+pub(super) fn dropped_in(text: &str, playing: usize, word: &str, [x, y]: [f32; 2], facing: Option<&str>) -> Result<(String, usize), String> {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let upto = playing.clamp(1, lines.len().max(1));
+    let Some(scene) = workshop_script::scene_of(&lines, upto) else {
+        return Err("no scene here: a scene's line first (drop a place on the Script)".to_string());
+    };
+    let mut made: Vec<String> = lines.iter().map(|line| line.to_string()).collect();
+    if workshop_script::cast_of(lines[scene - 1]).iter().any(|one| one == word) {
+        return moved_to(text, playing, word, [x, y]);
+    }
+    made[scene - 1] = with_cast(lines[scene - 1], word);
+    let facing = facing.map(|other| format!(" facing {other}")).unwrap_or_default();
+    Ok(workshop_script::lines_after(&made.join("\n"), upto, &[format!("{word} put {} {}{facing}", number(x), number(y))]))
+}
+
+/// Where someone dropped at a point stands: on free ground (the nearest, as
+/// the language puts them), not on anyone else (the nearest spot round it
+/// that is free), in whole pixels.
+pub(super) fn free_spot(ground: Option<&engine::Ground>, others: &[[f32; 2]], [x, y]: [f32; 2]) -> [f32; 2] {
+    const AROUND: [(f32, f32); 9] = [(0.0, 0.0), (-36.0, 0.0), (36.0, 0.0), (0.0, 22.0), (0.0, -22.0), (-72.0, 0.0), (72.0, 0.0), (-36.0, 22.0), (36.0, 22.0)];
+    let on_ground = |at: glam::Vec2| ground.map_or(at, |ground| ground.free(at));
+    let at = glam::Vec2::new(x, y);
+    let taken = |spot: glam::Vec2| others.iter().any(|[ox, oy]| (spot.x - ox).abs() < 24.0 && (spot.y - oy).abs() < 14.0);
+    let spot = AROUND.iter().map(|(dx, dy)| on_ground(at + glam::Vec2::new(*dx, *dy))).find(|spot| !taken(*spot)).unwrap_or_else(|| on_ground(at));
+    [spot.x.round(), spot.y.round()]
+}
+
+/// The nearest of the others to a point (whom someone put there faces).
+pub(super) fn nearest<'a>(feet: impl Iterator<Item = (&'a String, &'a [f32; 2])>, [x, y]: [f32; 2], but: &str) -> Option<&'a String> {
+    feet.filter(|(name, _)| *name != but)
+        .min_by(|(_, a), (_, b)| ((a[0] - x).powi(2) + (a[1] - y).powi(2)).total_cmp(&((b[0] - x).powi(2) + (b[1] - y).powi(2))))
+        .map(|(name, _)| name)
+}

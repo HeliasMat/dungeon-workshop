@@ -8,9 +8,10 @@
 //! other), `handles.rs` the handles (the camera's frame, someone's way,
 //! their walks, the spots), `mouse.rs` what the mouse does on it (a field's
 //! point, someone moved, a handle let go, a measure, a line written, the
-//! menu), `bar.rs` the line played under it, the bar and the keys,
-//! `script.rs` the film's text read and written again (someone moved to a
-//! point, the view framed, a way, a walk's point, the spots).
+//! menu), `drop.rs` an asset of the Assets panel dropped on it, `bar.rs`
+//! the line played under it, the bar and the keys, `script.rs` the film's
+//! text read and written again (someone moved to a point, the view framed, a
+//! way, a walk's point, the spots, someone dropped there).
 
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, RichText, Sense, Vec2, pos2, vec2};
 
@@ -19,6 +20,7 @@ use workshop_base::theme;
 use workshop_script::Scripts;
 
 mod bar;
+mod drop;
 mod handles;
 mod marks;
 mod mouse;
@@ -119,6 +121,7 @@ pub fn scene(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
         );
     }
     mouse::on_picture(ui, films, scripts, &view, picture, place_point, &handles);
+    drop::dropping(ui, films, scripts, &view);
     if capture && let Some(drawn) = &films.drawn {
         films.said = Some(written_out(drawn, scripts));
     }

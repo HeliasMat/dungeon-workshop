@@ -270,6 +270,7 @@ impl Worker {
             feet,
             numbers: film.play().sim.director.numbers_and_words().0.into_iter().collect(),
             state: preview::state::moment(film, &|who| names.get(&who).cloned().unwrap_or_else(|| film.play().sim.cast.who(who).1)),
+            ground: stage.place.ground.clone(),
         })))
     }
 }

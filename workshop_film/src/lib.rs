@@ -97,6 +97,8 @@ pub struct Frame {
     numbers: BTreeMap<String, f64>,
     /// Who is where then, the camera, the objects (the State panel).
     state: preview::state::Moment,
+    /// Where one can walk in the place (someone dropped there stands on free ground).
+    ground: Option<engine::Ground>,
 }
 
 /// A film played: of that revision, its last frame, when things are, what
@@ -490,6 +492,11 @@ impl Films {
     /// on the Scene, their row in the State), or no longer if they were.
     pub fn choose(&mut self, who: String) {
         self.focus_who = if self.focus_who.as_ref() == Some(&who) { None } else { Some(who) };
+    }
+
+    /// The one chosen, if any (the Assets panel's Pokémon follows them).
+    pub fn chosen(&self) -> Option<&str> {
+        self.focus_who.as_deref()
     }
 
     /// Played until the next line of the film's own course starts, stopped

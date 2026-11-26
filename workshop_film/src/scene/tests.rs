@@ -8,7 +8,9 @@ use super::handles::facing_dots;
 use super::marks::Labels;
 use super::marks::grid_step;
 use super::mouse::measure_said;
-use super::script::{Move, WAYS, faced, framed_at, moment_of, moved_to, moves_of, number, spot_lines, way_of, with_point, with_words};
+use super::script::{
+    Move, WAYS, dropped_in, faced, framed_at, free_spot, moment_of, moved_to, moves_of, nearest, number, spot_lines, way_of, with_cast, with_point, with_words,
+};
 use super::{Place, View, fitted_scale, wheel_look};
 
 /// By whole pixels when it fits so, else smaller.
@@ -140,4 +142,39 @@ fn names_do_not_cover_each_other() {
     assert!(!first.intersects(second), "{first:?} {second:?}");
     assert!(second.min.y < first.min.y, "moved up");
     assert_eq!(labels.spread(Rect::from_min_size(pos2(200.0, 0.0), vec2(5.0, 5.0))).min, pos2(200.0, 0.0), "free: where asked");
+}
+
+/// A Pokémon dropped on the Scene: one of the scene's cast, put there facing the nearest, after the line playing; one
+/// already there, moved; no scene, said.
+#[test]
+fn a_pokemon_dropped_joins_the_cast_and_stands_there() {
+    let text = "title: T\n\nscene: town pikachu munchlax\npikachu put 300 242 facing down\nmunchlax put 262 262\n\nmoment: m\npikachu: Hi!";
+    let (made, line) = dropped_in(text, 5, "piplup", [320.0, 250.0], Some("pikachu")).unwrap();
+    assert_eq!(
+        made,
+        "title: T\n\nscene: town pikachu munchlax piplup\npikachu put 300 242 facing down\nmunchlax put 262 262\npiplup put 320 250 facing pikachu\n\nmoment: m\npikachu: Hi!"
+    );
+    assert_eq!(line, 6);
+    // (Dropped later: after the line playing, as far in.)
+    let (made, line) = dropped_in("scene: beach riolu\n  riolu: hi", 2, "eevee", [10.0, 20.0], None).unwrap();
+    assert_eq!((made.as_str(), line), ("scene: beach riolu eevee\n  riolu: hi\n  eevee put 10 20", 3));
+    // (One of the cast already: their line written again.)
+    let (made, _) = dropped_in(text, 8, "munchlax", [100.0, 110.0], Some("pikachu")).unwrap();
+    assert!(made.contains("munchlax put 100 110\n") && made.contains("scene: town pikachu munchlax\n"), "{made}");
+    assert!(dropped_in("title: T\npikachu: hi", 2, "eevee", [1.0, 2.0], None).is_err(), "no scene");
+    assert_eq!(with_cast("scene: beach a # the beach", "b"), "scene: beach a b # the beach");
+}
+
+/// Where someone dropped stands: on free ground, off the others; whom they face, the nearest.
+#[test]
+fn someone_dropped_stands_on_free_ground() {
+    assert_eq!(free_spot(None, &[], [10.4, 20.6]), [10.0, 21.0]);
+    assert_eq!(free_spot(None, &[[10.0, 20.0]], [12.0, 21.0]), [-24.0, 21.0], "beside the one there");
+    // (A wall on the left half, rows of 8 pixels: put on the nearest free tile.)
+    let ground = engine::Ground::new(vec![vec![true, true, false, false, false, false, false, false]; 6]);
+    let [x, y] = free_spot(Some(&ground), &[], [4.0, 12.0]);
+    assert!(!ground.blocked(glam::Vec2::new(x, y), 1) && x >= 16.0, "{x} {y}");
+    let feet: std::collections::BTreeMap<String, [f32; 2]> = [("a".to_string(), [0.0, 0.0]), ("b".to_string(), [50.0, 0.0])].into_iter().collect();
+    assert_eq!(nearest(feet.iter(), [40.0, 0.0], "c").map(String::as_str), Some("b"));
+    assert_eq!(nearest(feet.iter(), [40.0, 0.0], "b").map(String::as_str), Some("a"), "not themselves");
 }
