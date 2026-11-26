@@ -315,7 +315,10 @@ is on, and whether the reference films still played with it;
   marius851000's FasterFlushMode4.
 - **c-of-time**, one build per ROM (`tools/ds/cot_build.py`, no `make`:
   the ARM GNU toolchain called from Python), holding Chesyon's Kabuto
-  Handler: an abort or fatal error is shown on screen (melonDS).
+  Handler (an abort or fatal error is shown on screen, melonDS) and our
+  GroundSpriteRoom (`tools/ds/cot/ground_sprite_room`, GPL-3): when Sky's
+  own room for a scene's sprites is full, the next ones go to ground
+  arena 1, about 250 KB more (LIMITS.md, "Species in a scene").
 
 The special processes' ids are told when the base is made (and kept in
 `base.json`): a script calls one with `ProcessSpecial(id, a, b)`. With

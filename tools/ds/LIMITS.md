@@ -559,6 +559,57 @@ played headless after each group, compared shot by shot with the first:
   to show; melonDS only), dynamic_actor called, ChooseStarter's menu after
   a film.
 
+## Species in a scene (GroundSpriteRoom, measured 2026-11-27)
+
+**The mechanism** (measured in py-desmume with exec hooks on
+LoadWanTableEntryFromPack, MemLocateSet and SplitMemBlock, the arenas read
+from RAM): in ground mode each species' sprite is loaded once
+(LoadWanTableEntryFromPack, `MONSTER/m_ground.bin`, decompressed) into
+`GROUND_MEMORY_ARENA_2`, allocation flags 14: a sub-arena GroundMainLoop
+takes from the default arena, 0xB0000 bytes (0xAFCE4 usable, 32 blocks).
+It is **bytes, not blocks**: the_brawl (20 of Sky's species) filled it at
+18 blocks of 32 with 17 sprites (0xAE950 used, 0x1394 left); the 18th
+(0x9BC0) found no room in MemLocateSet. FixMemorySoftlock (in the base)
+then draws its default sprite, a magenta square; before it the game
+stopped (the black scenes). Sky's sprites take 0x3000-0x14000 bytes,
+about 40 KB on average: about 17 species; SpriteCollab's put in the ROM
+0xEA50-0x12D40 (60-77 KB): about 10. 21 actors of one species load one
+sprite.
+
+**The hook** (`tools/ds/cot/ground_sprite_room`, ours, GPL-3, in the one
+c-of-time build with Kabuto): LoadWanTableEntryFromPack's two
+`bl MemAlloc` (EU 0x201D5C0, 0x201D5EC) go through a trampoline that keeps
+`lr` (FixMemorySoftlock checks it) and asks `GsrSpriteAllocFlags`: in
+ground mode, a sprite that does not fit in arena 2 goes to
+`GROUND_MEMORY_ARENA_1` (flags 15, 0x63B04 bytes, static, made again each
+time ground mode starts; the game puts its ground effects there, 0xB300
+used at most in the films measured) if 0x20000 stays free in one block
+after it; else the game's own path. Freed as before (GetFreeArenaGround
+finds the arena by the pointer).
+
+**Not used, measured**: the default arena has only about 0x25000-0x28000
+free during a scene (it holds arena 2, 0x3C000 of another sub-arena, the
+map); growing arena 2 when GroundMainLoop makes it (tried: +0x3D000 and
+128 blocks) hung the title screen, a ground mode too, its default-arena
+allocations finding no room. Overlay regions are shared with dungeon
+mode.
+
+**The new limit**: about 0xAFCE4 + 0x3B000 = 0xEB000 bytes of sprites
+(~940 KB, was ~720 KB), the actors' cap of 21 at once unchanged:
+
+| film (headless, melonDS) | before | with the hook |
+|---|---|---|
+| the_brawl, 20 of Sky's | 17 drawn, 3 magenta squares | all 20 (3 in arena 1) |
+| legends21: Pikachu + 20 of Sky's largest (Groudon, Kyogre, Rayquaza, Dialga, Palkia, Giratina, Lugia, Wailord...) | 17 | 20; the 21st (0xB190) a square: arena 1 kept its 0x20000 |
+| the_far_shore, 15 of SpriteCollab's | 10 | 13; 2 squares |
+
+So any 21 of Sky's usual species fit; the largest ones about 20; of
+SpriteCollab's about 13. A smaller reserve (0x18000) would give one more;
+kept at 0x20000 until arena 1's other users (flags 8, 16) are known.
+The three reference films: their 120 shots identical to the mega patch's
+group 4. Sheets (not committed): the brawl, the far shore, legends21 and
+the reference films in the session's scratchpad `cot_hook/`.
+
 ## Dungeons and boss fights (`patch_rom.py --dungeon`, seen 2026-11-22)
 
 Seen from a cold boot (`tests/games/test_rescue`'s Test Woods): the film,

@@ -321,6 +321,20 @@ share = "no"
 default = "on"
 tested = "ok (group 4, everything on: films as with group 1; its two arm9 hooks and its code at overlay 36 + 0x31070 checked; no crash seen to show)"
 
+[[patch]]
+name = "GroundSpriteRoom"
+kind = "cot"
+author = "Dungeon Workshop"
+source = "this repository (tools/ds/cot/ground_sprite_room); the allocator after pmdsky-debug and pmd-sky's decompiled ground code"
+path = "tools/ds/cot/ground_sprite_room"
+licence = "GPL-3"
+gives = "More species in a scene: a sprite that doesn't fit in ground arena 2 (where Sky loads each species' sprite: 0xB0000 bytes, about 17 of its species) goes to ground arena 1 (0x63B04 bytes, nearly empty in a cutscene; 128 KB kept for its effects): about 240 KB more, 3-6 of Sky's species or 3 of SpriteCollab's; else the game's own path (FixMemorySoftlock's default sprite)."
+depends = ["ExtraSpace", "FixMemorySoftlock"]
+regions = "EU"
+share = "yes"
+default = "on"
+tested = "ok (the three films' 120 shots identical to group 4; the_brawl's 20 species all drawn, was 17; 15 of SpriteCollab's: 13, was 10; LIMITS.md 'Species in a scene')"
+
 # --- Listed, not applied ------------------------------------------------------
 
 [[patch]]
