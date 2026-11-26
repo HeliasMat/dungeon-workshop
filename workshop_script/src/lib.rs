@@ -49,6 +49,7 @@ use film::service::{Diagnostic, Spot};
 use edits::replaced;
 use text::{index_of, line_at, spot_of};
 
+mod assets;
 mod body;
 mod cast;
 mod completion;
@@ -74,6 +75,7 @@ mod wiki;
 mod windows;
 mod workspace;
 
+pub use assets::{asset_written, cast_of, lines_after, scene_of};
 pub use editor::script;
 pub(crate) use highlight::speaker;
 pub(crate) use knowledge::species_of;
@@ -304,6 +306,8 @@ pub struct Scripts {
     /// open there, its example played, its recipe's source shown.
     plan_shown: bool,
     wiki_shown: bool,
+    /// The Wiki is a panel of the Film space (View › Add Panel): it opens there, not in a window of its own.
+    pub wiki_docked: bool,
     family: usize,
     wiki_sought: String,
     wiki_page: Option<String>,
@@ -391,6 +395,8 @@ pub struct Seen {
     pub playing: bool,
     pub timing: BTreeMap<usize, (f64, f64)>,
     pub end: Option<f64>,
+    /// The one chosen on the Scene: what an asset dropped on the Script is written for.
+    pub chosen: Option<String>,
 }
 
 /// The words by family, as they are browsed: the family, the word chosen;
@@ -454,6 +460,7 @@ impl Scripts {
             plan_shown: false,
             // (For a picture: `WORKSHOP_WIKI=walk`, `walk:play`, `joy:source`, `search:rain`, `all`.)
             wiki_shown: session.launch.wiki.is_some(),
+            wiki_docked: false,
             family: 0,
             wiki_sought: session.launch.wiki.as_deref().and_then(|asked| asked.strip_prefix("search:")).unwrap_or_default().to_string(),
             wiki_page: (session.launch.wiki.as_deref())
@@ -588,6 +595,18 @@ impl Scripts {
             (wrong, open.told.len() - wrong)
         })
     }
+}
+
+impl Scripts {
+    /// Whether the Wiki was asked for (F1, its button) since last asked: the docked Wiki then shown.
+    pub fn wiki_asked(&mut self) -> bool {
+        std::mem::take(&mut self.wiki_shown)
+    }
+}
+
+/// The Wiki as a panel of its own (docked in the Film space).
+pub fn wiki(ui: &mut egui::Ui, scripts: &mut Scripts) {
+    wiki::wiki_panel(ui, scripts);
 }
 
 /// A revision no file has had (two films opened one after the other never share one).

@@ -2,7 +2,8 @@
 //! part after part: the head over the text (`head.rs`), the keys taken first
 //! (`keys.rs`), the editor here, its margin and its ruler (`margin.rs`), what
 //! is offered as one types (`offers.rs`), the small windows over the text
-//! (`popups.rs`), the problems and the status under it (`problems.rs`).
+//! (`popups.rs`), the problems and the status under it (`problems.rs`), an
+//! asset of the Film's Assets panel dropped on it (`assets.rs`).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Range;
@@ -198,6 +199,7 @@ impl Body<'_> {
         let (clicked_margin, asked_line) = self.margin_clicks(ui, room.editor, &margin);
         self.bulb(ui, room.editor, &margin, keyed.bulb_asked, &clicked_margin);
         self.lines_held(ui, &written, room.editor, &margin);
+        self.asset_dropped(ui, &written, room.editor);
         self.ruler(ui, room.editor, &marks, &found, margin.cursor_line);
         self.forms(ui, &written);
         self.offers(ui, &written, room.editor);

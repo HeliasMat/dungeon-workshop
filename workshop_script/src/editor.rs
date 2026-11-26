@@ -50,7 +50,7 @@ pub fn script(ui: &mut egui::Ui, scripts: &mut Scripts, path: Option<&PathBuf>, 
         ui.allocate_rect(ui.available_rect_before_wrap(), Sense::hover());
         return asked;
     }
-    if !scripts.plan_shown && !scripts.wiki_shown && scripts.beside.is_none() {
+    if !scripts.plan_shown && (!scripts.wiki_shown || scripts.wiki_docked) && scripts.beside.is_none() {
         return script_body(ui, scripts, path, seen);
     }
     // (The Layout on the left, the text beside it; the Wiki in a window of its own.)
@@ -63,7 +63,7 @@ pub fn script(ui: &mut egui::Ui, scripts: &mut Scripts, path: Option<&PathBuf>, 
         let mut inside = ui.new_child(egui::UiBuilder::new().max_rect(side.shrink(6.0)).layout(egui::Layout::top_down(egui::Align::Min)));
         plan(&mut inside, scripts, &seen.timing, &seen.numbers);
     }
-    if scripts.wiki_shown {
+    if scripts.wiki_shown && !scripts.wiki_docked {
         wiki_window(ui.ctx(), scripts);
     }
     let mut middle = Rect::from_min_max(pos2(full.min.x + plan_wide + 1.0, full.min.y), full.max);

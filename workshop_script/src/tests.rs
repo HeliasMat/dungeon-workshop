@@ -133,3 +133,93 @@ fn in_ds_mode_only_what_exports_is_offered() {
     // (A directed fight exports now, as blows: its model stays.)
     assert_eq!(models.iter().map(|(word, _)| word.as_str()).collect::<Vec<_>>(), ["fight", "scene"]);
 }
+
+/// An asset of the Assets panel written in the Script: each its line, under the line it is dropped on (a blank one
+/// written over), as far in; a face on a spoken line, its other words kept; a place, a new scene with the same cast.
+#[test]
+fn an_asset_is_written_at_its_line() {
+    use workshop_base::asset::Asset;
+    let faces = ["normal", "happy", "sad", "surprised"];
+    let text = "scene: town pikachu piplup\n  pikachu put 1 2\n  pikachu: Hi!\n\n  piplup (bubble, sad): Oh.";
+    let line = |asset: &Asset, at: usize, who: Option<&str>| super::asset_written(text, at, asset, who, None, &faces);
+    let nth = |made: &(String, usize)| made.0.split('\n').nth(made.1 - 1).unwrap_or_default().to_string();
+    let music = line(&Asset::Music { word: "treasure_town".to_string() }, 2, None);
+    assert_eq!((nth(&music), music.1), ("  music treasure_town".to_string(), 3));
+    assert_eq!(nth(&line(&Asset::Sound { word: "click".to_string() }, 3, None)), "  sound click");
+    assert_eq!(nth(&line(&Asset::Gesture { who: "piplup".to_string(), words: "sit".to_string() }, 3, None)), "  piplup sit");
+    // (On the blank line: written over it.)
+    let written = line(&Asset::Gesture { who: "pikachu".to_string(), words: "pose look_up".to_string() }, 4, None);
+    assert_eq!(written, ("scene: town pikachu piplup\n  pikachu put 1 2\n  pikachu: Hi!\n  pikachu pose look_up\n  piplup (bubble, sad): Oh.".to_string(), 4));
+    // (Things: held by who is chosen, or by the one the line is of; put down where dropped.)
+    assert_eq!(nth(&line(&Asset::Thing { word: "Apple".to_string(), held: true }, 5, None)), "  piplup hold Apple");
+    assert_eq!(nth(&line(&Asset::Thing { word: "Apple".to_string(), held: true }, 2, Some("piplup"))), "  piplup hold Apple");
+    let put = super::asset_written(text, 2, &Asset::Thing { word: "Apple".to_string(), held: false }, None, Some([286.2, 234.0]), &faces);
+    assert_eq!(nth(&put), "  put object Apple 286 234");
+    assert_eq!(nth(&line(&Asset::Effect { name: "Thunderbolt".to_string() }, 3, None)), "  pikachu use Thunderbolt on piplup");
+    // (A face: on a spoken line, in place of the face; elsewhere, a line to say.)
+    let face = |at: usize| line(&Asset::Face { who: "piplup".to_string(), face: "happy".to_string() }, at, None);
+    assert_eq!(nth(&face(3)), "  pikachu (happy): Hi!");
+    assert_eq!(nth(&face(5)), "  piplup (bubble, happy): Oh.", "its bubble kept, its face made another");
+    assert_eq!((nth(&face(2)), face(2).1), ("  piplup (happy): ".to_string(), 3));
+    assert_eq!(super::assets::with_face("title: The Day", "happy", &faces), None, "a header is no one speaking");
+    // (A place: a new scene, a blank line before it, the cast kept.)
+    let place = line(&Asset::Place { word: "beach".to_string() }, 5, None);
+    assert_eq!((place.0.ends_with("Oh.\n\nscene: beach pikachu piplup"), place.1), (true, 7));
+}
+
+/// The lines an asset writes are read by the language without a fault.
+#[test]
+fn the_lines_of_the_assets_are_good_lines() {
+    let tables = workshop_base::session::Session::for_tests().tables();
+    for line in [
+        "pikachu sit",
+        "pikachu pose look_up",
+        "pikachu anim Attack",
+        "pikachu hold Apple",
+        "put object Apple 286 234",
+        "pikachu use Thunderbolt on piplup",
+        "music treasure_town",
+        "sound click",
+        "pikachu (happy): Hi!",
+        "piplup put 320 250 facing pikachu",
+    ] {
+        let text = format!("scene: town pikachu piplup\npikachu put 300 242\n{line}\n");
+        let wrong: Vec<String> =
+            film::service::diagnostics(&text, tables.clone()).into_iter().filter(|told| told.is_error()).map(|told| told.message).collect();
+        assert!(wrong.is_empty(), "{line}: {wrong:?}");
+    }
+}
+
+/// An asset written is one change of the text (one step back with Ctrl+Z), the cursor at its end; a Pokémon's word
+/// dropped in a line gets its spaces.
+#[test]
+fn an_asset_written_is_one_undo() {
+    use workshop_base::asset::Asset;
+    let before = "scene: town pikachu\npikachu: Hi!".to_string();
+    let mut open = Script {
+        path: std::path::PathBuf::from("t.film"),
+        text: before.clone(),
+        saved: before.clone(),
+        revision: 1,
+        asked: 0,
+        told: Vec::new(),
+        told_for: 0,
+        changed: None,
+        cursor: 0,
+        jump: None,
+        root: std::path::PathBuf::new(),
+    };
+    let said = open.put_asset(&Asset::Music { word: "treasure_town".to_string() }, Some(1), None, None);
+    assert_eq!(said, "line 2: music treasure_town");
+    assert_eq!(open.text, "scene: town pikachu\nmusic treasure_town\npikachu: Hi!");
+    assert_eq!(open.cursor_line(), 2);
+    // (As the text editor keeps its steps back: the text before, then the text written, a step between.)
+    let mut undoer: egui::util::undoer::Undoer<String> = egui::util::undoer::Undoer::default();
+    undoer.feed_state(0.0, &before);
+    undoer.feed_state(0.1, &open.text);
+    undoer.feed_state(5.0, &open.text);
+    assert_eq!(undoer.undo(&open.text), Some(&before), "one undo: as it was");
+    let mut word = Script { text: "pikachu:Hi".to_string(), ..open };
+    word.insert_at(7, "eevee");
+    assert_eq!(word.text, "pikachu eevee:Hi", "a space before it, none before the colon");
+}
