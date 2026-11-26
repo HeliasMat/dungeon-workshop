@@ -17,6 +17,8 @@ use std::path::Path;
 
 use engine::{Diagnostic, Lines, StoryEvent};
 
+/// The sprites' animations by clear names (`pikachu pose sit`), and the animation each one is.
+pub use film_acting::POSES;
 pub use film_core::{
     Context, Film, Lexicon, ReadAs, Told, Written, check, codes, coloured, context, doc, emit, formatted, grammar, internal, ir, lines, locate,
     performer_first, plot, scene_line, screen, shared_path, tables, time, words,

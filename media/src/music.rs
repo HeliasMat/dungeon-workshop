@@ -294,6 +294,11 @@ impl Library {
         Some(crate::audio::render(song, &banks, seconds))
     }
 
+    /// How long song `number` plays once through, in seconds; whether it loops.
+    pub fn song_length(&self, number: u16) -> Option<(f32, bool)> {
+        self.songs.get(&number).map(|(song, _)| crate::audio::once_length(song))
+    }
+
     /// Short tune `number`.
     pub fn jingle(&self, number: u16, seconds: f32) -> Option<Vec<i16>> {
         let song = self.jingles.get(&number)?;

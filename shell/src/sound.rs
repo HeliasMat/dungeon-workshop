@@ -52,6 +52,15 @@ impl SoundLengths {
     }
 }
 
+/// How long each of the game's songs plays once through, in seconds, and
+/// whether it loops, by number (the game's library read: a second or two).
+pub fn song_lengths(folder: &str) -> HashMap<u16, (f32, bool)> {
+    let Some(library) = Library::open(folder) else {
+        return HashMap::new();
+    };
+    library.songs.keys().filter_map(|number| Some((*number, library.song_length(*number)?))).collect()
+}
+
 /// How long a sound of our own lasts, in frames (none: no such file).
 pub fn own_length(folder: &str, project: &Project, name: &str) -> Option<f32> {
     own_sounds::seconds(folder, project, name).map(|seconds| seconds * 60.0)

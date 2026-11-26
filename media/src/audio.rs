@@ -254,6 +254,15 @@ fn unrolled(song: &Song, max_seconds: f32) -> Song {
     Song { ticks_per_quarter: song.ticks_per_quarter, tracks }
 }
 
+/// How long `song` plays once through, in seconds; whether it then goes back
+/// to a loop point (and plays on, again and again).
+pub fn once_length(song: &Song) -> (f32, bool) {
+    let tempo = TempoMap::new(song);
+    let length = song.tracks.iter().map(|t| t.length).max().unwrap_or(0);
+    let loops = song.tracks.iter().any(|track| track.events.iter().any(|(_, event)| *event == Event::LoopPoint));
+    (tempo.seconds(length) as f32, loops)
+}
+
 /// How long `song` plays, in seconds, `max_seconds` at most (a song that
 /// loops plays them all): as long as [`render`] has its notes play.
 pub fn length(song: &Song, max_seconds: f32) -> f32 {

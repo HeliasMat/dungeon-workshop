@@ -2,8 +2,8 @@
 //! in a small text file of their own, out of the project (`key = value`
 //! lines; `launch::LaunchOptions::settings` says where). The libretro core
 //! the Emulator space runs, the user's copy of the game a film is put in,
-//! armips; whether the game-making spaces show. Never in the repository:
-//! these are the user's own.
+//! armips; whether the game-making spaces show; the panels each space shows.
+//! Never in the repository: these are the user's own.
 
 use std::path::{Path, PathBuf};
 
@@ -21,6 +21,8 @@ pub const ROM: &str = "ds_rom";
 pub const ARMIPS: &str = "armips";
 /// `game_spaces = on|off`: the Game, Dungeon and Emulator spaces shown.
 pub const GAME_SPACES: &str = "game_spaces";
+/// `panels_<space> = Script,Scene,…`: the panels a space shows (View › Add Panel).
+pub const PANELS: &str = "panels_";
 
 impl Settings {
     /// Whether the game-making spaces (Game, Dungeon, Emulator) show. Said
@@ -31,13 +33,24 @@ impl Settings {
     pub fn game_spaces(&self, has_games: bool) -> bool {
         match self.get(GAME_SPACES) {
             Some(said) => matches!(said.to_lowercase().as_str(), "on" | "yes" | "true" | "1"),
-            None => has_games || !self.lines.is_empty(),
+            None => has_games || self.lines.iter().any(|(key, _)| !key.starts_with(PANELS)),
         }
     }
 
     /// The game-making spaces shown or hidden, and written out.
     pub fn set_game_spaces(&mut self, on: bool) -> Result<(), String> {
         self.set(GAME_SPACES, if on { "on" } else { "off" })
+    }
+
+    /// The panels a space shows, as they were left (none said: its own).
+    pub fn panels(&self, space: &str) -> Option<Vec<String>> {
+        let said = self.lines.iter().find(|(key, _)| key.strip_prefix(PANELS) == Some(space)).map(|(_, value)| value.as_str())?;
+        Some(said.split(',').map(str::trim).filter(|panel| !panel.is_empty()).map(str::to_string).collect())
+    }
+
+    /// The panels a space shows, written out.
+    pub fn set_panels(&mut self, space: &str, panels: &[&str]) -> Result<(), String> {
+        self.set(&format!("{PANELS}{space}"), &panels.join(","))
     }
 
     /// Those of that file (none yet: empty).
@@ -126,6 +139,17 @@ mod tests {
         let mut settings = read("");
         settings.set_game_spaces(true).unwrap();
         assert!(settings.game_spaces(false));
+        assert!(!read("panels_film = Script,Scene\n").game_spaces(false), "the panels laid out: still someone new");
+    }
+
+    /// The panels of a space, as they were left.
+    #[test]
+    fn the_panels_are_remembered() {
+        let mut settings = Settings { file: None, lines: parse("panels_film = Script, Scene,Assets\n") };
+        assert_eq!(settings.panels("film"), Some(vec!["Script".to_string(), "Scene".to_string(), "Assets".to_string()]));
+        assert_eq!(settings.panels("decor"), None);
+        settings.set_panels("decor", &["Scene", "Library"]).unwrap();
+        assert_eq!(settings.panels("decor"), Some(vec!["Scene".to_string(), "Library".to_string()]));
     }
 
     #[test]

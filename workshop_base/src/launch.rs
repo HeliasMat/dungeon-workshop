@@ -60,6 +60,9 @@ pub struct LaunchOptions {
     pub tilequant: Option<String>,
     /// `WORKSHOP_RESOURCE=drawing:bouee`: that shelf, that one chosen.
     pub resource: Option<String>,
+    /// `WORKSHOP_PICKER=<tab>[:<pokemon>[:<search>]]`: the Film's Assets panel on that tab
+    /// (pokemon, faces, gestures, music, sounds, things, places, effects), for that Pokémon, searching that.
+    pub picker: Option<String>,
     /// `WORKSHOP_PROJECT=open|versions|search:<word>|beside:<film>`: that window of the Script open.
     pub project: Option<String>,
     /// `WORKSHOP_FOCUS`: the Script in concentration.
@@ -130,6 +133,7 @@ impl LaunchOptions {
             music: var("WORKSHOP_MUSIC"),
             tilequant: var("WORKSHOP_TILEQUANT"),
             resource: var("WORKSHOP_RESOURCE"),
+            picker: var("WORKSHOP_PICKER"),
             project: var("WORKSHOP_PROJECT"),
             focus: set("WORKSHOP_FOCUS"),
             line: number("WORKSHOP_LINE"),
