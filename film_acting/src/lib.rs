@@ -117,7 +117,8 @@ pub const GROUP: film_core::verbs::Group = film_core::verbs::Group::new("acting"
 const GESTURE_FORMS: &[&str] = &["who:pokemon [once|loop|hold]"];
 /// On the DS, a gesture of Sky's own groups, and one of the community's (and what is lost).
 const GESTURE_DS: &str = "SetAnimation<actor>(n): the group of that species' own sprite showing it (ds_animations.txt), through Sky's table";
-const COMMUNITY_DS: &str = "SetAnimation<actor>(n): the species' own Sky group of that name where it has one (Bow, Yawn...), else the nearest Sky's sprites share";
+const COMMUNITY_DS: &str =
+    "SetAnimation<actor>(n): the species' own Sky group of that name where it has one (Bow, Yawn...), else the nearest Sky's sprites share";
 const COMMUNITY_LOST: &str = "Sky's sprites lack most of the community's animations: the nearest it has";
 
 /// The game's emote balloons by their names in the films: the effect, its sound

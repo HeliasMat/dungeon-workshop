@@ -52,7 +52,7 @@ check workshop_wiki "engine film preview workshop_base "
 check workshop_game "assets decor engine game workshop_base workshop_decor "
 check workshop_first "assets decor game spritecollab workshop_base "
 check workshop_emulator "emulator shell workshop_base workshop_first "
-check workshop_home "decor film workshop_base workshop_decor "
+check workshop_home "assets decor film preview spritecollab workshop_base workshop_decor "
 check workshop_tools "assets decor film media spritecollab workshop_base "
 check workshop "assets decor film workshop_base workshop_decor workshop_dungeon workshop_emulator workshop_film workshop_first workshop_game workshop_home workshop_resources workshop_script workshop_tools "
 # (The table of ARCHITECTURE.md, between <!-- rule --> and its end, is this

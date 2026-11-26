@@ -851,7 +851,7 @@ fn number_in_letters(number: usize) -> Option<String> {
     const TENS: [&str; 10] = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
     match number {
         0..20 => Some(SMALL[number].to_string()),
-        20..100 if number % 10 == 0 => Some(TENS[number / 10].to_string()),
+        20..100 if number.is_multiple_of(10) => Some(TENS[number / 10].to_string()),
         20..100 => Some(format!("{}_{}", TENS[number / 10], SMALL[number % 10])),
         _ => None,
     }

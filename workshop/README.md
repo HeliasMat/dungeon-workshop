@@ -435,7 +435,7 @@ A DS game run inside the Workshop, to see a film as the real game plays it (`wor
 - **Pause/Play**, **Reset**, **Step** (one frame, paused), **1× 2× 4×**, **Save State** / **Load State** (one slot a game), **Screenshot** (a PNG): the states and pictures go in the settings folder's `emulator/`.
 - **Play This Film on DS**: the film open in the Film space exported (`scene_player export-ds --partial`) and put in a copy of your Explorers of Sky (`tools/ds/patch_rom.py --boot --more-actors`, Python with `skytemple_files`) as `target/ds/workshop_play.nds`, then played from power on, A pressed by itself through the title until the film starts (about 25 s). The ROM and armips are asked the first time and remembered; what the steps say, and why one failed, is shown under the screens.
 
-The Workshop's **settings** (`workshop_emulator/src/settings.rs`) are a small `key = value` file of the user's own: `%APPDATA%\dungeon_workshop\settings.txt` (`~/.config/dungeon_workshop/` elsewhere, or `WORKSHOP_SETTINGS`), holding the core (`libretro_core`), the ROM (`ds_rom`) and armips (`armips`); the emulator's saves, states and screenshots sit beside it in `emulator/`. Nothing of them goes in the project.
+The Workshop's **settings** (`workshop_base/src/settings.rs`) are a small `key = value` file of the user's own: `%APPDATA%\dungeon_workshop\settings.txt` (`~/.config/dungeon_workshop/` elsewhere, or `WORKSHOP_SETTINGS`), holding the core (`libretro_core`), the ROM (`ds_rom`) and armips (`armips`); the emulator's saves, states and screenshots sit beside it in `emulator/`. Nothing of them goes in the project.
 
 ## The code
 
