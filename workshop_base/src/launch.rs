@@ -106,6 +106,8 @@ pub struct LaunchOptions {
     pub emulator_frames: Option<u32>,
     /// `WORKSHOP_EMULATOR_FILM=<file.film>`: that film played on DS at once (Play This Film on DS).
     pub emulator_film: Option<PathBuf>,
+    /// `WORKSHOP_EMULATOR_SCENE=n`: from its n-th scene (`tools/ds/watch.py --scene`).
+    pub emulator_scene: Option<usize>,
 }
 
 impl LaunchOptions {
@@ -164,6 +166,7 @@ impl LaunchOptions {
             emulator_rom: std::env::var_os("WORKSHOP_EMULATOR_ROM").map(PathBuf::from),
             emulator_frames: number("WORKSHOP_EMULATOR_FRAMES"),
             emulator_film: std::env::var_os("WORKSHOP_EMULATOR_FILM").map(PathBuf::from),
+            emulator_scene: number("WORKSHOP_EMULATOR_SCENE"),
         }
     }
 }

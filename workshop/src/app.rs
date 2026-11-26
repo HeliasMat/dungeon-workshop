@@ -558,7 +558,17 @@ impl App {
             Space::Film => self.film_tools(ui),
             Space::Dungeon => workshop_dungeon::dungeons::tabs(ui, &mut self.work.dungeons),
             Space::Game => workshop_game::tools(ui, &mut self.work.games),
-            Space::Emulator => workshop_emulator::tools(ui, &mut self.work.emulate, self.work.film.as_deref()),
+            Space::Emulator => {
+                // (The Script's text of the film, saved or not, and where its cursor is.)
+                let open = self.work.scripts.open.as_ref().filter(|open| Some(&open.path) == self.work.film.as_ref());
+                let film = self.work.film.as_deref().map(|path| workshop_emulator::FilmOnDs {
+                    path,
+                    text: open.map(|open| open.text.as_str()),
+                    saved: open.is_none_or(|open| open.saved()),
+                    line: open.map_or(1, |open| open.cursor_line()),
+                });
+                workshop_emulator::tools(ui, &mut self.work.emulate, film)
+            }
             Space::Assets if self.work.resources.creating() => workshop_resources::making_tabs(ui, &mut self.work.resources),
             space => {
                 let open = match space {

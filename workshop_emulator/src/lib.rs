@@ -57,15 +57,15 @@ fn key_map(keys: &[(Button, egui::Key)]) -> String {
 /// The patched copy the film is played in, and its film's export, under `<root>/target/ds/`.
 const PLAYED: &str = "workshop_play";
 
-/// A is pressed every that many frames from power on, until the film starts (as `tools/ds/boot_and_watch.py` does):
-/// in melonDS, the "New Game / Other" menu at about frame 1100, the controls screen at about 1200, the film from about 1450.
-const PRESS_EVERY: u64 = 90;
-const PRESS_UNTIL: u64 = 1400;
+/// From the ready state (the New Game menu waiting), A is pressed every that many frames until that one: New Game,
+/// then the film from its first scene.
+const PRESS_EVERY: u64 = 40;
+const PRESS_UNTIL: u64 = 90;
 
-/// What a run of "Play this film on DS" tells as it goes.
+/// What a run of "Play this film on DS" tells as it goes; its end: the film's copy and the core's ready state.
 enum Told {
     Line(String),
-    Done(Result<PathBuf, String>),
+    Done(Result<(PathBuf, PathBuf), String>),
 }
 
 /// "Play this film on DS" at work: its lines so far, its end.
@@ -92,7 +92,7 @@ pub struct Emulate {
     clock: Instant,
     /// Frames run since the game was loaded.
     frames: u64,
-    /// A is pressed by itself until that frame (through the title).
+    /// A is pressed by itself until that frame (New Game, from the ready state).
     pressing_until: Option<u64>,
     sound: Option<shell::stream::Stream>,
     /// What was last done, or why not.
@@ -158,7 +158,9 @@ impl Emulate {
         }
         // (`WORKSHOP_EMULATOR_FILM`: that film put on DS at once, for a picture.)
         if let Some(film) = launch.emulator_film.clone() {
-            emulate.play_film(&film);
+            let text = std::fs::read_to_string(&film).ok();
+            let asked = FilmOnDs { path: &film, text: text.as_deref(), saved: true, line: 1 };
+            emulate.play_film(&asked, launch.emulator_scene.filter(|scene| *scene > 1));
         }
         emulate
     }
@@ -267,8 +269,12 @@ impl Emulate {
         }
     }
 
-    /// "Play this film on DS": the user's ROM and armips asked once, then the export and the patch on a thread of their own.
-    fn play_film(&mut self, film: &Path) {
+    /// "Play this film on DS": the user's ROM and armips asked once, then the export and the copy on a thread of
+    /// their own (`tools/ds/watch.py --prepare`); the Script's text as it is now, saved or not; from that scene.
+    fn play_film(&mut self, film: &FilmOnDs, scene: Option<usize>) {
+        let Some(core) = self.core_path() else {
+            return self.said = "no libretro core chosen yet".to_string();
+        };
         let rom = match self.settings.path(settings::ROM).filter(|rom| rom.is_file()) {
             Some(rom) => rom,
             None => match workshop_base::pick::file("Your copy of Explorers of Sky (only read)", &[("Nintendo DS cartridge", &["nds"])], None) {
@@ -286,32 +292,48 @@ impl Emulate {
                     self.remember(settings::ARMIPS, &armips);
                     armips
                 }
-                None => return self.said = "no armips chosen: patch_rom.py --more-actors needs it (SKYTEMPLE_ARMIPS_EXEC)".to_string(),
+                None => return self.said = "no armips chosen: the base copy needs it (SKYTEMPLE_ARMIPS_EXEC)".to_string(),
             },
         };
+        // (Not saved: the Script's text as it is, put beside the copy under its own name.)
+        let exported = match (film.saved, film.text) {
+            (false, Some(text)) => {
+                let file = self.root.join("target").join("ds").join("play").join(film.path.file_name().unwrap_or_default());
+                if let Err(why) = write(&file, text.as_bytes()) {
+                    return self.said = why;
+                }
+                file
+            }
+            _ => film.path.to_path_buf(),
+        };
         let (tell, told) = channel();
-        let (root, data, film_path) = (self.root.clone(), self.data.clone(), film.to_path_buf());
+        let (root, data) = (self.root.clone(), self.data.clone());
         std::thread::spawn(move || {
-            let done = put_in_rom(&root, &data, &film_path, &rom, &armips, &tell);
+            let done = put_in_rom(&root, &data, &exported, &Mine { rom, armips, core }, scene, &tell);
             _ = tell.send(Told::Done(done));
         });
-        let name = film.file_name().unwrap_or_default().to_string_lossy().into_owned();
+        let name = film.path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+        let name = match scene {
+            Some(scene) => format!("{name} from scene {scene}"),
+            None => name,
+        };
         self.said = format!("putting {name} in your ROM…");
         self.making = Some(Making { film: name, lines: Vec::new(), told, done: None });
     }
 
-    /// What the making told since, and its end: the patched copy loaded, A pressed through the title.
+    /// What the making told since, and its end: the copy loaded, the ready state over it, the film's actors in its
+    /// memory, A pressed for New Game.
     fn hear_making(&mut self) {
         let Some(making) = &mut self.making else {
             return;
         };
-        let mut patched = None;
+        let mut made = None;
         while let Ok(told) = making.told.try_recv() {
             match told {
                 Told::Line(line) => making.lines.push(line),
-                Told::Done(Ok(rom)) => {
+                Told::Done(Ok(copy)) => {
                     making.done = Some(Ok(()));
-                    patched = Some(rom);
+                    made = Some(copy);
                 }
                 Told::Done(Err(why)) => {
                     self.said = format!("{} could not be put on DS", making.film);
@@ -319,14 +341,29 @@ impl Emulate {
                 }
             }
         }
-        if let Some(rom) = patched {
-            self.load(&rom, true);
-            if self.core.is_some() {
+        let Some((rom, state)) = made else {
+            return;
+        };
+        self.load(&rom, true);
+        let film = self.making.as_ref().map_or(String::new(), |making| making.film.clone());
+        let Some(core) = &mut self.core else {
+            return;
+        };
+        let pokes = std::fs::read_to_string(PathBuf::from(format!("{}.pokes", rom.display()))).unwrap_or_default();
+        let ready = std::fs::read(&state).map_err(|why| format!("{}: {why}", state.display())).and_then(|bytes| core.load_state(&bytes)).and_then(|()| {
+            let shares = format!("{} shares no memory", core.name);
+            emulator::poke_film(core.memory().ok_or(shares)?, &pokes)
+        });
+        match ready {
+            Ok(_) => {
                 self.pressing_until = Some(PRESS_UNTIL);
-                self.said = format!(
-                    "{}: from power on, A pressed through the title (the film from about 25 s)",
-                    self.making.as_ref().map_or("", |making| &making.film)
-                );
+                self.said = format!("{film}: from the New Game menu, the film at once");
+            }
+            Err(why) => {
+                self.said = format!("{film}: {why}");
+                if let Some(making) = &mut self.making {
+                    making.done = Some(Err(why));
+                }
             }
         }
     }
@@ -351,7 +388,7 @@ impl Emulate {
         }
         if let Some(until) = self.pressing_until
             && self.frames < until
-            && self.frames % PRESS_EVERY >= PRESS_EVERY - 3
+            && self.frames % PRESS_EVERY < 3
         {
             input = input.with(Button::A);
         }
@@ -429,34 +466,40 @@ fn write(file: &Path, bytes: &[u8]) -> Result<(), String> {
     std::fs::write(file, bytes).map_err(|why| format!("{}: {why}", file.display()))
 }
 
-/// The film exported (`scene_player export-ds`) and put in a copy of the ROM (`patch_rom.py --boot --more-actors`): the copy.
-fn put_in_rom(root: &Path, data: &str, film: &Path, rom: &Path, armips: &Path, tell: &Sender<Told>) -> Result<PathBuf, String> {
+/// The user's own: their Explorers of Sky, armips, the libretro core.
+struct Mine {
+    rom: PathBuf,
+    armips: PathBuf,
+    core: PathBuf,
+}
+
+/// The film exported, put in a copy of the cached base, the core's ready state made if it wasn't
+/// (`tools/ds/watch.py --prepare`, docs/DS.md): the copy and the state.
+fn put_in_rom(root: &Path, data: &str, film: &Path, mine: &Mine, scene: Option<usize>, tell: &Sender<Told>) -> Result<(PathBuf, PathBuf), String> {
     let say = |line: String| _ = tell.send(Told::Line(line));
-    let folder = root.join("target").join("ds");
-    std::fs::create_dir_all(&folder).map_err(|why| format!("{}: {why}", folder.display()))?;
-    let (exps, out) = (folder.join(format!("{PLAYED}.exps")), folder.join(format!("{PLAYED}.nds")));
-    say(format!("1/2 export: scene_player export-ds {}", film.display()));
-    let player = workshop_first::program_beside("scene_player")?;
-    let mut export = std::process::Command::new(&player);
-    export.args(["export-ds".as_ref(), film.as_os_str(), "--out".as_ref(), exps.as_os_str(), "--partial".as_ref()]).env("DUNGEON_DATA", data);
-    told_run(export, root, &say).map_err(|why| format!("the export failed: {why}"))?;
-    let script = root.join("tools").join("ds").join("patch_rom.py");
+    let copy = root.join("target").join("ds").join(format!("{PLAYED}.nds"));
+    let script = root.join("tools").join("ds").join("watch.py");
     if !script.is_file() {
-        return Err(format!("{} is missing: the patch needs the repository's tools", script.display()));
+        return Err(format!("{} is missing: the copy needs the repository's tools", script.display()));
     }
-    say(format!("2/2 patch: patch_rom.py --boot --more-actors into {}", out.display()));
+    say(format!("watch.py --prepare {}{}", film.display(), scene.map_or(String::new(), |scene| format!(" --scene {scene}"))));
     let python = if cfg!(windows) { "python" } else { "python3" };
-    let mut patch = std::process::Command::new(python);
-    patch.arg(&script).arg(rom).arg(&exps).arg("--boot").arg(&out).arg("--more-actors").env("SKYTEMPLE_ARMIPS_EXEC", armips).env("PYTHONIOENCODING", "utf-8");
-    told_run(patch, root, &say).map_err(|why| format!("the patch failed: {why}"))?;
-    match out.is_file() {
-        true => Ok(out),
-        false => Err(format!("{} was not written", out.display())),
+    let mut prepare = std::process::Command::new(python);
+    prepare.arg(&script).arg(film).arg("--prepare").arg("--copy").arg(&copy).arg("--rom").arg(&mine.rom).arg("--core").arg(&mine.core);
+    if let Some(scene) = scene {
+        prepare.arg("--scene").arg(scene.to_string());
+    }
+    prepare.env("SKYTEMPLE_ARMIPS_EXEC", &mine.armips).env("PYTHONIOENCODING", "utf-8").env("DUNGEON_DATA", data);
+    let lines = told_run(prepare, root, &say).map_err(|why| format!("the copy failed: {why}"))?;
+    let state = lines.iter().rev().find_map(|line| line.strip_prefix("ds-play ")?.rsplit_once(' ').map(|(_, state)| PathBuf::from(state)));
+    match state {
+        Some(state) if copy.is_file() && state.is_file() => Ok((copy, state)),
+        _ => Err(format!("{} or its ready state was not written", copy.display())),
     }
 }
 
-/// A program run from the root, each line it says told; why it failed (its last lines).
-fn told_run(mut command: std::process::Command, root: &Path, say: &dyn Fn(String)) -> Result<(), String> {
+/// A program run from the root, each line it says told: its lines; why it failed (its last lines).
+fn told_run(mut command: std::process::Command, root: &Path, say: &dyn Fn(String)) -> Result<Vec<String>, String> {
     use std::io::BufRead;
     let program = command.get_program().to_string_lossy().into_owned();
     let output = command.current_dir(root).stdin(std::process::Stdio::null()).output().map_err(|why| {
@@ -468,13 +511,34 @@ fn told_run(mut command: std::process::Command, root: &Path, say: &dyn Fn(String
         lines.push(line);
     }
     match output.status.success() {
-        true => Ok(()),
+        true => Ok(lines),
         false => Err(lines.iter().rev().take(6).rev().cloned().collect::<Vec<_>>().join("\n")),
     }
 }
 
+/// The film the Emulator plays on DS: its file, the Script's text of it
+/// (saved or not), the line the cursor is on.
+pub struct FilmOnDs<'a> {
+    pub path: &'a Path,
+    pub text: Option<&'a str>,
+    pub saved: bool,
+    pub line: usize,
+}
+
+impl FilmOnDs<'_> {
+    /// The scene the cursor is in (from 1): the `scene:` lines up to its line, as the DS export numbers its scenes.
+    pub fn scene(&self) -> usize {
+        self.text.map_or(1, |text| scene_at(text, self.line))
+    }
+}
+
+/// The scene a line is in (from 1): the `scene:` lines up to it.
+fn scene_at(text: &str, line: usize) -> usize {
+    text.lines().take(line.max(1)).filter(|said| said.trim_start().starts_with("scene:")).count().max(1)
+}
+
 /// The Emulator's tools: the game, the controls, the film.
-pub fn tools(ui: &mut egui::Ui, emulate: &mut Emulate, film: Option<&Path>) {
+pub fn tools(ui: &mut egui::Ui, emulate: &mut Emulate, film: Option<FilmOnDs>) {
     if ui.button("Load ROM…").on_hover_text("a DS game of yours (a .nds you dumped)").clicked() {
         emulate.choose_rom();
     }
@@ -518,15 +582,30 @@ pub fn tools(ui: &mut egui::Ui, emulate: &mut Emulate, film: Option<&Path>) {
     ui.separator();
     let busy = emulate.making.as_ref().is_some_and(|making| making.done.is_none());
     let can = film.is_some() && emulate.core_path().is_some() && !busy;
-    let hint = match film {
-        Some(film) => format!("{} put in a copy of your Explorers of Sky, played from power on", film.file_name().unwrap_or_default().to_string_lossy()),
+    let hint = match &film {
+        Some(film) => format!(
+            "{} put in a copy of your Explorers of Sky{}, played from its first scene",
+            film.path.file_name().unwrap_or_default().to_string_lossy(),
+            if film.saved { "" } else { " as the Script has it now (not saved)" }
+        ),
         None => "open a film in the Film space first".to_string(),
     };
     let play = egui::Button::new(RichText::new("Play This Film on DS").color(theme::GROUND).strong()).fill(theme::EMULATOR);
     if ui.add_enabled(can, play).on_hover_text(hint).on_disabled_hover_text("open a film in the Film space, and choose a core").clicked()
-        && let Some(film) = film
+        && let Some(film) = &film
     {
-        emulate.play_film(film);
+        emulate.play_film(film, None);
+    }
+    let scene = film.as_ref().map_or(1, FilmOnDs::scene);
+    let from = egui::Button::new(format!("From Scene {scene}"));
+    if ui
+        .add_enabled(can && scene > 1, from)
+        .on_hover_text("the film on DS from the scene the Script's cursor is in: its cast where they stand as it starts")
+        .on_disabled_hover_text("put the Script's cursor in a later scene")
+        .clicked()
+        && let Some(film) = &film
+    {
+        emulate.play_film(film, Some(scene));
     }
 }
 
@@ -740,5 +819,22 @@ mod tests {
         assert_eq!(keys_of(&Settings::read(Some(file.clone())))[4], (Button::A, egui::Key::X));
         assert!(key_map(&keys).contains("X: A"));
         _ = std::fs::remove_file(file);
+    }
+
+    #[test]
+    fn the_cursor_is_in_the_scene_of_the_last_scene_line_above_it() {
+        let text = "title: T
+
+scene: beach a b
+a: Hi.
+  scene: town a
+a: There.
+";
+        assert_eq!(scene_at(text, 1), 1, "before any scene: the first");
+        assert_eq!(scene_at(text, 4), 1);
+        assert_eq!(scene_at(text, 5), 2);
+        assert_eq!(scene_at(text, 99), 2);
+        let film = FilmOnDs { path: Path::new("x.film"), text: Some(text), saved: false, line: 6 };
+        assert_eq!(film.scene(), 2);
     }
 }
