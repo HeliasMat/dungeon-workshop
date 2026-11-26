@@ -14,6 +14,9 @@
 mod app;
 mod bug;
 mod capture;
+mod commands;
+mod shortcuts;
+mod video;
 
 fn main() -> eframe::Result {
     bug::told_as_bugs();

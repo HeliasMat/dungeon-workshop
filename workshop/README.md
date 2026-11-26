@@ -8,6 +8,19 @@ One window, seven spaces (Home, Game, Film, Decor, Dungeon, Resources, Emulator)
 
 **Made for films and decors first.** The Workshop opens on the Home (after the first launch, with a welcome panel: **+ New Film**, **+ New Decor**, the last files opened, the first film's steps, [docs/FIRST_FILM.md](../docs/FIRST_FILM.md)). The game-making spaces (Game, Dungeon, Emulator) show only when **Settings › Show the Game-Making Spaces** is on (`game_spaces = on` in the settings file): off for someone new, on by default for whoever already used them (a game in `games/`, or any setting already written: the emulator's paths or keys). The space looked at always shows.
 
+## The whole window
+
+- **The menus work in every space**: **File › Save** and **Edit › Undo / Redo** (and their keys) go to the space looked at: the Film's Script (its undo is the text's own, the Scene's and the Timeline's edits included), the Decor, what is being made in the Resources, the Dungeon and the Game (Save). **File › Export Video…** (the Film space) makes the film open a video in the background: `scene_player video <film>` (beside the Workshop), a window with how far it is (seconds made of the film's length), then where it is written (`target/films/<film>/<film>.mp4`), **Play It**, **Open the Folder**. It needs **ffmpeg** in the PATH: without it, the window says so (how to install it) and nothing is run.
+- **The command palette** (**Ctrl+Shift+P**, or View / Help › Command Palette…): every action of the menus, the spaces (Go to: Film…), the panels of the space looked at (View › Open / Close Panel: Timeline…), the last files (Open: …), each with its key; a few letters of its name find it (each word sought, the start of a word first; what can't be done now greyed, last); ↑ ↓, Enter or a click does it, Esc closes (`workshop/src/commands.rs`).
+- **Help › Keyboard Shortcuts…**: every key of each space, searched, read from this file's tables of keys (a table whose head starts with "Keys", under its heading: a key added here shows there, `workshop/src/shortcuts.rs`).
+- **The bar of state** says the file open from the project's folder (`library/films/the_juggler.film`), • if it is not written yet.
+
+| Keys | |
+|---|---|
+| Ctrl+Shift+P | the command palette |
+| Ctrl+S | save what is open in the space looked at |
+| Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z | undo, redo in the space looked at |
+
 ## Game
 
 A game of one's own (a folder of its own, `games/<name>/<name>.game`, see `games/README.md`; `workshop_game/`), in three columns (**+ New Game** makes its folder, its `.game` and its `films/`, `decors/`, `dungeons/`… folders; a dungeon of the game's own opens in the Dungeon space only if the library has one of that name):
@@ -22,13 +35,14 @@ The places' life (who lives there, what they say and when, what talking to them 
 The film's text in an editor, like VS Code.
 - **The colours**: who speaks, their face, what they say, the words of the language, the names, the times and numbers, the comments.
 - **The margin** numbers the lines and marks those the language says something about (red: error, yellow: remark); those words are underlined.
-- **PROBLEMS**, under the text, lists what the language says about the film (`film::service::diagnostics`), read again a moment after each change on a thread of its own. A click goes to the line; a button applies a fix offered.
+- **Problems**: what the language says about the film (`film::service::diagnostics`), read again a moment after each change on a thread of its own. A panel of its own, beside the Timeline (its tab says how many, an error in red; **View › Add Panel › Problems**), so the Script keeps its height; closed, they go back under the text, folded to their head while nothing is wrong (a click on the head opens or closes them). Those said alike are **one line**, with how many (`9 × …`) and their lines (each a click to go there); the errors first; a click on one goes to its first line; a fix of one, or of all of a kind at once; **Fix All**; **remarks** lists them or not.
 - **Typing** offers the words possible there (↑ ↓, Enter or Tab, Esc; Ctrl+Space to ask for them).
 - **Hovering over a word** says what it is, and what is wrong there; a word of the language, in a line, what it does, and **F1** for its page in the Wiki.
-- **At the top**: where the cursor is ("Scene 2 · the place as the game names it › moment › line › its word", each piece a click to go there), **Layout**, **Wiki**, **Find**, **View** (word wrap, hints, letter size), **Format**, **DS Mode**.
+- **At the top**: where the cursor is ("Scene 2 · the place as the game names it › moment › line › its word", each piece a click to go there), then a few: **Find**, the story view (**Text ▾**), **View** (word wrap, hints, letter size), **…** (the project's films: search, open, beside, versions, a note; **Format**, **DS Mode**, **Dialogue**, the **Layout**), **Wiki**.
+- **A film opened on a line** (from the Home, the Timeline, a problem, `WORKSHOP_LINE`) brings that line into sight, in the middle.
 - **DS Mode** (in the Script's head) adds the line `for ds` to the film, or takes it off: the film is written for Explorers of Sky on DS (docs/DS.md). Then what the DS can't play is told as the film is written (`E-DS-WORD`, `R-DS-LOSS`, `E-DS-ACTORS`, `E-DS-PLACE`, `E-DS-HERO`, `R-DS-ZOOM`, film/FILMS.md), the completion offers only the words that export (those with a loss marked "DS with loss: …"), and the Wiki shows each word's DS badge (**DS direct**, **DS with loss**, **not on DS**, what is lost or why on hover and on its page) with **DS only** to list the words that export. The statuses are those of `scene_player export-ds --table` (`film_core/src/ds.rs`).
 - **The Layout** (on the left): the scenes, their place, how many lines are wrong in them (⚠), their moments; a click goes there; Fold, Unfold all.
-- **The Wiki** (a window of its own, opened by **Wiki** in the Script's head or **F1**, to read beside the Workshop while writing): every word of the language (its words, the library's recipes, the engine's commands), searched by its name, its family or what it does (the very word first, then those it begins, then its family, then what they do), by family otherwise. A page for each: what it does, said for an author; how it is written, each form with what each part means, what may be left out and what it is then; an example, a little film (written by hand in `workshop_wiki/wiki/*.txt`, or made from the word's form), coloured as the Script colours it, the word's line lit: **Play / Stop the Example** (on the right, in a loop), **Insert at Cursor** (its line under the cursor's, the scene's own two in place of Pikachu and Piplup), **Copy Example**; **See Also**, the words it goes with; a recipe's **How it's made**, its own lines. A word a film does not take as written (the game's now, an engine command a film's words write) says what to write instead. **F1** opens the page of the word at the cursor (or pointed at). A page's example plays at once, large, on the right of its text, the whole scene seen; Insert at Cursor and F1 go to the film being written.
+- **The Wiki** (docked in the Film space, beside the Assets; opened there by **Wiki** in the Script's head or **F1**, docked again if its tab was closed; elsewhere a window of its own): every word of the language (its words, the library's recipes, the engine's commands), searched by its name, its family or what it does (the very word first, then those it begins, then its family, then what they do), by family otherwise. A page for each: what it does, said for an author; how it is written, each form with what each part means, what may be left out and what it is then; an example, a little film (written by hand in `workshop_wiki/wiki/*.txt`, or made from the word's form), coloured as the Script colours it, the word's line lit: **Play / Stop the Example** (on the right, in a loop), **Insert at Cursor** (its line under the cursor's, the scene's own two in place of Pikachu and Piplup), **Copy Example**; **See Also**, the words it goes with; a recipe's **How it's made**, its own lines. A word a film does not take as written (the game's now, an engine command a film's words write) says what to write instead. **F1** opens the page of the word at the cursor (or pointed at). A page's example plays at once, large, on the right of its text, the whole scene seen; Insert at Cursor and F1 go to the film being written.
 - **At the bottom**: the line said at the cursor in its box, cut as the game cuts it (34 letters, 3 lines; what goes beyond in red); the status bar (line, column, lines, scenes, the film's length; the problems, a click: the next one).
 - **The film is written by itself** a moment after the last change.
 
@@ -161,12 +175,26 @@ And also:
   - **drag the empty space** (or drag with the middle button anywhere) to move along the film; the wheel scrolls the tracks, Shift+wheel moves along the film; **Ctrl+wheel** zooms in or out, around the pointer;
   - **See All** shows the whole film; **Follow the Playhead** keeps it in sight;
   - the pointer over it: Space plays or stops, ← → from a line's start to the next one, Home, End.
-- **The Inspector** edits the cursor's line (‹ ›: the line before, the next one; its kind in colour).
+- **The Inspector** edits the cursor's line (‹ ›: the line before, the next one; its kind in colour), the line as written above in a box, wrapped. Its fields in two columns: the name (made readable: `walk_or_run` reads `walk | run`, `_` as spaces; wrapped), the value; a field of one word of a few (`lines | catmull | bezier`) is a row of buttons, a long value (points…) a field on lines of its own. A comment has no **When It Plays**.
   - **A line said**: who speaks (the film's cast), their face (the game's), their manner (fast, slow, top…), what they say.
   - **Another line**: each field of the form that read it when the film played, to change according to its kind. Someone is chosen from the cast, a number is dragged, the rest is written; a place can also be chosen with a click on the Scene ("on the scene", Esc: no). A field not written says its default value.
   - **The word**: its forms and what it does.
   - **When it plays** (a button to go there), and who is on stage at that moment.
   - **What is said about it**, with the fixes offered, in one click.
+
+| Keys (pointer over the Scene or the Timeline) | |
+|---|---|
+| Space, K | play, stop |
+| ← →, J L | a second before, after (the Timeline: from a line's start to the next) |
+| Shift+← →, `,` `.` | a frame before, after |
+| Home, End | the start, the end |
+| F6, F10 | step by line or not; on to the next line |
+| Ctrl+wheel | the Timeline closer or further (the Scene: the wheel) |
+| Shift+wheel | along the film, on the Timeline |
+| Shift+drag | measure on the Scene; on a bar: the lines after it move too |
+| Alt+drag | a bar beside the film (`&`) or back in sequence |
+| Ctrl+click | the point (or who is there) written at the Script's cursor |
+| Esc | no more choosing a point on the Scene |
 
 ## Decor
 
@@ -209,11 +237,11 @@ The film plays at once: `scene:` with its cast, a `put x y facing …` for each 
 - **The Project** (on the left): Recent, ★ Favourites, Films, Decors, Drawn Objects (a click: in the Resources), Shared Recipes (`uses`, `include`), Bin; how many of each.
 - **The Files** (in the middle):
   - **Open…**: all the films and decors, by their title; **Search the project** (Ctrl+K): the titles, the files, the places, those who play in them, and the words of their text;
-  - a **List** (a click on a column sorts it, again: reversed) or a **Grid**; each file with the picture of its place (a film's first scene, a decor itself);
+  - a **List** (a click on a column sorts it, again: reversed) or a **Grid**; each file with the picture of its place (a film's first scene, a decor itself), made once on a thread and kept in `target/workshop/pictures` (a decor's made again when it changes); while a decor's is made (or if it cannot be), the backdrop of the place it is made like (`like 11`);
   - a click chooses, a double-click opens; ↑ ↓ (← → in the grid) another, Enter opens it, Delete: the bin.
 - **The Preview** (on the right):
   - the picture of the place; ▶ opens the film and plays it;
-  - the **Details**: the kind, the scenes, the places (as the game names them), the characters, the lines said, the lines, the **State** (what the language says of the film: no problems, remarks, errors), when it changed; of a decor, its size and the films set there;
+  - the **Details**: the kind, the scenes, the places (as the game names them), the characters, the **Lines Said** (spoken lines), the **Lines of Text** (all), the **State** (what the language says of the film: no problems, remarks, errors), when it changed; of a decor, its size and the films set there;
   - **Open**, **Duplicate** ("_copy", the title too), **Rename** (a decor: also in the films set there, if asked), **Bin** (in `target/workshop/bin`), ★ Favourite, Show in Explorer;
   - in the **Bin**: **Put Back** (in its folder) or **Delete Permanently** (asked once more).
 
@@ -419,7 +447,8 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 
 | Crate, module | What it holds |
 |---|---|
-| `workshop/`: `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state |
+| `workshop/`: `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state; what a menu, the palette or a key asks done in the space looked at (`App::run`) |
+| `workshop/`: `commands.rs`, `shortcuts.rs`, `video.rs` | the command palette (`Command`, what it finds), Help › Keyboard Shortcuts (read from this README's tables of keys), File › Export Video (`scene_player video` in the background) |
 | `workshop_home/` | the Home: its shelves, the files as a table or a grid, the Preview and what is done with a file there (`open` asks the window for its space); New Film (`new_film/`: its text in `mod.rs`, its window in `ui.rs`) and New Decor (`new_decor.rs`) |
 | `workshop_first/` | the first launch: the user's copy of the game checked (`check_rom`), the resources extracted step by step (`Phase`, `Event`), what goes wrong said for a person; the programs beside the Workshop (`program_beside`) |
 | `workshop_game/` | the Game space: `lib.rs` (the game open, its three columns), `game.rs` (a `.game` file as the space reads and writes it: its card, its chapters as boxes) |
@@ -478,7 +507,9 @@ The root (`library/`, `games/`, `film/recipes/`) is the first folder up from whe
 | `WORKSHOP_TIMELINE=all,insert:pikachu:3.5,fold:camera` | the Film's Timeline showing the whole film, its window to write a line open on that track (`camera`, `sound`, `screen`, `other`, or one of the cast) at that time, a track folded |
 | `WORKSHOP_PICKER=gestures:pikachu` (`<tab>[:<pokemon>[:<search>]]`) | the Film's Assets on that tab (`pokemon`, `faces`, `gestures`, `music`, `sounds`, `things`, `places`, `effects`), for that Pokémon, searching that |
 | `WORKSHOP_STEP=1` | the Film stepping by line (Step on), playing from the start (or `WORKSHOP_INSTANT`): it stops at the next line |
-| `WORKSHOP_LINE=n` | the Script's cursor on line n |
+| `WORKSHOP_LINE=n` | the Script's cursor on line n (brought into sight) |
+| `WORKSHOP_PALETTE=<words>` | the command palette open, those words sought |
+| `WORKSHOP_SHORTCUTS=1` | Help › Keyboard Shortcuts open |
 | `WORKSHOP_WORDS=family` | the words by family open on that one |
 | `WORKSHOP_CREATE=image\|animation\|sound\|music\|dungeon\|dungeon:<word>` | the Resources making one (`dungeon:<word>`: that one open) |
 | `WORKSHOP_TRY=1` | the open dungeon tried at once |

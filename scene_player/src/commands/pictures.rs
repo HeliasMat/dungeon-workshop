@@ -352,6 +352,10 @@ pub fn video(piece: &Piece, scale: usize, context: &Arc<Context>) -> Result<(), 
         into.write_all(&screen.rgba).map_err(lost)?;
         ended += usize::from(film.over);
         frame += 1;
+        // (Where it is, each second of film: what the Workshop's Export Video shows.)
+        if frame % 60 == 0 {
+            println!("at {} s", seconds(frame));
+        }
     }
     drop(into);
     writer.wait().map_err(lost)?;

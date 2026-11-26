@@ -14,6 +14,8 @@ use workshop_base::project::{Entry, Kind, Project};
 use workshop_base::session::Session;
 use workshop_base::theme;
 
+use crate::commands::Command;
+
 /// The panels, each of one space.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Panel {
@@ -31,6 +33,8 @@ pub enum Panel {
     FilmAssets,
     /// The Wiki, docked (else a window of its own).
     Wiki,
+    /// The Script's problems, a panel of their own (else under the text).
+    Problems,
     // Decor.
     Hierarchy,
     History,
@@ -60,6 +64,7 @@ impl Panel {
             Panel::AssetGrid => "Resources",
             Panel::FilmAssets => "Assets",
             Panel::Wiki => "Wiki",
+            Panel::Problems => "Problems",
         }
     }
 
@@ -67,7 +72,9 @@ impl Panel {
     fn of(space: Space) -> &'static [Panel] {
         match space {
             Space::Home => &[Panel::Project, Panel::List, Panel::Preview],
-            Space::Film => &[Panel::Script, Panel::FilmScene, Panel::FilmAssets, Panel::FilmInspector, Panel::FilmState, Panel::Timeline, Panel::Wiki],
+            Space::Film => {
+                &[Panel::Script, Panel::FilmScene, Panel::FilmAssets, Panel::FilmInspector, Panel::FilmState, Panel::Timeline, Panel::Problems, Panel::Wiki]
+            }
             Space::Decor => &[Panel::Hierarchy, Panel::History, Panel::DecorScene, Panel::DecorInspector, Panel::Library],
             Space::Assets => &[Panel::AssetTree, Panel::AssetGrid, Panel::AssetInspector],
             Space::Dungeon | Space::Game | Space::Emulator => &[],
@@ -86,6 +93,7 @@ impl Panel {
             Panel::FilmInspector | Panel::FilmState => &[Panel::FilmAssets, Panel::FilmState, Panel::FilmInspector],
             Panel::Wiki => &[Panel::FilmAssets, Panel::FilmInspector, Panel::Timeline],
             Panel::Timeline => &[Panel::FilmState],
+            Panel::Problems => &[Panel::Timeline, Panel::FilmState],
             Panel::Hierarchy | Panel::History => &[Panel::History, Panel::Hierarchy],
             Panel::DecorInspector | Panel::Library => &[Panel::DecorInspector, Panel::Library],
             Panel::Project | Panel::Preview => &[Panel::Preview, Panel::Project],
@@ -170,10 +178,12 @@ fn layout(space: Space) -> DockState<Panel> {
         Space::Film => {
             let mut dock = DockState::new(vec![Panel::FilmScene]);
             let surface = dock.main_surface_mut();
-            let [scene, _] = surface.split_below(NodeIndex::root(), 0.64, vec![Panel::Timeline]);
+            // (Under them all, the Timeline, the Script's problems beside it.)
+            let [scene, _] = surface.split_below(NodeIndex::root(), 0.64, vec![Panel::Timeline, Panel::Problems]);
             let [scene, _] = surface.split_left(scene, 0.4, vec![Panel::Script]);
-            // (On the right: the assets to drag onto the Scene or the Script; under them, the line's Inspector and the State.)
-            let [_, assets] = surface.split_right(scene, 0.68, vec![Panel::FilmAssets]);
+            // (On the right: the assets to drag onto the Scene or the Script, the Wiki beside them; under them, the
+            // line's Inspector and the State.)
+            let [_, assets] = surface.split_right(scene, 0.68, vec![Panel::FilmAssets, Panel::Wiki]);
             surface.split_below(assets, 0.64, vec![Panel::FilmInspector, Panel::FilmState]);
             dock
         }
@@ -244,6 +254,14 @@ pub struct App {
     game_spaces: bool,
     /// The panels each space shows, as the settings last had them (written again when they change).
     remembered: [Vec<&'static str>; 7],
+    /// The command palette (Ctrl+Shift+P), while open; Help › Keyboard Shortcuts, while open (what is sought there).
+    palette: Option<crate::commands::Palette>,
+    shortcuts: bool,
+    shortcuts_sought: String,
+    /// A key a command asked of the space's own editor, pressed at the next frame (before the panels).
+    pressed: Option<(egui::Modifiers, egui::Key)>,
+    /// File › Export Video, while it is made and until its window is closed.
+    export: Option<crate::video::Export>,
 }
 
 impl App {
@@ -292,6 +310,12 @@ impl App {
             quant: workshop_tools::tilequant::QuantTool::asked(context, &launch),
             spritecollab: None,
             welcome: launch.welcome,
+            // (`WORKSHOP_PALETTE=<words>`, `WORKSHOP_SHORTCUTS`: open, for a picture.)
+            palette: launch.palette.clone().map(|sought| crate::commands::Palette { sought, chosen: 0, fresh: true }),
+            shortcuts: launch.shortcuts,
+            shortcuts_sought: String::new(),
+            pressed: None,
+            export: None,
         };
         if app.welcome {
             app.first_steps();
@@ -351,49 +375,52 @@ impl App {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.label(theme::text("Workshop", theme::BODY, theme::STRONG).strong());
             ui.add_space(6.0);
+            let mut asked: Option<Command> = None;
+            let item = |ui: &mut egui::Ui, said: &str, key: &str, can: bool| ui.add_enabled(can, egui::Button::new(said).shortcut_text(key)).clicked();
             ui.menu_button("File", |ui| {
-                if ui.button("New Film…").clicked() {
-                    self.new_film();
+                if item(ui, "New Film…", "", true) {
+                    asked = Some(Command::NewFilm);
                 }
-                if ui.button("New Decor…").clicked() {
-                    self.new_decor();
+                if item(ui, "New Decor…", "", true) {
+                    asked = Some(Command::NewDecor);
                 }
                 ui.separator();
                 ui.menu_button("Open Recent", |ui| {
                     let recent: Vec<Entry> = self.work.project.recent().into_iter().take(10).cloned().collect();
                     for entry in recent {
                         if ui.button(format!("{} — {}", entry.title, entry.kind.word())).clicked() {
-                            workshop_home::open(&self.work.session, &entry);
+                            asked = Some(Command::Open(entry.path.clone()));
                         }
                     }
                 });
-                let open = self.space == Space::Decor && self.work.decors.open.is_some();
-                if ui.add_enabled(open, egui::Button::new("Save").shortcut_text("Ctrl+S")).clicked() {
-                    self.save();
+                if item(ui, &format!("Save ({})", self.space.word()), "Ctrl+S", self.can_save()) {
+                    asked = Some(Command::Save);
                 }
-                if ui.button("Reload the Project").clicked() {
-                    self.work.project = Project::read(&self.work.session);
-                    self.work.said = "project reloaded".to_string();
+                if item(ui, "Export Video…", "", self.can_export()) {
+                    asked = Some(Command::ExportVideo);
+                }
+                if item(ui, "Reload the Project", "", true) {
+                    asked = Some(Command::ReloadProject);
                 }
                 ui.separator();
-                if ui.button("Quit").clicked() {
-                    ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                if item(ui, "Quit", "", true) {
+                    asked = Some(Command::Quit);
                 }
             });
             ui.menu_button("Edit", |ui| {
-                let open = self.space == Space::Decor && self.work.decors.open.is_some();
-                if ui.add_enabled(open, egui::Button::new("Undo").shortcut_text("Ctrl+Z")).clicked()
-                    && let Some(decor) = &mut self.work.decors.open
-                {
-                    decor.undo();
+                let can = self.can_undo();
+                if item(ui, "Undo", "Ctrl+Z", can) {
+                    asked = Some(Command::Undo);
                 }
-                if ui.add_enabled(open, egui::Button::new("Redo").shortcut_text("Ctrl+Y")).clicked()
-                    && let Some(decor) = &mut self.work.decors.open
-                {
-                    decor.redo();
+                if item(ui, "Redo", "Ctrl+Y", can) {
+                    asked = Some(Command::Redo);
                 }
             });
             ui.menu_button("View", |ui| {
+                if item(ui, "Command Palette…", "Ctrl+Shift+P", true) {
+                    self.palette = Some(crate::commands::Palette { fresh: true, ..Default::default() });
+                }
+                ui.separator();
                 let panels = Panel::of(self.space);
                 if !panels.is_empty() {
                     ui.menu_button("Add Panel", |ui| {
@@ -411,12 +438,12 @@ impl App {
                         }
                     });
                 }
-                if ui.button(format!("Default Layout ({})", self.space.word())).clicked() {
-                    self.docks[self.space.at()] = layout(self.space);
+                if item(ui, &format!("Default Layout ({})", self.space.word()), "", true) {
+                    asked = Some(Command::DefaultLayout);
                 }
                 for space in self.spaces() {
-                    if ui.button(format!("Go to: {}", space.word())).clicked() {
-                        self.space = space;
+                    if item(ui, &format!("Go to: {}", space.word()), "", true) {
+                        asked = Some(Command::Go(space));
                     }
                 }
             });
@@ -427,7 +454,7 @@ impl App {
                     .on_hover_text("Game, Dungeon and Emulator: to make a game of your films (chapters, dungeons, the DS). Off: films and decors only.")
                     .changed()
                 {
-                    self.show_game_spaces(shown);
+                    asked = Some(Command::GameSpaces);
                 }
             });
             ui.menu_button("Tools", |ui| {
@@ -436,20 +463,28 @@ impl App {
                     .on_hover_text("a picture to the console's rules: tiles of 8, 16 colours each; <name>_quant.png beside it")
                     .clicked()
                 {
-                    self.quant = Some(workshop_tools::tilequant::QuantTool::new());
+                    asked = Some(Command::Tilequant);
                 }
                 if ui.button("SpriteCollab…").on_hover_text("the PMDCollab community's sprites and portraits: search, look, import into data/extra").clicked()
                 {
-                    self.spritecollab = Some(workshop_tools::sprites::Browser::new(&self.work.session, None));
+                    asked = Some(Command::SpriteCollab);
                 }
             });
             ui.menu_button("Help", |ui| {
-                if ui.button("Your First Film in 5 Minutes…").clicked() {
-                    self.space = Space::Home;
-                    self.welcome = true;
+                if item(ui, "Keyboard Shortcuts…", "", true) {
+                    asked = Some(Command::Shortcuts);
+                }
+                if item(ui, "Command Palette…", "Ctrl+Shift+P", true) {
+                    self.palette = Some(crate::commands::Palette { fresh: true, ..Default::default() });
+                }
+                if item(ui, "Your First Film in 5 Minutes…", "", true) {
+                    asked = Some(Command::FirstFilm);
                 }
                 ui.label(theme::weak("Step by step: docs/FIRST_FILM.md; a game: docs/TUTORIAL.md."));
             });
+            if let Some(command) = asked {
+                self.run(ui.ctx(), command);
+            }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.spacing_mut().item_spacing.x = 1.0;
                 for space in self.spaces().into_iter().rev() {
@@ -787,6 +822,24 @@ impl App {
 
     /// The keys of the whole window: save, undo, make again.
     fn keys(&mut self, context: &egui::Context) {
+        // (The Film: its Script's own keys while it is typed in; elsewhere in the space, saved and undone here.)
+        if self.space == Space::Film && !context.wants_keyboard_input() {
+            let (save, redo, undo) = context.input_mut(|input| {
+                let save = input.consume_key(egui::Modifiers::COMMAND, egui::Key::S);
+                // (Ctrl+Shift+Z before Ctrl+Z: the plain one would take both.)
+                let redo = input.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::Z)
+                    | input.consume_key(egui::Modifiers::COMMAND, egui::Key::Y);
+                (save, redo, input.consume_key(egui::Modifiers::COMMAND, egui::Key::Z))
+            });
+            if save {
+                self.run(context, Command::Save);
+            }
+            if redo {
+                self.run(context, Command::Redo);
+            } else if undo {
+                self.run(context, Command::Undo);
+            }
+        }
         if self.space != Space::Decor || context.wants_keyboard_input() {
             return;
         }
@@ -855,7 +908,8 @@ impl App {
                 _ => self.work.home.chosen.clone(),
             };
             let mark = if self.unsaved(self.space) && matches!(self.space, Space::Film | Space::Decor) { " •" } else { "" };
-            ui.label(white(file.map_or("library".to_string(), |path| format!("{}{mark}", path.display()))));
+            let root = self.work.session.root().to_path_buf();
+            ui.label(white(file.map_or("library".to_string(), |path| format!("{}{mark}", relative(&path, &root))))).on_hover_text("from the project's folder");
             ui.label(white(format!("{} films · {} decors", self.work.project.films.len(), self.work.project.decors.len())));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(white(self.work.said.clone()));
@@ -876,16 +930,18 @@ impl App {
         }
     }
 
-    /// The Wiki docked in the Film space: the Script opens it there (F1, its button), not in a window.
+    /// The Wiki docked in the Film space: the Script opens it there (F1, its button), not in a window over the
+    /// Script and the Scene (closed, it is docked again when asked). The problems, under the text or a panel.
     fn wiki_docked(&mut self) {
         let dock = &mut self.docks[Space::Film.at()];
-        let docked = dock.find_tab(&Panel::Wiki);
-        self.work.scripts.wiki_docked = docked.is_some();
-        if let Some(at) = docked
-            && self.work.scripts.wiki_asked()
-        {
-            dock.set_active_tab(at);
+        self.work.scripts.problems_docked = dock.find_tab(&Panel::Problems).is_some();
+        if self.work.scripts.wiki_asked() {
+            opened(dock, Panel::Wiki);
+            if let Some(at) = dock.find_tab(&Panel::Wiki) {
+                dock.set_active_tab(at);
+            }
         }
+        self.work.scripts.wiki_docked = dock.find_tab(&Panel::Wiki).is_some();
     }
 
     /// The New Film window opened (on its first step).
@@ -987,6 +1043,15 @@ impl egui_dock::TabViewer for Panels<'_> {
     type Tab = Panel;
 
     fn title(&mut self, tab: &mut Panel) -> egui::WidgetText {
+        // (The problems, how many on their tab: an error in red, seen even when the Timeline is in front.)
+        if *tab == Panel::Problems {
+            let (wrong, remarked) = self.work.scripts.counts();
+            return match (wrong, remarked) {
+                (0, 0) => "Problems".into(),
+                (0, remarked) => format!("Problems · {remarked}").into(),
+                (wrong, _) => RichText::new(format!("Problems · {wrong} error{}", if wrong > 1 { "s" } else { "" })).color(theme::WRONG).into(),
+            };
+        }
         tab.title().into()
     }
 
@@ -1040,6 +1105,7 @@ impl egui_dock::TabViewer for Panels<'_> {
                 workshop_resources::picker(ui, &mut self.work.resources, &self.work.decors, &mut self.work.scripts, chosen.as_deref(), &cast);
             }
             Panel::Wiki => workshop_script::wiki(ui, &mut self.work.scripts),
+            Panel::Problems => workshop_script::problems_panel(ui, &mut self.work.scripts),
             Panel::AssetTree => workshop_resources::tree(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetGrid => workshop_resources::grid(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetInspector => {
@@ -1132,7 +1198,7 @@ impl App {
                 step(ui, "2.", "Write two lines in the Script: `pikachu (happy): Hello!` — Ctrl+Space offers what comes next.");
                 step(ui, "3.", "Ctrl+Enter plays from the cursor's line; Space plays or pauses.");
                 step(ui, "4.", "Drag someone on the Scene to move them: their line is written again.");
-                step(ui, "5.", "A video of it: `scene_player video <film>` in a terminal (ffmpeg needed).");
+                step(ui, "5.", "A video of it: File › Export Video (ffmpeg needed).");
                 ui.label(theme::weak("All of it, with pictures: docs/FIRST_FILM.md."));
                 ui.add_space(10.0);
                 let room = ui.available_width();
@@ -1171,6 +1237,8 @@ impl eframe::App for App {
         if let Some(told) = self.work.decors.tick(context) {
             self.work.said = told;
         }
+        self.early_keys(context);
+        self.palette(context);
         self.keys(context);
         self.wiki_docked();
         // (The game open in the Game space: the Dungeon space lists and opens its own dungeons and fights too.)
@@ -1216,6 +1284,7 @@ impl eframe::App for App {
         self.making(context);
         self.welcome(context);
         self.restore(context);
+        self.overlays(context);
         workshop_tools::tilequant::show(context, &mut self.quant);
         self.answer();
         workshop_tools::sprites::show(context, &mut self.spritecollab);
@@ -1234,5 +1303,209 @@ impl eframe::App for App {
 fn toggle_walls(decors: &mut workshop_decor::Decors) {
     if !decors.hidden.remove("walls") {
         decors.hidden.insert("walls");
+    }
+}
+
+impl App {
+    /// Whether the space looked at has something to write out (File › Save, Ctrl+S).
+    fn can_save(&self) -> bool {
+        match self.space {
+            Space::Film => self.work.scripts.open.is_some(),
+            Space::Decor => self.work.decors.open.is_some(),
+            Space::Assets => self.work.resources.creating(),
+            Space::Dungeon => self.work.dungeons.unsaved_count() > 0,
+            Space::Game => self.work.games.unsaved(),
+            Space::Home | Space::Emulator => false,
+        }
+    }
+
+    /// Whether the space looked at has something to undo (Edit › Undo, Redo).
+    fn can_undo(&self) -> bool {
+        match self.space {
+            Space::Film => self.work.scripts.open.is_some(),
+            Space::Decor => self.work.decors.open.is_some(),
+            Space::Assets => self.work.resources.creating(),
+            _ => false,
+        }
+    }
+
+    /// Whether a video can be made: a film open in the Film space, none being made.
+    fn can_export(&self) -> bool {
+        self.space == Space::Film && self.work.film.is_some() && self.export.as_ref().is_none_or(|export| export.done.is_some())
+    }
+
+    /// Every action the palette offers, as the menus have them: what can be done now, the spaces, the panels of
+    /// the space looked at, the last files.
+    fn offered(&self) -> Vec<crate::commands::Offered> {
+        use crate::commands::Offered;
+        let space = self.space.word();
+        let mut offered = vec![
+            Offered::new("File › New Film…", "", Command::NewFilm, true),
+            Offered::new("File › New Decor…", "", Command::NewDecor, true),
+            Offered::new(format!("File › Save ({space})"), "Ctrl+S", Command::Save, self.can_save()),
+            Offered::new("File › Export Video…", "", Command::ExportVideo, self.can_export()),
+            Offered::new("File › Reload the Project", "", Command::ReloadProject, true),
+            Offered::new(format!("Edit › Undo ({space})"), "Ctrl+Z", Command::Undo, self.can_undo()),
+            Offered::new(format!("Edit › Redo ({space})"), "Ctrl+Y", Command::Redo, self.can_undo()),
+            Offered::new(format!("View › Default Layout ({space})"), "", Command::DefaultLayout, true),
+            Offered::new("Help › Keyboard Shortcuts…", "", Command::Shortcuts, true),
+            Offered::new("Help › Your First Film in 5 Minutes…", "", Command::FirstFilm, true),
+            Offered::new(format!("Settings › {} the Game-Making Spaces", if self.game_spaces { "Hide" } else { "Show" }), "", Command::GameSpaces, true),
+            Offered::new("Tools › Convert an Image (Tilequant)…", "", Command::Tilequant, true),
+            Offered::new("Tools › SpriteCollab…", "", Command::SpriteCollab, true),
+        ];
+        for space in self.spaces() {
+            offered.push(Offered::new(format!("Go to: {}", space.word()), "", Command::Go(space), space != self.space));
+        }
+        let dock = &self.docks[self.space.at()];
+        for panel in Panel::of(self.space).iter().filter(|panel| panel.closeable()) {
+            let verb = if dock.find_tab(panel).is_some() { "Close" } else { "Open" };
+            offered.push(Offered::new(format!("View › {verb} Panel: {}", panel.title()), "", Command::Panel(panel.title()), true));
+        }
+        for entry in self.work.project.recent().into_iter().take(12) {
+            offered.push(Offered::new(format!("Open: {} ({})", entry.title, entry.kind.word()), "", Command::Open(entry.path.clone()), true));
+        }
+        offered.push(Offered::new("File › Quit", "", Command::Quit, true));
+        offered
+    }
+
+    /// An action done, asked by a menu, the palette or a key: routed to the space looked at.
+    fn run(&mut self, context: &egui::Context, command: Command) {
+        let key = |key| Some((egui::Modifiers::COMMAND, key));
+        match command {
+            Command::NewFilm => self.new_film(),
+            Command::NewDecor => self.new_decor(),
+            Command::Save => match self.space {
+                Space::Film => self.work.said = self.work.scripts.save_now().unwrap_or_default(),
+                Space::Decor => self.save(),
+                Space::Assets | Space::Dungeon | Space::Game => self.pressed = key(egui::Key::S),
+                Space::Home | Space::Emulator => {}
+            },
+            Command::Undo | Command::Redo => {
+                let redo = command == Command::Redo;
+                match self.space {
+                    Space::Film => {
+                        if !self.work.scripts.undo(context, redo) {
+                            self.work.said = format!("nothing to {}", if redo { "redo" } else { "undo" });
+                        }
+                    }
+                    Space::Decor => {
+                        if let Some(decor) = &mut self.work.decors.open {
+                            if redo {
+                                decor.redo();
+                            } else {
+                                decor.undo();
+                            }
+                        }
+                    }
+                    Space::Assets => self.pressed = key(if redo { egui::Key::Y } else { egui::Key::Z }),
+                    _ => {}
+                }
+            }
+            Command::ReloadProject => {
+                self.work.project = Project::read(&self.work.session);
+                self.work.said = "project reloaded".to_string();
+            }
+            Command::Quit => context.send_viewport_cmd(egui::ViewportCommand::Close),
+            Command::Go(space) => self.space = space,
+            Command::Panel(title) => {
+                if let Some(panel) = Panel::of(self.space).iter().find(|panel| panel.title() == title) {
+                    let dock = &mut self.docks[self.space.at()];
+                    if dock.find_tab(panel).is_some() {
+                        closed(dock, *panel);
+                    } else {
+                        opened(dock, *panel);
+                    }
+                }
+            }
+            Command::DefaultLayout => self.docks[self.space.at()] = layout(self.space),
+            Command::Shortcuts => self.shortcuts = true,
+            Command::FirstFilm => {
+                self.space = Space::Home;
+                self.welcome = true;
+            }
+            Command::GameSpaces => self.show_game_spaces(!self.game_spaces),
+            Command::Tilequant => self.quant = Some(workshop_tools::tilequant::QuantTool::new()),
+            Command::SpriteCollab => self.spritecollab = Some(workshop_tools::sprites::Browser::new(&self.work.session, None)),
+            Command::ExportVideo => {
+                if let Some(film) = self.work.film.clone() {
+                    let length = self.work.films.timeline.as_ref().map(|_| self.work.films.end as f64 / 60.0);
+                    self.export = Some(crate::video::Export::start(&film, length));
+                    self.work.said = format!("making the video of {}…", film.file_name().unwrap_or_default().to_string_lossy());
+                }
+            }
+            Command::Open(path) => {
+                if let Some(entry) = self.work.project.films.iter().chain(&self.work.project.decors).find(|entry| entry.path == path).cloned() {
+                    workshop_home::open(&self.work.session, &entry);
+                }
+            }
+        }
+    }
+
+    /// The palette, over the whole (an action asked there done): drawn before the panels, so that its keys (↑ ↓,
+    /// Enter, Esc) are its own.
+    fn palette(&mut self, context: &egui::Context) {
+        if let Some(mut palette) = self.palette.take() {
+            let offered = self.offered();
+            let (asked, close) = crate::commands::palette(context, &mut palette, &offered);
+            if !close {
+                self.palette = Some(palette);
+            }
+            if let Some(command) = asked {
+                self.run(context, command);
+            }
+        }
+    }
+
+    /// The windows over the whole: the shortcuts, the video being made.
+    fn overlays(&mut self, context: &egui::Context) {
+        crate::shortcuts::window(context, &mut self.shortcuts, &mut self.shortcuts_sought);
+        if let Some(export) = &mut self.export {
+            let was = export.done.is_some();
+            if crate::video::window(context, export) {
+                self.export = None;
+            } else if !was && let Some(done) = &export.done {
+                self.work.said = match done {
+                    Ok(path) => format!("video written: {}", path.display()),
+                    Err(why) => why.clone(),
+                };
+            }
+        }
+    }
+
+    /// The keys of the whole window, before the panels: the palette (Ctrl+Shift+P); a key a command asked of the
+    /// space's own editor, pressed now.
+    fn early_keys(&mut self, context: &egui::Context) {
+        if context.input_mut(|input| input.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::P)) {
+            self.palette = match self.palette {
+                Some(_) => None,
+                None => Some(crate::commands::Palette { fresh: true, ..Default::default() }),
+            };
+        }
+        if let Some((modifiers, key)) = self.pressed.take() {
+            context.input_mut(|input| {
+                input.events.push(egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers });
+            });
+        }
+    }
+}
+
+/// A file's path as the status bar says it: from the project's root (else whole).
+fn relative(path: &Path, root: &Path) -> String {
+    let root = std::path::absolute(root).unwrap_or_else(|_| root.to_path_buf());
+    let whole = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
+    whole.strip_prefix(&root).map_or_else(|_| path.display().to_string(), |inside| inside.to_string_lossy().replace('\\', "/"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The status bar says a file from the project's root.
+    #[test]
+    fn a_path_is_said_from_the_root() {
+        let root = Path::new("/w/dungeon_workshop");
+        assert_eq!(relative(Path::new("/w/dungeon_workshop/library/films/a.film"), root), "library/films/a.film");
+        assert_eq!(relative(Path::new("/elsewhere/b.film"), root), Path::new("/elsewhere/b.film").display().to_string());
     }
 }

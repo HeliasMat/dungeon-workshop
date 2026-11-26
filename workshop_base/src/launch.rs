@@ -84,6 +84,10 @@ pub struct LaunchOptions {
     pub library: Option<String>,
     /// `WORKSHOP_FIRST`: the first launch's screen, even with the data there.
     pub first: bool,
+    /// `WORKSHOP_PALETTE=<words>`: the command palette open, those words sought.
+    pub palette: Option<String>,
+    /// `WORKSHOP_SHORTCUTS`: Help › Keyboard Shortcuts open.
+    pub shortcuts: bool,
     /// `WORKSHOP_WELCOME`: the "what to try first" panel, as after the first launch.
     pub welcome: bool,
     /// `WORKSHOP_SETTINGS=<file>`: the Workshop's settings (else `settings.txt` in the
@@ -148,6 +152,8 @@ impl LaunchOptions {
             library: var("WORKSHOP_LIBRARY"),
             first: set("WORKSHOP_FIRST"),
             welcome: set("WORKSHOP_WELCOME"),
+            palette: std::env::var("WORKSHOP_PALETTE").ok(),
+            shortcuts: set("WORKSHOP_SHORTCUTS"),
             settings: std::env::var_os("WORKSHOP_SETTINGS").map(PathBuf::from).or_else(settings_folder),
             libretro_core: std::env::var_os("WORKSHOP_LIBRETRO_CORE").map(PathBuf::from),
             armips: std::env::var_os("SKYTEMPLE_ARMIPS_EXEC").map(PathBuf::from),
