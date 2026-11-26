@@ -124,7 +124,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         "the item (already placed by `put`) in their hands, in front of them, on the side they look, and it follows them everywhere / dropped where it is",
     ),
     Form::new("hop", &["who:code x:coordinate y:coordinate height:number frames:duration", ""], "a jump in an arc to there"),
-    Form::new("infront", &["who:code otheroff:word"], "drawn in front of the other, wherever they are"),
+    Form::new("infront", &["who:code other_or_off:word"], "drawn in front of the other, wherever they are"),
     Form::new("jump", &["who:code [height:number] [frames:duration]"], "a jump on the spot (10 pixels, 12 frames)"),
     Form::new("large", &["item:word", "off"], "the item large, crisp, above the scene"),
     Form::new("layer", &["who:code rest..."], "drawn over everyone, under, or among the others"),
@@ -168,7 +168,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     ),
     Form::new(
         "slowmo",
-        &["who:code timesoff:word rest..."],
+        &["who:code times_or_off:word rest..."],
         "their own time alone, so many times slower (or faster): their steps, their jumps, their laps, their frames, what shows on them; the rest of the scene on the scene's time (`tempo` multiplies them). What waits for them (`waitfor`) waits for their slowed time. `off` (or `1`): like the scene",
     ),
     Form::new(

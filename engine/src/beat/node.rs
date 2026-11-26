@@ -248,7 +248,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     ),
     Form::new(
         "trackpath",
-        &["node:word frames:duration linescatmullbezier:word curve:word [rest...]"],
+        &["node:word frames:duration lines_or_catmull_or_bezier:word curve:word [rest...]"],
         "the node follows these points at an even speed (by the length of the path), in so many frames, by this curve: in straight lines, in a Catmull-Rom curve through all the points, or in one Bézier curve whose controls they are; `orient`: turned the way it goes (a body: it looks that way); `relative`: the points from where it is",
     ),
     Form::new("untrack", &["node:word [property:word]"], "its tracks stop (only that property's): it stays as it is"),

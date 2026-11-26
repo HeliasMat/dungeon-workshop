@@ -230,7 +230,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("musicspeed", &["percent:word"], "the music faster or slower (`120`: a fifth faster, higher; `100`: as it is)"),
     Form::new(
         "note",
-        &["cdefgab:word [2] [sound]"],
+        &["note:word [2] [sound]"],
         "a note: the sound (the click by default) played higher, by so many semitones (`c2`: the octave above; or a number of semitones)",
     ),
     Form::new("onhit", &["who:code sound:word rest..."], "this sound, at the next blow who takes"),

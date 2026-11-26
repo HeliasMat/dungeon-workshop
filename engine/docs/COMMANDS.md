@@ -571,7 +571,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `answer` | `answer [text...]` |
 | `appear` | `appear who:code [frames:duration]` |
 | `approach` | `approach who:code other:code frames:duration` |
-| `arrives` | `arrives who:code walkrun:word pace:word x:coordinate y:coordinate [rest...]` |
+| `arrives` | `arrives who:code walk_or_run:word pace:word x:coordinate y:coordinate [rest...]` |
 | `ask` | `ask [text...]` |
 | `attach` | `attach node:word parent:word [dx:number dy:number] [inherit pos angle:number scale:number opacity colour:word]` |
 | `attr` | `attr who:code bits:word` |
@@ -637,7 +637,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `flies` | `flies who:code` |
 | `flip` | `flip who:code rest...` |
 | `float` | `float who:code [height:number] [frames:duration]` |
-| `flock` | `flock spot:word walkrun:word who:code` |
+| `flock` | `flock spot:word walk_or_run:word who:code` |
 | `follow` | `follow who:code leader:code [gap:number]` · `follow who:code -` |
 | `footing` | `footing who:code wide:word` |
 | `frame` | `frame frames:duration rest... [rest2...]` |
@@ -648,7 +648,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `give` | `give item:word from:word to:word [frames:duration] [keep]` |
 | `glance` | `glance who:code [frames:duration] [wait]` · `glance @ x:coordinate y:coordinate rest...` |
 | `go` | `go who:code x:coordinate y:coordinate frames:duration slide:word rest...` |
-| `goes` | `goes who:code walkrun:word x05s2:word x:coordinate y:coordinate` |
+| `goes` | `goes who:code walk_or_run:word x05s2:word x:coordinate y:coordinate` |
 | `gone` | `gone who:code [rest...]` |
 | `goto` | `goto label:word` |
 | `gotoscene` | `gotoscene name:word` |
@@ -663,7 +663,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `hud` | `hud [rest...]` · `hud [place:word] off` |
 | `if` | `if condition...` |
 | `image` | `image name:word file:word x:coordinate y:coordinate` · `image name:word off` |
-| `infront` | `infront who:code otheroff:word` |
+| `infront` | `infront who:code other_or_off:word` |
 | `iris` | `iris out [frames:duration] [who:code]` · `iris in rest...` |
 | `jingle` | `jingle n:number` |
 | `jump` | `jump who:code [height:number] [frames:duration]` |
@@ -674,7 +674,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `lands` | `lands who:code` |
 | `large` | `large item:word` · `large off` |
 | `layer` | `layer who:code rest...` |
-| `leaves` | `leaves who:code rightleftentrance:word [run]` |
+| `leaves` | `leaves who:code right_or_left_or_entrance:word [run]` |
 | `letterbox` | `letterbox 1` · `letterbox 0` |
 | `light` | `light ambience:word [frames:duration]` |
 | `lightning` | `lightning who:code` · `lightning @ x:coordinate y:coordinate` |
@@ -695,7 +695,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `musicfrom` | `musicfrom namen:word time:duration` |
 | `musicspeed` | `musicspeed percent:word` |
 | `node` | `node name:word group [x:coordinate y:coordinate]` · `node name:word picture file:word [x:coordinate y:coordinate]` · `node name:word off` |
-| `note` | `note cdefgab:word [2] [sound]` |
+| `note` | `note note:word [2] [sound]` |
 | `onhit` | `onhit who:code sound:word rest...` |
 | `onmenu` | `onmenu label:word` |
 | `ontalk` | `ontalk who:code label:word` |
@@ -746,13 +746,13 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `shot` | `shot zoom:number who:word` |
 | `shout` | `shout rest...` |
 | `sink` | `sink who:code pixels:number [sand]` |
-| `slowmo` | `slowmo who:code timesoff:word rest...` |
+| `slowmo` | `slowmo who:code times_or_off:word rest...` |
 | `sound` | `sound namen:word` · `sound namen:word who:code` |
 | `spacing` | `spacing [rest...]` |
 | `speed` | `speed who:code pixels:number per rest...` |
 | `spin` | `spin who:code laps:word frames:duration [rotate]` |
 | `spotlight` | `spotlight who:code [radius:number]` · `spotlight @ x:coordinate y:coordinate [radius:number]` · `spotlight off` · `spotlight plus who:code [radius:number]` · `spotlight plus @ x:coordinate y:coordinate [radius:number]` |
-| `spread` | `spread frameplace:word who:code` |
+| `spread` | `spread frame_or_place:word who:code` |
 | `status` | `status who:code name:word [plus]` · `status who:code off` |
 | `step` | `step who:code dx:number dy:number` |
 | `still` | `still who:code rest...` · `still rest...` |
@@ -770,7 +770,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `timer` | `timer time:duration` · `timer off` |
 | `tint` | `tint r:number g:number b:number strength:number frames:duration` · `tint colour:word strength:number frames:duration` |
 | `track` | `track node:word property:word [rest...]` |
-| `trackpath` | `trackpath node:word frames:duration linescatmullbezier:word curve:word [rest...]` |
+| `trackpath` | `trackpath node:word frames:duration lines_or_catmull_or_bezier:word curve:word [rest...]` |
 | `train` | `train gap:number leader:code rest...` · `train off` |
 | `tremble` | `tremble who:code [strength:number] frames:duration` |
 | `turn` | `turn who:code dir:word` |

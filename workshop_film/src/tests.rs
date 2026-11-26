@@ -94,3 +94,14 @@ fn the_inspector_edits_a_field_of_a_line_written_who_first() {
     );
     assert!(with_field("scene: beach\n  music calm\n", 2, &read, "who", &words("eevee")).is_err(), "another word's line");
 }
+
+/// The fields' names read as words: one of a few as `a | b`, the others' `_` as spaces.
+#[test]
+fn the_inspectors_names_are_readable() {
+    use super::inspector::{choices_of, readable};
+    assert_eq!(readable("lines_or_catmull_or_bezier"), "lines | catmull | bezier");
+    assert_eq!(readable("side_team"), "side team");
+    assert_eq!(readable("frames"), "frames");
+    assert_eq!(choices_of("walk_or_run"), Some(vec!["walk", "run"]));
+    assert_eq!(choices_of("color"), None);
+}

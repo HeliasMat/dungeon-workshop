@@ -375,7 +375,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("alllook", &["whoside:word"], "everyone looks"),
     Form::new(
         "arrives",
-        &["who:code walkrun:word pace:word x:coordinate y:coordinate [rest...]"],
+        &["who:code walk_or_run:word pace:word x:coordinate y:coordinate [rest...]"],
         "comes in from where the view does not go, or in smoke if there is no way; `place`: whoever is there walks there; in a place that has entrances, by the nearest one on that side; `by:left`, `by:south`: by this side or this entrance, from outside the place, in a line behind whoever comes in that way",
     ),
     Form::new(
@@ -389,17 +389,17 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("lands", &["who:code"], "those who flew or swam walk on the ground again: walls hold them"),
     Form::new("ghosts", &["who:code"], "those who pass through walls by nature: seen through while in one"),
     Form::new("hovers", &["who:code"], "those who hover by nature: a little bob in the air (2 pixels, a second), once on the stage"),
-    Form::new("flock", &["spot:word walkrun:word who:code"], "a crowd goes to this place, its middle there, each keeping their place (straight ahead)"),
+    Form::new("flock", &["spot:word walk_or_run:word who:code"], "a crowd goes to this place, its middle there, each keeping their place (straight ahead)"),
     Form::new("gathers", &["var:word spot:word step:word rest..."], "each on free ground around the place, their place in `{var<n>_x}`"),
     Form::new(
         "goes",
-        &["who:code walkrun:word x05s2:word x:coordinate y:coordinate"],
+        &["who:code walk_or_run:word x05s2:word x:coordinate y:coordinate"],
         "goes through these points, going around walls and people; a pace: so many times a walker's, or so many seconds",
     ),
     Form::new("ground", &["place:word", "x:coordinate y:coordinate lines:word"], "the story carries on in a place where you walk"),
     Form::new(
         "leaves",
-        &["who:code rightleftentrance:word [run]"],
+        &["who:code right_or_left_or_entrance:word [run]"],
         "(`run`: running, scared) leaves the place by the nearest entrance on that side (the place's, otherwise its ground nearest the edge) or by that one, going around what is in the way, in a line behind whoever leaves that way, and disappears once outside",
     ),
     Form::new("roams", &["who:code wide:word"], "they stroll around, as wide as the ground allows"),
@@ -412,7 +412,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("seats", &["var:word who:code rest..."], "each goes to a seat they can reach; the middle of the table in `{var_x}`"),
     Form::new("setspot", &["rest..."], "names a place, found now"),
     Form::new("shot", &["zoom:number who:word"], "this zoom, less if the body needs it"),
-    Form::new("spread", &["frameplace:word who:code"], "they move apart at the start of a scene, the view on them"),
+    Form::new("spread", &["frame_or_place:word who:code"], "they move apart at the start of a scene, the view on them"),
     Form::new(
         "swims",
         &["pixels:number who:code"],

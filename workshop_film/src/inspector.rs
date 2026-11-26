@@ -49,7 +49,10 @@ pub fn inspector(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
             });
             ui.add_space(4.0);
         }
-        when_it_plays(ui, films, &mut looked);
+        // (A comment or an empty line plays nothing: no "When It Plays".)
+        if !matches!(looked.written.trim_start().chars().next(), None | Some('#')) {
+            when_it_plays(ui, films, &mut looked);
+        }
         what_is_said(ui, films, &told, &mut looked);
     });
     if let Some(frame) = looked.go {
@@ -86,8 +89,12 @@ fn head(ui: &mut egui::Ui, looked: &mut Looked) {
             }
         });
     });
+    // (As written, wrapped in a box of its own: long lines read whole, not cut.)
     let shown = if looked.written.trim().is_empty() { "(empty)".to_string() } else { looked.written.trim().to_string() };
-    ui.label(RichText::new(shown).monospace().color(theme::TEXT));
+    egui::Frame::new().fill(theme::FIELD).corner_radius(3).inner_margin(egui::Margin::symmetric(6, 4)).show(ui, |ui| {
+        ui.set_width(ui.available_width());
+        ui.add(egui::Label::new(RichText::new(shown).size(theme::SMALL).color(theme::TEXT)).wrap());
+    });
     ui.add_space(6.0);
 }
 
@@ -141,6 +148,24 @@ fn spoken(ui: &mut egui::Ui, films: &Films, looked: &mut Looked, (who, faces, ma
     ui.add_space(8.0);
 }
 
+/// How wide the names of the fields are, in their column (longer ones wrap).
+const LABEL_WIDE: f32 = 104.0;
+
+/// A field's name as the form gives it, made readable: one word of a few (`lines_or_catmull_or_bezier`) as
+/// `lines | catmull | bezier`, the others' `_` as spaces.
+pub(super) fn readable(name: &str) -> String {
+    match choices_of(name) {
+        Some(choices) => choices.join(" | "),
+        None => name.replace('_', " ").trim().to_string(),
+    }
+}
+
+/// The words a field takes, when its name lists them (`walk_or_run`).
+pub(super) fn choices_of(name: &str) -> Option<Vec<&str>> {
+    let choices: Vec<&str> = name.split("_or_").collect();
+    (choices.len() > 1 && choices.iter().all(|choice| !choice.is_empty())).then_some(choices)
+}
+
 /// A number as a field writes it: whole without its point.
 pub(super) fn number_said(number: f64) -> String {
     if number.fract() == 0.0 { format!("{number:.0}") } else { format!("{number}") }
@@ -157,17 +182,20 @@ fn fields(ui: &mut egui::Ui, films: &mut Films, looked: &mut Looked, fresh: bool
     if !fresh {
         ui.label(theme::weak("the film plays again: the fields come back in a moment"));
     }
-    egui::Grid::new("fields").num_columns(2).spacing([10.0, 6.0]).show(ui, |ui| {
+    egui::Grid::new("fields").num_columns(2).spacing([10.0, 6.0]).min_col_width(LABEL_WIDE).show(ui, |ui| {
         for value in &read.values {
             let (_, said) = value.kind.told();
-            ui.label(theme::weak(&value.name)).on_hover_text(said);
+            // (The name as the form gives it, made readable, wrapped in its column.)
+            ui.allocate_ui(vec2(LABEL_WIDE, 0.0), |ui| {
+                ui.add(egui::Label::new(theme::weak(readable(&value.name))).wrap()).on_hover_text(format!("{}: {said}", value.name));
+            });
             let now = value.words.join(" ");
             if value.at.is_none() {
                 ui.label(theme::text(if now.is_empty() { "—".to_string() } else { format!("{now} (default)") }, theme::SMALL, theme::FAINT));
                 ui.end_row();
                 continue;
             }
-            let chosen = ui.horizontal(|ui| field(ui, value, &now, line, &films.cast, &mut films.typing, &mut films.picking)).inner;
+            let chosen = ui.horizontal_wrapped(|ui| field(ui, value, &now, line, &films.cast, &mut films.typing, &mut films.picking)).inner;
             if let Some(words) = chosen.filter(|_| fresh) {
                 films.typing.remove(&(line, value.name.clone()));
                 let words: Vec<String> = words.split_whitespace().map(str::to_string).collect();
@@ -199,6 +227,16 @@ fn field(
     picking: &mut Option<(usize, String)>,
 ) -> Option<String> {
     let mut chosen: Option<String> = None;
+    // (One word of a few, as the form names them (`walk_or_run`): each a button, the one written lit.)
+    if let Some(choices) = choices_of(&value.name) {
+        // (In the cell's own wrapped row: what does not fit goes under, the row as high.)
+        for choice in choices {
+            if ui.selectable_label(choice == now, choice).clicked() && choice != now {
+                chosen = Some(choice.to_string());
+            }
+        }
+        return chosen;
+    }
     match value.kind {
         film::grammar::Kind::Someone | film::grammar::Kind::Code => {
             egui::ComboBox::from_id_salt(("someone", &value.name)).selected_text(now).width(150.0).show_ui(ui, |ui| {
@@ -219,8 +257,11 @@ fn field(
         _ => {
             let mut typed = typing.get(&(line, value.name.clone())).cloned().unwrap_or_else(|| now.to_string());
             let place = matches!(value.kind, film::grammar::Kind::Place);
-            let room = if place { (ui.available_width() - 90.0).max(60.0) } else { ui.available_width().min(220.0) };
-            let field = ui.add(egui::TextEdit::singleline(&mut typed).desired_width(room));
+            let room = if place { (ui.available_width() - 90.0).max(60.0) } else { ui.available_width().max(80.0) };
+            // (A long value, as points one after the other: on lines of its own, wrapped.)
+            let long = typed.chars().count() > 28;
+            let edit = if long { egui::TextEdit::multiline(&mut typed).desired_rows(2) } else { egui::TextEdit::singleline(&mut typed) };
+            let field = ui.add(edit.desired_width(room));
             if field.lost_focus() && typed.trim() != now && !typed.trim().is_empty() {
                 chosen = Some(typed.trim().to_string());
             }
