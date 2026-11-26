@@ -160,7 +160,9 @@ terrain 323 0 0 40 28 a18d4a19/a18d4a19/.../c14a5d4a18 walls ch
   - Ctrl+C, Ctrl+X, Ctrl+V (at the pointer), Ctrl+D (beside), Del, Esc.
   - Several chosen: the Inspector aligns them on the first (left, center, right, top, middle, bottom), duplicates them, removes them, or **saves them as a template** (`library/decors/templates/<name>.template`, lines laid from 0 0), to lay again from Library › Templates (click: in the middle; drag: where it is dropped).
   - Nothing chosen: the Inspector adds a spot, an entrance, an exit or a resident in the middle of the view; a chosen resident takes its facing there, a marker its name, its size and the place it leads to.
+- **Resident, Spot, Entrance, Exit, Zone** (the tools bar; K, T, E, X, Z): a click on the scene lays one there (`resident pikachu 200 120 down`, `spot spot1 120 80`, `entrance 160 236`, `exit 284 112 32 16 to 224`, `zone zone1 84 84 32 32`), a click or a drag on one of its kind takes it, moves it; a small window beside it fills its essentials: a resident's Pokémon (sought in the catalog) and first `says` line, a spot's, a zone's or an entrance's name, where an exit leads. The residents and markers are shown while one of these tools is in hand.
 - **The layers** (at the top of the Hierarchy, from below to above): Terrains, Ground, Objects, Residents, Over, Markers, Walls.
+  - The Walls row counts the tiles walled as the decor was baked last; its tip, those painted by hand.
   - Each is shown or hidden, locked or not. Alt+click on the eye: it alone. Its opacity can be set (in the Workshop only).
   - The **active layer** (a click on Ground, Objects or Over) receives what is laid from the Library or by scattering (`layer ground`, nothing, `layer over`).
   - Hovered, a layer frames its elements on the scene; double-click: all chosen.

@@ -202,10 +202,20 @@ The whole Decor space (Scene, Hierarchy, Inspector, Library, terrains, walls, wa
 
 - **The Library** (under the Scene, `workshop_decor/src/library/`):
   - **one search at the top**, always there (Ctrl+F over the Library or the Scene, or `/` anywhere in the space; Esc empties it): elements, backdrops, models and the project's decors at once, each kind in its own group, the best first (by name, tag, place; a decor found opens with a click);
-  - on the left: **This Decor's Place** (the elements of the place it is made from), Favourites, Recently Laid, All Elements, **Backdrops**, Models, the categories, the game's places by kind;
+  - on the left: **This Decor's Place** (the elements of the place it is made from, `like`, its backdrop or its `level`; a decor that has one opens the Library on it), Favourites, Recently Laid, All Elements, **Backdrops**, Models, the categories, the game's places by kind;
   - pointed at, an element shows **at its own size** (×2, ×3… while it fits), playing, on a checkerboard.
 - **Backdrops**: each place of the game without its elements (its rest, `r<level>`). A double-click, Enter or a drag onto the scene lays the decor on it: `put r<level> 0 0 shadow off layer ground locked`, before the first piece (under them all; locked, so a click takes what is over it); a decor that has one has it changed where it is. Right click: the decor made the backdrop's size too, its place's elements, the backdrop taken off. One step each, undone by Ctrl+Z. (`base level` is left to `decor import`: the Workshop does not draw it.)
-- **Laying**: a click on a card takes it as a **stamp**: its ghost follows the pointer exactly where it would land, each click lays one (each its own undo step), Esc or a right click puts it down; a double-click lays it in the middle; a drag lays it where it is let go, its ghost showing where. **Snap** (S, or the tools bar) lays and carries on the decor's grid (`grid n`, else 8); Alt held turns it the other way for a moment. **Lays on** (tools bar): the layer what is laid goes on (Ground: under the characters; Objects: as the game, its top in front of them; Over: in front of everything). **Walls** (C, or the tools bar): where the characters cannot walk, in red.
+- **Laying**: a click on a card takes it as a **stamp**: its ghost follows the pointer exactly where it would land, each click lays one (each its own undo step), Esc or a right click puts it down; a double-click lays it in the middle; a drag lays it where it is let go, its ghost showing where. **Snap** (S, or the tools bar) lays and carries on the decor's grid (`grid n`, else 8); Alt held turns it the other way for a moment. **Lays on** (tools bar): the layer what is laid goes on (Ground: under the characters; Objects: as the game, its top in front of them; Over: in front of everything).
+- **Walls**: the **Walls** tool (M) paints them (left: walled, right: freed, Shift: given back to what is laid: `wall tiles`, `free tiles`); **Show Walls** (C, or the tools bar) shows where the characters cannot walk, in red. The Walls layer counts the tiles walled as the decor was baked last (its tip: those painted by hand).
+- **The marker tools** (tools bar, `workshop_decor/src/markers.rs`): **Resident** (K), **Spot** (T), **Entrance** (E), **Exit** (X), **Zone** (Z). A click on the scene lays one there (one undo step), a click or a drag on one of its kind takes it and moves it (the others of the decor are left alone); each of its kind has a ring on the scene. A small window opens beside the one laid or taken, its essentials written as they are filled:
+  - a resident: its Pokémon, sought in the Pokémon catalog (name, number, type; Enter takes the first), and the first line it says: `resident piplup 200 120 down` / `says Welcome to the beach!` (after `[life]`);
+  - a spot, a zone: its name (`spot spot1 120 80`, `zone zone1 84 84 32 32`);
+  - an entrance: its name (`entrance 160 236 north_gate`);
+  - an exit: where it leads, a decor of yours (its menu) or a game place's number (`exit 284 112 32 16 to my_harbour left`).
+  Esc or Done closes it; the Inspector has the rest (facing, wandering, size, `on zone`…).
+- **The Terrain brush** starts on the tiles of the decor's own place; each swatch is named by what it looks like (grass, sand, water, earth, cliff, rock, snow, lava…), its picture large on hover.
+- **The Inspector, nothing chosen**: each setting not said (Grid, Level, Music, Seed) says what it is then and what to tick; a marker's empty name says what to type (`by_the_well`, `north_gate`).
+- **▶ Try in a Film** (tools bar, once the decor is baked): a scratch film in this decor, made on a thread (`workshop/src/try_film.rs`, `workshop_home::new_film::tried`): the Walk tool's Pokémon and a friend put on its ground by the scene itself, framed, the first saying where they are, walking to each of its entrances (else across it), the second following. It is written in `target/workshop/try/<decor>.film`, never the library, and opens playing in the Film space; there **Keep in Library** copies it into your films (`try_<decor>.film`).
 - **The hint bar** along the top of the Scene: what is on (the stamp, snap, walls, the layer) and the keys of the tool in hand.
 
 | Keys (pointer over the Scene, Choose) | |
@@ -220,6 +230,7 @@ The whole Decor space (Scene, Hierarchy, Inspector, Library, terrains, walls, wa
 | S, C, G, R | snap, walls, grid, rulers |
 | Ctrl+F, / | the Library's search |
 | V B N M P | Choose, Terrain, Scatter, Walls, Walk |
+| K T E X Z | Resident, Spot, Entrance, Exit, Zone |
 
 ## Home
 
@@ -504,7 +515,8 @@ The root (`library/`, `games/`, `film/recipes/`) is the first folder up from whe
 | `WORKSHOP_EMULATOR_FILM=<file.film>` | that film put on DS at once (Play This Film on DS; the settings' ROM and armips) |
 | `WORKSHOP_GAME=my_game` | that game open in the Game space |
 | `WORKSHOP_VIEW="x y zoom"` | the view of the scene (in the Film: `Screenplay`, `Board`, `Characters`, `Graph`: the Script seen so) |
-| `WORKSHOP_TOOL=terrain\|scatter\|walls\|walk` | the tool in hand |
+| `WORKSHOP_TOOL=terrain\|scatter\|walls\|walk\|resident\|spot\|entrance\|exit\|zone` | the tool in hand (a marker tool with `WORKSHOP_CHOSEN=n`: the window beside that marker open) |
+| `WORKSHOP_MARKER=resident:400:250` | that marker laid there, its tool in hand, its window open (a picture never writes the decor: what it changes is neither saved nor baked) |
 | `WORKSHOP_LIBRARY=backdrops\|models\|search:<words>` | the Decor's Library on that shelf, or searching that |
 | `WORKSHOP_CHOSEN=n` | line n chosen |
 | `WORKSHOP_FOLDED="Transform,Resident"` | those components of the Inspector folded |
@@ -518,7 +530,7 @@ The root (`library/`, `games/`, `film/recipes/`) is the first folder up from whe
 | `WORKSHOP_SHORTCUTS=1` | Help › Keyboard Shortcuts open |
 | `WORKSHOP_WORDS=family` | the words by family open on that one |
 | `WORKSHOP_CREATE=image\|animation\|sound\|music\|dungeon\|dungeon:<word>` | the Resources making one (`dungeon:<word>`: that one open) |
-| `WORKSHOP_TRY=1` | the open dungeon tried at once |
+| `WORKSHOP_TRY=1` | the open dungeon tried at once; in the Decor space, Try in a Film at once |
 | `WORKSHOP_CREATE=fight:<word>` | that boss fight open in its editor (with `WORKSHOP_TRY=1`: tried) |
 | `WORKSHOP_BOSS_HP=20` | the fight alone tried with the boss at 20 % of its HP |
 | `WORKSHOP_FILE=my_film` | that file chosen in the Home |
