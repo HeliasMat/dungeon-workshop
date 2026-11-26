@@ -27,6 +27,10 @@ pub enum Panel {
     FilmInspector,
     FilmState,
     Timeline,
+    /// The Pokémon, faces, gestures, music, sounds, things, places, effects, to drag onto the Scene or the Script.
+    FilmAssets,
+    /// The Wiki, docked (else a window of its own).
+    Wiki,
     // Decor.
     Hierarchy,
     History,
@@ -54,7 +58,102 @@ impl Panel {
             Panel::History => "History",
             Panel::Library | Panel::AssetTree => "Library",
             Panel::AssetGrid => "Resources",
+            Panel::FilmAssets => "Assets",
+            Panel::Wiki => "Wiki",
         }
+    }
+
+    /// A space's panels, in the order View › Add Panel lists them.
+    fn of(space: Space) -> &'static [Panel] {
+        match space {
+            Space::Home => &[Panel::Project, Panel::List, Panel::Preview],
+            Space::Film => &[Panel::Script, Panel::FilmScene, Panel::FilmAssets, Panel::FilmInspector, Panel::FilmState, Panel::Timeline, Panel::Wiki],
+            Space::Decor => &[Panel::Hierarchy, Panel::History, Panel::DecorScene, Panel::DecorInspector, Panel::Library],
+            Space::Assets => &[Panel::AssetTree, Panel::AssetGrid, Panel::AssetInspector],
+            Space::Dungeon | Space::Game | Space::Emulator => &[],
+        }
+    }
+
+    /// Whether it can be closed: all but the heart of its space (the Script and the Scene, the list, the grid).
+    fn closeable(self) -> bool {
+        !matches!(self, Panel::Script | Panel::FilmScene | Panel::DecorScene | Panel::List | Panel::AssetGrid)
+    }
+
+    /// The panels it goes beside when it is opened again, the first there.
+    fn beside(self) -> &'static [Panel] {
+        match self {
+            Panel::FilmAssets => &[Panel::FilmInspector, Panel::FilmState],
+            Panel::FilmInspector | Panel::FilmState => &[Panel::FilmAssets, Panel::FilmState, Panel::FilmInspector],
+            Panel::Wiki => &[Panel::FilmAssets, Panel::FilmInspector, Panel::Timeline],
+            Panel::Timeline => &[Panel::FilmState],
+            Panel::Hierarchy | Panel::History => &[Panel::History, Panel::Hierarchy],
+            Panel::DecorInspector | Panel::Library => &[Panel::DecorInspector, Panel::Library],
+            Panel::Project | Panel::Preview => &[Panel::Preview, Panel::Project],
+            Panel::AssetTree | Panel::AssetInspector => &[Panel::AssetInspector, Panel::AssetTree],
+            _ => &[],
+        }
+    }
+}
+
+/// A panel opened in a space's dock: beside one it goes with, else on the right of the whole.
+fn opened(dock: &mut DockState<Panel>, panel: Panel) {
+    if dock.find_tab(&panel).is_some() {
+        return;
+    }
+    let near = panel.beside().iter().find_map(|other| dock.find_main_surface_tab(other));
+    let surface = dock.main_surface_mut();
+    match near {
+        Some((node, _)) => {
+            surface.set_focused_node(node);
+            surface.push_to_focused_leaf(panel);
+        }
+        None if surface.is_empty() => surface.push_to_first_leaf(panel),
+        None => {
+            surface.split_right(NodeIndex::root(), 0.75, vec![panel]);
+        }
+    }
+}
+
+/// A panel closed in a space's dock.
+fn closed(dock: &mut DockState<Panel>, panel: Panel) {
+    if let Some(at) = dock.find_tab(&panel) {
+        dock.remove_tab(at);
+    }
+}
+
+/// The panels a dock shows, by their titles (as the settings keep them).
+fn shown_panels(dock: &DockState<Panel>) -> Vec<&'static str> {
+    dock.iter_all_tabs().map(|(_, panel)| panel.title()).collect()
+}
+
+/// A space's panels as they were left (the settings), laid out as its own are:
+/// those closed taken out, those opened put in.
+fn arranged(space: Space, settings: &workshop_base::settings::Settings) -> DockState<Panel> {
+    let mut dock = layout(space);
+    let Some(shown) = settings.panels(space_key(space)) else {
+        return dock;
+    };
+    for panel in Panel::of(space) {
+        let wanted = shown.iter().any(|title| title == panel.title());
+        if !wanted && panel.closeable() {
+            closed(&mut dock, *panel);
+        } else if wanted {
+            opened(&mut dock, *panel);
+        }
+    }
+    dock
+}
+
+/// A space's word in the settings (`panels_film`).
+fn space_key(space: Space) -> &'static str {
+    match space {
+        Space::Home => "home",
+        Space::Game => "game",
+        Space::Film => "film",
+        Space::Decor => "decor",
+        Space::Dungeon => "dungeon",
+        Space::Assets => "resources",
+        Space::Emulator => "emulator",
     }
 }
 
@@ -72,9 +171,10 @@ fn layout(space: Space) -> DockState<Panel> {
             let mut dock = DockState::new(vec![Panel::FilmScene]);
             let surface = dock.main_surface_mut();
             let [scene, _] = surface.split_below(NodeIndex::root(), 0.74, vec![Panel::Timeline]);
-            let [scene, _] = surface.split_left(scene, 0.42, vec![Panel::Script]);
-            let [_, inspector] = surface.split_right(scene, 0.74, vec![Panel::FilmInspector]);
-            surface.split_below(inspector, 0.4, vec![Panel::FilmState]);
+            let [scene, _] = surface.split_left(scene, 0.4, vec![Panel::Script]);
+            // (On the right: the assets to drag onto the Scene or the Script; under them, the line's Inspector and the State.)
+            let [_, assets] = surface.split_right(scene, 0.68, vec![Panel::FilmAssets]);
+            surface.split_below(assets, 0.64, vec![Panel::FilmInspector, Panel::FilmState]);
             dock
         }
         Space::Decor => {
@@ -142,6 +242,8 @@ pub struct App {
     /// The user's settings; whether the game-making spaces (Game, Dungeon, Emulator) show.
     settings: workshop_base::settings::Settings,
     game_spaces: bool,
+    /// The panels each space shows, as the settings last had them (written again when they change).
+    remembered: [Vec<&'static str>; 7],
 }
 
 impl App {
@@ -177,11 +279,14 @@ impl App {
         };
         let settings = workshop_base::settings::Settings::read(launch.settings.clone());
         let game_spaces = settings.game_spaces(!work.session.library().games().is_empty());
+        let docks = Space::ALL.map(|space| arranged(space, &settings));
+        let remembered = std::array::from_fn(|at| shown_panels(&docks[at]));
         let mut app = App {
+            remembered,
             space,
             settings,
             game_spaces,
-            docks: Space::ALL.map(layout),
+            docks,
             work,
             capture: crate::capture::Capture::asked(&launch),
             quant: workshop_tools::tilequant::QuantTool::asked(context, &launch),
@@ -289,6 +394,23 @@ impl App {
                 }
             });
             ui.menu_button("View", |ui| {
+                let panels = Panel::of(self.space);
+                if !panels.is_empty() {
+                    ui.menu_button("Add Panel", |ui| {
+                        for panel in panels {
+                            let dock = &mut self.docks[self.space.at()];
+                            let mut shown = dock.find_tab(panel).is_some();
+                            let said = if panel.closeable() { "" } else { " (always there)" };
+                            if ui.add_enabled(panel.closeable(), egui::Checkbox::new(&mut shown, format!("{}{said}", panel.title()))).changed() {
+                                if shown {
+                                    opened(dock, *panel);
+                                } else {
+                                    closed(dock, *panel);
+                                }
+                            }
+                        }
+                    });
+                }
                 if ui.button(format!("Default Layout ({})", self.space.word())).clicked() {
                     self.docks[self.space.at()] = layout(self.space);
                 }
@@ -741,6 +863,31 @@ impl App {
         });
     }
 
+    /// The panels of the space looked at, written in the settings when one was
+    /// opened or closed (they open so the next time); the Wiki docked, shown there.
+    fn remember_panels(&mut self) {
+        let at = self.space.at();
+        let shown = shown_panels(&self.docks[at]);
+        if shown != self.remembered[at] {
+            if let Err(why) = self.settings.set_panels(space_key(self.space), &shown) {
+                self.work.said = why;
+            }
+            self.remembered[at] = shown;
+        }
+    }
+
+    /// The Wiki docked in the Film space: the Script opens it there (F1, its button), not in a window.
+    fn wiki_docked(&mut self) {
+        let dock = &mut self.docks[Space::Film.at()];
+        let docked = dock.find_tab(&Panel::Wiki);
+        self.work.scripts.wiki_docked = docked.is_some();
+        if let Some(at) = docked
+            && self.work.scripts.wiki_asked()
+        {
+            dock.set_active_tab(at);
+        }
+    }
+
     /// The New Film window opened (on its first step).
     fn new_film(&mut self) {
         self.work.new_decor = None;
@@ -843,8 +990,8 @@ impl egui_dock::TabViewer for Panels<'_> {
         tab.title().into()
     }
 
-    fn is_closeable(&self, _tab: &Panel) -> bool {
-        false
+    fn is_closeable(&self, tab: &Panel) -> bool {
+        tab.closeable()
     }
 
     fn clear_background(&self, tab: &Panel) -> bool {
@@ -877,6 +1024,7 @@ impl egui_dock::TabViewer for Panels<'_> {
                     timing: self.work.films.timing(),
                     end: self.work.films.timeline.as_ref().map(|_| self.work.films.end as f64 / 60.0),
                     numbers: self.work.films.numbers.clone(),
+                    chosen: self.work.films.chosen().map(str::to_string),
                 };
                 if let Some(line) = workshop_script::script(ui, &mut self.work.scripts, self.work.film.clone().as_ref(), &seen) {
                     self.work.films.go_to_line(line);
@@ -886,6 +1034,12 @@ impl egui_dock::TabViewer for Panels<'_> {
             Panel::Timeline => workshop_film::timeline(ui, &mut self.work.films, &mut self.work.scripts),
             Panel::FilmInspector => workshop_film::inspector(ui, &mut self.work.films, &mut self.work.scripts),
             Panel::FilmState => workshop_film::state(ui, &mut self.work.films, &mut self.work.scripts),
+            Panel::FilmAssets => {
+                let chosen = self.work.films.chosen().map(str::to_string);
+                let cast = self.work.films.cast.clone();
+                workshop_resources::picker(ui, &mut self.work.resources, &self.work.decors, &mut self.work.scripts, chosen.as_deref(), &cast);
+            }
+            Panel::Wiki => workshop_script::wiki(ui, &mut self.work.scripts),
             Panel::AssetTree => workshop_resources::tree(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetGrid => workshop_resources::grid(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetInspector => {
@@ -1018,6 +1172,7 @@ impl eframe::App for App {
             self.work.said = told;
         }
         self.keys(context);
+        self.wiki_docked();
         // (The game open in the Game space: the Dungeon space lists and opens its own dungeons and fights too.)
         self.work.dungeons.game = self.work.games.shown();
         let bar = |fill| egui::Frame::new().fill(fill).inner_margin(egui::Margin::symmetric(6, 0));
@@ -1053,10 +1208,11 @@ impl eframe::App for App {
                     .style(style)
                     .show_leaf_collapse_buttons(false)
                     .show_leaf_close_all_buttons(false)
-                    .show_close_buttons(false)
+                    .show_close_buttons(true)
                     .show_inside(ui, &mut Panels { work: &mut self.work });
             });
         }
+        self.remember_panels();
         self.making(context);
         self.welcome(context);
         self.restore(context);

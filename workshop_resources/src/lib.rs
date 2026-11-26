@@ -8,7 +8,9 @@
 //!   smaller; a PNG dropped on the window joins the things drawn;
 //! - the Inspector: the one chosen in large, its pictures one by one or
 //!   playing, heard if it is heard, what it is, how a film writes it (written
-//!   in the film open in a click), the films and decors it is in.
+//!   in the film open in a click), the films and decors it is in;
+//! - the Assets (`picker`), a panel of the Film space: the same shelves made
+//!   small, beside the film, to drag onto its Scene or its Script.
 //!
 //! A crate of Dungeon Workshop: the Resources space (`Resources`) and its
 //! makings (`Maker`: a picture of `workshop_picture`, a sound of
@@ -36,6 +38,7 @@ mod game_shelves;
 mod grid;
 mod inspector;
 mod maker;
+mod picker;
 mod pictures;
 mod shelves;
 mod studio;
@@ -47,6 +50,7 @@ mod tree;
 pub use grid::grid;
 pub use inspector::inspector;
 pub use maker::Maker;
+pub use picker::{Tab as PickerTab, picker};
 pub use studio::{making_tabs, studio};
 pub use tree::tree;
 
@@ -349,6 +353,8 @@ pub struct Resources {
     /// Work going on for the Pokémon chosen (its sheets written or read); a SpriteBot folder being imported.
     run: Option<workshop_base::tool_run::Run>,
     sheet_import: Option<SheetImport>,
+    /// The Film space's Assets panel (`picker`).
+    picker: picker::Picker,
 }
 
 /// A folder (or zip) of SpriteBot's layout to import: in place of the Pokémon chosen, or as a variant of it.
@@ -416,6 +422,7 @@ impl Resources {
             said: None,
             run: None,
             sheet_import: None,
+            picker: picker::Picker::new(session.launch.picker.as_deref()),
         }
     }
 
