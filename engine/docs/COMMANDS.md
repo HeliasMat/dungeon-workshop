@@ -359,7 +359,7 @@ Colours by their name (for `flash`, `tint`, `halo`, `particles`, `gauge`): `whit
 | `fadesound <name> <volume> <time> [stop]` | a named sound or ambience (`as`) goes to this volume during this time; `stop`: it stops once there (`fadesound rain 0 2s stop`) |
 | `music own:<name> [<time>]`, `musicfrom own:<name> <time>` | a file of ours as music, smoothly during this time; from this moment |
 | `voice <who> <name\|n>` | the sound of their lines as they type (see Speech) |
-| `note <c\|d\|e\|f\|g\|a\|b>[2] [sound]` | a note: the sound (the click by default) played higher, by so many semitones (`c2`: the octave above; or a number of semitones) |
+| `note <note>[2] [sound]` | a note (`c`, `d`, `e`, `f`, `g`, `a`, `b`): the sound (the click by default) played higher, by so many semitones (`c2`: the octave above; or a number of semitones) |
 
 The game's 193 songs and ambiences each have a name: `scene_player songs` gives them all, with their number, their original title and their moods; `scene_player songs sad` (or `battle`, `calm`, `party`, `tension`, `fear`, `mystery`, `emotion`, `epic`, `funny`, `victory`, `night`, `sea`, `dungeon`, `forest`, `snow`...) those of that mood. The most common: `peace`, `evening_beach`, `guild`, `guild_party`, `treasure_town`, `upbeat`, `worry`, `battle`, `memory`, `compassion`, `comfort`, `unease`, `rising_fear`, `impossible`, `morning_sun`, `end_of_day`, `good_night`. The ambient ones (`scene_player songs ambient`) are lasting sounds, to play with `ambient`: `sea`, `rain`, `storm`, `wind_1`, `fire_1`, `waterfall`, `rumble`, `hot_water`...
 
@@ -567,8 +567,8 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `add` | `add name:word [value:number]` |
 | `advance` | `advance dx:number dy:number who:code` |
 | `after` | `after time:duration command...` |
-| `alllook` | `alllook whoside:word` |
-| `ambient` | `ambient namen:word` |
+| `alllook` | `alllook who_or_side:word` |
+| `ambient` | `ambient name_or_n:word` |
 | `anim` | `anim who:code name:word [loop] [frozen]` · `anim who:code name:word n:number times` · `anim who:code group:word loop:word frozen:word` |
 | `answer` | `answer [text...]` |
 | `appear` | `appear who:code [frames:duration]` |
@@ -693,8 +693,8 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `moveeffect` | `moveeffect who:code move:word` |
 | `moveshot` | `moveshot from:word to:word move:word [frames:duration]` |
 | `movesound` | `movesound move:word` |
-| `music` | `music namen:word` · `music name:word time:duration` · `music back` · `music rest...` |
-| `musicfrom` | `musicfrom namen:word time:duration` |
+| `music` | `music name_or_n:word` · `music name:word time:duration` · `music back` · `music rest...` |
+| `musicfrom` | `musicfrom name_or_n:word time:duration` |
 | `musicspeed` | `musicspeed percent:word` |
 | `node` | `node name:word group [x:coordinate y:coordinate]` · `node name:word picture file:word [x:coordinate y:coordinate]` · `node name:word off` |
 | `note` | `note note:word [2] [sound]` |
@@ -749,7 +749,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `shout` | `shout rest...` |
 | `sink` | `sink who:code pixels:number [sand]` |
 | `slowmo` | `slowmo who:code times_or_off:word rest...` |
-| `sound` | `sound namen:word` · `sound namen:word who:code` |
+| `sound` | `sound name_or_n:word` · `sound name_or_n:word who:code` |
 | `spacing` | `spacing [rest...]` |
 | `speed` | `speed who:code pixels:number per rest...` |
 | `spin` | `spin who:code laps:word frames:duration [rotate]` |
@@ -786,7 +786,7 @@ Each command's forms as the engine declares them (`engine/src/beat/`, each kind'
 | `untrack` | `untrack node:word [property:word]` |
 | `vanish` | `vanish who:code [frames:duration]` |
 | `views` | `views who:code rest...` · `views who:code off` |
-| `voice` | `voice who:code sound:word` · `voice who:code -` · `voice who:code namen:word` |
+| `voice` | `voice who:code sound:word` · `voice who:code -` · `voice who:code name_or_n:word` |
 | `volume` | `volume v:word to rest...` |
 | `wait` | `wait duration:duration` · `wait` |
 | `waitall` | `waitall` |

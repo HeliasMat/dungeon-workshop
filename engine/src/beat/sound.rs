@@ -216,7 +216,7 @@ declare! {
 /// part between brackets left out, `rest...` the words left) and what it
 /// does, for the language and the docs (see `forms`).
 pub(in crate::beat) const FORMS: &[Form] = &[
-    Form::new("ambient", &["namen:word"], "an ambient sound"),
+    Form::new("ambient", &["name_or_n:word"], "an ambient sound"),
     Form::new("fademusic", &["v:word frames:duration"], "fades out the music, the ambience, or both"),
     Form::new(
         "fadesound",
@@ -225,13 +225,13 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     ),
     Form::new("jingle", &["n:number"], "a sound effect (by its name, below, or its number) / a little tune"),
     Form::new("movesound", &["move:word"], "the sound of a move, alone"),
-    Form::new("music", &["namen:word", "name:word time:duration", "back", "rest..."], "the music (`-`: silence)"),
-    Form::new("musicfrom", &["namen:word time:duration"], "the music, from this moment of the song"),
+    Form::new("music", &["name_or_n:word", "name:word time:duration", "back", "rest..."], "the music (`-`: silence)"),
+    Form::new("musicfrom", &["name_or_n:word time:duration"], "the music, from this moment of the song"),
     Form::new("musicspeed", &["percent:word"], "the music faster or slower (`120`: a fifth faster, higher; `100`: as it is)"),
     Form::new(
         "note",
         &["note:word [2] [sound]"],
-        "a note: the sound (the click by default) played higher, by so many semitones (`c2`: the octave above; or a number of semitones)",
+        "a note (`c`, `d`, `e`, `f`, `g`, `a`, `b`): the sound (the click by default) played higher, by so many semitones (`c2`: the octave above; or a number of semitones)",
     ),
     Form::new("onhit", &["who:code sound:word rest..."], "this sound, at the next blow who takes"),
     Form::new(
@@ -239,7 +239,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
         &["sound:word [volume v:number] [pan p:number] [from who:code [near]] [pitch n:number] [loop] [as name:word] [rise time:duration]"],
         "a sound played the way you say. `<sound>`: a game sound (name or number), `move:<n>` (a move's), `song:<n>` (a game song, for an ambience), `own:<name>` (a file of ours, `library/sounds/<name>.wav`). `volume` (1: as is, up to 4), `pan` (-1 all the way left, 1 all the way right), `from <who>` (from the side they are on screen, quieter the further they are; `near`: without fading), `pitch` (semitones, higher and faster), `loop` (endless, until its `fadesound … stop`), `as <name>` (its name, to change or stop it; another of the same name stops), `rise` (it rises from silence during this time). As many as you like at the same time",
     ),
-    Form::new("sound", &["namen:word", "namen:word who:code"], "a sound effect (by its name, below, or its number) / a little tune"),
+    Form::new("sound", &["name_or_n:word", "name_or_n:word who:code"], "a sound effect (by its name, below, or its number) / a little tune"),
     Form::new("volume", &["v:word to rest..."], "the music's volume"),
 ];
 

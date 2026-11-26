@@ -169,9 +169,14 @@ mod tests {
         })
     }
 
-    /// A name of a form, its letters plain, once.
+    /// A name of a form, its letters plain, once; a list of two words or
+    /// more named by them, as the engine names it (`walk|run` →
+    /// `walk_or_run`, `name|n|-` → `name_or_n`; `-|x0.5|s2` stays `x05s2`).
     fn name_once(names: &mut Vec<String>, written: &str) -> String {
-        let plain: String = crate::words::plain(written).chars().filter(|letter| letter.is_ascii_alphanumeric() || *letter == '_').collect();
+        let unescaped = written.replace("\\|", "|");
+        let words: Vec<&str> = unescaped.split('|').filter(|word| !word.is_empty() && word.chars().all(|letter| letter.is_ascii_lowercase())).collect();
+        let written = if words.len() > 1 { words.join("_or_") } else { written.to_string() };
+        let plain: String = crate::words::plain(&written).chars().filter(|letter| letter.is_ascii_alphanumeric() || *letter == '_').collect();
         let base = if plain.is_empty() || plain.starts_with(|letter: char| letter.is_ascii_digit()) { "v".to_string() } else { plain };
         let mut name = base.clone();
         let mut rank = 2;

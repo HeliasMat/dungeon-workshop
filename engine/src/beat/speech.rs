@@ -79,7 +79,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("shout", &["rest..."], "a thought (little bubbles) / a shout (spiky bubble)"),
     Form::new("textspeed", &["times:number", "normal"], "the following lines type so many times faster (`0.4` slowly, `3` fast)"),
     Form::new("think", &["rest..."], "a thought (little bubbles) / a shout (spiky bubble)"),
-    Form::new("voice", &["who:code sound:word", "who:code -", "who:code namen:word"], "the sound of their lines as they type"),
+    Form::new("voice", &["who:code sound:word", "who:code -", "who:code name_or_n:word"], "the sound of their lines as they type"),
 ];
 
 pub(super) fn read(fields: &Fields) -> Option<SpeechBeat> {

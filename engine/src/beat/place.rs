@@ -372,7 +372,7 @@ declare! {
 /// does, for the language and the docs (see `forms`).
 pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new("advance", &["dx:number dy:number who:code"], "a crowd runs, staying on the ground"),
-    Form::new("alllook", &["whoside:word"], "everyone looks"),
+    Form::new("alllook", &["who_or_side:word"], "everyone looks"),
     Form::new(
         "arrives",
         &["who:code walk_or_run:word pace:word x:coordinate y:coordinate [rest...]"],
