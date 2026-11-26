@@ -4,9 +4,11 @@
 
 use eframe::egui::{Rect, Vec2, pos2, vec2};
 
+use super::handles::facing_dots;
+use super::marks::Labels;
 use super::marks::grid_step;
 use super::mouse::measure_said;
-use super::script::{moved_to, spots_of};
+use super::script::{Move, WAYS, faced, framed_at, moment_of, moved_to, moves_of, number, spot_lines, way_of, with_point, with_words};
 use super::{Place, View, fitted_scale, wheel_look};
 
 /// By whole pixels when it fits so, else smaller.
@@ -52,9 +54,90 @@ fn the_grid_steps_out() {
 /// The spots, and someone moved: their last line that puts them at a point, or a `put` after the scene's line.
 #[test]
 fn the_text_is_read_and_written_again() {
-    assert_eq!(spots_of("spot well 10 20\nspot bad x 2\nriolu put 1 2"), vec![("well".to_string(), [10.0, 20.0])]);
+    assert_eq!(spot_lines("spot well 10 20\nspot bad x 2\nriolu put 1 2"), vec![("well".to_string(), 1, [10.0, 20.0])]);
     let text = "scene: beach riolu\n  riolu put 1 2\n  riolu walk to 5 6\n  riolu: hi";
     assert_eq!(moved_to(text, 4, "riolu", [7.0, 8.0]), Ok(("scene: beach riolu\n  riolu put 1 2\n  riolu walk to 7 8\n  riolu: hi".to_string(), 3)));
     assert_eq!(moved_to("scene: beach\n  a: hi", 2, "riolu", [7.0, 8.0]), Ok(("scene: beach\n  riolu put 7 8\n  a: hi".to_string(), 2)));
     assert!(moved_to("scene: beach\nriolu put here", 2, "riolu", [7.0, 8.0]).is_err());
+}
+
+/// Words of a line made others, the rest as it was (its spaces, its indent); numbers written short.
+#[test]
+fn words_are_made_others_in_place() {
+    assert_eq!(with_words("a\n  riolu  walk to 1 2  # x", 2, 3, 2, "5 6"), "a\n  riolu  walk to 5 6  # x");
+    assert_eq!(with_point("spot well 10 20", 1, 2, [3.0, 4.5]), "spot well 3 4.5");
+    assert_eq!(with_words("one", 3, 0, 1, "two"), "one", "no such line: as it was");
+    assert_eq!((number(2.0), number(1.256), number(0.5)), ("2".to_string(), "1.26".to_string(), "0.5".to_string()));
+}
+
+/// The moment of a line: from its `moment:` (or `scene:`) line to the next one.
+#[test]
+fn a_moment_has_its_lines() {
+    let text = "scene: beach riolu\nriolu put 1 2\nmoment: a\nriolu: hi\nmoment: b\nriolu: bye";
+    assert_eq!(moment_of(text, 2), (1, 3));
+    assert_eq!(moment_of(text, 4), (3, 5));
+    assert_eq!(moment_of(text, 6), (5, 7));
+}
+
+/// The camera dragged: the moment's framing line written again with the point, else a `frame … snap` added; its zoom.
+#[test]
+fn the_camera_frames_a_point() {
+    let text = "scene: town riolu\nriolu put 1 2\n\nmoment: m\nglide to 300 212 in 1f\nriolu: hi";
+    assert_eq!(framed_at(text, 6, [310.0, 200.0], None), ("scene: town riolu\nriolu put 1 2\n\nmoment: m\nglide to 310 200 in 1f\nriolu: hi".to_string(), 5));
+    let named = "scene: town riolu\nframe riolu piplup follows\nriolu: hi";
+    assert_eq!(framed_at(named, 3, [5.0, 6.0], None).0, "scene: town riolu\nframe 5 6\nriolu: hi", "a point stays: follows no longer");
+    assert_eq!(framed_at("scene: town riolu\nframe riolu snap\nriolu: hi", 3, [5.0, 6.0], None).0, "scene: town riolu\nframe 5 6 snap\nriolu: hi");
+    assert_eq!(framed_at("scene: town riolu\nglide riolu 2s", 2, [5.0, 6.0], None).0, "scene: town riolu\nglide 5 6 2s");
+    assert_eq!(framed_at("scene: town riolu\n  riolu: hi", 2, [5.0, 6.0], None), ("scene: town riolu\n  frame 5 6 snap\n  riolu: hi".to_string(), 2));
+    assert_eq!(framed_at("scene: town riolu\n  riolu: hi", 2, [5.0, 6.0], Some(1.5)).0, "scene: town riolu\n  frame 5 6 snap\n  zoom 1.5 1f\n  riolu: hi");
+    assert_eq!(
+        framed_at("scene: town riolu\nzoom 2 1f\nframe 1 1 snap\nriolu: hi", 4, [5.0, 6.0], Some(0.5)).0,
+        "scene: town riolu\nzoom 0.5 1f\nframe 5 6 snap\nriolu: hi"
+    );
+}
+
+/// Someone's way: from the screen's direction; their line's `facing` (or `look`) written again, added to a `put`, else a `look`.
+#[test]
+fn someone_faces_a_way() {
+    assert_eq!((way_of(1.0, 0.0), way_of(0.0, 1.0), way_of(-1.0, -1.0), way_of(1.0, -0.9)), ("right", "down", "upleft", "upright"));
+    for (at, dot) in facing_dots(eframe::egui::Pos2::ZERO).iter().enumerate() {
+        assert_eq!(way_of(dot.x, dot.y), WAYS[at], "each dot its way");
+    }
+    let text = "scene: town riolu\nriolu put 1 2 facing up\nriolu: hi";
+    assert_eq!(faced(text, 3, "riolu", "left"), ("scene: town riolu\nriolu put 1 2 facing left\nriolu: hi".to_string(), 2));
+    assert_eq!(faced("scene: town riolu\nriolu put 1 2\nriolu: hi", 3, "riolu", "left").0, "scene: town riolu\nriolu put 1 2 facing left\nriolu: hi");
+    assert_eq!(faced("scene: town riolu\nriolu look up", 2, "riolu", "down").0, "scene: town riolu\nriolu look down");
+    assert_eq!(
+        faced("scene: town riolu\nriolu jump\npiplup: hi", 3, "riolu", "down"),
+        ("scene: town riolu\nriolu jump\npiplup: hi\nriolu look down".to_string(), 4)
+    );
+}
+
+/// Someone's walks in the moment: their points in the order walked (`via` first), where they stood before.
+#[test]
+fn the_walks_of_a_moment() {
+    let text =
+        "scene: town riolu\nriolu put 1 2\nmoment: m\nriolu walk to 10 20\nriolu run to 30 40 via 5 5 6 6\npiplup walk to 0 0\nmoment: n\nriolu walk to 9 9";
+    let (before, moves) = moves_of(text, 4, "riolu");
+    assert_eq!(before, Some([1.0, 2.0]));
+    assert_eq!(
+        moves,
+        vec![
+            Move { line: 4, points: vec![(3, [10.0, 20.0])], runs: false },
+            Move { line: 5, points: vec![(6, [5.0, 5.0]), (8, [6.0, 6.0]), (3, [30.0, 40.0])], runs: true },
+        ]
+    );
+    assert_eq!(with_point(text, 5, 8, [7.0, 7.0]).split('\n').nth(4), Some("riolu run to 30 40 via 5 5 7 7"));
+}
+
+/// Names laid on the picture keep clear of each other, moved up first.
+#[test]
+fn names_do_not_cover_each_other() {
+    let mut labels = Labels::default();
+    let first = labels.spread(Rect::from_min_size(pos2(0.0, 100.0), vec2(40.0, 10.0)));
+    let second = labels.spread(Rect::from_min_size(pos2(10.0, 100.0), vec2(40.0, 10.0)));
+    assert_eq!(first.min, pos2(0.0, 100.0));
+    assert!(!first.intersects(second), "{first:?} {second:?}");
+    assert!(second.min.y < first.min.y, "moved up");
+    assert_eq!(labels.spread(Rect::from_min_size(pos2(200.0, 0.0), vec2(5.0, 5.0))).min, pos2(200.0, 0.0), "free: where asked");
 }

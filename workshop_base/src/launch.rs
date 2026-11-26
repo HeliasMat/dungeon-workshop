@@ -45,7 +45,7 @@ pub struct LaunchOptions {
     pub step: Option<String>,
     /// `WORKSHOP_INSTANT=s`: the film shown at that second.
     pub instant: Option<f64>,
-    /// `WORKSHOP_SCENE=…`: what the Film space's Scene shows.
+    /// `WORKSHOP_SCENE=whole,names,grid,who:<name>`: what the Film space's Scene shows (who: that one chosen).
     pub scene: Option<String>,
     /// `WORKSHOP_GAME=my_game`: that game open.
     pub game: Option<String>,

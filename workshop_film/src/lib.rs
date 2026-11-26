@@ -201,11 +201,17 @@ enum BarAct {
 }
 
 /// What a drag on the Scene holds: someone (their name, from their feet to
-/// where they were taken), the picture itself, or a measure (from that point).
+/// where they were taken), the picture itself, a measure (from that point),
+/// or a handle: the camera's frame (from the place's point it was taken at;
+/// by a corner: grown), the way someone faces, a point written in a line
+/// (its line, the word it is at: a walk's, a spot's).
 enum Held {
     Someone(String, [f32; 2]),
     Picture,
     Measure([f32; 2]),
+    Camera { from: [f32; 2], corner: bool },
+    Facing(String),
+    Point(usize, usize),
 }
 
 impl Films {
@@ -280,6 +286,10 @@ impl Films {
         }
         let shown = self.session.launch.scene.clone().unwrap_or_default();
         (self.whole, self.names, self.grid) = (shown.contains("whole"), shown.contains("names"), shown.contains("grid"));
+        // (`who:pikachu`: that one chosen, their handles shown.)
+        if let Some(who) = shown.split(',').find_map(|part| part.strip_prefix("who:")) {
+            self.focus_who = Some(who.to_string());
+        }
     }
 
     /// The frame it stands at.
@@ -450,6 +460,12 @@ impl Films {
             .filter(|span| span.start <= frame && frame <= span.end.max(span.start) && span.label.is_none())
             .max_by_key(|span| span.start)
             .map(|span| span.number as usize)
+    }
+
+    /// The line the Scene's edits are made from: the Script's line in the
+    /// staging view (its cursor's), else the one playing.
+    pub fn line_here(&self, cursor: usize) -> usize {
+        if self.staged { cursor } else { self.timeline.as_ref().and_then(|_| self.playing_line()).unwrap_or(cursor) }
     }
 
     /// When each line plays the first time and how long (on the film's own course), in seconds.

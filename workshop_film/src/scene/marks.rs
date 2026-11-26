@@ -1,39 +1,86 @@
 //! What is drawn over the film's picture: the place's grid, the camera's
 //! frame, who is there (pointed, chosen, named by the line pointed in the
-//! Script), the spots the film names, the point under the pointer, what the
-//! mouse holds.
+//! Script), the spots the film names, the handles, the point under the
+//! pointer, what the mouse holds; the names laid so as not to cover each other.
 
 use eframe::egui::{self, Color32, FontId, Painter, Pos2, Rect, Stroke, StrokeKind, vec2};
 
 use super::super::{Films, Frame, Held};
-use super::script::spots_of;
+use super::handles::Handles;
 use super::{Place, View};
 use workshop_base::theme;
 use workshop_script::Scripts;
 
 /// All the marks over the picture; the place's point under the pointer.
-pub(super) fn over(ui: &egui::Ui, films: &Films, scripts: &mut Scripts, drawn: &Frame, view: &View, head: Rect, picture: &egui::Response) -> Option<[f32; 2]> {
+#[allow(clippy::too_many_arguments)]
+pub(super) fn over(
+    ui: &egui::Ui,
+    films: &Films,
+    scripts: &mut Scripts,
+    drawn: &Frame,
+    view: &View,
+    head: Rect,
+    picture: &egui::Response,
+    handles: &Handles,
+) -> Option<[f32; 2]> {
     let painter = ui.painter_at(view.seen);
     let place = Place::of(view, drawn);
     if films.grid {
         grid(&painter, &place, view, drawn.close);
     }
+    let mut labels = Labels::default();
     if let Some(camera) = drawn.camera {
         let frame = view.frame_of(camera);
         painter.rect_stroke(frame, 0.0, Stroke::new(1.5_f32, theme::FILM), StrokeKind::Inside);
-        painter.text(frame.left_top() + vec2(4.0, 3.0), egui::Align2::LEFT_TOP, "camera", FontId::proportional(theme::SMALL), theme::FILM);
+        let said = painter.layout_no_wrap("camera".to_string(), FontId::proportional(theme::SMALL), theme::FILM);
+        labels.placed.push(Rect::from_min_size(frame.left_top() + vec2(4.0, 3.0), said.size()));
+        painter.galley(frame.left_top() + vec2(4.0, 3.0), said, theme::FILM);
     }
     let pointer = picture.hover_pos();
-    bodies(&painter, films, scripts, drawn, view, pointer);
-    // (The places the film names: `endroit name x y`.)
-    if films.names
-        && let Some(open) = scripts.open.as_ref()
-    {
-        spots(&painter, &place, view, &open.text);
+    handles.draw(&painter, films.held.as_ref());
+    bodies(&painter, films, scripts, drawn, view, pointer, &mut labels);
+    // (The places the film names: `spot name x y`.)
+    for (name, _, at) in &handles.spots {
+        spot(&painter, *at, name, &mut labels);
     }
     let place_point = pointer.map(|at| pointed(ui, drawn, &place, view, head, at));
-    held(&painter, films, drawn, &place, view, pointer.or(ui.input(|input| input.pointer.hover_pos())));
+    let at = pointer.or(ui.input(|input| input.pointer.hover_pos()));
+    held(&painter, films, drawn, &place, view, at);
+    if let (Some(held), Some(at)) = (films.held.as_ref(), at) {
+        super::handles::held(&painter, handles, held, &place, at);
+    }
     place_point
+}
+
+/// The names laid on the picture so far, so that the next keeps clear of them.
+#[derive(Default)]
+pub(super) struct Labels {
+    pub placed: Vec<Rect>,
+}
+
+impl Labels {
+    /// Where a name of that box goes, nearest where it is asked: there, or
+    /// moved up (then down) by steps of its height until it covers no other.
+    pub fn spread(&mut self, asked: Rect) -> Rect {
+        let step = asked.height() + 1.0;
+        let tries = std::iter::once(0.0).chain((1..12).flat_map(|at| [at as f32, -(at as f32)]));
+        let free = tries.map(|times| asked.translate(vec2(0.0, -step * times))).find(|room| !self.placed.iter().any(|placed| placed.intersects(*room)));
+        let room = free.unwrap_or(asked);
+        self.placed.push(room);
+        room
+    }
+
+    /// A name on a dark tag, its bottom left there if it is free (else the nearest free), a thin line to there if moved.
+    fn tag(&mut self, painter: &Painter, at: Pos2, said: &str, colour: Color32) {
+        let galley = painter.layout_no_wrap(said.to_string(), FontId::proportional(theme::SMALL), colour);
+        let asked = Rect::from_min_size(at - vec2(0.0, galley.size().y + 4.0), galley.size() + vec2(8.0, 4.0));
+        let room = self.spread(asked);
+        if room != asked {
+            painter.line_segment([at, room.left_bottom()], Stroke::new(1.0_f32, colour.gamma_multiply(0.6)));
+        }
+        painter.rect_filled(room, 2.0, Color32::from_black_alpha(200));
+        painter.galley(room.min + vec2(4.0, 2.0), galley, colour);
+    }
 }
 
 /// The grid's step in the place: 8, doubled while its lines would be closer than 6 points.
@@ -65,7 +112,7 @@ fn grid(painter: &Painter, place: &Place, view: &View, close: f32) {
 
 /// Who is there: the one chosen, those the line pointed in the Script names
 /// (or the Timeline lights), all of them with Names, the one pointed (lit in the Script).
-fn bodies(painter: &Painter, films: &Films, scripts: &mut Scripts, drawn: &Frame, view: &View, pointer: Option<Pos2>) {
+fn bodies(painter: &Painter, films: &Films, scripts: &mut Scripts, drawn: &Frame, view: &View, pointer: Option<Pos2>, labels: &mut Labels) {
     let named: std::collections::HashSet<String> = scripts
         .hovered_line
         .and_then(|line| scripts.open.as_ref().and_then(|open| open.text.split('\n').nth(line - 1).map(str::to_string)))
@@ -79,27 +126,22 @@ fn bodies(painter: &Painter, films: &Films, scripts: &mut Scripts, drawn: &Frame
         }
         if !pointed && films.focus_who.as_ref() == Some(name) {
             painter.rect_stroke(frame, 0.0, Stroke::new(2.0_f32, theme::FILM), StrokeKind::Outside);
-            workshop_decor::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::FILM);
+            labels.tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::FILM);
         } else if !pointed && (named.contains(name) || scripts.lit_who_track.as_ref() == Some(name)) {
             painter.rect_stroke(frame, 0.0, Stroke::new(2.0_f32, theme::POINTED), StrokeKind::Outside);
-            workshop_decor::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::POINTED);
+            labels.tag(painter, frame.left_top() - vec2(0.0, 2.0), name, theme::POINTED);
         } else if films.names || pointed {
             painter.rect_stroke(frame, 0.0, Stroke::new(1.0_f32, if pointed { Color32::WHITE } else { theme::DECOR }), StrokeKind::Outside);
-            workshop_decor::tag(painter, frame.left_top() - vec2(0.0, 2.0), name, if pointed { Color32::WHITE } else { theme::DECOR });
+            labels.tag(painter, frame.left_top() - vec2(0.0, 2.0), name, if pointed { Color32::WHITE } else { theme::DECOR });
         }
     }
 }
 
-/// The spots the film names, each a small diamond and its name.
-fn spots(painter: &Painter, place: &Place, view: &View, text: &str) {
-    for (name, point) in spots_of(text) {
-        let at = place.to_screen(point);
-        if view.seen.contains(at) {
-            let mark = [at + vec2(0.0, -4.0), at + vec2(4.0, 0.0), at + vec2(0.0, 4.0), at + vec2(-4.0, 0.0)];
-            painter.add(egui::Shape::convex_polygon(mark.to_vec(), theme::FILM, Stroke::new(1.0_f32, Color32::BLACK)));
-            painter.text(at + vec2(6.0, 0.0), egui::Align2::LEFT_CENTER, &name, FontId::proportional(theme::SMALL - 1.0), theme::FILM);
-        }
-    }
+/// A spot the film names: a diamond (to drag) and its name.
+fn spot(painter: &Painter, at: Pos2, name: &str, labels: &mut Labels) {
+    let mark = [at + vec2(0.0, -5.0), at + vec2(5.0, 0.0), at + vec2(0.0, 5.0), at + vec2(-5.0, 0.0)];
+    painter.add(egui::Shape::convex_polygon(mark.to_vec(), theme::FILM, Stroke::new(1.0_f32, Color32::BLACK)));
+    labels.tag(painter, at + vec2(7.0, 8.0), name, theme::FILM);
 }
 
 /// The place's point under the pointer (and who stands there, where), said

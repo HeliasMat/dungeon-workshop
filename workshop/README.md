@@ -111,7 +111,12 @@ And also:
   - dragging elsewhere (or with the middle button) moves the picture, the wheel looks closer around the pointer, a double-click (or **Fit**) puts it back whole;
   - **Shift+drag** measures: pixels, tiles, gap in x and in y;
   - hovering over someone, at the top right, where their feet are in the place;
-  - with **Names**, the spots of the film (`spot name x y`) marked with a diamond.
+  - with **Names** (and in **Whole Place**), the spots of the film (`spot name x y`) marked with a diamond: **dragging one** writes its `spot` line again;
+  - **handles**, each drag one change to undo, only the words it must written again (the line's spacing kept); the line they write from is the Script's cursor's in the staging view, else the one playing:
+    - **the camera's frame** (Whole Place, its corners marked): dragging it moves the view, a corner grows or shrinks it (the zoom). The moment's last framing line up to the line (`frame …`, `glide [to] …`) gets the point (`frame` keeps `snap` and `max:`, drops `follows`), else `frame x y snap` is added after the moment's (or scene's) first line; a zoom goes on the moment's last `zoom` line, else `zoom n 1f` after the framing line;
+    - **the way the one chosen faces** (a click on them): eight dots around their feet, the way they face lit; a click on a dot (or a drag from one, toward the way) writes it: their last line of the scene up to the line, its `facing …` or `look …` written again, `facing way` added to a `put`, else `who look way` after the line;
+    - **their walks** in the moment (`who walk|run [to] x y [via …]`): a dotted line from where they stood (blue walking, orange running), each point a dot: **dragging one** writes that point of its line again;
+  - the names keep clear of each other: one that would cover another goes up (or down), a thin line to where it belongs.
 - **Step by line** (for the author who wants to see each line do its work):
   - **Step** in the bar (F6) on: as the film plays, it stops at the start of each new line of its own course, the line lit in the Script (outlined in the Film's colour, kept in sight). Lines played beside the film (`&`) and those of a recipe do not stop it. Several lines starting on the same frame stop it one after the other, the film standing still.
   - **Next Line** (F10, wherever the pointer is): played until the next line starts, stopped there, Step on or not. Space plays on (stopping at the next line again with Step on).

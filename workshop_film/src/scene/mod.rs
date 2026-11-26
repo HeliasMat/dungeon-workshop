@@ -1,13 +1,16 @@
-//! The Scene panel: the frame as the game shows it, the bar that plays it,
-//! someone dragged to a new spot.
+//! The Scene panel: the frame as the game shows it (the staging view: its
+//! screen's effects off), the bar that plays it, someone dragged to a new
+//! spot, the handles that write the film's lines.
 //!
 //! Here the order of its parts and the picture's view (where, how grown);
 //! `marks.rs` what is drawn over the picture (the grid, the camera, who is
-//! there, the spots, what the mouse holds), `mouse.rs` what the mouse does
-//! on it (a field's point, someone moved, a measure, a line written, the
+//! there, the spots, what the mouse holds; the names kept clear of each
+//! other), `handles.rs` the handles (the camera's frame, someone's way,
+//! their walks, the spots), `mouse.rs` what the mouse does on it (a field's
+//! point, someone moved, a handle let go, a measure, a line written, the
 //! menu), `bar.rs` the line played under it, the bar and the keys,
-//! `script.rs` the film's text read and written again (the spots, someone
-//! moved to a point).
+//! `script.rs` the film's text read and written again (someone moved to a
+//! point, the view framed, a way, a walk's point, the spots).
 
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, RichText, Sense, Vec2, pos2, vec2};
 
@@ -16,6 +19,7 @@ use workshop_base::theme;
 use workshop_script::Scripts;
 
 mod bar;
+mod handles;
 mod marks;
 mod mouse;
 mod script;
@@ -97,7 +101,12 @@ pub fn scene(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
     if picture.double_clicked() {
         (films.look, films.pan) = (1.0, Vec2::ZERO);
     }
-    let place_point = picture_drawn(ui, films, scripts, &view, room, head, &picture);
+    let handles = films
+        .drawn
+        .as_ref()
+        .zip(scripts.open.as_ref())
+        .map_or_else(handles::Handles::default, |(drawn, open)| handles::handles(films, &open.text, films.line_here(open.cursor_line()), drawn, &view));
+    let place_point = picture_drawn(ui, films, scripts, &view, room, head, &picture, &handles);
     if let Some((line, said)) = films.wrong.first() {
         let band = Rect::from_min_size(room.min, vec2(room.width(), 22.0));
         ui.painter().rect_filled(band, 0.0, Color32::from_rgb(0x5A, 0x1D, 0x1D));
@@ -109,7 +118,7 @@ pub fn scene(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
             Color32::WHITE,
         );
     }
-    mouse::on_picture(ui, films, scripts, &view, picture, place_point);
+    mouse::on_picture(ui, films, scripts, &view, picture, place_point, &handles);
     if capture && let Some(drawn) = &films.drawn {
         films.said = Some(written_out(drawn, scripts));
     }
@@ -189,14 +198,24 @@ fn view(ui: &egui::Ui, films: &mut Films, room: Rect) -> View {
 }
 
 /// The picture, its marks, whether it is old; the place's point under the pointer.
-fn picture_drawn(ui: &egui::Ui, films: &Films, scripts: &mut Scripts, view: &View, room: Rect, head: Rect, picture: &egui::Response) -> Option<[f32; 2]> {
+#[allow(clippy::too_many_arguments)]
+fn picture_drawn(
+    ui: &egui::Ui,
+    films: &Films,
+    scripts: &mut Scripts,
+    view: &View,
+    room: Rect,
+    head: Rect,
+    picture: &egui::Response,
+    handles: &handles::Handles,
+) -> Option<[f32; 2]> {
     let Some(texture) = &films.texture else {
         let said = films.failed.clone().unwrap_or_else(|| "the film is playing…".to_string());
         ui.painter().text(room.center(), egui::Align2::CENTER_CENTER, said, FontId::proportional(theme::BODY), theme::WEAK);
         return None;
     };
     ui.painter_at(room).image(texture.id(), view.shown, Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
-    let place_point = films.drawn.as_ref().and_then(|drawn| marks::over(ui, films, scripts, drawn, view, head, picture));
+    let place_point = films.drawn.as_ref().and_then(|drawn| marks::over(ui, films, scripts, drawn, view, head, picture, handles));
     if films.shows_staged() {
         workshop_decor::tag(&ui.painter_at(room), view.seen.left_bottom() + vec2(4.0, -4.0), "staging · effects off", theme::FILM);
     }
