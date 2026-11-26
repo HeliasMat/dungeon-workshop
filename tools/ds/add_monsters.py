@@ -132,9 +132,10 @@ def put_faces(kao, folder, number):
     return put
 
 
-def add(rom, config, monsters, tell=print):
+def add(rom, config, monsters, tell=print, made=made_sprite):
     """Each monster put in the ROM: {its export's number: the ROM's}, the
-    one drawn instead for those that couldn't be."""
+    one drawn instead for those that couldn't be. `made`: a sheets'
+    folder made a sprite (`ds_cache.py` keeps each one made)."""
     if not monsters:
         return {}
     strings = texts(rom, config)
@@ -153,7 +154,7 @@ def add(rom, config, monsters, tell=print):
                 raise RuntimeError(f'no spare monster entry left ({len(SPARE)} a ROM)')
             if not os.path.isdir(os.path.join(one.folder, 'sprite')):
                 raise RuntimeError(f'no sheets at {one.folder}')
-            parts = made_sprite(one.folder)
+            parts = made(one.folder)
             number = free.pop(0)
             # (Packs of unequal lengths, as SkyTemple mends them: empty sprites.)
             sprite = max(len(pack) for pack in packs.values())

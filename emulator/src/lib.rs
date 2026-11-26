@@ -511,6 +511,17 @@ impl Core {
         }
     }
 
+    /// The machine's main memory (the DS's 4 MB from 0x2000000), as the core shares it; None if it doesn't.
+    pub fn memory(&mut self) -> Option<&mut [u8]> {
+        // SAFETY: a game is loaded; the core gives a buffer of that size it keeps while the game is loaded,
+        // and `&mut self` keeps it from running meanwhile.
+        unsafe {
+            let size = (self.api.get_memory_size)(ffi::MEMORY_SYSTEM_RAM);
+            let data = (self.api.get_memory_data)(ffi::MEMORY_SYSTEM_RAM) as *mut u8;
+            (size > 0 && !data.is_null()).then(|| std::slice::from_raw_parts_mut(data, size))
+        }
+    }
+
     /// The core's options, as set.
     pub fn variables(&self) -> Vec<Variable> {
         shared().as_ref().map(|shared| shared.variables.clone()).unwrap_or_default()
@@ -541,6 +552,39 @@ impl Drop for Core {
         *shared() = None;
         OPEN.store(false, Ordering::SeqCst);
     }
+}
+
+/// A film's `.pokes` (`tools/ds/ds_cache.py`) written in the DS's main
+/// memory, after a ready savestate of the base copy is loaded over the
+/// film's copy: the base's actor list, read at power on, is found by its
+/// spare entries' species (`mark`, `mark + 1`, `mark + 2`, 12 bytes apart,
+/// at byte 2 of an entry), and each spare actor the film casts gets its
+/// species there. How many were written.
+pub fn poke_film(memory: &mut [u8], pokes: &str) -> Result<usize, String> {
+    let mut mark = None;
+    let mut actors = Vec::new();
+    for line in pokes.lines() {
+        let words: Vec<&str> = line.split_whitespace().collect();
+        let number = |at: usize| words.get(at).and_then(|word| word.parse::<u16>().ok()).ok_or(format!("the pokes: “{line}”"));
+        match words.first() {
+            Some(&"mark") => mark = Some(number(1)?),
+            Some(&"actor") => actors.push((number(1)? as usize, number(2)?)),
+            _ => {}
+        }
+    }
+    let Some(mark) = mark else {
+        return Ok(0);
+    };
+    let marked = |at: usize, n: u16| memory.get(at + 2..at + 4) == Some(&(mark + n).to_le_bytes()[..]);
+    let table = (0..memory.len().saturating_sub(36))
+        .step_by(2)
+        .find(|&at| marked(at, 0) && marked(at + 12, 1) && marked(at + 24, 2))
+        .ok_or("the ready state holds no actor list of the base copy: remove it to make it again")?;
+    for (spare, species) in &actors {
+        let at = table + spare * 12 + 2;
+        memory.get_mut(at..at + 2).ok_or("a spare actor past the memory")?.copy_from_slice(&species.to_le_bytes());
+    }
+    Ok(actors.len())
 }
 
 /// The options that make melonDS show both screens one above the other,
@@ -582,6 +626,21 @@ mod tests {
         let input = Input::default().with(Button::A).with(Button::Start);
         assert_eq!(input.buttons, (1 << 8) | (1 << 3));
         assert!(input.held(Button::A) && !input.held(Button::B));
+    }
+
+    #[test]
+    fn a_films_spare_actors_get_their_species_in_memory() {
+        let mut memory = vec![0u8; 400];
+        for n in 0..4u16 {
+            let at = 100 + 12 * n as usize + 2;
+            memory[at..at + 2].copy_from_slice(&(4000 + n).to_le_bytes());
+        }
+        let written = poke_film(&mut memory, "# a comment\nmark 4000\nactor 0 25\nactor 3 428\n");
+        assert_eq!(written, Ok(2));
+        assert_eq!(&memory[102..104], &25u16.to_le_bytes());
+        assert_eq!(&memory[100 + 36 + 2..100 + 36 + 4], &428u16.to_le_bytes());
+        assert_eq!(&memory[114..116], &4001u16.to_le_bytes());
+        assert!(poke_film(&mut vec![0u8; 400], "mark 4000\nactor 0 25\n").is_err());
     }
 
     #[test]

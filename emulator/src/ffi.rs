@@ -4,6 +4,8 @@
 use std::ffi::{c_char, c_void};
 
 pub const API_VERSION: u32 = 1;
+/// The machine's main memory, for `retro_get_memory_data`.
+pub const MEMORY_SYSTEM_RAM: u32 = 2;
 
 // The environment's commands answered (`RETRO_ENVIRONMENT_*`).
 pub const EXPERIMENTAL: u32 = 0x10000;
@@ -129,6 +131,8 @@ pub struct Api {
     pub unserialize: unsafe extern "C" fn(*const c_void, usize) -> bool,
     pub load_game: unsafe extern "C" fn(*const GameInfo) -> bool,
     pub unload_game: unsafe extern "C" fn(),
+    pub get_memory_data: unsafe extern "C" fn(u32) -> *mut c_void,
+    pub get_memory_size: unsafe extern "C" fn(u32) -> usize,
 }
 
 impl Api {
@@ -163,6 +167,8 @@ impl Api {
             unserialize: get!("retro_unserialize"),
             load_game: get!("retro_load_game"),
             unload_game: get!("retro_unload_game"),
+            get_memory_data: get!("retro_get_memory_data"),
+            get_memory_size: get!("retro_get_memory_size"),
         })
     }
 }

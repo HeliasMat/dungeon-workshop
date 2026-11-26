@@ -3,6 +3,9 @@
 //! PNG (`target/emulator/shot.png`), the core's options told.
 //! `--press A:90[:1400]` holds A for three frames every 90 (until frame 1400): through a title screen;
 //! `--every N` also writes a PNG every N frames (`<out>_<frame>.png`).
+//! `--state-in <file>` starts from that savestate (after `--pokes <file>`, a
+//! film's `.pokes` of `tools/ds/ds_cache.py`, is written in memory);
+//! `--state-out <file>` keeps the last frame's.
 //! The core and the ROM are the user's own: nothing of them is kept.
 
 use std::path::PathBuf;
@@ -22,8 +25,11 @@ fn main() -> std::process::ExitCode {
         Some((parts.next()??, parts.next().flatten().unwrap_or(u32::MAX)))
     });
     let every: Option<u32> = option("--every").and_then(|said| said.parse().ok());
+    let state_in = option("--state-in");
+    let state_out = option("--state-out");
+    let pokes = option("--pokes");
     if args.len() < 2 {
-        eprintln!("emulator <core> <rom> [frames] [out.png] [--press A:90[:until]] [--every N]");
+        eprintln!("emulator <core> <rom> [frames] [out.png] [--press A:90[:until]] [--every N] [--state-in f] [--pokes f] [--state-out f]");
         return std::process::ExitCode::from(2);
     }
     let frames: u32 = args.get(2).and_then(|said| said.parse().ok()).unwrap_or(600);
@@ -40,6 +46,23 @@ fn main() -> std::process::ExitCode {
     println!("{} {}: {:.2} frames a second, {} Hz", core.name, core.version, core.fps(), core.sample_rate());
     for variable in core.variables() {
         println!("  {} = {}   ({}: {})", variable.key, variable.value, variable.said, variable.values.join("|"));
+    }
+    if let Some(state) = &state_in {
+        let loaded = std::fs::read(state).map_err(|why| format!("{state}: {why}")).and_then(|bytes| core.load_state(&bytes));
+        if let Err(why) = loaded {
+            eprintln!("{why}");
+            return std::process::ExitCode::FAILURE;
+        }
+    }
+    if let Some(pokes) = &pokes {
+        let text = std::fs::read_to_string(pokes).unwrap_or_default();
+        match core.memory().ok_or("the core shares no memory".to_string()).and_then(|memory| emulator::poke_film(memory, &text)) {
+            Ok(count) => println!("{count} actors poked"),
+            Err(why) => {
+                eprintln!("{why}");
+                return std::process::ExitCode::FAILURE;
+            }
+        }
     }
     let started = std::time::Instant::now();
     let mut samples = 0;
@@ -60,6 +83,11 @@ fn main() -> std::process::ExitCode {
     let took = started.elapsed().as_secs_f64();
     let frame = core.frame();
     println!("{frames} frames in {took:.1} s ({:.0} a second), {samples} sound samples, frame {}x{}", frames as f64 / took, frame.width, frame.height);
+    if let Some(state) = &state_out
+        && let Err(why) = core.save_state().and_then(|bytes| std::fs::write(state, bytes).map_err(|why| format!("{state}: {why}")))
+    {
+        eprintln!("{why}");
+    }
     for message in core.take_messages() {
         println!("  core: {message}");
     }
