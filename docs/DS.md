@@ -131,21 +131,62 @@ committed to this project.
 ## Playing a film on DS
 
 1. Open the film in the Film space.
-2. In the Emulator space, click **Play This Film on DS**. The first time, it
+2. In the Emulator space, click **Play This Film on DS**, or **From Scene
+   n** to start at the scene the Script's cursor is in. The first time, it
    asks for your Explorers of Sky `.nds` (only read, never changed) and for
    armips (`SKYTEMPLE_ARMIPS_EXEC`), which SkyTemple's patch for more actors
    is assembled with; both are remembered.
-3. It runs `scene_player export-ds <film> --partial` (what does not export
-   is left out, and said), then `python tools/ds/patch_rom.py <rom> <exps>
-   --boot target/ds/workshop_play.nds --more-actors` (Python 3 with
-   `skytemple_files`), each line they say shown under the screens.
-4. The copy is loaded from power on with no save file, and A is pressed by
-   itself every 90 frames through the title, the New Game menu and the controls screen; the
-   film starts after about 25 seconds. Then the keys are yours (X is A:
-   it closes each line of dialogue).
+3. It runs `python tools/ds/watch.py <film> --prepare` (Python 3 with
+   `skytemple_files`): the export (`scene_player export-ds --partial`: what
+   does not export is left out, and said), then the film put in a copy of
+   the cached base, `target/ds/workshop_play.nds`. The Script's text is
+   exported as it is now, saved or not.
+4. The copy is loaded, the core's ready state over it (the New Game menu,
+   waiting), the film's Pokémon written in its memory, and A pressed for
+   New Game: the film starts at once. Then the keys are yours (X is A: it
+   closes each line of dialogue).
 
-The patched copy, its savestates and screenshots are your game's: never
-commit them (`target/` and the settings folder are out of the repository).
+The first click makes the base and the core's ready state (about 10 s, more
+for each new Pokémon of SpriteCollab's); then a click takes about 3 s.
+
+### The loop, in one command
+
+    python tools/ds/watch.py <film> [--scene n] --headless
+
+exports the film, puts it in the cached base, plays 20 s of it from the
+ready state without a window (melonDS through the `emulator` program, else
+py-desmume) and writes `target/ds/watch/sheet.png` (a shot every 30 frames);
+about 6 to 9 s in all. Without `--headless`, the Workshop opens and plays it
+in its Emulator space. `--frames`, `--every`, `--period` (A every n
+frames), `--out` and `--rom` as its help says.
+
+How the base and the ready state work (`tools/ds/ds_cache.py`):
+
+- **The base** (`target/ds/cache/<rom hash>/base/base.nds`) is your ROM with
+  what every film needs, done once: SkyTemple's ActorAndLevelLoader, 64
+  spare actors, the new game's event playing 64 scene slots
+  (`SCRIPT/T00P01/dwscen01...`) after a jump, the decor maps' files, and
+  the Pokémon SpriteCollab adds that the films played so far cast (each
+  sprite made once and kept). A film casting one more makes it again.
+- **A film's copy** is the base with only the film's files written over, in
+  place (its scenes in the last slots, the jump pointing at the first of
+  them, its decors, the actor list): about 1.5 s. Nothing else of the
+  cartridge moves.
+- **The ready state** is taken once on the base, on the New Game menu,
+  before the game reads the event; it plays any film's copy. The game read
+  the actor list at power on, so the copy's `.pokes` says which species
+  the film's Pokémon are, written in memory after the state is loaded.
+
+The cache is made again when the ROM or these tools change. What it can't
+hold (more than 64 scenes, very large scenes or decors) is refused, with
+the size: `patch_rom.py --boot` has no such limit and still makes a ROM to
+share: `python tools/ds/patch_rom.py <rom> <exps> --boot <out.nds>
+--more-actors [--patch out.bps]`. Limits and measured times:
+`tools/ds/LIMITS.md` ("The fast loop").
+
+The copies, the cache, its savestates and screenshots are your game's:
+never commit them (`target/` and the settings folder are out of the
+repository).
 
 ## A film that leads into its dungeon (a trial)
 
@@ -176,7 +217,10 @@ how Sky keeps its dungeons in `tools/ds/DUNGEONS.md`.
 
 `emulator <core> <rom> [frames] [out.png] [--press A:90] [--every N]` runs a game with no
 window and writes its last frame (both screens) as a PNG, with the core's
-options listed: the quickest check that a core works. The Python tools
+options listed: the quickest check that a core works. `--state-in <file>`
+starts from a savestate (`--pokes <copy>.pokes` then writes a film's
+actors in memory), `--state-out <file>` keeps the last frame's: what
+`watch.py` plays with. The Python tools
 (`tools/ds/boot_and_watch.py`, `record.py`) do the same with py-desmume and
 make contact sheets and videos.
 

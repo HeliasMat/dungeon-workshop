@@ -150,13 +150,15 @@ class Paths:
         self.monsters = os.path.join(self.root, 'monsters')
         self.decors = os.path.join(self.root, 'decors')
 
-    def read_manifest(self):
+    def read_manifest(self, stale=False):
+        """The base's manifest; None if it is stale (made by other tools, its
+        copy gone), unless `stale` (the Pokémon it held are kept)."""
         try:
             with open(self.manifest, encoding='utf-8') as file:
                 manifest = json.load(file)
         except (OSError, ValueError):
             return None
-        if manifest.get('tools') != tools_key() or not os.path.isfile(self.base):
+        if not stale and (manifest.get('tools') != tools_key() or not os.path.isfile(self.base)):
             return None
         return manifest
 
@@ -358,10 +360,11 @@ def ensure_base(rom_path, monsters=(), tell=print):
     paths = Paths(rom_path)
     manifest = paths.read_manifest()
     wanted = {one.species: one for one in monsters}
-    had = {}
+    # (The Pokémon a base held, kept when it is made again.)
+    held = manifest or paths.read_manifest(stale=True) or {'monsters': {}}
+    had = {int(species): add_monsters.Monster(species, one['instead'], one['folder'], one['name'])
+           for species, one in held['monsters'].items() if os.path.isdir(one['folder'])}
     if manifest:
-        had = {int(species): add_monsters.Monster(species, one['instead'], one['folder'], one['name'])
-               for species, one in manifest['monsters'].items() if os.path.isdir(one['folder'])}
         missing = [one for species, one in wanted.items()
                    if species not in had or os.path.basename(had[species].folder) != f'{species}-{folder_hash(one.folder)}']
         if not missing:

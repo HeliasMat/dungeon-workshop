@@ -7,7 +7,7 @@ marked **seen** was checked in the original game in the emulator
 
 ## Watching the film
 
-In the Workshop: the Emulator space's **Play This Film on DS** exports the film open, patches it in with `--boot --more-actors` and plays it from power on in a libretro core of the user's (melonDS); how to get one: `docs/DS.md`.
+In the Workshop: the Emulator space's **Play This Film on DS** exports the film open (its Script as it is, saved or not), puts it in a copy of a cached base and plays it from a ready savestate in a libretro core of the user's (melonDS): "The fast loop" below; how to get a core: `docs/DS.md`. `patch_rom.py --boot --more-actors` still makes a ROM to share, played from power on.
 
 Three ways were weighed:
 
@@ -24,6 +24,61 @@ title menu (the old adventure is deleted on confirming, as in the game).
 does; the result is not byte-identical (the compiler lays branches out
 anew) but plays: the story's opening and quiz were seen to run after the
 film.
+
+## The fast loop (`ds_cache.py`, `watch.py`, seen 2026-11-26)
+
+A change to a film is seen on DS in a few seconds: the Workshop's **Play
+This Film on DS** and `tools/ds/watch.py` put the film in a copy of a base
+made once (`tools/ds/ds_cache.py`) and play it from a ready savestate of
+that base. Measured on this machine, warm cache, melonDS:
+
+| | Before (patch_rom.py, boot from power on) | Now |
+|---|---|---|
+| the_night_crossing (1 scene) | export 0.6 s, patch 6-10 s, boot 19 s headless / 25 s in the Workshop | export 0.6 s, copy 1.6 s; the title at frame 180 of the ready state; 20 s of the film headless in 4 s |
+| the_little_festival (4 Pokémon added) | patch 93 s, boot as above | 9.5 s for its sheet (copy 1.8-2.2 s); the first time a cast changes, the base made again in 9-11 s (each sprite made once, then kept) and the ready state in 3.8 s |
+| no_name (8 scenes, a decor, Pichu's form) | patch 29 s, boot as above | 8.3 s for its sheet (copy 1.8 s), `--scene 3` straight into the decor |
+| the Workshop's button | 40-50 s + the film up to the change | about 2.6 s of copy, then the film from the New Game menu (about 3 s of game to its title) |
+
+How it holds (all seen):
+
+- **The base**: ActorAndLevelLoader, the new game's event playing 64
+  acting slots (`SCRIPT/T00P01/dwscen01..64`) after one `jump`, 64 spare
+  actors (`NPC_DW386...`, species `4000 + n`), the decor maps' four sets
+  of files, the SpriteCollab Pokémon of the films so far. Made in 4 s, plus
+  about 8 s a Pokémon the first time its sprite is made.
+- **A film's copy** writes only its files, in place, in their room
+  (zeros after); the jump's two bytes point at its first slot, its scenes in
+  the last slots. Since nothing moves in the cartridge, the game's file
+  table, read at power on, stays true; a copy saved by ndspy moves files and
+  the ready state then shows a white screen (seen).
+- **Every slot is an acting of `T00P01`** (a debug map no story scene
+  plays): each scene's script sets its own place before anything shows
+  (`back_SetGround`, `back2_SetGround`, as the export writes it), so it
+  plays where the film says (seen: a beach, a town, a decor).
+- **The actor list** is read once at power on (ActorAndLevelLoader keeps
+  it in memory): the ready state holds the base's. The copy's `.pokes`
+  gives the spare actors' species; the players find the list in memory by
+  its marks (`4000, 4001, 4002` 12 bytes apart) and write them
+  (`emulator::poke_film`, `watch.py`). Without it, the film's own Pokémon
+  show as others and their lines lose name and face (seen).
+- **The ready state** is a core's own: melonDS's at frame 1200 (A every 90
+  frames until 1050), py-desmume's at 1060 (A at 700-980): the New Game
+  menu, before the game reads the event. Another core (DeSmuME's libretro
+  core) would use melonDS's timing: not tried.
+- **From a scene**: `--scene n` (From Scene n in the Workshop) keeps the
+  film's scenes from the n-th; each scene's layout is where everyone stands
+  as it starts, so it plays as in the whole film. Not from a moment within
+  a scene.
+
+Limits of the fast copy (`patch_rom.py --boot` has none of them, and is
+still what makes a ROM to share): 64 scenes, 64 Pokémon without an actor of
+the game's own, a scene's compiled script 48 KB and layout 8 KB, a decor's
+files 160 KB (`.bpc`), 8 KB (`.bpl`), 96 KB (`.bma`); a film past them is
+refused with the size. The base holds 34 added Pokémon at most (those of
+the films played so far; past 34, only the film's). Not for `--dungeon`
+nor a story scene replaced. The cache (`target/ds/cache/<rom>/`, about
+150 MB) is made again when the ROM or the four tools' text change; delete
+it to start over.
 
 ## Several scenes
 
