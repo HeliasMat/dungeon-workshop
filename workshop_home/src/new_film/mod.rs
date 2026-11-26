@@ -231,6 +231,90 @@ pub fn made(plan: &Plan, data: &str, library: &assets::project::Project, tables:
     film_text(plan, music.as_deref(), &placed)
 }
 
+/// The most places a scratch film walks to.
+const MOST_STOPS: usize = 4;
+
+/// Where a scratch film in a decor walks: to each of its entrances (the
+/// first four), else across it, from a quarter to three quarters of its width.
+pub fn stops(decor_text: &str) -> Vec<[i32; 2]> {
+    let entrances: Vec<[i32; 2]> =
+        decor::doc::entrances(decor_text).into_iter().take(MOST_STOPS).map(|([x, y], _)| [x.round() as i32, y.round() as i32]).collect();
+    if !entrances.is_empty() {
+        return entrances;
+    }
+    let size = decor_text.lines().find_map(|line| match line.split_whitespace().collect::<Vec<_>>().as_slice() {
+        ["decor:", _, wide, high, ..] => Some([wide.parse::<i32>().ok()?, high.parse::<i32>().ok()?]),
+        _ => None,
+    });
+    let [wide, high] = size.unwrap_or([512, 384]);
+    vec![[wide / 4, high / 2], [wide * 3 / 4, high / 2]]
+}
+
+/// A scratch film in a decor (Try in a Film): its cast put where the scene
+/// puts them (on its ground), framed; the first says where they are, walks to
+/// each stop, the second following; then they meet again.
+pub fn tour_text(plan: &Plan, music: Option<&str>, placed: &[Placed], stops: &[[i32; 2]]) -> String {
+    let words: Vec<&str> = plan.cast.iter().map(|(word, _)| word.as_str()).collect();
+    let (a, b) = (words[0], words.get(1).copied().unwrap_or(words[0]));
+    let title = plan.title.trim();
+    let mut text = format!("# Try in a Film: a scratch film in {title}, kept in target/ (not your library); Keep in Library keeps it.\n");
+    text.push_str(&format!("scene: {} {}\n", plan.place, words.join(" ")));
+    if let Some(music) = music {
+        text.push_str(&format!("music {music}\n"));
+    }
+    for word in &words {
+        if let Some(one) = placed.iter().find(|one| one.word == *word) {
+            text.push_str(&format!("{word} put {} {} facing {}\n", one.at[0], one.at[1], one.facing));
+        }
+    }
+    text.push_str("\nmoment: a look around\n");
+    text.push_str(&format!("frame {}\n", words.join(" ")));
+    text.push_str(&format!("{a} (happy): So this is {title}!\n"));
+    if a != b {
+        text.push_str(&format!("{b} nod\n"));
+    }
+    text.push_str("\nmoment: the way round\n");
+    text.push_str(&format!("frame {a} follows\n"));
+    if a != b {
+        text.push_str(&format!("{b} follow {a}\n"));
+    }
+    for [x, y] in stops {
+        text.push_str(&format!("{a} walk to {x} {y}\n"));
+    }
+    if a != b {
+        text.push_str("\nmoment: together again\n");
+        text.push_str(&format!("{b} follow off\n"));
+        text.push_str(&format!("{b} walk to {a}\n"));
+        text.push_str(&format!("frame {a} {b}\n"));
+    }
+    text.push_str(&format!("{a} (joyous): What a place!\n"));
+    text
+}
+
+/// A scratch film in that decor, made whole: the two placed by playing its
+/// scene once (the game's files read; else the scene places them as it
+/// plays), the place's music, its stops.
+#[allow(clippy::too_many_arguments)]
+pub fn tried(
+    name: &str,
+    title: &str,
+    decor_text: &str,
+    cast: &[&str],
+    data: &str,
+    library: &assets::project::Project,
+    tables: Arc<film::tables::Tables>,
+) -> String {
+    let plan = Plan {
+        title: title.to_string(),
+        place: name.to_string(),
+        cast: cast.iter().map(|word| (word.to_string(), shown_name(&tables, word))).collect(),
+        start: Start::Empty,
+    };
+    let music = music_of(&plan, tables.clone());
+    let placed = placed(&plan, data, library, tables).unwrap_or_default();
+    tour_text(&plan, music.as_deref(), &placed, &stops(decor_text))
+}
+
 /// The name a Pokémon's lines call it by: the game's (`Pikachu`), else its word made a name.
 pub fn shown_name(tables: &film::tables::Tables, word: &str) -> String {
     tables.monsters.get(word).map(|(_, name)| name.clone()).filter(|name| !name.is_empty() && !name.starts_with('?')).unwrap_or_else(|| {

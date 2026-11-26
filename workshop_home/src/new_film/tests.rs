@@ -95,3 +95,28 @@ fn a_film_made_whole_places_its_cast_and_reads() {
         println!("--- {place} {start:?}\n{text}");
     }
 }
+
+/// Try in a Film: the scratch film walks to each entrance (else across the
+/// decor), the second following; it reads with nothing wrong.
+#[test]
+fn a_scratch_film_in_a_decor_reads() {
+    let decor = "decor: tried 400 300\nentrance 200 296 south\nentrance 4 150\n";
+    assert_eq!(stops(decor), vec![[200, 296], [4, 150]]);
+    assert_eq!(stops("decor: empty 400 300\n"), vec![[100, 150], [300, 150]]);
+    let mut two = plan("beach", &["pikachu", "piplup"], Start::Empty);
+    two.title = "Wish Beach".to_string();
+    let placed = vec![
+        Placed { word: "pikachu".to_string(), at: [300, 220], facing: "right".to_string() },
+        Placed { word: "piplup".to_string(), at: [340, 220], facing: "left".to_string() },
+    ];
+    let text = tour_text(&two, Some("beach"), &placed, &stops(decor));
+    assert!(text.contains("scene: beach pikachu piplup\nmusic beach\npikachu put 300 220 facing right\npiplup put 340 220 facing left\n"), "{text}");
+    assert!(text.contains("pikachu walk to 200 296\npikachu walk to 4 150\n"), "{text}");
+    assert!(text.contains("piplup follow pikachu"), "{text}");
+    assert_eq!(wrong(&text), Vec::<String>::new(), "{text}");
+    // (One alone: no one follows.)
+    let alone = plan("beach", &["pikachu"], Start::Empty);
+    let text = tour_text(&alone, None, &[], &stops(decor));
+    assert!(!text.contains(" follow "), "{text}");
+    assert_eq!(wrong(&text), Vec::<String>::new(), "{text}");
+}
