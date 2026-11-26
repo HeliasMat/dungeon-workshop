@@ -29,6 +29,48 @@ chose them (`E-DS-HERO`), a zoom or a frame wider than the screen
 command with no DS operation). In DS Mode the completion offers only what
 exports, and the Wiki shows each word's DS badge.
 
+### The DS Report
+
+What the export would do with the film is told in the Workshop as you
+write, without exporting: `ds_export::report` (the export with nothing
+written, about a second) runs on a thread of the Script's a moment after
+each change, in DS Mode or while the DS Report is open. Each of its notes
+is on a line of the film, of a kind (bubble, item, pose, species, crowd,
+camera, weather, decor, engine command…), with how much is lost:
+
+- **changed** (a yellow diamond): played, with less or otherwise (a bubble
+  as a box line, the nearest pose, a pan instead of a zoom);
+- **left out** (an orange triangle): not played (an item, a weather Sky
+  lacks, an engine's step);
+- **not possible** (a red cross): a word the DS has nothing for (`zoom`,
+  `hold`, `trackpath`), its way round given;
+- and **added** (a green plus, no loss): a Pokémon SpriteCollab adds, put in
+  the ROM.
+
+The same note is told once: an engine's steps of one line make one note,
+a word the DS lacks is not told again by its steps or its item, and a
+word's own loss gives way to a note of its own on the line.
+
+- **In the Script's margin** (DS Mode): the worst a line loses, a mark
+  just left of the text; pointed at, each note and what the DS does
+  instead. With DS Mode off and the DS Report open, the marks are faint.
+- **The DS Report** (View › Add Panel › DS Report): the notes by kind, with
+  how many; a click on one goes to its line.
+- **The status** under the Script (DS Mode), in one line: "on DS: 92% as
+  written, 12 changed, 3 left out, 4 new Pokémon added" (each line that
+  plays counted once, by the worst it loses).
+
+- **DS Preview** (a checkbox over the Scene): the film played as the DS
+  would show it, from the same report: each line it leaves out (an item, a
+  zoom, a word it lacks) not played, each bubble said in the box; the lines
+  stay where they are, so the Script and the Timeline still agree. Not
+  shown (yet): the crowd's trim, the nearest poses, a pan instead of a
+  frame wider than the screen, the still decor.
+
+`scene_player export-ds` prints the same notes, a line each (`line 28: a
+line in a bubble (changed); on DS: a line of Sky's box that closes by
+itself`), and the Emulator's making log shows them.
+
 Nothing is lost in silence, and no Pokémon becomes another:
 
 - **A line said in a bubble** (`who (bubble[, face]): …`, `bubble`, `think`,
