@@ -27,7 +27,10 @@ Kricketune.
    long it took, and below them the last lines of what the step is doing:
    reading your cartridge (the longest, a few minutes), the dungeons' floors, the pieces of the places,
    the places built. Keep the window open.
-5. When it is done, the Workshop opens on the **Game** space, empty: no game yet, it is yours to make.
+5. When it is done, the Workshop opens on the **Home**, with a welcome panel (its first film's steps:
+   [Your first film in 5 minutes](FIRST_FILM.md)). Close it. The spaces that make a game are hidden at
+   first: **Settings › Show the Game-Making Spaces**. **You see** Game, Dungeon and Emulator in the bar
+   of spaces, top right. Click **Game**: empty, no game yet, it is yours to make.
    A small **What to Try First** panel says where to begin; **Close** it.
 
 Without a window, the same thing is:

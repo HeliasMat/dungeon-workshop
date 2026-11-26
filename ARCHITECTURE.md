@@ -89,7 +89,7 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `scene_player` | the program that plays a film or a game, and its commands |
 | `emulator` | a small libretro frontend: a core the user chose loaded, a game run frame by frame (program `emulator`, headless) |
 | `dungeon_lsp` | the language server (program `dungeon_lsp`) |
-| `workshop_base` | what every part of the Workshop shares: the `Session`, the look, the project's files, safe saves, the system's dialogs, the spaces and what a part asks of the window (`Ask`) |
+| `workshop_base` | what every part of the Workshop shares: the `Session`, the look, the project's files, safe saves, the system's dialogs, the spaces and what a part asks of the window (`Ask`), the user's own settings (`settings`: the emulator's paths and keys, the game-making spaces shown) |
 | `workshop_picture` | the Resources' painter: pictures and animations painted as in a pixel-art studio |
 | `workshop_sound` | the Resources' sound maker: sounds made as the sound makers of games make them, then mixed; the instruments music plays with |
 | `workshop_music` | the Resources' music maker: a song of tracks, regions and notes, its mixer, MIDI files |
@@ -99,8 +99,8 @@ One name per crate: **its folder is its package**, so a name seen in a `use`, a 
 | `workshop_decor` | the Decor space: the decor open, its Scene, Hierarchy and Inspector, its brushes, the Library of pieces, the decors' tool at work |
 | `workshop_film` | the Film space played: the film of the Script on its thread, its Scene, Timeline and Inspector |
 | `workshop_resources` | the Resources space: the shelves of the game's and the project's things, their Inspector, and what is being made in tabs (`Maker`) |
-| `workshop_home` | the Home: the project's files at a glance, found, sorted, previewed, opened, duplicated, renamed, put in the bin |
-| `workshop_emulator` | the Emulator space: a DS game run by a libretro core the user chose (through `emulator`), a film put on DS and played; the Workshop's own settings |
+| `workshop_home` | the Home: the project's files at a glance, found, sorted, previewed, opened, duplicated, renamed, put in the bin; the New Film and New Decor windows (`new_film`, `new_decor`) |
+| `workshop_emulator` | the Emulator space: a DS game run by a libretro core the user chose (through `emulator`), a film put on DS and played |
 | `workshop_first` | the first launch: the user's own copy of the game checked, its resources extracted, step by step; the programs beside the Workshop found |
 | `workshop_game` | the Game space: a game of one's own, its card, its chapters as boxes, played from a chapter, checked, packed; its `.game` file as the space reads and writes it |
 | `workshop_tools` | the Tools menu's windows: SpriteCollab looked through and imported, an image converted to the console's rules |
@@ -154,7 +154,7 @@ A block only uses blocks from the layers below it, and only those that `sh tools
 | `workshop_game` | `assets`, `decor`, `engine`, `game`, `workshop_base`, `workshop_decor` |
 | `workshop_first` | `assets`, `decor`, `game`, `spritecollab`, `workshop_base` |
 | `workshop_emulator` | `emulator`, `shell`, `workshop_base`, `workshop_first` |
-| `workshop_home` | `decor`, `film`, `workshop_base`, `workshop_decor` |
+| `workshop_home` | `assets`, `decor`, `film`, `preview`, `spritecollab`, `workshop_base`, `workshop_decor` |
 | `workshop_tools` | `assets`, `decor`, `film`, `media`, `spritecollab`, `workshop_base` |
 | `workshop` | `assets`, `decor`, `film`, `workshop_base`, `workshop_decor`, `workshop_dungeon`, `workshop_emulator`, `workshop_film`, `workshop_first`, `workshop_game`, `workshop_home`, `workshop_resources`, `workshop_script`, `workshop_tools` |
 <!-- end of rule -->

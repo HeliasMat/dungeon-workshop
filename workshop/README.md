@@ -6,6 +6,8 @@ cargo run --offline -p workshop [file.film | file.decor]
 
 One window, seven spaces (Home, Game, Film, Decor, Dungeon, Resources, Emulator), each with its panels docked as in a studio (the Game's columns and the Dungeon's editors take the whole window).
 
+**Made for films and decors first.** The Workshop opens on the Home (after the first launch, with a welcome panel: **+ New Film**, **+ New Decor**, the last files opened, the first film's steps, [docs/FIRST_FILM.md](../docs/FIRST_FILM.md)). The game-making spaces (Game, Dungeon, Emulator) show only when **Settings › Show the Game-Making Spaces** is on (`game_spaces = on` in the settings file): off for someone new, on by default for whoever already used them (a game in `games/`, or any setting already written: the emulator's paths or keys). The space looked at always shows.
+
 ## Game
 
 A game of one's own (a folder of its own, `games/<name>/<name>.game`, see `games/README.md`; `workshop_game/`), in three columns (**+ New Game** makes its folder, its `.game` and its `films/`, `decors/`, `dungeons/`… folders; a dungeon of the game's own opens in the Dungeon space only if the library has one of that name):
@@ -181,7 +183,17 @@ The whole Decor space (Scene, Hierarchy, Inspector, Library, terrains, walls, wa
 
 ## Home
 
-The project at a glance (`workshop_home/`).
+The project at a glance (`workshop_home/`). In its bar: **+ New Film**, **+ New Decor**, **Your First Film in 5 Minutes** (the welcome panel again; Help has it too), **Games** (with the game-making spaces shown).
+
+**New Film** (`workshop_home/src/new_film/`): four steps on one window, Back and Next under them, a step done clicked to go back to it:
+1. **Place**: your decors (their picture), the places films use most, then every place of the game by kind (`library/tables/place_kinds.txt`), searched by name; a double-click goes on.
+2. **Cast**: the Pokémon with a body (the game's, those imported from SpriteCollab, the variants), their portraits, searched by name or Pokédex number; two to six, numbered in order (the first two lead), a click on a name takes it out. Searched, SpriteCollab's Pokémon not imported yet are offered too: a click opens SpriteCollab on it.
+3. **Start**: A Conversation, An Arrival, A Chase, Two Moments, Empty Stage; beside them, the lines it writes with this cast.
+4. **Title** (one offered), the file it will be, **Create the Film**.
+
+The film plays at once: `scene:` with its cast, a `put x y facing …` for each one (where the scene's own placing stands them on its ground, turned to one another: the scene played once, on a thread, to know), the place's `music`, a first `moment:` with its `frame`, the start's lines. It opens in the Film space, on its staging.
+
+**New Decor** (`workshop_home/src/new_decor.rs`): a title, then what it starts from: **A Place of the Game** (made again whole, each element to move or take out: `like <level>`), **Its Ground Only** (the place's picture without its elements, locked under all one lays), or **An Empty Page** (256 × 192, 512 × 384, 768 × 576). A decor made like a place (or laid on its backdrop) opens with the Terrain brush on that place's own tiles.
 - **The Project** (on the left): Recent, ★ Favourites, Films, Decors, Drawn Objects (a click: in the Resources), Shared Recipes (`uses`, `include`), Bin; how many of each.
 - **The Files** (in the middle):
   - **Open…**: all the films and decors, by their title; **Search the project** (Ctrl+K): the titles, the files, the places, those who play in them, and the words of their text;
@@ -396,7 +408,7 @@ Adding a panel, a space or a part: [docs/ADD_A_WORKSHOP_PANEL.md](../docs/ADD_A_
 | Crate, module | What it holds |
 |---|---|
 | `workshop/`: `main.rs`, `app.rs` | the window: its menus, the spaces, their docked panels, the bar of state |
-| `workshop_home/` | the Home: its shelves, the files as a table or a grid, the Preview and what is done with a file there (`open` asks the window for its space) |
+| `workshop_home/` | the Home: its shelves, the files as a table or a grid, the Preview and what is done with a file there (`open` asks the window for its space); New Film (`new_film/`: its text in `mod.rs`, its window in `ui.rs`) and New Decor (`new_decor.rs`) |
 | `workshop_first/` | the first launch: the user's copy of the game checked (`check_rom`), the resources extracted step by step (`Phase`, `Event`), what goes wrong said for a person; the programs beside the Workshop (`program_beside`) |
 | `workshop_game/` | the Game space: `lib.rs` (the game open, its three columns), `game.rs` (a `.game` file as the space reads and writes it: its card, its chapters as boxes) |
 | `workshop_tools/` | the Tools' windows: `sprites.rs` (SpriteCollab looked through, imported), `tilequant.rs` (an image converted to the console's rules) |
@@ -427,7 +439,7 @@ The Workshop's `main` reads, once, what it is launched with (`workshop_base/src/
 | `DUNGEON_DATA=<folder>` | the game's files read from there (else the root's `data/`) |
 | `DUNGEON_SPRITECOLLAB=<folder>` | the clone of SpriteCollab the Tools read (else `<root>/sources/spritecollab`) |
 | `DUNGEON_FILM_LANGUAGE=fr` | the films said in that language (a line that does not give it: in English) |
-| `WORKSHOP_SETTINGS=<file>` | the Workshop's settings there (else `dungeon_workshop/settings.txt` in the system's settings folder) |
+| `WORKSHOP_SETTINGS=<file>` | the Workshop's settings there (else `dungeon_workshop/settings.txt` in the system's settings folder): the emulator's paths and keys, `game_spaces = on\|off` |
 | `WORKSHOP_LIBRETRO_CORE=<file>` | the libretro core the Emulator runs (before the settings' own) |
 | `SKYTEMPLE_ARMIPS_EXEC=<armips>` | what Play This Film on DS assembles with (before the settings' own) |
 
@@ -459,6 +471,8 @@ The root (`library/`, `games/`, `film/recipes/`) is the first folder up from whe
 | `WORKSHOP_CREATE=fight:<word>` | that boss fight open in its editor (with `WORKSHOP_TRY=1`: tried) |
 | `WORKSHOP_BOSS_HP=20` | the fight alone tried with the boss at 20 % of its HP |
 | `WORKSHOP_FILE=my_film` | that file chosen in the Home |
+| `WORKSHOP_NEW=film:3:beach:pikachu,piplup:chase` | the New Film window open at that step (1 to 4), that place, that cast, that start (`talk`, `arrival`, `chase`, `moments`, `empty`) chosen; `decor[:<place>]`: the New Decor window |
+| `WORKSHOP_WELCOME=1` | the welcome panel, as after the first launch |
 | `WORKSHOP_PANELS=layout,wiki` | the Layout, the Wiki open beside the Script |
 | `WORKSHOP_WIKI=walk\|walk:play\|joy:source\|search:rain\|all` | the Script's Wiki open on that page (its example played, its recipe's source shown), searching that, or on all the words (`all:ds`: DS only, in DS Mode); in a picture it shows over the window |
 | `WORKSHOP_COMPLETE=1` | with `WORKSHOP_LINE=n`: the cursor at the end of that line, what may be typed there offered |

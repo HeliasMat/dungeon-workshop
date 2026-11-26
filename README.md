@@ -2,7 +2,7 @@
 
 **A workshop for making your own dungeon-crawling games**, in the spirit of the "Mystery Dungeon" games: cutscenes written like a screenplay, villages to wander around, turn-based dungeons, boss fights, a game that saves. All in Rust, with a complete editor.
 
-**New here? [Your first game in 30 minutes](docs/TUTORIAL.md)**: from the first launch to a game sent to a friend, step by step.
+**New here? [Your first film in 5 minutes](docs/FIRST_FILM.md)**: New Film, a place, a cast, two lines, played, someone moved on the stage, a video. Then, to make a whole game of your films, [your first game in 30 minutes](docs/TUTORIAL.md): from the first launch to a game sent to a friend, step by step.
 
 > **No game assets in this repository.** Dungeon Workshop contains no pictures, sounds, music, dialogue or scripts from any published game, only the names that refer to them (see [CREDITS.md](CREDITS.md#what-is-not-here)). On first launch, it extracts them from **your own copy** of the *Pokémon Mystery Dungeon: Explorers of Sky* cartridge (a `.nds` file you dumped yourself). They stay on your computer. Use only a cartridge you own and dumped yourself; whether making such a copy is allowed depends on the laws of your country, and it is up to you to check them. This project does not provide, and will not help you find, any game file.
 >
@@ -126,6 +126,7 @@ A `.dwpack` holds the game's own files (and those of the library it uses), never
 
 ## Documentation
 
+- [docs/FIRST_FILM.md](docs/FIRST_FILM.md): your first film in 5 minutes; [docs/TUTORIAL.md](docs/TUTORIAL.md): your first game in 30 minutes.
 - [film/FILMS.md](film/FILMS.md): the film language, all its words, films you can play, dungeons and boss fights.
 - [workshop/README.md](workshop/README.md): the Workshop, panel by panel.
 - [decor/DECORS.md](decor/DECORS.md): the decor language.
