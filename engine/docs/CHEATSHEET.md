@@ -4,7 +4,7 @@ One command per line, fields separated by **tabs**. Each one is detailed in `COM
 `<who>`: `target` (the one Enter found), `0` the hero, `10` the partner, `m<species>` a Pokémon (`m133` Eevee), `m98.1` a second one of the same species, `i<item>` an item, `p<n>` an invisible point, or a name given by `cast`.
 `<x> <y>`: pixels, or `@spot` (given by `spot`), or `@spot+dx-dy` beside it, or `{name}` (a number, put in when the line plays).
 `<dir>`: by its name (never a figure, which is someone): `down`, `downright`, `right`, `upright`, `up`, `upleft`, `left`, `downleft`.
-`<face>`: a number, `-`, or `normal happy pain angry worried sad crying shouting teary_eyed determined joyous inspired surprised dizzy sigh stunned`.
+`<face>`: a number, `-`, or `normal happy pain angry worried sad crying shouting teary_eyed determined joyous inspired surprised dizzy sigh stunned special_one special_two special_three special_four` (the last four: a face of its own some species have, SpriteCollab's Special0 to Special3).
 
 **File** — `# comment` · `include <file>` · `cast <name> <who>` · `spot <name> <x> <y>` · `group <name> <a,b,c>` · `define <name>` … `enddef` · `do <name> <values>` (`$1`, `$2?default`) · `repeat <n>` … `endrepeat` · `each <a,b|group> <command with $>`
 **Structure** — `event 0 <NAME> 1 1` · `scene <place> <name>` · `backdrop <place> 1 -` · `end` · `banner <text>`

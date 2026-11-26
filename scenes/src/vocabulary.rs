@@ -70,6 +70,11 @@ pub static POKEMON: Vocabulary = Vocabulary {
         ("dizzy", 13),
         ("sigh", 16),
         ("stunned", 17),
+        // (The community's Special0 to Special3: a face of its own some species have.)
+        ("special_one", 14),
+        ("special_two", 15),
+        ("special_three", 18),
+        ("special_four", 19),
     ],
     // (By the original's numbers. `leaping_faces`: joy, surprise.)
     face_emotes: &[(3, 94), (4, 92), (5, 171), (6, 171), (8, 171), (1, 93), (10, 93), (12, 88), (13, 89), (16, 92), (17, 172)],

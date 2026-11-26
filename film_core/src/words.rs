@@ -30,7 +30,7 @@ pub const SPOTS: [(&str, (i32, i32)); 9] = [
 ];
 
 /// The words of a face; the face.
-pub const FACES: [(&str, &str); 16] = [
+pub const FACES: [(&str, &str); 20] = [
     ("normal", "normal"),
     ("happy", "happy"),
     ("joyous", "joyous"),
@@ -47,6 +47,10 @@ pub const FACES: [(&str, &str); 16] = [
     ("dizzy", "dizzy"),
     ("sigh", "sigh"),
     ("stunned", "stunned"),
+    ("special_one", "special_one"),
+    ("special_two", "special_two"),
+    ("special_three", "special_three"),
+    ("special_four", "special_four"),
 ];
 
 pub const EMOTIONS: [(&str, &str); 12] = [

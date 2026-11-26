@@ -262,6 +262,8 @@ The library's sequences (17) play whole emotions: `do joy eevee`, `do fear pika`
 | `joyous` | 10 | `inspired` | 11 |
 | `surprised` | 12 | `dizzy` | 13 |
 | `sigh` | 16 | `stunned` | 17 |
+| `special_one` | 14 | `special_two` | 15 |
+| `special_three` | 18 | `special_four` | 19 |
 
 With `mood` and `autoface`, a whole conversation is written with `line <who> - <text>`: each turns, reacts and is shown on their own. A face shows: `angry` anger, `worried` sweat, `sad` / `crying` / `teary_eyed` tears, `happy` / `joyous` notes, `surprised` "!", `dizzy` "?", `sigh` "...", `stunned` the shock.
 
