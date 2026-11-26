@@ -26,7 +26,7 @@ the Home's bar, or File › New Film…). A window of four steps opens.
    lines it will write, with your cast.
 4. **Title**: a title is offered; change it if you like. Click **Create the Film**.
 
-**You see** the Film space: the Script on the left, the Scene in the middle, the film playing.
+**You see** the Film space: the Script on the left, the Scene in the middle, the Assets on the right, the film playing.
 Everyone stands on the place's ground, turned to one another, framed, with the place's music.
 The film's first lines say so:
 
@@ -61,13 +61,22 @@ often with a fix (Ctrl+.). F1 on a word opens its page in the Wiki, with an exam
 Timeline below shows each line in time, and a click there goes to that moment. Your two lines
 play as soon as they are written.
 
-## 4. Move someone on the stage (1 minute)
+## 4. Move someone on the stage, add someone (1 minute)
 
 Put the cursor on a `put` line at the top: the Scene shows the stage as it stands there (no fade,
 no title over it: *Staging*). Drag Piplup somewhere else: their `put` line is written again with
 the new place. Click on someone and the dots around their feet turn them (`facing`). In
 **Whole Place**, the camera's frame is a rectangle you can drag, and a corner of it zooms.
 Ctrl+Z undoes each change.
+
+**Someone new, a face, a song, without typing.** The **Assets** on the right hold what a film is
+made with. Drag a Pokémon from its **Pokémon** tab onto the Scene: it joins the scene's cast and is
+put there, facing the nearest (`eevee put 400 210 facing piplup`). Click Piplup on the Scene, then
+the **Faces** tab: drag *surprised* onto Piplup's line in the Script, and it says it surprised; the
+**Gestures** tab plays each of Piplup's gestures as the pointer rests on it: drag one onto Piplup.
+In **Music**, rest the pointer on a song to hear it, and drag it onto a line (`music …`). A
+double-click on any of them writes it at the Script's cursor. (View › Add Panel opens or closes the
+panels; View › Default Layout puts them back.)
 
 ## 5. A video of it (30 seconds)
 
