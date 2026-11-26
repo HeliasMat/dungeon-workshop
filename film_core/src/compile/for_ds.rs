@@ -141,9 +141,10 @@ fn words(film: &mut Film, lines: &[(usize, &str)]) {
 const BUBBLE_LINE: &str = "(bubble)";
 
 /// `R-DS-SPECIES`: a Pokémon or a form the ROM has no sprite for (one
-/// SpriteCollab adds, numbered past Sky's): drawn as its base species, or
-/// as a stand-in, until its sprites are put in the ROM. Told on the first
-/// line that names it.
+/// SpriteCollab adds, numbered past Sky's, with no sheets in the data to put
+/// in the ROM): drawn as its base species, or as a stand-in. One whose
+/// sheets the data has is put in the ROM by `patch_rom.py`: nothing told.
+/// Told on the first line that names it.
 fn species(film: &mut Film, lines: &[(usize, &str)]) {
     let mut actors: Vec<(String, String)> = film.actors.iter().map(|(name, code)| (name.clone(), code.clone())).collect();
     actors.sort();
@@ -151,7 +152,7 @@ fn species(film: &mut Film, lines: &[(usize, &str)]) {
         let Some(Who::Monster(species) | Who::Another { species, .. }) = Who::parse(&code) else { continue };
         let drawn = drawn_on_ds(&film.tables.data, species);
         let shown = match drawn {
-            Drawn::Own => continue,
+            Drawn::Own | Drawn::Added(_) => continue,
             Drawn::Base(base) => format!("a form SpriteCollab adds: drawn as {}, its base species", monster_name(film, base)),
             Drawn::StandIn => {
                 format!("a Pokémon Sky doesn't have: drawn as a stand-in, {} “?”, its name said in its lines", monster_name(film, crate::ds::STAND_IN))
@@ -162,7 +163,7 @@ fn species(film: &mut Film, lines: &[(usize, &str)]) {
             (!trimmed.starts_with('#')).then(|| word_at(lines, number, &name).map(|bytes| (number, bytes))).flatten()
         });
         let Some((number, bytes)) = first else { continue };
-        let message = format!("“{name}” (species {species}) on DS: {shown}, the ROM having no sprite of its own for it yet");
+        let message = format!("“{name}” (species {species}) on DS: {shown}, the data having no sheets of its own to put in the ROM");
         film.problems.push(Diagnostic::at(number, message).as_remark().on(Some(bytes)).coded(codes::DS_SPECIES));
     }
 }

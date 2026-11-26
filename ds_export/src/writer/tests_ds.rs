@@ -49,6 +49,30 @@ fn a_species_the_rom_lacks_is_its_base_or_the_stand_in_told() {
     assert!(!zorua.is_empty());
 }
 
+/// A Pokémon SpriteCollab adds whose sheets the data has is put in the ROM:
+/// itself on its actor, its portrait shown, the one drawn instead kept for
+/// `patch_rom.py`, nothing told as a loss.
+#[test]
+fn a_species_with_its_sheets_is_put_in_the_rom() {
+    let folder = std::env::temp_dir().join(format!("ds_export_added_{}", std::process::id()));
+    std::fs::create_dir_all(folder.join("extra").join("portraits")).expect("a folder");
+    std::fs::create_dir_all(folder.join("rom")).expect("a folder");
+    // (Grookey's walk and idle, as the dungeons' sheets: 0 and 1.)
+    std::fs::write(folder.join("extra").join("sprites.txt"), "2810\t0\t32\t56\t6,4\t0\t0\n2810\t1\t24\t40\t16,16\t0\t0\n").expect("written");
+    std::fs::write(folder.join("extra").join("portraits").join("2810_0.png"), b"").expect("written");
+    let data = folder.to_string_lossy().into_owned();
+    let game = game(&data);
+    let mut writer = Writer::new(&game);
+    let grookey = Who::Monster(2810);
+    writer.film_names.insert(grookey, "grookey".to_string());
+    let actor = writer.actor(grookey).expect("an actor");
+    assert_eq!(writer.actors[&grookey].species, Some(2810));
+    assert_eq!(writer.added.get(&2810), Some(&::film::ds::STAND_IN));
+    assert!(writer.told.is_empty(), "{:?}", writer.told);
+    writer.say(4, None, Some(grookey), Some(0), "Hi.");
+    assert!(writer.body.contains(&format!("message_SetFace({actor}, FACE_NORMAL")), "{}", writer.body);
+}
+
 /// A pose no sprite of Sky's plays (Rotate) is the nearest every sprite
 /// has, a hop, told by species: never left out.
 #[test]

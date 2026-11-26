@@ -148,6 +148,10 @@ pub(crate) struct Writer<'a> {
     /// The face of each line said in a bubble, by its line (the bubble's
     /// beat has none: read from the line's brackets).
     pub(crate) bubble_faces: HashMap<i32, u16>,
+    /// The species SpriteCollab adds the film casts, put in the ROM from
+    /// their sheets (`patch_rom.py`), and who each is drawn as where that
+    /// fails (its base, or the stand-in).
+    pub(crate) added: BTreeMap<u16, u16>,
 }
 
 /// A frame of so many at most is of a few: they are never left out.
@@ -264,6 +268,7 @@ impl<'a> Writer<'a> {
             passage: None,
             values: HashMap::new(),
             instead_poses: BTreeMap::new(),
+            added: BTreeMap::new(),
             film_names: HashMap::new(),
             bubble_faces: HashMap::new(),
         }
@@ -432,15 +437,17 @@ impl<'a> Writer<'a> {
     /// chance, never in silence.
     fn drawn(&mut self, who: Who, species: u16) -> Drawn {
         let drawn = drawn_on_ds(&self.game.data, species);
-        if drawn != Drawn::Own {
+        if let Drawn::Added(instead) = drawn {
+            self.added.insert(species, instead);
+        } else if drawn != Drawn::Own {
             let name = self.film_names.get(&who).cloned().unwrap_or_else(|| self.game.name(species));
             let told = match drawn {
                 Drawn::Base(base) => format!(
-                    "{name} (species {species}, a form SpriteCollab adds): drawn as {}, its base species, on DS (the ROM has no sprite of its own for it yet)",
+                    "{name} (species {species}, a form SpriteCollab adds): drawn as {}, its base species, on DS (the data has no sheets of its own for it)",
                     self.game.name(base)
                 ),
                 _ => format!(
-                    "{name} (species {species}, a Pokémon Sky doesn't have): drawn as a stand-in, {} “?”, on DS, its name said in its lines (the ROM has no sprite for it yet)",
+                    "{name} (species {species}, a Pokémon Sky doesn't have): drawn as a stand-in, {} “?”, on DS, its name said in its lines (the data has no sheets for it)",
                     self.game.name(STAND_IN)
                 ),
             };

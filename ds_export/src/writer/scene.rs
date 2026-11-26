@@ -348,6 +348,7 @@ impl Writer<'_> {
         next.instead_poses = std::mem::take(&mut self.instead_poses);
         next.film_names = std::mem::take(&mut self.film_names);
         next.bubble_faces = std::mem::take(&mut self.bubble_faces);
+        next.added = std::mem::take(&mut self.added);
         *self = next;
     }
 

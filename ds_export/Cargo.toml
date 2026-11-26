@@ -18,6 +18,8 @@ game = { path = "../game" }
 preview = { path = "../preview" }
 rules = { path = "../rules" }
 scenes = { path = "../scenes" }
+# The sheets of the Pokémon SpriteCollab adds, in SpriteBot's layout, for the ROM.
+spritecollab = { path = "../spritecollab" }
 serde_json.workspace = true
 image.workspace = true
 png = "0.18"

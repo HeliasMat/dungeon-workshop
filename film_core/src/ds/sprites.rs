@@ -1,6 +1,7 @@
 //! Sky's sprites, as the export and the DS mode read them: which species
-//! the game has (`drawn_on_ds`: a form SpriteCollab adds is drawn as its
-//! base species, a Pokémon of a later generation as a stand-in), and which
+//! the game has (`drawn_on_ds`: one SpriteCollab adds is put in the ROM
+//! from its sheets; without them a form is drawn as its base species, a
+//! Pokémon of a later generation as a stand-in), and which
 //! pose each species' own sprite shows for a group of the engine's
 //! (`pose_on_ds`: its own group of that name, else the nearest one every
 //! sprite has).
@@ -24,6 +25,10 @@ pub const STAND_IN: u16 = 228;
 pub enum Drawn {
     /// Sky has it.
     Own,
+    /// One SpriteCollab adds, whose sheets the data has: put in the ROM
+    /// from them (`tools/ds/add_monsters.py`), drawn as itself, or as the
+    /// species given (its base, or the stand-in) where that fails.
+    Added(u16),
     /// A form SpriteCollab adds (`pichu_spiky`): as its base species.
     Base(u16),
     /// A Pokémon Sky doesn't have (a later generation's): as [`STAND_IN`].
@@ -34,7 +39,7 @@ impl Drawn {
     /// The species the DS shows.
     pub fn species(self, asked: u16) -> u16 {
         match self {
-            Drawn::Own => asked,
+            Drawn::Own | Drawn::Added(_) => asked,
             Drawn::Base(base) => base,
             Drawn::StandIn => STAND_IN,
         }
@@ -54,8 +59,19 @@ fn bases(data: &str) -> Arc<HashMap<u16, u16>> {
 }
 
 /// How that species is drawn on the DS (`data`: the data folder, its
-/// `variants.txt`): itself, its base species, or the stand-in.
+/// sheets and `variants.txt`): itself (Sky's, or added from its sheets),
+/// its base species, or the stand-in.
 pub fn drawn_on_ds(data: &str, species: u16) -> Drawn {
+    match without_sheets(data, species) {
+        Drawn::Own => Drawn::Own,
+        instead if added_groups(data).contains_key(&species) => Drawn::Added(instead.species(species)),
+        instead => instead,
+    }
+}
+
+/// How that species is drawn where its sheets aren't put in the ROM: Sky's
+/// own, its base species, or the stand-in.
+pub fn without_sheets(data: &str, species: u16) -> Drawn {
     if species < SKY_SPECIES {
         return Drawn::Own;
     }
@@ -79,12 +95,41 @@ pub const OWN_ORDER: &str = "extra/ds_animations.txt";
 
 type Groups = HashMap<u16, Vec<(u16, String)>>;
 
-/// Each species' own groups and their names (`OWN_ORDER`).
+/// The groups of the sheets the data has for the species SpriteCollab adds
+/// (`sprites.txt`'s rows past Sky's species), as their sprite put in the ROM
+/// numbers them: a scene's sheet is its group past the dungeons' five, the
+/// dungeons' own their group (as `spritecollab::export` writes them).
+fn added_groups(data: &str) -> Arc<Groups> {
+    static CACHE: OnceLock<Mutex<HashMap<String, Arc<Groups>>>> = OnceLock::new();
+    const DUNGEON: [u16; 5] = [0, 7, 6, 5, 1];
+    kept(&CACHE, data, || {
+        let mut groups: Groups = HashMap::new();
+        for line in assets::data::text(data, "sprites.txt").lines() {
+            let mut fields = line.split('\t');
+            let (Some(Ok(species)), Some(Ok(index))) = (fields.next().map(str::parse::<u16>), fields.next().map(str::parse::<u16>)) else { continue };
+            if species < SKY_SPECIES {
+                continue;
+            }
+            let group = index.checked_sub(5).unwrap_or(DUNGEON[usize::from(index.min(4))]);
+            let own = groups.entry(species).or_default();
+            if !own.iter().any(|(at, _)| *at == group) {
+                own.push((group, group_name(group).to_string()));
+            }
+        }
+        // (Walking and standing, or no sprite the game can show.)
+        groups.retain(|_, own| own.iter().any(|(at, _)| *at == 0) && own.iter().any(|(at, _)| *at == 7));
+        groups
+    })
+}
+
+/// Each species' own groups and their names (`OWN_ORDER`, and the sheets of
+/// the species added from SpriteCollab's).
 fn own_groups(data: &str) -> Arc<Groups> {
     static CACHE: OnceLock<Mutex<HashMap<String, Arc<Groups>>>> = OnceLock::new();
     kept(&CACHE, data, || {
         let told = std::fs::read_to_string(game_file(data, OWN_ORDER)).unwrap_or_default();
-        told.lines()
+        let mut own: Groups = told
+            .lines()
             .filter(|line| !line.starts_with('#'))
             .filter_map(|line| {
                 let (species, groups) = line.split_once('\t')?;
@@ -92,7 +137,9 @@ fn own_groups(data: &str) -> Arc<Groups> {
                     groups.split(',').filter_map(|pair| pair.split_once('=')).filter_map(|(at, name)| Some((at.parse().ok()?, name.to_string()))).collect();
                 Some((species.parse().ok()?, groups))
             })
-            .collect()
+            .collect();
+        own.extend(added_groups(data).iter().map(|(species, groups)| (*species, groups.clone())));
+        own
     })
 }
 
@@ -290,5 +337,6 @@ mod tests {
         assert_eq!(drawn_on_ds("", 5257), Drawn::StandIn);
         assert_eq!(drawn_on_ds("", 2495).species(2495), STAND_IN);
         assert_eq!(Drawn::Base(172).species(5257), 172);
+        assert_eq!(Drawn::Added(228).species(2810), 2810);
     }
 }

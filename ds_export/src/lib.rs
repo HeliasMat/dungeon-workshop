@@ -3,8 +3,10 @@
 //! copy of the user's own ROM (docs/DS.md).
 //!
 //! - [`film()`]: a film as a cutscene of the original game, written in
-//!   ExplorerScript (SkyTemple's language for Sky's scripts), and each decor
-//!   its scenes are in as a map of Sky's of its own, beside it.
+//!   ExplorerScript (SkyTemple's language for Sky's scripts), each decor
+//!   its scenes are in as a map of Sky's of its own, and each Pokémon
+//!   SpriteCollab adds that it casts as its sheets in SpriteBot's layout,
+//!   beside it.
 //! - [`dungeon()`]: a dungeon of the Workshop (and the fight it ends with) as
 //!   the rules read it, in JSON, for `tools/ds/dungeon.py`.
 //! - [`table()`]: every word of the vocabulary and what it becomes on the DS.
@@ -148,8 +150,9 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
     if let Some(folder) = out.parent() {
         let _ = std::fs::create_dir_all(folder);
     }
-    // The decors the scenes are in, each as a map beside the export.
-    let maps = decor_maps(&game, film.tables, &text, out, tell)?;
+    // The decors the scenes are in, each as a map beside the export; the
+    // Pokémon SpriteCollab adds, each as its sheets.
+    let maps = decor_maps(&game, film.tables, &text, out, tell)? + &added_monsters(&game, &writer.added, out, tell)?;
     if !maps.is_empty() {
         let at = text.find('\n').map_or(0, |end| end + 1);
         text.insert_str(at, &maps);
@@ -229,6 +232,33 @@ fn decor_maps(game: &Game, tables: &Tables, text: &str, out: &Path, tell: &mut d
             map.height,
             files.join(" ")
         );
+    }
+    Ok(lines)
+}
+
+/// Each Pokémon SpriteCollab adds that the film casts (`added`: its
+/// species, who it is drawn as where it can't be put in the ROM), its
+/// sheets and faces written beside `out` in SpriteBot's layout
+/// (`<out>.monster<species>/sprite/AnimData.xml`..., `portrait/<Face>.png`,
+/// `spritecollab::export`), for `tools/ds/add_monsters.py` to make a
+/// monster of the ROM's of: its line, `// ds-export monster <species>
+/// <instead> <folder> <name>`.
+fn added_monsters(game: &Game, added: &BTreeMap<u16, u16>, out: &Path, tell: &mut dyn FnMut(String)) -> Result<String, String> {
+    let mut lines = String::new();
+    let places = spritecollab::Places::new(&game.data, Path::new(""));
+    for (species, instead) in added {
+        let folder = format!("{}.monster{species}", out.file_name().and_then(|name| name.to_str()).unwrap_or("film"));
+        let at = out.with_file_name(&folder);
+        // (Of an export before: what this one writes only.)
+        let _ = std::fs::remove_dir_all(&at);
+        let written = spritecollab::export(&places, u32::from(*species), &at)?;
+        // (A form is named as its base species; a Pokémon of its own by its name.)
+        let name = match ::film::ds::without_sheets(&game.data, *species) {
+            ::film::ds::Drawn::Base(base) => game.name(base),
+            _ => game.name(*species),
+        };
+        tell(format!("  {name} (species {species}): put in the ROM from SpriteCollab's sheets ({written}); drawn as {} where that fails", game.name(*instead)));
+        let _ = writeln!(lines, "// ds-export monster {species} {instead} {folder} {name}");
     }
     Ok(lines)
 }

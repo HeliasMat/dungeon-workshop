@@ -128,8 +128,9 @@ fn what_the_export_leaves_out_is_told() {
     assert!(told("scene: beach krabby pikachu\nkrabby shadow off\n", codes::DS_LEFT).is_empty());
 }
 
-/// A form SpriteCollab adds is drawn as its base species on DS: said where
-/// it is first named (where the data has the form).
+/// A form SpriteCollab adds is put in the ROM where the data has its sheets
+/// (nothing told), else drawn as its base species on DS: said where it is
+/// first named (where the data has the form).
 #[test]
 fn a_form_the_rom_lacks_is_told_as_its_base() {
     let tables = crate::tests::tables();
@@ -138,6 +139,10 @@ fn a_form_the_rom_lacks_is_told_as_its_base() {
     }
     let film = "for ds\nscene: beach pichu_spiky\npichu_spiky: Mine!\n";
     let drawn = told(film, codes::DS_SPECIES);
+    if matches!(film_core::ds::drawn_on_ds(&tables.data, 5257), film_core::ds::Drawn::Added(_)) {
+        assert!(drawn.is_empty(), "put in the ROM from its sheets: {drawn:?}");
+        return;
+    }
     assert_eq!(drawn.len(), 1, "{:?}", coded(film));
     assert!(drawn[0].contains("“pichu_spiky”") && drawn[0].contains("drawn as Pichu"), "{drawn:?}");
     assert!(told("for ds\nscene: beach pichu\npichu: Mine!\n", codes::DS_SPECIES).is_empty());

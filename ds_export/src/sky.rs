@@ -41,7 +41,14 @@ impl Game {
         };
         let levels = rows("levels.txt").into_iter().filter_map(|row| Some((row.first()?.parse().ok()?, row.get(1)?.clone()))).collect();
         let actors = rows("entities.txt").into_iter().filter_map(|row| Some((row.get(1)?.clone(), row.get(2)?.parse().ok()?))).collect();
-        let names = rows("monsters.txt").into_iter().filter_map(|row| Some((row.first()?.parse().ok()?, row.get(1)?.clone()))).collect();
+        // (The names of Sky's and of the Pokémon SpriteCollab adds.)
+        let names = assets::data::text(data, "monsters.txt")
+            .lines()
+            .filter_map(|line| {
+                let (number, name) = line.split_once('\t')?;
+                Some((number.parse().ok()?, name.split('\t').next()?.to_string()))
+            })
+            .collect();
         _ = DATA.set(data.to_string());
         Game { levels, actors, data: data.to_string(), move_types, names, decors: HashMap::new() }
     }
@@ -60,9 +67,11 @@ impl Game {
     }
 
     /// Whether that species has that portrait (none known for 0: the hero
-    /// and the partner, whose species the player chose).
+    /// and the partner, whose species the player chose): Sky's own, or, for
+    /// one SpriteCollab adds, the data's, put in the ROM with its sprite.
     pub(crate) fn has_face(&self, species: u16, face: u16) -> bool {
-        species == 0 || game_file(&self.data, &format!("rom/portraits/{species}_{face}.png")).exists()
+        let layer = if species < ::film::ds::SKY_SPECIES { "rom/" } else { "" };
+        species == 0 || game_file(&self.data, &format!("{layer}portraits/{species}_{face}.png")).exists()
     }
 }
 
