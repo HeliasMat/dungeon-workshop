@@ -613,7 +613,7 @@ fn gestured(film: &mut Film, line: &Line) -> bool {
 fn played(film: &mut Film, line: &Line, who: &str, name: &str) -> Option<i64> {
     let name = name.to_string();
     if matches!(name.as_str(), "spin" | "dance" | "twirl") {
-        film_core::groups::aura::moved(film, &who, film_core::groups::aura::Mood::Dancing);
+        film_core::groups::aura::moved(film, who, film_core::groups::aura::Mood::Dancing);
     }
     // (`pose a sleep`, said with no way of playing it: the engine's own pose, lying asleep.)
     let said_how = line.args.has("once") || line.args.has("loop") || line.args.has("hold");
@@ -625,7 +625,7 @@ fn played(film: &mut Film, line: &Line, who: &str, name: &str) -> Option<i64> {
         _ => None,
     };
     if let Some(pose) = own.filter(|_| !said_how) {
-        film.on(&who, |one| emit::pose(one, pose));
+        film.on(who, |one| emit::pose(one, pose));
         return Some(0);
     }
     let (group, by_default) = pose_named(&name)?;
@@ -636,7 +636,7 @@ fn played(film: &mut Film, line: &Line, who: &str, name: &str) -> Option<i64> {
         _ => by_default,
     };
     let mut lasts = 0;
-    for one in film.members(&who) {
+    for one in film.members(who) {
         // (An animation his sprite lacks: the nearest it has, else he stands, told.)
         let Some(group) = animation_had(film, &one, group, line.number) else {
             continue;
