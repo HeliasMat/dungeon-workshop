@@ -188,6 +188,7 @@ def core_ready(paths, core, tell=print):
     command = [program('emulator'), core, paths.base, str(MELON_READY), shot, '--press', MELON_PRESS, '--state-out', state + '.tmp']
     subprocess.run(command, cwd=ROOT, check=True, capture_output=True)
     os.replace(state + '.tmp', state)
+    os.remove(shot)
     tell(f'  ready state: {state} ({time.time() - started:.1f} s)')
     return state
 
