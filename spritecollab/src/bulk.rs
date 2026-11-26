@@ -347,8 +347,7 @@ pub fn import_all(places: &Places, over: Over, progress: &mut dyn FnMut(&str)) -
                     whom.push((of, false));
                     totals.species += 1;
                 } else {
-                    let told = forms.get(&form).map(|name| plain_word(name)).filter(|name| !name.is_empty()).unwrap_or_else(|| format!("form{form}"));
-                    let word = super::variant_word(&format!("{species}_{told}"));
+                    let word = form_word(&species, &forms, form);
                     let number = *words.entry(word.clone()).or_insert_with(|| {
                         next += 1;
                         next - 1
@@ -389,6 +388,115 @@ pub fn import_all(places: &Places, over: Over, progress: &mut dyn FnMut(&str)) -
     write_credits(places)?;
     progress("credits written to data/extra/spritecollab_credits.txt (CC BY-NC 4.0: non-commercial use, credit given)");
     Ok(totals)
+}
+
+/// The word a form takes as a variant (`vulpix_alola`, `eevee_alternate_two`), of its species' name and its forms' names.
+fn form_word(species: &str, forms: &BTreeMap<u32, String>, form: u32) -> String {
+    let told = forms.get(&form).map(|name| plain_word(name)).filter(|name| !name.is_empty()).unwrap_or_else(|| format!("form{form}"));
+    super::variant_word(&format!("{species}_{told}"))
+}
+
+/// The words the import gives the forms (`eevee_alternate_two`), each with its folder.
+pub fn form_words(clone: &Path) -> HashMap<String, Unit> {
+    let mut words = HashMap::new();
+    for (dex, (species, forms)) in forms_named(clone) {
+        let species = if species.is_empty() { format!("No. {dex:04}") } else { species };
+        for form in forms.keys().filter(|form| **form > 0) {
+            words.insert(form_word(&species, &forms, *form), (dex, *form));
+        }
+    }
+    words
+}
+
+/// A folder of the clone not imported yet: where it is, its species' name,
+/// its form's (none: the species itself), the variant word it will take (a form's).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Missing {
+    pub unit: Unit,
+    pub species: String,
+    pub form: String,
+    pub word: String,
+}
+
+/// Every folder of the clone with something to import that no import has
+/// done yet (`spritecollab_done.txt`): what [`import_all`] would add.
+pub fn not_imported(places: &Places) -> Vec<Missing> {
+    let clone = &places.clone;
+    let done = Done::read(places);
+    let named = forms_named(clone);
+    let mut missing = Vec::new();
+    for dex in dexes_of(clone) {
+        let (species, forms) = named.get(&dex).cloned().unwrap_or_default();
+        let species = if species.is_empty() { format!("No. {dex:04}") } else { species };
+        for form in forms_of(clone, dex).into_iter().filter(|form| !done.units.contains(&(dex, *form))) {
+            let (told, word) = if form == 0 {
+                (String::new(), String::new())
+            } else {
+                (forms.get(&form).cloned().unwrap_or_else(|| format!("Form {form}")), form_word(&species, &forms, form))
+            };
+            missing.push(Missing { unit: (dex, form), species: species.clone(), form: told, word });
+        }
+    }
+    missing
+}
+
+/// One who made a part of a sprite or a portrait: their name, where to find them, when, what.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Credit {
+    pub portrait: bool,
+    pub name: String,
+    pub contact: String,
+    pub date: String,
+    /// Still in the sprite (`CUR`), or replaced since (`OLD`).
+    pub current: bool,
+    pub what: Vec<String>,
+}
+
+/// The credits of every folder imported (`data/extra/spritecollab_credits.txt`),
+/// the authors named after `credit_names.txt` of the clone.
+pub fn credits(places: &Places) -> HashMap<Unit, Vec<Credit>> {
+    let names: HashMap<String, (String, String)> = std::fs::read_to_string(places.clone.join("credit_names.txt"))
+        .unwrap_or_default()
+        .lines()
+        .skip(1)
+        .filter_map(|line| {
+            let mut fields = line.split('\t');
+            let (name, discord, contact) = (fields.next()?.trim(), fields.next()?.trim(), fields.next().unwrap_or("").trim());
+            Some((discord.to_string(), (name.to_string(), contact.to_string())))
+        })
+        .collect();
+    let text = std::fs::read_to_string(places.extra.join("spritecollab_credits.txt")).unwrap_or_default();
+    credits_in(&text, &names)
+}
+
+/// The credits of a credits file's text, the authors named by `names` (their Discord id: name, contact).
+pub fn credits_in(text: &str, names: &HashMap<String, (String, String)>) -> HashMap<Unit, Vec<Credit>> {
+    let mut found: HashMap<Unit, Vec<Credit>> = HashMap::new();
+    for line in text.lines() {
+        let Some((head, entries)) = line.strip_prefix('#').and_then(|line| line.split_once(": ")) else { continue };
+        let Some((folder, kind)) = head.split_once(' ') else { continue };
+        let mut parts = folder.split('/');
+        let Some(dex) = parts.next().and_then(number) else { continue };
+        let Some(form) = parts.next().map_or(Some(0), number) else { continue };
+        for entry in entries.split("; ") {
+            let fields: Vec<&str> = entry.split('\t').collect();
+            if fields.len() < 5 {
+                continue;
+            }
+            let author = fields[1].trim();
+            let (name, contact) = names.get(author).cloned().unwrap_or_else(|| (author.to_string(), String::new()));
+            let what = fields[4].split(',').map(str::trim).filter(|what| !what.is_empty() && !what.ends_with('^')).map(str::to_string).collect();
+            found.entry((dex, form)).or_default().push(Credit {
+                portrait: kind == "portrait",
+                name,
+                contact,
+                date: fields[0].split(' ').next().unwrap_or_default().to_string(),
+                current: fields[2] == "CUR",
+                what,
+            });
+        }
+    }
+    found
 }
 
 /// What is imported so far written: the sheets, the lists, where it is (last: a run cut short does the rest again).
@@ -491,6 +599,36 @@ mod tests {
         assert_eq!(variants.lines().count(), 1, "{variants}");
         assert!(variants.contains("5000\t25\tpikachu_rock_star"), "{variants}");
         _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// What is not imported yet, with the word a form will take; nothing once all is imported.
+    #[test]
+    fn not_imported_then_all_imported() {
+        let (root, places) = fixture("missing");
+        let missing = not_imported(&places);
+        let units: Vec<Unit> = missing.iter().map(|one| one.unit).collect();
+        assert_eq!(units, vec![(25, 0), (25, 2), (495, 0)]);
+        assert_eq!((missing[1].form.as_str(), missing[1].word.as_str()), ("Rock_Star", "pikachu_rock_star"));
+        assert_eq!(missing[2].species, "Snivy");
+        assert_eq!(form_words(&places.clone).get("pikachu_rock_star"), Some(&(25, 2)));
+        import_all(&places, Over::Ours, &mut |_| {}).unwrap();
+        assert!(not_imported(&places).is_empty());
+        _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// The credits read: by folder, the authors named, the mirrored faces left.
+    #[test]
+    fn credits_read() {
+        let names = HashMap::from([("<@!1>".to_string(), ("Audino".to_string(), "https://github.com/audinowho".to_string()))]);
+        let text = "Sprites by…\n#0025 sprite: 2020-10-07 17:58:43.1\tCHUNSOFT\tCUR\tUnspecified\tWalk,Idle\n\
+                    #0025/0002 portrait: 2021-01-01 10:00:00.0\t<@!1>\tOLD\tPMDCollab_1\tNormal,Normal^; 2022-02-02 1:1:1.0\t<@!9>\tCUR\tPMDCollab_1\tHappy\n";
+        let credits = credits_in(text, &names);
+        assert_eq!(credits[&(25, 0)][0].name, "CHUNSOFT");
+        assert_eq!(credits[&(25, 0)][0].what, vec!["Walk", "Idle"]);
+        let form = &credits[&(25, 2)];
+        assert_eq!((form[0].name.as_str(), form[0].portrait, form[0].current, form[0].date.as_str()), ("Audino", true, false, "2021-01-01"));
+        assert_eq!(form[0].what, vec!["Normal"]);
+        assert_eq!(form[1].name, "<@!9>", "an author not named: as written");
     }
 
     /// The folders a change touches: a species', a form's, the species' shiny ones as its own.

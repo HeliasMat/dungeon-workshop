@@ -38,7 +38,7 @@ use std::path::{Path, PathBuf};
 use image::RgbaImage;
 
 mod bulk;
-pub use bulk::{Totals, fetch_all, import_all, update};
+pub use bulk::{Credit, Missing, Totals, Unit, credits, credits_in, fetch_all, form_words, import_all, not_imported, update};
 
 /// Where the community's sprites are fetched from.
 pub const REPOSITORY: &str = "https://github.com/PMDCollab/SpriteCollab";
