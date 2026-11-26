@@ -97,12 +97,6 @@ fn layout(space: Space) -> DockState<Panel> {
     }
 }
 
-/// A file being made: its kind, its title as typed.
-pub struct Making {
-    pub kind: Kind,
-    pub title: String,
-}
-
 /// All the panels work with: the project, what is chosen and open, what was
 /// just said; what a panel asks of the window.
 pub struct Work {
@@ -115,7 +109,9 @@ pub struct Work {
     pub film: Option<PathBuf>,
     pub decor: Option<PathBuf>,
     pub said: String,
-    pub making: Option<Making>,
+    /// The New Film and New Decor windows, while open.
+    pub new_film: Option<workshop_home::new_film::ui::NewFilm>,
+    pub new_decor: Option<workshop_home::new_decor::NewDecor>,
     /// The Decor space's own.
     pub decors: workshop_decor::Decors,
     /// The Film space's Script; the film played.
@@ -143,6 +139,9 @@ pub struct App {
     spritecollab: Option<workshop_tools::sprites::Browser>,
     /// The "what to try first" panel, shown once the first launch is done.
     welcome: bool,
+    /// The user's settings; whether the game-making spaces (Game, Dungeon, Emulator) show.
+    settings: workshop_base::settings::Settings,
+    game_spaces: bool,
 }
 
 impl App {
@@ -154,7 +153,8 @@ impl App {
             film: None,
             decor: None,
             said: String::new(),
-            making: None,
+            new_film: None,
+            new_decor: None,
             decors: workshop_decor::Decors::new(&session, context),
             scripts: workshop_script::Scripts::new(&session, context),
             films: workshop_film::Films::new(&session, context),
@@ -175,8 +175,12 @@ impl App {
             Some("emulator") => Space::Emulator,
             _ => Space::Home,
         };
+        let settings = workshop_base::settings::Settings::read(launch.settings.clone());
+        let game_spaces = settings.game_spaces(!work.session.library().games().is_empty());
         let mut app = App {
             space,
+            settings,
+            game_spaces,
             docks: Space::ALL.map(layout),
             work,
             capture: crate::capture::Capture::asked(&launch),
@@ -186,6 +190,12 @@ impl App {
         };
         if app.welcome {
             app.first_steps();
+        }
+        // (`WORKSHOP_NEW=film:3:beach:pikachu,piplup`, `decor:beach`: that window open, for a picture.)
+        match launch.new.as_deref() {
+            Some(said) if said.starts_with("film") => app.work.new_film = Some(workshop_home::new_film::ui::NewFilm::asked(&app.work.session, said)),
+            Some(said) if said.starts_with("decor") => app.work.new_decor = Some(workshop_home::new_decor::NewDecor::asked(&app.work.session, said)),
+            _ => {}
         }
         // (`WORKSHOP_SPRITECOLLAB=25`: that window open on that number, for a picture.)
         if let Some(dex) = &launch.spritecollab {
@@ -238,10 +248,10 @@ impl App {
             ui.add_space(6.0);
             ui.menu_button("File", |ui| {
                 if ui.button("New Film…").clicked() {
-                    self.work.making = Some(Making { kind: Kind::Film, title: String::new() });
+                    self.new_film();
                 }
                 if ui.button("New Decor…").clicked() {
-                    self.work.making = Some(Making { kind: Kind::Decor, title: String::new() });
+                    self.new_decor();
                 }
                 ui.separator();
                 ui.menu_button("Open Recent", |ui| {
@@ -282,10 +292,20 @@ impl App {
                 if ui.button(format!("Default Layout ({})", self.space.word())).clicked() {
                     self.docks[self.space.at()] = layout(self.space);
                 }
-                for space in Space::ALL {
+                for space in self.spaces() {
                     if ui.button(format!("Go to: {}", space.word())).clicked() {
                         self.space = space;
                     }
+                }
+            });
+            ui.menu_button("Settings", |ui| {
+                let mut shown = self.game_spaces;
+                if ui
+                    .checkbox(&mut shown, "Show the Game-Making Spaces")
+                    .on_hover_text("Game, Dungeon and Emulator: to make a game of your films (chapters, dungeons, the DS). Off: films and decors only.")
+                    .changed()
+                {
+                    self.show_game_spaces(shown);
                 }
             });
             ui.menu_button("Tools", |ui| {
@@ -302,11 +322,15 @@ impl App {
                 }
             });
             ui.menu_button("Help", |ui| {
-                ui.label(theme::weak("Dungeon Workshop: the project's films and decors."));
+                if ui.button("Your First Film in 5 Minutes…").clicked() {
+                    self.space = Space::Home;
+                    self.welcome = true;
+                }
+                ui.label(theme::weak("Step by step: docs/FIRST_FILM.md; a game: docs/TUTORIAL.md."));
             });
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.spacing_mut().item_spacing.x = 1.0;
-                for space in Space::ALL.into_iter().rev() {
+                for space in self.spaces().into_iter().rev() {
                     let here = space == self.space;
                     let marked = format!("{}{}", space.word(), if self.unsaved(space) { " •" } else { "" });
                     let word = RichText::new(marked).color(if here { theme::STRONG } else { theme::TEXT });
@@ -331,13 +355,19 @@ impl App {
                 let new = |ui: &mut egui::Ui, word: &str, colour: egui::Color32| {
                     ui.add(egui::Button::new(RichText::new(word).color(theme::GROUND).strong()).fill(colour).corner_radius(3))
                 };
-                if new(ui, "+ New Film", theme::FILM).clicked() {
-                    self.work.making = Some(Making { kind: Kind::Film, title: String::new() });
+                if new(ui, "+ New Film", theme::FILM).on_hover_text("a place, a cast, a start: it plays at once").clicked() {
+                    self.new_film();
                 }
-                if new(ui, "+ New Decor", theme::DECOR).clicked() {
-                    self.work.making = Some(Making { kind: Kind::Decor, title: String::new() });
+                if new(ui, "+ New Decor", theme::DECOR).on_hover_text("from a place of the game, or an empty page").clicked() {
+                    self.new_decor();
                 }
-                if new(ui, "Games", theme::GAME).on_hover_text("the games of the project: their chapters, played, checked, exported").clicked() {
+                ui.separator();
+                if ui.button("Your First Film in 5 Minutes").on_hover_text("the steps, from nothing to a film played and exported").clicked() {
+                    self.welcome = true;
+                }
+                if self.game_spaces
+                    && new(ui, "Games", theme::GAME).on_hover_text("the games of the project: their chapters, played, checked, exported").clicked()
+                {
                     self.space = Space::Game;
                 }
             }
@@ -419,6 +449,7 @@ impl App {
             match ask {
                 Ask::Go(space) => self.space = space,
                 Ask::Film { path, line } => {
+                    self.welcome = false;
                     match &mut self.work.scripts.open {
                         Some(open) if open.path == path && line > 0 => open.go_to_line(line),
                         _ if line > 0 => self.work.scripts.ask_line(line),
@@ -428,6 +459,7 @@ impl App {
                     self.space = Space::Film;
                 }
                 Ask::Decor { path, line } => {
+                    self.welcome = false;
                     self.go_to(Going::Decor(path));
                     if line > 0
                         && let Some(open) = &mut self.work.decors.open
@@ -709,53 +741,59 @@ impl App {
         });
     }
 
-    /// The window making a new film or decor: its title, then made.
+    /// The New Film window opened (on its first step).
+    fn new_film(&mut self) {
+        self.work.new_decor = None;
+        self.welcome = false;
+        self.work.new_film = Some(workshop_home::new_film::ui::NewFilm::new(&self.work.session));
+    }
+
+    /// The New Decor window opened.
+    fn new_decor(&mut self) {
+        self.work.new_film = None;
+        self.welcome = false;
+        self.work.new_decor = Some(workshop_home::new_decor::NewDecor::new(&self.work.session));
+    }
+
+    /// The spaces shown in the bar: the game-making ones only if the settings
+    /// say so (the one looked at always).
+    fn spaces(&self) -> Vec<Space> {
+        Space::ALL
+            .into_iter()
+            .filter(|space| self.game_spaces || *space == self.space || !matches!(space, Space::Game | Space::Dungeon | Space::Emulator))
+            .collect()
+    }
+
+    /// The game-making spaces shown or hidden, the settings written.
+    fn show_game_spaces(&mut self, on: bool) {
+        self.game_spaces = on;
+        if let Err(why) = self.settings.set_game_spaces(on) {
+            self.work.said = why;
+        }
+        if !on && matches!(self.space, Space::Game | Space::Dungeon | Space::Emulator) {
+            self.space = Space::Home;
+        }
+    }
+
+    /// The New Film and New Decor windows, while open; what they made, opened in its space.
     fn making(&mut self, context: &egui::Context) {
-        let Some(making) = &mut self.work.making else {
-            return;
+        let pictures = self.work.home.pictures();
+        let done = match (&mut self.work.new_film, &mut self.work.new_decor) {
+            (Some(new), _) => new.ui(context, pictures),
+            (None, Some(new)) => new.ui(context, pictures),
+            (None, None) => return,
         };
-        let mut open = true;
-        let mut made = false;
-        let word = making.kind.word().to_lowercase();
-        egui::Window::new(format!("New {word}")).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0]).show(
-            context,
-            |ui| {
-                ui.set_width(420.0);
-                egui::Grid::new("making").num_columns(2).spacing([10.0, 8.0]).show(ui, |ui| {
-                    ui.label(theme::weak("Title"));
-                    let field = ui.add(egui::TextEdit::singleline(&mut making.title).hint_text("The Big Day").desired_width(f32::INFINITY));
-                    field.request_focus();
-                    ui.end_row();
-                    ui.label(theme::weak("File"));
-                    ui.label(theme::weak(file_of(&self.work.session, making).map_or("—".to_string(), |path| path.display().to_string())));
-                    ui.end_row();
-                });
-                ui.add_space(6.0);
-                ui.horizontal(|ui| {
-                    let enter = ui.input(|input| input.key_pressed(egui::Key::Enter));
-                    let free = file_of(&self.work.session, making).is_some_and(|path| !path.exists());
-                    if ui.add_enabled(free, egui::Button::new(RichText::new("Create").strong())).clicked() || (enter && free) {
-                        made = true;
-                    }
-                    if !free && !making.title.trim().is_empty() {
-                        ui.label(theme::text("this name is already taken", theme::SMALL, theme::WRONG));
-                    }
-                });
-            },
-        );
-        if made {
-            let making = self.work.making.take().expect("being made");
-            match create(&self.work.session, &making) {
-                Ok(path) => {
-                    self.work.project = Project::read(&self.work.session);
-                    if let Some(entry) = self.work.project.films.iter().chain(&self.work.project.decors).find(|entry| entry.path == path).cloned() {
-                        workshop_home::open(&self.work.session, &entry);
-                    }
+        use workshop_home::new_film::ui::Done;
+        match done {
+            Done::Open => {}
+            Done::Closed => (self.work.new_film, self.work.new_decor) = (None, None),
+            Done::Made(path) => {
+                (self.work.new_film, self.work.new_decor) = (None, None);
+                self.work.project = Project::read(&self.work.session);
+                if let Some(entry) = self.work.project.films.iter().chain(&self.work.project.decors).find(|entry| entry.path == path).cloned() {
+                    workshop_home::open(&self.work.session, &entry);
                 }
-                Err(why) => self.work.said = why,
             }
-        } else if !open {
-            self.work.making = None;
         }
     }
 }
@@ -791,37 +829,6 @@ fn named_in_film(session: &Session, film: &Path, text: &str) -> Vec<(String, Goi
         }
     }
     named
-}
-
-/// The file a new one will be: its title's words joined (`the_big_day`).
-fn file_of(session: &Session, making: &Making) -> Option<PathBuf> {
-    let words: Vec<String> = making
-        .title
-        .split_whitespace()
-        .map(|word| word.to_lowercase().chars().filter(|letter| letter.is_alphanumeric()).collect::<String>())
-        .filter(|word| !word.is_empty())
-        .collect();
-    if words.is_empty() {
-        return None;
-    }
-    let name = words.join("_");
-    Some(match making.kind {
-        Kind::Film => session.library().films().join(format!("{name}.film")),
-        Kind::Decor => session.library().decors().join(format!("{name}.decor")),
-    })
-}
-
-/// A new film or decor written: where.
-fn create(session: &Session, making: &Making) -> Result<PathBuf, String> {
-    let path = file_of(session, making).ok_or("a title first")?;
-    let title = making.title.trim();
-    let name = path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
-    let text = match making.kind {
-        Kind::Film => format!("title: {title}\n\nscene: beach partner\npartner: Hello!\n"),
-        Kind::Decor => format!("decor: {name} 512 384\nname {title}\n"),
-    };
-    std::fs::write(&path, text).map_err(|why| format!("{}: {why}", path.display()))?;
-    Ok(path)
 }
 
 /// The panels drawn, each by its space's module.
@@ -925,48 +932,78 @@ fn dock_style(context: &egui::Context) -> Style {
 }
 
 impl App {
-    /// Just after the first launch: the Game space, on the first game there is (none in a new
-    /// workshop), and what to try first.
+    /// Just after the first launch: the Home, and what to try first.
     pub fn first_steps(&mut self) {
-        if let Some(game) = self.work.session.library().games().into_iter().next() {
-            self.work.games.open_game(&game);
-        }
-        (self.space, self.welcome) = (Space::Game, true);
+        (self.space, self.welcome) = (Space::Home, true);
     }
 
-    /// The "what to try first" panel, until closed.
+    /// The welcome panel, until closed: make a film or a decor, open one of
+    /// the last, the first film's steps.
     fn welcome(&mut self, context: &egui::Context) {
-        if !self.welcome {
+        if !self.welcome || self.work.new_film.is_some() || self.work.new_decor.is_some() {
             return;
         }
         let mut open = true;
-        egui::Window::new("What to Try First")
+        let (mut film, mut decor) = (false, false);
+        egui::Window::new(RichText::new("Welcome to the Workshop").strong())
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
-            .default_width(420.0)
+            .default_width(600.0)
             .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
             .show(context, |ui| {
-                ui.label(theme::text("Your data is ready, and the workshop is yours: empty, waiting for your first game.", theme::BODY, theme::STRONG));
-                ui.add_space(8.0);
+                ui.set_width(600.0);
+                ui.label(theme::text("Make films with Pokémon: a place, a cast, a few lines. Each line plays as you write it.", theme::BODY, theme::STRONG));
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    let big = |ui: &mut egui::Ui, word: &str, colour: egui::Color32| {
+                        ui.add(
+                            egui::Button::new(RichText::new(word).size(theme::TITLE).strong().color(theme::GROUND))
+                                .fill(colour)
+                                .min_size(egui::vec2(180.0, 40.0)),
+                        )
+                    };
+                    film = big(ui, "+ New Film", theme::FILM).on_hover_text("a place, a cast, a start: it plays at once").clicked();
+                    decor = big(ui, "+ New Decor", theme::DECOR).on_hover_text("a place of your own, from one of the game's or an empty page").clicked();
+                });
+                ui.add_space(12.0);
+                ui.label(theme::text("YOUR FIRST FILM IN 5 MINUTES", theme::SMALL, theme::FILM));
                 let step = |ui: &mut egui::Ui, number: &str, said: &str| {
                     ui.horizontal_wrapped(|ui| {
-                        ui.label(theme::text(number, theme::BODY, theme::GAME));
+                        ui.label(theme::text(number, theme::BODY, theme::FILM));
                         ui.label(theme::text(said, theme::BODY, theme::TEXT));
                     });
                 };
-                step(ui, "1.", "Make a game: type a title under GAMES (on the left) and click + New Game.");
-                step(ui, "2.", "Write its first film in the Film space: the scene plays each line as you type it.");
-                step(ui, "3.", "Draw a place in the Decor space, and say who lives there in its life.");
-                step(ui, "4.", "Play it from the Game space: arrows walk, Enter talks, M opens the menu.");
+                step(ui, "1.", "New Film: choose a place, two Pokémon or more, a start, a title. It opens playing.");
+                step(ui, "2.", "Write two lines in the Script: `pikachu (happy): Hello!` — Ctrl+Space offers what comes next.");
+                step(ui, "3.", "Ctrl+Enter plays from the cursor's line; Space plays or pauses.");
+                step(ui, "4.", "Drag someone on the Scene to move them: their line is written again.");
+                step(ui, "5.", "A video of it: `scene_player video <film>` in a terminal (ffmpeg needed).");
+                ui.label(theme::weak("All of it, with pictures: docs/FIRST_FILM.md."));
+                ui.add_space(10.0);
+                let room = ui.available_width();
+                ui.allocate_ui(egui::vec2(room, 0.0), |ui| {
+                    ui.label(theme::text("OPEN AGAIN", theme::SMALL, theme::WEAK));
+                    if workshop_home::recent_row(ui, &mut self.work.home, &self.work.project, 4) == 0 {
+                        ui.label(theme::weak("your films and decors will be here"));
+                    }
+                });
                 ui.add_space(6.0);
-                ui.label(theme::weak("Step by step, from an empty folder to a game sent to a friend: docs/TUTORIAL.md (“Your first game in 30 minutes”)."));
-                ui.add_space(8.0);
-                if ui.button("Close").clicked() {
-                    self.welcome = false;
+                if !self.game_spaces {
+                    ui.label(theme::text(
+                        "Making a whole game (chapters, dungeons, the DS)? Settings › Show the Game-Making Spaces.",
+                        theme::SMALL,
+                        theme::FAINT,
+                    ));
                 }
             });
         self.welcome &= open;
+        if film {
+            self.new_film();
+        }
+        if decor {
+            self.new_decor();
+        }
     }
 }
 

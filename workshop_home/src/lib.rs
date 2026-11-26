@@ -13,6 +13,9 @@
 //! keeps; what touches another space (a file opened, a film played, a file
 //! open moved, the things drawn shown) is asked of the window (`Ask`).
 
+pub mod new_decor;
+pub mod new_film;
+
 use std::sync::Arc;
 
 use std::collections::{BTreeSet, HashMap};
@@ -103,6 +106,11 @@ impl Home {
         }
     }
 
+    /// The pictures of the places, made on a thread (the New Film window shares them).
+    pub fn pictures(&mut self) -> &mut workshop_base::example::Examples {
+        &mut self.pictures
+    }
+
     fn favourite(&mut self, path: &Path) {
         if !self.favourites.remove(path) {
             self.favourites.insert(path.to_path_buf());
@@ -184,6 +192,34 @@ fn paint_picture(painter: &egui::Painter, home: &mut Home, context: &egui::Conte
             painter.text(room.center(), egui::Align2::CENTER_CENTER, first, FontId::proportional(room.height() * 0.5), colour_of(entry.kind));
         }
     }
+}
+
+/// The last films and decors changed, in a row of cards (their place's
+/// picture, their title, their kind): a click opens one in its space. How
+/// many there were (none: nothing drawn).
+pub fn recent_row(ui: &mut egui::Ui, home: &mut Home, project: &Project, count: usize) -> usize {
+    let recent: Vec<Entry> = project.recent().into_iter().take(count).cloned().collect();
+    if recent.is_empty() {
+        return 0;
+    }
+    let context = ui.ctx().clone();
+    ui.horizontal(|ui| {
+        for entry in &recent {
+            let (rect, response) = ui.allocate_exact_size(vec2(132.0, 104.0), Sense::click());
+            let fill = if response.hovered() { theme::HOVERED } else { theme::GROUND };
+            ui.painter().rect_filled(rect, 3.0, fill);
+            let room = Rect::from_min_size(rect.min + vec2(4.0, 4.0), vec2(rect.width() - 8.0, 66.0));
+            paint_picture(ui.painter(), home, &context, entry, room);
+            let painter = ui.painter();
+            let title = painter.layout(entry.title.clone(), FontId::proportional(theme::SMALL), theme::STRONG, rect.width() - 8.0);
+            painter.galley(pos2(rect.left() + 4.0, room.bottom() + 3.0), title, theme::STRONG);
+            painter.text(rect.left_bottom() + vec2(4.0, -3.0), egui::Align2::LEFT_BOTTOM, entry.kind.word(), FontId::proportional(10.0), colour_of(entry.kind));
+            if response.on_hover_text(format!("open {} · changed {}", entry.title, entry.age())).clicked() {
+                open(&home.session, entry);
+            }
+        }
+    });
+    recent.len()
 }
 
 // --- The Project ---

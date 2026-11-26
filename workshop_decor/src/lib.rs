@@ -13,7 +13,7 @@
 //! (`workshop`). It uses `workshop_base` (the session, the look, safe saves)
 //! and `decor` (the decors' language and tool).
 
-mod edit;
+pub mod edit;
 pub mod library;
 pub mod panels;
 pub mod placing;
@@ -515,7 +515,12 @@ impl Decors {
     /// That decor open (if it is not yet).
     pub fn open(&mut self, path: &PathBuf) {
         if self.open.as_ref().is_none_or(|open| &open.path != path) {
-            self.open = Some(Open::read(&self.session, path.clone()));
+            let open = Open::read(&self.session, path.clone());
+            // (The terrain brush on the tiles of the decor's own place, if it has them.)
+            if let Some(level) = own_place(&open.text).filter(|level| assets::data::has(self.session.data(), &format!("tilesets/{level}.png"))) {
+                (self.brushes.level, self.brushes.terrain) = (level, 0);
+            }
+            self.open = Some(open);
         }
     }
 
@@ -839,4 +844,9 @@ mod tests {
         assert!(!merges("removed: put e1_1", "removed: put e1_1"));
         assert!(!merges("moved: put e1_1", "moved: put e1_2"));
     }
+}
+
+/// The place of the game a decor is made like (`like <level>`), else the one it is laid on (its backdrop).
+pub fn own_place(text: &str) -> Option<i64> {
+    edit::setting(text, "like").and_then(|like| like.split_whitespace().next()?.parse().ok()).or_else(|| edit::backdrop_of(text).map(|(_, level)| level))
 }

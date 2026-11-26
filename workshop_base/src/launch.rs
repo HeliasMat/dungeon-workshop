@@ -41,6 +41,9 @@ pub struct LaunchOptions {
     pub boss_hp: Option<i32>,
     /// `WORKSHOP_CREATE=dungeon:my_dungeon,image…`: those open, being made.
     pub create: Option<String>,
+    /// `WORKSHOP_NEW=film[:step[:place[:a,b[:start]]]]|decor[:place]`: the New Film window open at that
+    /// step (1 to 4), those chosen; or the New Decor window, that place chosen.
+    pub new: Option<String>,
     /// `WORKSHOP_STEP=1`: the film played a frame at a time.
     pub step: Option<String>,
     /// `WORKSHOP_INSTANT=s`: the film shown at that second.
@@ -118,6 +121,7 @@ impl LaunchOptions {
             drawn: set("WORKSHOP_DRAWN"),
             boss_hp: number("WORKSHOP_BOSS_HP"),
             create: var("WORKSHOP_CREATE"),
+            new: var("WORKSHOP_NEW"),
             step: var("WORKSHOP_STEP"),
             instant: number("WORKSHOP_INSTANT"),
             scene: var("WORKSHOP_SCENE"),
