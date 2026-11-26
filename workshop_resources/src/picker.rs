@@ -1,6 +1,7 @@
 //! The Film space's Assets panel: the Resources' shelves made small, beside
-//! the film being written. Tabs: the Pokémon (the film's cast first, the
-//! project's, SpriteCollab's not imported when sought), the faces and the
+//! the film being written. Tabs: the Pokémon (the film's cast first, then the
+//! catalog of `catalog.rs`, each species' forms under it, SpriteCollab's not
+//! imported imported when first used), the faces and the
 //! gestures of the Pokémon chosen (the Scene's chosen one, followed), the
 //! music (its title, how long), the sounds, the things, the places, the
 //! moves' effects. Each card is dragged onto the Scene or the Script
@@ -8,8 +9,7 @@
 //! Script's cursor. Music and sounds play on hover (a click keeps a song
 //! playing; Stop hushes it), gestures and effects play on hover.
 
-use std::collections::{HashMap, HashSet};
-use std::sync::mpsc::Receiver;
+use std::collections::HashSet;
 use std::time::Instant;
 
 use eframe::egui::{self, Color32, FontId, Rect, RichText, Sense, Stroke, vec2};
@@ -21,12 +21,10 @@ use workshop_picture::fitted;
 use workshop_script::Scripts;
 
 use super::pictures::{animations_of, body_sheet, face_name, faces_of, read_png};
-use super::{Item, READ_EACH_FRAME, Resources, Sheet, Shelf};
+use super::{Item, READ_EACH_FRAME, Resources, Sheet, Shelf, pokemon_cards};
 
 /// How long the pointer rests on a song or a sound before it is heard.
-const HEARD_AFTER: f64 = 0.35;
-/// How much of a body's frame its card shows (the middle: the rest is room round it).
-const BODY_SHOWN: f32 = 0.6;
+pub(super) const HEARD_AFTER: f64 = 0.35;
 
 /// The panel's tabs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -90,15 +88,8 @@ pub(super) struct Picker {
     who: Option<String>,
     followed: Option<String>,
     /// What the pointer rests on, since when; what a hover made heard (hushed when it leaves).
-    resting: Option<(String, Instant)>,
-    hover_heard: Option<String>,
-    /// The songs' lengths, read on a thread of their own.
-    lengths: HashMap<u16, (f32, bool)>,
-    reading: Option<Receiver<HashMap<u16, (f32, bool)>>>,
-    /// SpriteCollab's Pokémon (read when first sought).
-    collab: Option<Vec<(u32, String)>>,
-    /// The gesture words of their own (`pikachu sit`, not `pikachu pose sit`).
-    gesture_words: Option<HashSet<&'static str>>,
+    pub(super) resting: Option<(String, Instant)>,
+    pub(super) hover_heard: Option<String>,
 }
 
 impl Picker {
@@ -108,7 +99,7 @@ impl Picker {
         let tab = parts.next().and_then(Tab::of).unwrap_or(Tab::Pokemon);
         let who = parts.next().filter(|who| !who.is_empty()).map(str::to_string);
         let sought = parts.next().unwrap_or_default().to_string();
-        Picker { tab, sought, followed: None, who, resting: None, hover_heard: None, lengths: HashMap::new(), reading: None, collab: None, gesture_words: None }
+        Picker { tab, sought, followed: None, who, resting: None, hover_heard: None }
     }
 }
 
@@ -125,6 +116,8 @@ struct Card {
 /// The Assets panel: the tabs, the search, the cards; `chosen`: who is chosen on the Scene, `cast`: the film's.
 pub fn picker(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, scripts: &mut Scripts, chosen: Option<&str>, cast: &[String]) {
     resources.read_now = 0;
+    resources.work_done();
+    resources.thumbs.take(ui.ctx());
     follow(resources, chosen, cast);
     head(ui, resources);
     ui.add_space(2.0);
@@ -134,35 +127,37 @@ pub fn picker(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, scr
     let mut hovered_audio = false;
     let mut hovered_card = false;
     let mut written: Option<Asset> = None;
-    egui::ScrollArea::vertical().id_salt("assets picker").auto_shrink([false, false]).show(ui, |ui| {
-        let tab = resources.picker.tab;
-        match tab {
-            Tab::Music | Tab::Sounds => audio_rows(ui, resources, decors, tab, &mut hovered_audio, &mut written),
-            _ => {
-                for (title, cards) in sections(resources, decors, cast) {
-                    if !title.is_empty() {
-                        ui.add_space(4.0);
-                        ui.label(theme::text(title, theme::SMALL, theme::WEAK));
-                    }
-                    ui.horizontal_wrapped(|ui| {
-                        ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
-                        for card in &cards {
-                            hovered_card |= card_shown(ui, resources, decors, card, &mut written);
+    if resources.picker.tab == Tab::Pokemon {
+        hovered_card = pokemon_tab(ui, resources, cast, &mut written);
+    } else {
+        egui::ScrollArea::vertical().id_salt("assets picker").auto_shrink([false, false]).show(ui, |ui| {
+            let tab = resources.picker.tab;
+            match tab {
+                Tab::Pokemon => {}
+                Tab::Music | Tab::Sounds => audio_rows(ui, resources, decors, tab, &mut hovered_audio, &mut written),
+                _ => {
+                    for (title, cards) in sections(resources, decors) {
+                        if !title.is_empty() {
+                            ui.add_space(4.0);
+                            ui.label(theme::text(title, theme::SMALL, theme::WEAK));
                         }
-                    });
-                    if cards.is_empty() {
-                        ui.label(theme::weak(match tab {
-                            Tab::Faces | Tab::Gestures => "choose a Pokémon (its tab, or someone on the Scene)",
-                            _ => "nothing by that name",
-                        }));
+                        ui.horizontal_wrapped(|ui| {
+                            ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
+                            for card in &cards {
+                                hovered_card |= card_shown(ui, resources, decors, card, &mut written);
+                            }
+                        });
+                        if cards.is_empty() {
+                            ui.label(theme::weak(match tab {
+                                Tab::Faces | Tab::Gestures => "choose a Pokémon (its tab, or someone on the Scene)",
+                                _ => "nothing by that name",
+                            }));
+                        }
                     }
-                }
-                if tab == Tab::Pokemon {
-                    collab_found(ui, resources);
                 }
             }
-        }
-    });
+        });
+    }
     // (A song heard on a hover: hushed when the pointer leaves it.)
     if !hovered_audio && !hovered_card {
         resources.picker.resting = None;
@@ -173,6 +168,9 @@ pub fn picker(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, scr
         }
     }
     if let Some(asset) = written {
+        if let Asset::Pokemon { word } = &asset {
+            resources.import_if_missing(word);
+        }
         let said = match scripts.open.as_mut() {
             Some(open) => open.put_asset(&asset, None, chosen, None),
             None => "no film open: open one first".to_string(),
@@ -234,19 +232,15 @@ fn shown_name(resources: &Resources, word: &str) -> String {
     resources.session.tables().monsters.get(word).map(|(_, name)| name.clone()).filter(|name| !name.is_empty()).unwrap_or_else(|| word.to_string())
 }
 
-/// Whether an item answers what is sought (a Pokémon by its number too).
+/// Whether an item answers what is sought.
 fn answers(item: &Item, sought: &str) -> bool {
-    let person = matches!(item.shelf, Shelf::Pokemon | Shelf::Variants);
-    if person && !sought.is_empty() && sought.chars().all(|letter| letter.is_ascii_digit()) {
-        return item.order.to_string() == sought;
-    }
     sought.is_empty() || [&item.word, &item.label, &item.about].iter().any(|said| film::words::plain(said).contains(sought))
 }
 
 /// The asset a thing of a shelf hands.
 fn asset_of(item: &Item) -> Option<Asset> {
     Some(match item.shelf {
-        Shelf::Pokemon | Shelf::Variants => Asset::Pokemon { word: item.word.clone() },
+        Shelf::Pokemon => Asset::Pokemon { word: item.word.clone() },
         Shelf::Songs => Asset::Music { word: item.word.clone() },
         Shelf::Sounds => Asset::Sound { word: item.word.clone() },
         Shelf::Items => Asset::Thing { word: item.label.clone(), held: true },
@@ -264,24 +258,13 @@ fn card_of(item: &Item) -> Option<Card> {
 }
 
 /// The cards of the tab, by section (its title), as sought.
-fn sections(resources: &mut Resources, decors: &Decors, cast: &[String]) -> Vec<(String, Vec<Card>)> {
+fn sections(resources: &mut Resources, decors: &Decors) -> Vec<(String, Vec<Card>)> {
     let sought = film::words::plain(resources.picker.sought.trim());
     let of = |resources: &mut Resources, shelf: Shelf| -> Vec<Card> {
         resources.list(shelf, decors).iter().filter(|item| answers(item, &sought)).filter_map(card_of).collect()
     };
     match resources.picker.tab {
-        Tab::Pokemon => {
-            let mut all = of(resources, Shelf::Pokemon);
-            all.extend(of(resources, Shelf::Variants));
-            let (theirs, others): (Vec<Card>, Vec<Card>) =
-                all.into_iter().partition(|card| matches!(&card.asset, Asset::Pokemon { word } if cast.iter().any(|one| one == word)));
-            let mut found = Vec::new();
-            if !theirs.is_empty() {
-                found.push(("IN THIS FILM".to_string(), theirs));
-            }
-            found.push((if found.is_empty() { String::new() } else { "ALL".to_string() }, others));
-            found
-        }
+        Tab::Pokemon | Tab::Music | Tab::Sounds => Vec::new(),
         Tab::Faces => vec![(String::new(), faces(resources, &sought))],
         Tab::Gestures => vec![(String::new(), gestures(resources, &sought))],
         Tab::Things => vec![
@@ -294,7 +277,95 @@ fn sections(resources: &mut Resources, decors: &Decors, cast: &[String]) -> Vec<
             vec![("YOUR DECORS".to_string(), decors_own), ("THE GAME'S PLACES".to_string(), of(resources, Shelf::Backdrops))]
         }
         Tab::Effects => vec![(String::new(), of(resources, Shelf::Attacks))],
-        Tab::Music | Tab::Sounds => Vec::new(),
+    }
+}
+
+/// The Pokémon tab: the film's cast first, then the catalog (as sought: name, number, type, generation), each
+/// species' forms under it; only the rows in sight drawn. Whether the pointer is on a card.
+fn pokemon_tab(ui: &mut egui::Ui, resources: &mut Resources, cast: &[String], written: &mut Option<Asset>) -> bool {
+    let catalog = resources.catalog();
+    let sought = resources.picker.sought.trim().to_string();
+    let size = vec2(108.0, 112.0);
+    let mut hovered = false;
+    let mut did = pokemon_cards::Did::default();
+    let theirs: Vec<(usize, usize)> = cast.iter().filter_map(|one| catalog.find(one)).collect();
+    if !theirs.is_empty() && sought.is_empty() {
+        ui.label(theme::text("IN THIS FILM", theme::SMALL, theme::WEAK));
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
+            for (species, entry) in theirs {
+                let (rect, response) = ui.allocate_exact_size(size, Sense::click_and_drag());
+                let one = &catalog.species[species];
+                let chosen = resources.picker.who.as_deref() == Some(one.entries[entry].word.as_str());
+                pokemon_cards::card(ui, resources, rect, one, &one.entries[entry], entry, &response, chosen, false);
+                hovered |= response.hovered();
+                if response.double_clicked() {
+                    did.twice = Some((species, entry));
+                } else if response.clicked() {
+                    did.clicked = Some((species, entry));
+                }
+                if response.drag_started() {
+                    did.dragged = Some((species, entry));
+                }
+            }
+        });
+        ui.add_space(4.0);
+    }
+    let found = (!sought.is_empty()).then(|| catalog.search(&sought));
+    let shown = pokemon_cards::shown(&catalog, found.as_deref(), |species, by_itself| resources.species_open(species, by_itself));
+    let columns = ((ui.available_width() - 6.0) / (size.x + 8.0)).floor().max(1.0) as usize;
+    let rows = pokemon_cards::rows(&shown, columns);
+    let count: usize = shown.len();
+    ui.label(theme::text(
+        if sought.is_empty() { format!("ALL · {count} species, {} with their forms", catalog.len()) } else { format!("{count} species found") },
+        theme::SMALL,
+        theme::WEAK,
+    ));
+    if rows.is_empty() {
+        ui.label(theme::weak("nothing by that name, number, type or generation (gen 8, fire…)"));
+    }
+    let who = resources.picker.who.clone();
+    let grid = pokemon_cards::grid(ui, resources, "assets pokemon", &catalog, &rows, size, who.as_deref(), None);
+    hovered |= grid.hovered;
+    did.clicked = did.clicked.or(grid.clicked);
+    did.twice = did.twice.or(grid.twice);
+    did.dragged = did.dragged.or(grid.dragged);
+    if let Some(species) = grid.toggled {
+        let open = shown.iter().find(|one| one.species == species).is_some_and(|one| one.open);
+        resources.toggle_species(&catalog.species[species], open);
+    }
+    let word_of = |(species, entry): (usize, usize)| catalog.species[species].entries[entry].word.clone();
+    if let Some(at) = did.clicked {
+        let word = word_of(at);
+        if !resources.import_if_missing(&word) {
+            resources.picker.who = Some(word);
+        }
+    }
+    if let Some(at) = did.twice {
+        *written = Some(Asset::Pokemon { word: word_of(at) });
+    }
+    if let Some(at) = did.dragged {
+        let word = word_of(at);
+        resources.import_if_missing(&word);
+        egui::DragAndDrop::set_payload(ui.ctx(), Asset::Pokemon { word });
+    }
+    dragged_label(ui);
+    hovered
+}
+
+/// What is being dragged, said beside the pointer.
+fn dragged_label(ui: &egui::Ui) {
+    let Some(asset) = egui::DragAndDrop::payload::<Asset>(ui.ctx()) else { return };
+    if !ui.input(|input| input.pointer.any_down()) {
+        return;
+    }
+    ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+    if let Some(at) = ui.input(|input| input.pointer.latest_pos()) {
+        egui::Area::new(egui::Id::new("asset dragged")).order(egui::Order::Tooltip).fixed_pos(at + vec2(14.0, 10.0)).interactable(false).show(ui.ctx(), |ui| {
+            egui::Frame::new().fill(Color32::from_black_alpha(220)).inner_margin(egui::Margin::symmetric(6, 3)).corner_radius(3).show(ui, |ui| {
+                ui.label(theme::text(asset.said(), theme::SMALL, theme::FILM));
+            });
+        });
     }
 }
 
@@ -343,7 +414,7 @@ fn faces(resources: &Resources, sought: &str) -> Vec<Card> {
 fn gestures(resources: &mut Resources, sought: &str) -> Vec<Card> {
     let Some(who) = resources.picker.who.clone() else { return Vec::new() };
     let Some(number) = number_of(resources, &who) else { return Vec::new() };
-    let own = resources.picker.gesture_words.get_or_insert_with(gesture_words).clone();
+    let own = gesture_words_known();
     let mut cards = Vec::new();
     for (file, anim) in animations_of(&resources.session, number) {
         let names: Vec<&str> = film::POSES.iter().filter(|(_, named, _)| *named == anim).map(|(name, ..)| *name).collect();
@@ -380,6 +451,12 @@ fn gesture_words() -> HashSet<&'static str> {
         })
         .map(|(_, word, ..)| word)
         .collect()
+}
+
+/// The gesture words, read once.
+pub(super) fn gesture_words_known() -> &'static HashSet<&'static str> {
+    static KNOWN: std::sync::OnceLock<HashSet<&'static str>> = std::sync::OnceLock::new();
+    KNOWN.get_or_init(gesture_words)
 }
 
 /// A card: its picture (playing while the pointer is on it), its name;
@@ -425,10 +502,15 @@ fn card_shown(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, car
     match sheet(resources, decors, &context, card) {
         Some(sheet) => {
             let step = since.map_or(0, |seconds| sheet.step_at(seconds));
-            // (A body's frames are wide round it: their middle shown, larger.)
-            let (uv, cell) = if card.key.starts_with("body:") {
-                let uv = sheet.uv_at(step, 0);
-                (Rect::from_center_size(uv.center(), uv.size() * BODY_SHOWN), sheet.cell * BODY_SHOWN)
+            // (A body's frames are wide round it: what is drawn in them shown, larger.)
+            let (uv, cell) = if let Some((number, file)) = card.key.strip_prefix("body:").and_then(|rest| rest.split_once(':')) {
+                if !resources.bounds.contains_key(&card.key)
+                    && let (Ok(number), Ok(file)) = (number.parse::<i64>(), file.parse::<u8>())
+                {
+                    let bounds = super::pictures::body_bounds(&resources.session, number, file);
+                    resources.bounds.insert(card.key.clone(), bounds);
+                }
+                super::pictures::cut_step(&sheet, step, resources.bounds.get(&card.key).copied().flatten())
             } else {
                 (sheet.uv(step), sheet.cell)
             };
@@ -528,42 +610,11 @@ fn cached(resources: &mut Resources, context: &egui::Context, key: &str, make: i
     made
 }
 
-/// SpriteCollab's Pokémon not imported yet, of what is sought: a click opens SpriteCollab on it.
-fn collab_found(ui: &mut egui::Ui, resources: &mut Resources) {
-    let sought = film::words::plain(resources.picker.sought.trim());
-    if sought.is_empty() {
-        return;
-    }
-    let session = resources.session.clone();
-    let collab = resources.picker.collab.get_or_insert_with(|| {
-        let known: HashSet<i64> = [super::shelves::listed(&session, Shelf::Pokemon), super::shelves::listed(&session, Shelf::Variants)]
-            .concat()
-            .iter()
-            .map(|item| item.order)
-            .collect();
-        spritecollab::tracker_names(&session.spritecollab).into_iter().filter(|(dex, _)| !known.contains(&i64::from(*dex))).collect()
-    });
-    let found: Vec<(u32, String)> =
-        collab.iter().filter(|(dex, name)| film::words::plain(name).contains(&sought) || dex.to_string() == sought).take(16).cloned().collect();
-    if found.is_empty() {
-        return;
-    }
-    ui.add_space(6.0);
-    ui.label(theme::text("ON SPRITECOLLAB · NOT IMPORTED YET", theme::SMALL, theme::WEAK));
-    ui.horizontal_wrapped(|ui| {
-        for (dex, name) in found {
-            if ui.button(format!("{name} · No. {dex}")).on_hover_text("opens SpriteCollab on it, to import it: then it is here").clicked() {
-                session.ask(Ask::SpriteCollab(Some(dex)));
-            }
-        }
-    });
-}
-
 /// The songs or the sounds, a row each: ▶, its name, its title or what it is, how long.
 fn audio_rows(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, tab: Tab, hovered_any: &mut bool, written: &mut Option<Asset>) {
     let shelf = if tab == Tab::Music { Shelf::Songs } else { Shelf::Sounds };
     if tab == Tab::Music {
-        lengths(resources);
+        resources.song_lengths();
     }
     let sought = film::words::plain(resources.picker.sought.trim());
     let items: Vec<Item> = resources.list(shelf, decors).into_iter().filter(|item| answers(item, &sought)).collect();
@@ -604,9 +655,9 @@ fn audio_rows(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, tab
         painter.text(text_at, egui::Align2::LEFT_TOP, &name, FontId::proportional(theme::BODY), theme::STRONG);
         painter.text(text_at + vec2(0.0, 14.0), egui::Align2::LEFT_TOP, &under, FontId::proportional(theme::SMALL - 1.0), theme::WEAK);
         if tab == Tab::Music
-            && let Some((seconds, loops)) = resources.picker.lengths.get(&(item.number as u16))
+            && let Some((seconds, loops)) = resources.lengths.get(&(item.number as u16)).copied()
         {
-            let said = format!("{}:{:02}{}", (*seconds as u32) / 60, (*seconds as u32) % 60, if *loops { " ↻" } else { "" });
+            let said = format!("{}:{:02}{}", (seconds as u32) / 60, (seconds as u32) % 60, if loops { " ↻" } else { "" });
             painter.text(rect.right_center() - vec2(8.0, 0.0), egui::Align2::RIGHT_CENTER, said, FontId::proportional(theme::SMALL), theme::TEXT);
         }
         // (Resting on it a moment: heard; a click: heard on, or hushed.)
@@ -647,27 +698,8 @@ fn audio_rows(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, tab
     }
 }
 
-/// The songs' lengths, read on a thread the first time they are asked.
-fn lengths(resources: &mut Resources) {
-    let picker = &mut resources.picker;
-    if let Some(reading) = &picker.reading
-        && let Ok(lengths) = reading.try_recv()
-    {
-        picker.lengths = lengths;
-        picker.reading = None;
-    }
-    if picker.lengths.is_empty() && picker.reading.is_none() {
-        let (send, receive) = std::sync::mpsc::channel();
-        let data = resources.session.data().to_string();
-        std::thread::spawn(move || {
-            _ = send.send(shell::sound::song_lengths(&data));
-        });
-        picker.reading = Some(receive);
-    }
-}
-
 /// A song or a sound heard now (a song in place of the one heard).
-fn hear_now(resources: &mut Resources, item: &Item) {
+pub(super) fn hear_now(resources: &mut Resources, item: &Item) {
     if item.shelf == Shelf::Songs && resources.heard.as_deref() == Some(item.key().as_str()) {
         return;
     }
@@ -675,7 +707,7 @@ fn hear_now(resources: &mut Resources, item: &Item) {
 }
 
 /// What plays, hushed.
-fn hush(resources: &mut Resources) {
+pub(super) fn hush(resources: &mut Resources) {
     if let Some(audio) = resources.audio.as_mut() {
         audio.song(0, None, 0.0, 0.0);
     }

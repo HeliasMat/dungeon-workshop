@@ -50,8 +50,39 @@ struct Picked {
 
 pub fn grid(ui: &mut egui::Ui, resources: &mut Resources, decors: &mut Decors) {
     take_dropped(resources, ui.ctx());
+    resources.work_done();
+    resources.thumbs.take(ui.ctx());
     let context = ui.ctx().clone();
     toolbar::tools(ui, resources);
+    let searching = !resources.sought.trim().is_empty();
+    if !searching {
+        resources.everywhere = false;
+    }
+    // (The catalog's cards, its species and their forms; the songs' and the sounds' cards.)
+    if !resources.listed && resources.shelf == Shelf::Pokemon && (!searching || resources.catalog_sought()) {
+        pokemon_grid(ui, resources);
+        return;
+    }
+    if !resources.listed && resources.shelf.heard() && !searching {
+        let items = resources.shown(decors);
+        toolbar::head(ui, resources, items.len());
+        toolbar::filters(ui, resources);
+        let chosen_at = items.iter().position(|item| Some(item.key()) == resources.chosen);
+        let columns = ((ui.available_width() - 10.0) / (super::music_cards::CARD.x + 8.0)).floor().max(1.0) as usize;
+        let scroll_to =
+            resources.scroll_wanted.then(|| chosen_at.map_or(0.0, |at| ((at / columns) as f32 * (super::music_cards::CARD.y + 8.0) - 60.0).max(0.0)));
+        resources.scroll_wanted = false;
+        let did = super::music_cards::cards(ui, resources, &items, chosen_at, scroll_to);
+        if let Some((at, _)) = did.clicked {
+            // (Chosen without the Inspector's own listening: the card heard it already.)
+            let item = &items[at];
+            if resources.chosen.as_deref() != Some(item.key().as_str()) {
+                resources.chosen = Some(item.key());
+                (resources.step, resources.face, resources.watching, resources.body, resources.renaming, resources.trashing) = (0, 0, false, None, None, false);
+            }
+        }
+        return;
+    }
     // (Those open and not written yet: a • after their name, as on their tabs.)
     let unsaved = resources.unsaved_keys();
     let items: Vec<Item> = resources
@@ -92,6 +123,70 @@ pub fn grid(ui: &mut egui::Ui, resources: &mut Resources, decors: &mut Decors) {
         resources.chosen = Some(key);
     }
     keys(ui, resources, &items, chosen_at, &layout);
+}
+
+/// The Pokémon shelf: the catalog's species (a generation, or what is sought: a name, a number, a type, `gen 8`),
+/// their forms opened under them; a click chooses one (its page in the Inspector), a double click copies its word.
+fn pokemon_grid(ui: &mut egui::Ui, resources: &mut Resources) {
+    let catalog = resources.catalog();
+    let sought = resources.sought.trim().to_string();
+    let found = (!sought.is_empty()).then(|| catalog.search(&sought));
+    let mut shown = super::pokemon_cards::shown(&catalog, found.as_deref(), |species, by_itself| resources.species_open(species, by_itself));
+    if let Some(generation) = resources.filter.as_ref().and_then(|filter| filter.parse::<u8>().ok()).filter(|_| sought.is_empty()) {
+        shown.retain(|one| catalog.species[one.species].generation == generation);
+    }
+    let count: usize = shown.iter().map(|one| one.entries.len()).sum();
+    toolbar::head(ui, resources, count);
+    toolbar::filters(ui, resources);
+    ui.horizontal(|ui| {
+        ui.add_space(10.0);
+        let said = if sought.is_empty() {
+            format!("{} species, {} Pokémon with their forms · search by name, number, type, generation (“fire gen 3”)", shown.len(), catalog.len())
+        } else {
+            format!("{} species found", shown.len())
+        };
+        ui.label(theme::text(said, theme::SMALL, theme::WEAK));
+        if !sought.is_empty() && ui.small_button("Search All Shelves").on_hover_text("this search through every shelf: faces, music, things…").clicked() {
+            resources.everywhere = true;
+        }
+    });
+    let size = vec2((resources.size * 1.45).round(), resources.size + 46.0);
+    let columns = ((ui.available_width() - 12.0) / (size.x + 8.0)).floor().max(1.0) as usize;
+    let rows = super::pokemon_cards::rows(&shown, columns);
+    let chosen_word = resources.chosen.as_deref().and_then(|key| key.strip_prefix("pokemon:")).map(str::to_string);
+    let scroll_to = resources.scroll_wanted.then(|| {
+        let row = chosen_word.as_ref().and_then(|word| {
+            let (species, entry) = catalog.find(word)?;
+            rows.iter().position(|row| row.cards.contains(&(species, entry)) || row.cards.contains(&(species, 0)))
+        });
+        row.map_or(0.0, |row| (row as f32 * (size.y + 8.0) - 60.0).max(0.0))
+    });
+    resources.scroll_wanted = false;
+    if rows.is_empty() {
+        ui.label(theme::weak("  no Pokémon by that name, number, type or generation"));
+    }
+    let did = super::pokemon_cards::grid(ui, resources, "resources pokemon", &catalog, &rows, size, chosen_word.as_deref(), scroll_to);
+    if let Some(species) = did.toggled {
+        let open = shown.iter().find(|one| one.species == species).is_some_and(|one| one.open);
+        resources.toggle_species(&catalog.species[species], open);
+    }
+    let item_of = |(species, entry): (usize, usize)| {
+        let (species, at) = (&catalog.species[species], entry);
+        let entry = &species.entries[at];
+        let about = super::catalog::about(species, entry, at);
+        Item { shelf: Shelf::Pokemon, word: entry.word.clone(), label: entry.name.clone(), about, number: entry.number, file: None, order: 0 }
+    };
+    if let Some(at) = did.clicked.or(did.twice) {
+        let item = item_of(at);
+        resources.choose(&item);
+        if did.twice.is_some() {
+            if resources.import_if_missing(&item.word) {
+                return;
+            }
+            ui.ctx().copy_text(item.word.clone());
+            resources.said = Some(format!("copied: {} (type it in a film, or drag it from the Film's Assets)", item.word));
+        }
+    }
 }
 
 /// The things: a grid of their pictures, or a list; scrolled to the one

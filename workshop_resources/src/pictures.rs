@@ -35,6 +35,16 @@ fn sheets_of(session: &Session, file: &'static str) -> std::sync::Arc<Sheets> {
     kept.get(|| assets::tables::sheets(session.data(), file).into_iter().map(|row| ((row.number, row.animation), row.sheet)).collect())
 }
 
+/// The Pokémon's sheets, by number and animation.
+pub(super) fn sprite_sheets(session: &Session) -> std::sync::Arc<Sheets> {
+    sheets_of(session, "sprites.txt")
+}
+
+/// Whether a body's animation is the game's own (its file in `data/rom/`), not the community's nor drawn by hand.
+pub(super) fn the_games(session: &Session, number: i64, file: u8) -> bool {
+    std::path::Path::new(session.data()).join("rom").join("sprites").join(format!("{number}_{file}.png")).is_file()
+}
+
 /// A body's animations the game draws: their files, their words (`Attack`, `Sleep`…).
 pub(super) fn animations_of(session: &Session, number: i64) -> Vec<(u8, String)> {
     let sprites = sheets_of(session, "sprites.txt");
@@ -55,6 +65,42 @@ pub(super) fn body_sheet(session: &Session, context: &egui::Context, number: i64
     let path = PathBuf::from(assets::data::path(session.data(), &format!("sprites/{number}_{file}.png")));
     let texture = read_png(context, &path, &format!("body:{number}:{file}"), sheet.wide)?;
     fitting(Sheet { texture, cell: vec2(sheet.wide as f32, sheet.high as f32), count: sheet.durations.len().max(1), ticks: sheet.durations.clone() })
+}
+
+/// What is drawn of a body's animation facing down, all its images together: its place in a cell (pixels).
+pub(super) fn body_bounds(session: &Session, number: i64, file: u8) -> Option<Rect> {
+    let sprites = sheets_of(session, "sprites.txt");
+    let sheet = sprites.get(&(u16::try_from(number).ok()?, file))?;
+    let picture = image::open(assets::data::path(session.data(), &format!("sprites/{number}_{file}.png"))).ok()?.to_rgba8();
+    drawn_in_row(&picture, sheet.wide, sheet.high)
+}
+
+/// What is drawn in a sheet's first row, its cells laid over each other: its place in a cell (pixels).
+pub fn drawn_in_row(picture: &image::RgbaImage, wide: u32, high: u32) -> Option<Rect> {
+    let (wide, high) = (wide.max(1), high.min(picture.height()));
+    let mut found: Option<Rect> = None;
+    for y in 0..high {
+        for x in 0..picture.width() {
+            if picture.get_pixel(x, y).0[3] > 0 {
+                let at = egui::pos2((x % wide) as f32, y as f32);
+                let one = Rect::from_min_max(at, at + vec2(1.0, 1.0));
+                found = Some(found.map_or(one, |found| found.union(one)));
+            }
+        }
+    }
+    found
+}
+
+/// A step of a body's sheet facing down, cut to what is drawn in its row: its part of the texture, its size.
+pub(super) fn cut_step(sheet: &Sheet, step: usize, bounds: Option<Rect>) -> (Rect, egui::Vec2) {
+    let uv = sheet.uv_at(step, 0);
+    let Some(bounds) = bounds else {
+        // (Not known: the middle of the cell, the rest being room round it.)
+        return (Rect::from_center_size(uv.center(), uv.size() * 0.6), sheet.cell * 0.6);
+    };
+    let size = sheet.texture.size_vec2();
+    let min = uv.min + vec2(bounds.min.x / size.x, bounds.min.y / size.y);
+    (Rect::from_min_size(min, vec2(bounds.width() / size.x, bounds.height() / size.y)), bounds.size())
 }
 
 /// The game's effects, read once a session.
@@ -80,7 +126,7 @@ pub(super) fn sheet_of(session: &Session, context: &egui::Context, item: &Item) 
             let cell = texture.size_vec2();
             Some(Sheet { texture, cell, count: 1, ticks: vec![60] })
         }
-        Shelf::Pokemon | Shelf::Variants => {
+        Shelf::Pokemon => {
             // (Its portrait; none in the game: its body, as it walks.)
             let path = PathBuf::from(assets::data::path(&data, &format!("portraits/{}_0.png", item.number)));
             if let Some(texture) = read_png(context, &path, &key, 0) {
@@ -206,10 +252,17 @@ pub(super) fn paint_item(
     }
 }
 
-/// The faces a species has a portrait of (their numbers), the first first.
+/// The faces in the order they are shown: as the films name them (normal, happy… sigh, stunned, then the special
+/// ones), any other after by its number.
+pub(super) fn face_order() -> Vec<u16> {
+    let named: Vec<u16> = scenes::vocabulary::POKEMON.faces.iter().map(|(_, number)| *number).collect();
+    named.iter().copied().chain((0..20).filter(|face| !named.contains(face))).collect()
+}
+
+/// The faces a species has a portrait of (their numbers), the normal one first, in the order the films name them.
 pub(super) fn faces_of(session: &Session, number: i64) -> Vec<u16> {
     let folder = session.data();
-    let mut faces: Vec<u16> = (0..20).filter(|face| assets::data::has(folder, &format!("portraits/{number}_{face}.png"))).collect();
+    let mut faces: Vec<u16> = face_order().into_iter().filter(|face| assets::data::has(folder, &format!("portraits/{number}_{face}.png"))).collect();
     if faces.is_empty() {
         faces.push(0);
     }

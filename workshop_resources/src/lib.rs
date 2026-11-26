@@ -1,14 +1,19 @@
 //! The Resources space: all a film and a decor are made with, looked
 //! through as in a studio's asset browser.
-//! - the Library: the shelves (Pokémon and their variants, the things
-//!   drawn and the game's, the songs and the sounds, the effects, the
-//!   pieces of the decors), how many on each, the favourites;
+//! - the Library: the shelves (the Pokémon catalog, `catalog.rs`: every
+//!   species, its forms and variants under it; their faces; the things drawn
+//!   and the game's, the songs and the sounds, the effects, the pieces of the
+//!   decors), how many on each, the favourites;
 //! - the Resources: a shelf's things in a grid (or a list), their pictures,
-//!   sought by a few letters everywhere at once, sorted, made larger or
-//!   smaller; a PNG dropped on the window joins the things drawn;
+//!   sought by a few letters everywhere at once (on the Pokémon shelf: the
+//!   catalog, by name, number, type, generation), sorted, made larger or
+//!   smaller; the Pokémon's and the songs' cards their own (`pokemon_cards.rs`,
+//!   `music_cards.rs`), only those in sight drawn; a PNG dropped on the window
+//!   joins the things drawn;
 //! - the Inspector: the one chosen in large, its pictures one by one or
 //!   playing, heard if it is heard, what it is, how a film writes it (written
-//!   in the film open in a click), the films and decors it is in;
+//!   in the film open in a click), the films and decors it is in; a Pokémon's
+//!   page (`inspector/page.rs`: its animations, faces, forms, credits);
 //! - the Assets (`picker`), a panel of the Film space: the same shelves made
 //!   small, beside the film, to drag onto its Scene or its Script.
 //!
@@ -33,17 +38,21 @@ use pictures::sheet_of;
 use shelves::{favourites_file, filter_words, made_list};
 use workshop_decor::Decors;
 
+mod catalog;
 mod dropped;
 mod game_shelves;
 mod grid;
 mod inspector;
 mod maker;
+mod music_cards;
 mod picker;
 mod pictures;
+mod pokemon_cards;
 mod shelves;
 mod studio;
 #[cfg(test)]
 mod tests;
+mod thumbs;
 mod toolbar;
 mod tree;
 
@@ -61,7 +70,6 @@ const READ_EACH_FRAME: usize = 14;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Shelf {
     Pokemon,
-    Variants,
     /// Each Pokémon's faces, one card each.
     Portraits,
     Drawn,
@@ -87,9 +95,8 @@ pub enum Shelf {
 }
 
 impl Shelf {
-    const ALL: [Shelf; 17] = [
+    const ALL: [Shelf; 16] = [
         Shelf::Pokemon,
-        Shelf::Variants,
         Shelf::Portraits,
         Shelf::Drawn,
         Shelf::Props,
@@ -109,7 +116,7 @@ impl Shelf {
 
     /// The groups of the Library, each its shelves (none: a shelf alone).
     const GROUPS: [(&'static str, &'static [Shelf]); 7] = [
-        ("Characters", &[Shelf::Pokemon, Shelf::Variants, Shelf::Portraits]),
+        ("Characters", &[Shelf::Pokemon, Shelf::Portraits]),
         ("Objects", &[Shelf::Drawn, Shelf::Props, Shelf::Items]),
         ("Audio", &[Shelf::Songs, Shelf::Sounds]),
         ("Effects", &[Shelf::Attacks, Shelf::Statuses, Shelf::Weather, Shelf::Effects]),
@@ -121,8 +128,7 @@ impl Shelf {
     fn name(self) -> &'static str {
         match self {
             Shelf::Pokemon => "Pokémon",
-            Shelf::Variants => "Variants",
-            Shelf::Portraits => "Portraits",
+            Shelf::Portraits => "Faces",
             Shelf::Drawn => "Drawn",
             Shelf::Props => "The Game's",
             Shelf::Items => "Items",
@@ -152,7 +158,6 @@ impl Shelf {
     fn key(self) -> &'static str {
         match self {
             Shelf::Pokemon => "pokemon",
-            Shelf::Variants => "variant",
             Shelf::Portraits => "portrait",
             Shelf::Drawn => "drawing",
             Shelf::Props => "prop",
@@ -183,7 +188,7 @@ impl Shelf {
 
     /// A line of it is shown played, on the beach, in the Inspector.
     fn watched(self) -> bool {
-        matches!(self, Shelf::Pokemon | Shelf::Variants | Shelf::Portraits | Shelf::Items | Shelf::Attacks | Shelf::Statuses | Shelf::Weather | Shelf::Effects)
+        matches!(self, Shelf::Pokemon | Shelf::Portraits | Shelf::Items | Shelf::Attacks | Shelf::Statuses | Shelf::Weather | Shelf::Effects)
     }
 }
 
@@ -210,7 +215,7 @@ impl Item {
     fn line(&self) -> Option<String> {
         let word = &self.word;
         match self.shelf {
-            Shelf::Pokemon | Shelf::Variants => Some(format!("{word} walk to right")),
+            Shelf::Pokemon => Some(format!("{word} walk to right")),
             Shelf::Portraits => Some(format!("{word}: ...")),
             Shelf::Drawn => Some(format!("pikachu hold {word}")),
             Shelf::Props => Some(format!("object put {word} front_of pikachu")),
@@ -355,6 +360,27 @@ pub struct Resources {
     sheet_import: Option<SheetImport>,
     /// The Film space's Assets panel (`picker`).
     picker: picker::Picker,
+    /// The Pokémon catalog (made when first asked, again when SpriteCollab's folders not imported are known).
+    catalog: Option<Arc<catalog::Catalog>>,
+    missing: Option<Vec<spritecollab::Missing>>,
+    missing_reading: Option<std::sync::mpsc::Receiver<Vec<spritecollab::Missing>>>,
+    /// The Pokémon's cards' pictures, made on a thread.
+    thumbs: thumbs::Thumbs,
+    /// The species whose forms were opened, or shut, by their word.
+    open_species: std::collections::HashSet<String>,
+    shut_species: std::collections::HashSet<String>,
+    /// On the Pokémon shelf, a search through every shelf asked (else through the catalog).
+    everywhere: bool,
+    /// The part of a Pokémon's page shown.
+    page: inspector::Page,
+    /// SpriteCollab's credits and its forms' folders, read when a page first shows them.
+    credits: Option<Arc<HashMap<spritecollab::Unit, Vec<spritecollab::Credit>>>>,
+    form_units: Option<Arc<HashMap<String, spritecollab::Unit>>>,
+    /// The songs' lengths (seconds, whether it loops), read on a thread.
+    lengths: HashMap<u16, (f32, bool)>,
+    lengths_reading: Option<std::sync::mpsc::Receiver<HashMap<u16, (f32, bool)>>>,
+    /// What is drawn of each body's animation facing down (`pictures::body_bounds`), by its picture's key.
+    bounds: HashMap<String, Option<Rect>>,
 }
 
 /// A folder (or zip) of SpriteBot's layout to import: in place of the Pokémon chosen, or as a variant of it.
@@ -369,15 +395,23 @@ impl Resources {
         let favourites = std::fs::read_to_string(favourites_file(session))
             .map(|text| text.lines().map(str::to_string).filter(|line| !line.is_empty()).collect())
             .unwrap_or_default();
-        // (`WORKSHOP_RESOURCE=drawing:bouee`: that shelf, that one chosen, for a picture.)
-        let asked = session.launch.resource.clone();
+        // (`WORKSHOP_RESOURCE=drawing:bouee`: that shelf, that one chosen, for a picture; `pokemon?eevee`: that
+        // shelf, that sought; `pokemon:eevee:faces`: that part of its page.)
+        let (asked, sought) = match session.launch.resource.as_deref().map(|asked| asked.split_once('?').unwrap_or((asked, ""))) {
+            Some((asked, sought)) => (Some(asked.to_string()), sought.to_string()),
+            None => (None, String::new()),
+        };
         let shelf = asked.as_ref().and_then(|asked| Shelf::ALL.into_iter().find(|shelf| asked.starts_with(shelf.key()))).unwrap_or(Shelf::Pokemon);
+        let (asked, page) = match asked.as_deref().and_then(|asked| asked.rsplit_once(':')).and_then(|(rest, page)| Some((rest, inspector::Page::of(page)?))) {
+            Some((rest, page)) => (Some(rest.to_string()), page),
+            None => (asked, inspector::Page::Animations),
+        };
         Resources {
             session: session.clone(),
             shelf,
             chosen: asked.as_ref().filter(|asked| asked.contains(':')).map(|asked| asked.trim_end_matches(":body").to_string()),
-            sought: String::new(),
-            size: 84.0,
+            sought,
+            size: 96.0,
             listed: false,
             sort: 0,
             only_used: false,
@@ -423,6 +457,19 @@ impl Resources {
             run: None,
             sheet_import: None,
             picker: picker::Picker::new(session.launch.picker.as_deref()),
+            catalog: None,
+            missing: None,
+            missing_reading: None,
+            thumbs: thumbs::Thumbs::new(),
+            open_species: std::collections::HashSet::new(),
+            shut_species: std::collections::HashSet::new(),
+            everywhere: false,
+            page,
+            credits: None,
+            form_units: None,
+            lengths: HashMap::new(),
+            lengths_reading: None,
+            bounds: HashMap::new(),
         }
     }
 
@@ -430,6 +477,106 @@ impl Resources {
     pub fn forget(&mut self) {
         self.lists.clear();
         self.pictures.clear();
+        self.catalog = None;
+        self.thumbs.forget();
+        (self.credits, self.form_units) = (None, None);
+    }
+
+    /// The Pokémon catalog: made once (SpriteCollab's folders not imported looked for on a thread, then added).
+    fn catalog(&mut self) -> Arc<catalog::Catalog> {
+        if let Some(reading) = &self.missing_reading
+            && let Ok(missing) = reading.try_recv()
+        {
+            self.missing = Some(missing);
+            self.missing_reading = None;
+            self.catalog = None;
+            self.lists.remove(&Shelf::Pokemon);
+            self.lists.remove(&Shelf::Portraits);
+        }
+        if self.missing.is_none() && self.missing_reading.is_none() && self.session.spritecollab.join("sprite").is_dir() {
+            let (send, receive) = std::sync::mpsc::channel();
+            let places = workshop_base::tool_run::places(&self.session);
+            std::thread::spawn(move || _ = send.send(spritecollab::not_imported(&places)));
+            self.missing_reading = Some(receive);
+        }
+        if self.catalog.is_none() {
+            let missing = self.missing.clone().unwrap_or_default();
+            self.catalog = Some(Arc::new(catalog::of_session(&self.session, &missing)));
+        }
+        self.catalog.clone().unwrap_or_default()
+    }
+
+    /// Whether a species' forms are shown (`by_itself`: as the search would have it).
+    fn species_open(&self, species: &catalog::Species, by_itself: bool) -> bool {
+        pokemon_cards::is_open(&self.open_species, &self.shut_species, species, by_itself)
+    }
+
+    /// A species' forms opened, or shut.
+    fn toggle_species(&mut self, species: &catalog::Species, now_open: bool) {
+        let word = species.entries.first().map(|entry| entry.word.clone()).unwrap_or_default();
+        if now_open {
+            self.open_species.remove(&word);
+            self.shut_species.insert(word);
+        } else {
+            self.shut_species.remove(&word);
+            self.open_species.insert(word);
+        }
+    }
+
+    /// A Pokémon of SpriteCollab not imported yet, used: SpriteCollab imported (what is not yet) in the background;
+    /// then everything read again. Whether it was needed.
+    fn import_if_missing(&mut self, word: &str) -> bool {
+        let catalog = self.catalog();
+        let Some((_, entry)) = catalog.entry(word) else { return false };
+        if entry.source != catalog::Source::Missing {
+            return false;
+        }
+        if self.run.is_none() {
+            let places = workshop_base::tool_run::places(&self.session);
+            self.run = Some(workshop_base::tool_run::Run::spawn("import community", move || {
+                spritecollab::import_all(&places, spritecollab::Over::Ours, &mut |_| {}).map(|totals| format!("imported from SpriteCollab: {totals}"))
+            }));
+            self.said = Some(format!("{word}: importing it from SpriteCollab, in the background…"));
+        }
+        true
+    }
+
+    /// The work on its thread told when done; an import: everything read again.
+    fn work_done(&mut self) {
+        if let Some(run) = self.run.as_mut()
+            && let Some(done) = run.poll().cloned()
+        {
+            let doing = run.doing.clone();
+            self.run = None;
+            self.said = Some(match done {
+                Ok(said) => {
+                    if doing.starts_with("import") {
+                        self.session.reload();
+                        self.missing = None;
+                        self.forget();
+                    }
+                    said
+                }
+                Err(why) => why,
+            });
+        }
+    }
+
+    /// The songs' lengths, read on a thread the first time they are asked.
+    fn song_lengths(&mut self) -> &HashMap<u16, (f32, bool)> {
+        if let Some(reading) = &self.lengths_reading
+            && let Ok(lengths) = reading.try_recv()
+        {
+            self.lengths = lengths;
+            self.lengths_reading = None;
+        }
+        if self.lengths.is_empty() && self.lengths_reading.is_none() {
+            let (send, receive) = std::sync::mpsc::channel();
+            let data = self.session.data().to_string();
+            std::thread::spawn(move || _ = send.send(shell::sound::song_lengths(&data)));
+            self.lengths_reading = Some(receive);
+        }
+        &self.lengths
     }
 
     /// The keys of the things open and not written yet (`dungeon:word`…), as the shelves know them.
@@ -492,12 +639,33 @@ impl Resources {
             let wanted = self.favourites.clone();
             return Shelf::ALL.iter().flat_map(|shelf| self.list(*shelf, decors)).filter(|item| wanted.contains(&item.key())).collect();
         }
+        if shelf == Shelf::Pokemon && !self.lists.contains_key(&shelf) {
+            let catalog = self.catalog();
+            self.lists.insert(shelf, catalog::items(&catalog));
+        }
         self.lists.entry(shelf).or_insert_with(|| made_list(&self.session, shelf, decors)).clone()
+    }
+
+    /// Whether the search is the catalog's (on the Pokémon shelf, not asked through every shelf).
+    fn catalog_sought(&self) -> bool {
+        self.shelf == Shelf::Pokemon && !self.everywhere && !self.sought.trim().is_empty()
     }
 
     /// What the grid shows: the shelf's, or, something being sought, all those that answer it.
     fn shown(&mut self, decors: &Decors) -> Vec<Item> {
         let sought = film::words::plain(self.sought.trim());
+        // (On the Pokémon shelf: the catalog's search, by name, number, type, generation; the closest first.)
+        if self.catalog_sought() {
+            let catalog = self.catalog();
+            let all = self.list(Shelf::Pokemon, decors);
+            let by_word: HashMap<&str, &Item> = all.iter().map(|item| (item.word.as_str(), item)).collect();
+            return catalog
+                .search(&self.sought)
+                .iter()
+                .flat_map(|found| found.entries.iter().map(move |entry| (found.species, *entry)))
+                .filter_map(|(species, entry)| by_word.get(catalog.species[species].entries[entry].word.as_str()).map(|item| (*item).clone()))
+                .collect();
+        }
         let mut items: Vec<Item> = if sought.is_empty() {
             self.list(self.shelf, decors)
         } else {
@@ -509,8 +677,14 @@ impl Resources {
         };
         // (A generation, a mood; those used in a film only.)
         if let Some(filter) = self.filter.clone().filter(|_| sought.is_empty()) {
-            let wanted = filter_words(&self.session, self.shelf, &filter);
-            items.retain(|item| wanted.contains(&item.word));
+            if self.shelf == Shelf::Pokemon {
+                let catalog = self.catalog();
+                let generation: u8 = filter.parse().unwrap_or(0);
+                items.retain(|item| catalog.entry(&item.word).is_some_and(|(species, _)| species.generation == generation));
+            } else {
+                let wanted = filter_words(self.shelf, &filter);
+                items.retain(|item| wanted.contains(&item.word));
+            }
         }
         self.read_corpus();
         if self.only_used {

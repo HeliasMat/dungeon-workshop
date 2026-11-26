@@ -45,7 +45,7 @@ pub(super) fn tools(ui: &mut egui::Ui, resources: &mut Resources) {
         if ui.input(|input| input.modifiers.command && input.key_pressed(egui::Key::F)) {
             field.request_focus();
         }
-        if !resources.sought.is_empty() && ui.small_button("✕").clicked() {
+        if !resources.sought.is_empty() && ui.small_button("×").on_hover_text("the search cleared").clicked() {
             resources.sought.clear();
         }
         ui.spacing_mut().slider_width = 90.0;
@@ -108,7 +108,7 @@ fn made_and_imported(bar: &mut egui::Ui, resources: &mut Resources) {
             take_files(resources, chosen);
         }
     }
-    if matches!(resources.shelf, Shelf::Pokemon | Shelf::Variants)
+    if matches!(resources.shelf, Shelf::Pokemon)
         && bar.button("SpriteCollab…").on_hover_text("the PMDCollab community's sprites and portraits, to look at and import").clicked()
     {
         resources.session.ask(Ask::SpriteCollab(None));
@@ -119,7 +119,13 @@ fn made_and_imported(bar: &mut egui::Ui, resources: &mut Resources) {
 pub(super) fn head(ui: &mut egui::Ui, resources: &Resources, count: usize) {
     let head = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width(), 24.0));
     ui.painter().rect_filled(head, 0.0, theme::TABS);
-    let title = if resources.sought.trim().is_empty() { resources.shelf.path() } else { format!("“{}” everywhere", resources.sought.trim()) };
+    let title = if resources.sought.trim().is_empty() {
+        resources.shelf.path()
+    } else if resources.catalog_sought() {
+        format!("“{}” in Pokémon", resources.sought.trim())
+    } else {
+        format!("“{}” everywhere", resources.sought.trim())
+    };
     ui.painter().text(head.left_center() + vec2(10.0, 0.0), egui::Align2::LEFT_CENTER, title, FontId::proportional(theme::BODY), theme::STRONG);
     let said = format!("{count} element{}", if count > 1 { "s" } else { "" });
     ui.painter().text(head.right_center() - vec2(10.0, 0.0), egui::Align2::RIGHT_CENTER, said, FontId::proportional(theme::SMALL), theme::WEAK);

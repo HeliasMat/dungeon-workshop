@@ -45,15 +45,13 @@ pub(super) fn listed(session: &Session, shelf: Shelf) -> Vec<Item> {
     let tables = session.tables();
     match shelf {
         Shelf::Pokemon => pokemon(session),
-        Shelf::Variants => variants(session),
         Shelf::Drawn => drawn(session),
         Shelf::Props => {
             tables.props.iter().map(|(word, number)| item(shelf, word, word, format!("game prop No. {number}"), i64::from(*number), None)).collect()
         }
-        Shelf::Songs => rules::songs::SONGS
-            .iter()
-            .map(|song| item(shelf, song.word, song.word, format!("{} · {}", song.title, song.moods), i64::from(song.number), None))
-            .collect(),
+        Shelf::Songs => {
+            rules::songs::SONGS.iter().map(|song| item(shelf, song.word, song.title, song.moods.replace(' ', " · "), i64::from(song.number), None)).collect()
+        }
         Shelf::Sounds => sounds(session),
         Shelf::Dungeons => dungeons(session),
         Shelf::Bosses => bosses(session),
@@ -61,7 +59,7 @@ pub(super) fn listed(session: &Session, shelf: Shelf) -> Vec<Item> {
         Shelf::Attacks => game_shelves::attacks(session),
         Shelf::Statuses => game_shelves::statuses(session),
         Shelf::Weather => game_shelves::weathers(),
-        Shelf::Portraits => game_shelves::portraits(session, &[pokemon(session), variants(session)].concat()),
+        Shelf::Portraits => game_shelves::portraits(session, &pokemon(session)),
         Shelf::Items => game_shelves::items(session),
         Shelf::Backdrops => game_shelves::backdrops(session),
         Shelf::Tilesets => game_shelves::tilesets(session),
@@ -93,53 +91,9 @@ fn item(shelf: Shelf, word: &str, label: &str, about: String, number: i64, file:
     Item { shelf, word: word.to_string(), label: label.to_string(), about, number, file, order: number }
 }
 
-/// Each species once, by the word its name makes; its first number. (Those the game draws only: the names of
-/// later Pokémon are known, not their bodies.)
+/// Every Pokémon of the catalog (the species, their forms after each), SpriteCollab's not imported left.
 fn pokemon(session: &Session) -> Vec<Item> {
-    let tables = session.tables();
-    let drawn: std::collections::HashSet<&String> = tables.with_sprites.iter().collect();
-    let mut by_name: BTreeMap<String, (i64, String)> = BTreeMap::new();
-    for (word, (number, name)) in tables.monsters.iter().filter(|(word, _)| drawn.contains(word)) {
-        let Ok(number) = number.parse::<i64>() else { continue };
-        if number == 0 || name.is_empty() || name.starts_with('?') || film::words::plain(name) != *word {
-            continue;
-        }
-        let kept = by_name.entry(name.clone()).or_insert((number, word.clone()));
-        if number < kept.0 {
-            *kept = (number, word.clone());
-        }
-    }
-    by_name
-        .into_iter()
-        .map(|(name, (number, word))| {
-            let dex = dex_of(session, number);
-            // (Those of the game that are no Pokémon (a decoy, a statue): last.)
-            let order = if dex > 0 { dex } else { 100_000 + number };
-            let about = if dex > 0 { format!("Pokédex No. {dex}") } else { format!("the game's, No. {number}") };
-            Item { order, ..item(Shelf::Pokemon, &word, &name, about, number, None) }
-        })
-        .collect()
-}
-
-/// The variants: each its own number, its own body; sorted with its species.
-fn variants(session: &Session) -> Vec<Item> {
-    let tables = session.tables();
-    tables
-        .variants
-        .iter()
-        .flat_map(|(of, words)| {
-            let species = tables.monsters.values().find(|(number, _)| number == of).map_or(String::new(), |(_, name)| name.clone());
-            let number = of.parse::<i64>().unwrap_or(0);
-            words.iter().map(move |word| (word.clone(), species.clone(), number))
-        })
-        .map(|(word, species, number)| {
-            let own = tables.monsters.get(&word).and_then(|(own, _)| own.parse::<i64>().ok()).unwrap_or(number);
-            Item {
-                order: dex_of(session, number),
-                ..item(Shelf::Variants, &word, &word, format!("variant of {species} (Pokédex No. {})", dex_of(session, number)), own, None)
-            }
-        })
-        .collect()
+    super::catalog::items(&super::catalog::of_session(session, &[]))
 }
 
 /// A drawn picture's name and how many images it holds, of its file's stem (`smoke.4`); none for a large one.
@@ -221,12 +175,9 @@ fn bosses(session: &Session) -> Vec<Item> {
         .collect()
 }
 
-/// The words a filter keeps: a generation's Pokémon, a mood's songs.
-pub(super) fn filter_words(session: &Session, shelf: Shelf, filter: &str) -> std::collections::HashSet<String> {
+/// The words a filter keeps: a mood's songs (a generation's Pokémon: the catalog's, `Resources::shown`).
+pub(super) fn filter_words(shelf: Shelf, filter: &str) -> std::collections::HashSet<String> {
     match shelf {
-        Shelf::Pokemon => {
-            filter.parse::<usize>().ok().and_then(|generation| session.tables().generations.get(&generation).cloned()).unwrap_or_default().into_iter().collect()
-        }
         Shelf::Songs => {
             rules::songs::SONGS.iter().filter(|song| song.moods.split_whitespace().any(|mood| mood == filter)).map(|song| song.word.to_string()).collect()
         }

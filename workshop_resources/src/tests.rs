@@ -169,3 +169,178 @@ fn each_shelf_is_in_one_group() {
     assert_eq!(super::Shelf::Statuses.path(), "Effects › Status Effects");
     assert_eq!(super::Shelf::Pieces.path(), "Decor (Elements)");
 }
+
+/// A small catalog, as the project's files would make it: the game's (a second gender, Unown's letters, the
+/// story's Dialga, Mama, a decoy), the community's (a species past the game's, a variant painted by hand, forms),
+/// SpriteCollab's not imported.
+fn small_catalog() -> super::catalog::Catalog {
+    use super::catalog::{Catalog, Input};
+    let monster = |number: i64, words: &[&str], name: &str| (number, words.iter().map(|word| word.to_string()).collect(), name.to_string());
+    let input = Input {
+        monsters: vec![
+            monster(4, &["charmander"], "Charmander"),
+            monster(39, &["jigglypuff"], "Jigglypuff"),
+            monster(40, &["wigglytuff"], "Wigglytuff"),
+            monster(575, &["mama"], "Mama"),
+            monster(122, &["mrmime"], "Mr. Mime"),
+            monster(133, &["eevee"], "Eevee"),
+            monster(733, &["eevee_733"], "Eevee"),
+            monster(201, &["unown"], "Unown"),
+            monster(202, &["unown_202"], "Unown"),
+            monster(483, &["dialga"], "Dialga"),
+            monster(552, &["dialga_552", "dialga_primal"], "Dialga"),
+            monster(553, &["decoy"], "Decoy"),
+            monster(2810, &["grookey"], "Grookey"),
+            monster(5205, &["eeveealternate"], "Eevee Alternate"),
+        ],
+        variants: vec![
+            (5205, 133, "eevee_alternate".to_string(), false),
+            (5206, 133, "eevee_alternate_two".to_string(), false),
+            (5300, 4, "charmander_pirate".to_string(), true),
+        ],
+        dex: [(4, 4), (39, 39), (40, 40), (575, 40), (122, 122), (133, 133), (733, 133), (201, 201), (202, 201), (483, 483), (552, 483), (553, 0)]
+            .into_iter()
+            .collect(),
+        types: [(4, (2, 0)), (133, (1, 0)), (40, (1, 0))].into_iter().collect(),
+        missing: vec![
+            spritecollab::Missing { unit: (906, 0), species: "Sprigatito".to_string(), form: String::new(), word: String::new() },
+            spritecollab::Missing { unit: (133, 9), species: "Eevee".to_string(), form: "Holiday_Hat".to_string(), word: "eevee_holiday_hat".to_string() },
+        ],
+    };
+    Catalog::build(&input)
+}
+
+/// The catalog: each species once, in the Pokédex's order, its forms under it named; Mama a form of Wigglytuff,
+/// not a species between Jigglypuff and Wigglytuff; the game's others last.
+#[test]
+fn the_catalog_groups_the_forms_under_their_species() {
+    use super::catalog::Source;
+    let catalog = small_catalog();
+    let names: Vec<&str> = catalog.species.iter().map(|species| species.name.as_str()).collect();
+    assert_eq!(names, ["Charmander", "Jigglypuff", "Wigglytuff", "Mr. Mime", "Eevee", "Unown", "Dialga", "Grookey", "Sprigatito", "Decoy"]);
+    let eevee = &catalog.species[4];
+    let forms: Vec<(&str, &str, Source)> = eevee.entries.iter().map(|entry| (entry.word.as_str(), entry.form.as_str(), entry.source)).collect();
+    assert_eq!(
+        forms,
+        [
+            ("eevee", "", Source::Game),
+            ("eevee_alternate", "Alternate", Source::Community),
+            ("eevee_alternate_two", "Alternate Two", Source::Community),
+            ("eevee_holiday_hat", "Holiday Hat", Source::Missing),
+        ]
+    );
+    assert_eq!(eevee.entries[2].name, "Eevee · Alternate Two");
+    assert!(catalog.find("eevee_733").is_none() && catalog.find("unown_202").is_none(), "a word ending in a number is no film's");
+    let wigglytuff = &catalog.species[2];
+    assert_eq!((wigglytuff.entries[1].word.as_str(), wigglytuff.entries[1].name.as_str()), ("mama", "Wigglytuff · Mama"));
+    assert_eq!((catalog.species[6].entries[1].word.as_str(), catalog.species[6].entries[1].form.as_str()), ("dialga_primal", "Primal"));
+    assert_eq!(catalog.species[0].entries[1].source, Source::Hand);
+    assert_eq!((catalog.species[7].generation, catalog.species[7].entries[0].source), (8, Source::Community));
+    assert_eq!((catalog.species[8].entries[0].word.as_str(), catalog.species[8].entries[0].number), ("sprigatito", -1));
+    assert_eq!(catalog.species[9].dex, 0);
+    assert_eq!(catalog.species[0].types_said(), "Fire");
+    assert_eq!(catalog.entry("mama").map(|(species, _)| species.name.as_str()), Some("Wigglytuff"));
+}
+
+/// The catalog sought: by name (accents, case, `_` and spaces left out), by number, by type, by generation; a
+/// form found alone shows with its species; the closest first.
+#[test]
+fn the_catalog_is_sought_by_name_number_type_generation() {
+    let catalog = small_catalog();
+    let names = |said: &str| -> Vec<String> { catalog.search(said).iter().map(|found| catalog.species[found.species].name.clone()).collect() };
+    for said in ["eevee", "Éevée", "EEVEE", "  eev  "] {
+        assert_eq!(names(said), ["Eevee"], "{said}");
+    }
+    let eevee = &catalog.search("eevee")[0];
+    assert!(eevee.whole);
+    assert_eq!(eevee.entries.len(), 4, "the species found: all of its forms");
+    for said in ["mr mime", "mr_mime", "Mr. Mime", "mrmime"] {
+        assert_eq!(names(said), ["Mr. Mime"], "{said}");
+    }
+    assert_eq!(names("133"), ["Eevee"]);
+    assert_eq!(names("#40"), ["Wigglytuff"]);
+    assert_eq!(names("fire"), ["Charmander"]);
+    assert_eq!(names("normal gen 1"), ["Wigglytuff", "Eevee"]);
+    for said in ["gen 8", "gen8", "g8", "generation 8"] {
+        assert_eq!(names(said), ["Grookey"], "{said}");
+    }
+    let alternate_two = catalog.search("alternate two");
+    assert_eq!(names("alternate two"), ["Eevee"]);
+    assert!(!alternate_two[0].whole);
+    assert_eq!(alternate_two[0].entries, [2]);
+    assert_eq!(names("mama"), ["Wigglytuff"]);
+    // (The name itself first, then those beginning with it, then the rest.)
+    assert_eq!(names("dialga"), ["Dialga"]);
+    assert_eq!(names("pirate"), ["Charmander"]);
+    assert!(names("nothing like it").is_empty());
+}
+
+/// The cards in rows: the folded species side by side, an open one on rows of its own, its forms after it; a
+/// species found by a form alone opens on that form.
+#[test]
+fn the_cards_lie_in_rows() {
+    use super::pokemon_cards::{Row, Shown, rows, shown};
+    let catalog = small_catalog();
+    let all = shown(&catalog, None, |species, _| species.name == "Eevee");
+    assert_eq!(all.len(), catalog.species.len());
+    assert_eq!(all[4].entries.len(), 4);
+    let laid = rows(&all, 3);
+    assert_eq!(laid[0], Row { cards: vec![(0, 0), (1, 0), (2, 0)], band: false });
+    assert_eq!(laid[1], Row { cards: vec![(3, 0)], band: false }, "the row cut before the open species");
+    assert_eq!(laid[2], Row { cards: vec![(4, 0), (4, 1), (4, 2)], band: true });
+    assert_eq!(laid[3], Row { cards: vec![(4, 3)], band: true });
+    assert_eq!(laid[4].cards[0], (5, 0));
+    let found = catalog.search("alternate two");
+    let opened = shown(&catalog, Some(&found[..]), |_, by_itself| by_itself);
+    assert_eq!(opened, [Shown { species: 4, entries: vec![0, 2], open: true }]);
+    let few = catalog.search("eevee");
+    assert_eq!(shown(&catalog, Some(&few[..]), |_, by_itself| by_itself)[0].entries.len(), 4, "few species found: their forms open");
+    assert_eq!(shown(&catalog, Some(&few[..]), |_, _| false)[0].entries, [0], "shut when asked");
+}
+
+/// The faces named as a film names them, the special ones too (no `15` nor `18`), in the films' order.
+#[test]
+fn every_face_has_its_name() {
+    use super::pictures::{face_name, face_order};
+    for face in 0..20 {
+        assert!(face_name(face).parse::<u16>().is_err(), "face {face}: {}", face_name(face));
+    }
+    assert_eq!(
+        (face_name(14), face_name(15), face_name(18), face_name(19)),
+        ("special_one".into(), "special_two".into(), "special_three".into(), "special_four".into())
+    );
+    let order = face_order();
+    assert_eq!(&order[..3], &[0, 1, 2]);
+    assert!(order.iter().position(|face| *face == 17) < order.iter().position(|face| *face == 14), "sigh and stunned before the special ones");
+    let text = "scene: beach eevee\neevee (special_two): Hm.\n";
+    assert!(problems_in(text).iter().all(|problem| !problem.contains("Error")), "{:?}", problems_in(text));
+}
+
+/// A song's length: minutes, seconds, ↻ when it loops.
+#[test]
+fn a_song_length_is_said() {
+    assert_eq!(super::music_cards::length_said(125.4, true), "2:05 ↻");
+    assert_eq!(super::music_cards::length_said(59.6, false), "1:00");
+}
+
+/// The project's own catalog (with the game's files): Mama under Wigglytuff, Eevee's forms with it, every word
+/// a Pokémon of the films.
+#[test]
+fn the_projects_catalog() {
+    let session = workshop_base::session::Session::for_tests();
+    let catalog = super::catalog::of_session(&session, &[]);
+    if catalog.species.len() < 400 {
+        return;
+    }
+    assert!(!catalog.species.iter().any(|species| species.name == "Mama"));
+    let eevee = &catalog.search("eevee")[0];
+    assert_eq!(catalog.species[eevee.species].name, "Eevee");
+    let tables = session.tables();
+    for species in &catalog.species {
+        for entry in species.entries.iter().filter(|entry| entry.number >= 0) {
+            assert!(tables.monsters.contains_key(&entry.word), "{} ({}) is no word of the films", entry.word, entry.name);
+        }
+    }
+    let words: std::collections::HashSet<&str> = catalog.species.iter().flat_map(|species| species.entries.iter().map(|entry| entry.word.as_str())).collect();
+    assert_eq!(words.len(), catalog.len(), "each word once");
+}

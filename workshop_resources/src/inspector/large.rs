@@ -5,9 +5,9 @@ use std::path::PathBuf;
 
 use eframe::egui::{self, Color32, Painter, Pos2, Rect, RichText, Sense, Stroke, StrokeKind, pos2, vec2};
 
-use super::super::pictures::{animations_of, body_sheet, face_name, faces_of, paint_item, read_png};
+use super::super::pictures::{animations_of, body_sheet, faces_of, paint_item, read_png};
 use super::super::{Item, Resources, Sheet, Shelf};
-use super::{Shown, section};
+use super::Shown;
 use workshop_base::theme;
 use workshop_decor::Decors;
 use workshop_picture::fitted;
@@ -15,7 +15,7 @@ use workshop_picture::fitted;
 /// What is shown of the one chosen: a person's body (if it has no faces, or
 /// its body was asked) or its face, a thing's picture; the step shown.
 pub(super) fn shown(resources: &mut Resources, context: &egui::Context, item: &Item) -> Shown {
-    let person = matches!(item.shelf, Shelf::Pokemon | Shelf::Variants);
+    let person = matches!(item.shelf, Shelf::Pokemon);
     let has_faces = person && assets::data::has(resources.session.data(), &format!("portraits/{}_0.png", item.number));
     let anims = if person { animations_of(&resources.session, item.number) } else { Vec::new() };
     let body = person && (!has_faces || resources.body.unwrap_or(false)) && !anims.is_empty();
@@ -42,7 +42,7 @@ pub(super) fn shown(resources: &mut Resources, context: &egui::Context, item: &I
         }
         _ => resources.step.min(steps.saturating_sub(1)),
     };
-    Shown { person, has_faces, anims, body, sheet, steps, step }
+    Shown { person, anims, body, sheet, steps, step }
 }
 
 /// The checkered ground, the one chosen drawn on it; how much it is grown, said.
@@ -52,7 +52,7 @@ pub(super) fn in_large(ui: &mut egui::Ui, resources: &mut Resources, decors: &mu
     let painter = ui.painter_at(room);
     checkered(&painter, room);
     match item.shelf {
-        Shelf::Pokemon | Shelf::Variants if shown.body => match &shown.sheet {
+        Shelf::Pokemon if shown.body => match &shown.sheet {
             Some(sheet) => {
                 let fit = fitted(sheet.cell, room.shrink(10.0));
                 painter.image(sheet.texture.id(), fit, sheet.uv_at(shown.step, resources.way), Color32::WHITE);
@@ -60,7 +60,7 @@ pub(super) fn in_large(ui: &mut egui::Ui, resources: &mut Resources, decors: &mu
             }
             None => String::new(),
         },
-        Shelf::Pokemon | Shelf::Variants => face_in_large(&painter, resources, context, item, room),
+        Shelf::Pokemon => face_in_large(&painter, resources, context, item, room),
         _ => {
             paint_item(&painter, resources, decors, context, item, room.shrink(10.0), shown.step);
             shown.sheet.as_ref().map_or_else(String::new, |sheet| format!("×{:.0}", (fitted(sheet.cell, room.shrink(14.0)).width() / sheet.cell.x).max(1.0)))
@@ -136,37 +136,13 @@ pub(super) fn steps_row(ui: &mut egui::Ui, resources: &mut Resources, item: &Ite
     });
 }
 
-/// A Pokémon's faces; a click shows one.
-pub(super) fn faces(ui: &mut egui::Ui, resources: &mut Resources, item: &Item, shown: &Shown) {
-    section(ui, "Faces");
-    ui.horizontal_wrapped(|ui| {
-        ui.add_space(8.0);
-        ui.spacing_mut().item_spacing = vec2(3.0, 3.0);
-        for (at, face) in faces_of(&resources.session, item.number).iter().enumerate() {
-            if ui.selectable_label(!shown.body && resources.face == at, theme::text(face_name(*face), theme::SMALL, theme::TEXT)).clicked() {
-                (resources.face, resources.body) = (at, Some(false));
-            }
-        }
-    });
-}
-
-/// Its body's animations, the way it faces; a click plays one.
-pub(super) fn animations(ui: &mut egui::Ui, resources: &mut Resources, shown: &Shown) {
-    section(ui, "Animations");
+/// The way its body faces, as it plays in large.
+pub(super) fn sides(ui: &mut egui::Ui, resources: &mut Resources) {
     ui.horizontal_wrapped(|ui| {
         ui.add_space(8.0);
         ui.label(theme::text("Side", theme::SMALL, theme::WEAK));
         for way in 0..8 {
             way_button(ui, resources, way);
-        }
-    });
-    ui.horizontal_wrapped(|ui| {
-        ui.add_space(8.0);
-        ui.spacing_mut().item_spacing = vec2(3.0, 3.0);
-        for (file, word) in &shown.anims {
-            if ui.selectable_label(shown.body && resources.anim == *file, theme::text(word.replace('_', " "), theme::SMALL, theme::TEXT)).clicked() {
-                (resources.anim, resources.playing, resources.body) = (*file, true, Some(true));
-            }
         }
     });
 }

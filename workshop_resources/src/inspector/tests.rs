@@ -7,7 +7,7 @@ use super::actions::{renamed_said, still_written};
 /// Each shelf's thing is called by its kind.
 #[test]
 fn a_kind_is_named() {
-    assert_eq!(kind_name(Shelf::Variants), "Character");
+    assert_eq!(kind_name(Shelf::Pokemon), "Character");
     assert_eq!(kind_name(Shelf::Pieces), "Decor Element");
     assert_eq!(kind_name(Shelf::Drawn), "Object");
 }

@@ -9,7 +9,7 @@ use workshop_base::theme;
 
 /// Its actions, the work on its thread told when done, the import asked.
 pub(super) fn actions(ui: &mut egui::Ui, resources: &mut Resources, item: &Item) {
-    work_done(resources);
+    resources.work_done();
     let busy = resources.run.is_some();
     if busy {
         ui.ctx().request_repaint_after(std::time::Duration::from_millis(250));
@@ -34,27 +34,6 @@ pub(super) fn actions(ui: &mut egui::Ui, resources: &mut Resources, item: &Item)
     }
     if done {
         resources.sheet_import = None;
-    }
-}
-
-/// The work's end told (an import: the Pokémon read again).
-fn work_done(resources: &mut Resources) {
-    if let Some(run) = resources.run.as_mut()
-        && let Some(done) = run.poll().cloned()
-    {
-        let doing = run.doing.clone();
-        resources.run = None;
-        resources.said = Some(match done {
-            Ok(said) => {
-                if doing.starts_with("import") {
-                    resources.forget();
-                    format!("{said} (new Pokémon show everywhere once the Workshop is started again)")
-                } else {
-                    said
-                }
-            }
-            Err(why) => why,
-        });
     }
 }
 

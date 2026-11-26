@@ -170,10 +170,13 @@ pub(super) fn portrait_face(word: &str) -> Option<u16> {
 pub(super) fn portraits(session: &Session, people: &[Item]) -> Vec<Item> {
     let files = portrait_files(session);
     let named: BTreeSet<u16> = scenes::vocabulary::POKEMON.faces.iter().map(|(_, number)| *number).collect();
+    let order = super::pictures::face_order();
+    let rank = |face: u16| order.iter().position(|known| *known == face).unwrap_or(99) as i64;
     people
         .iter()
         .flat_map(|person| {
-            let faces = files.get(&person.number).cloned().unwrap_or_default();
+            let mut faces: Vec<u16> = files.get(&person.number).cloned().unwrap_or_default().into_iter().collect();
+            faces.sort_by_key(|face| rank(*face));
             faces.into_iter().filter(|face| named.contains(face)).map(move |face| Item {
                 shelf: Shelf::Portraits,
                 word: portrait_word(&person.word, face),
@@ -181,7 +184,7 @@ pub(super) fn portraits(session: &Session, people: &[Item]) -> Vec<Item> {
                 about: format!("{}'s portrait, face No. {face}", person.label),
                 number: person.number,
                 file: None,
-                order: person.order * 100 + i64::from(face),
+                order: person.order * 100 + rank(face),
             })
         })
         .collect()

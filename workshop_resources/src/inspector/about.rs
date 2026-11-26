@@ -11,7 +11,7 @@ use workshop_script::Scripts;
 /// What a shelf's thing is called, over what it is.
 pub(super) fn kind_name(shelf: Shelf) -> &'static str {
     match shelf {
-        Shelf::Pokemon | Shelf::Variants => "Character",
+        Shelf::Pokemon => "Character",
         Shelf::Songs => "Music",
         Shelf::Sounds => "Sound",
         Shelf::Portraits => "Portrait",
@@ -79,7 +79,7 @@ pub(super) fn in_a_film(ui: &mut egui::Ui, resources: &mut Resources, scripts: &
             ui.add(egui::Label::new(RichText::new(&line).monospace().size(theme::SMALL).color(Color32::from_rgb(0xDC, 0xDC, 0xAA))).selectable(true));
         });
     });
-    let person = matches!(item.shelf, Shelf::Pokemon | Shelf::Variants);
+    let person = matches!(item.shelf, Shelf::Pokemon);
     ui.horizontal(|ui| {
         ui.add_space(8.0);
         if ui.button(copy).on_hover_text("the line, to paste in a film").clicked() {

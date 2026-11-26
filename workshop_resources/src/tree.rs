@@ -56,10 +56,11 @@ pub fn tree(ui: &mut egui::Ui, resources: &mut Resources, decors: &mut Decors) {
             }
             for shelf in shelves {
                 let count = resources.list(*shelf, decors).len();
-                let chosen = resources.shelf == *shelf && resources.sought.trim().is_empty();
+                let chosen = resources.shelf == *shelf && (resources.sought.trim().is_empty() || resources.catalog_sought());
                 let deep = if group.is_empty() { 0.0 } else { 16.0 };
                 if row(ui, shelf.name(), Some(count), chosen, deep, theme::TEXT, None).clicked() {
                     resources.shelf = *shelf;
+                    resources.everywhere = false;
                     resources.sought.clear();
                     resources.scroll_wanted = true;
                 }

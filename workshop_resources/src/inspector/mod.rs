@@ -16,9 +16,12 @@ use workshop_script::Scripts;
 mod about;
 mod actions;
 mod large;
+mod page;
 mod pokemon;
 #[cfg(test)]
 mod tests;
+
+pub(super) use page::Page;
 
 /// A text with a word made another, wherever it is whole.
 pub(super) fn word_replaced(text: &str, old: &str, new: &str) -> String {
@@ -44,7 +47,6 @@ pub(super) fn word_replaced(text: &str, old: &str, new: &str) -> String {
 /// animations, its body shown or its face), its sheet, the step shown.
 struct Shown {
     person: bool,
-    has_faces: bool,
     anims: Vec<(u8, String)>,
     body: bool,
     sheet: Option<Sheet>,
@@ -64,11 +66,11 @@ pub fn inspector(ui: &mut egui::Ui, resources: &mut Resources, decors: &mut Deco
         let shown = large::shown(resources, &context, &item);
         let scale_said = large::in_large(ui, resources, decors, &context, &item, &shown);
         large::steps_row(ui, resources, &item, &shown, &scale_said);
-        if shown.person && shown.has_faces {
-            large::faces(ui, resources, &item, &shown);
-        }
-        if shown.person && !shown.anims.is_empty() {
-            large::animations(ui, resources, &shown);
+        if shown.person {
+            if shown.body {
+                large::sides(ui, resources);
+            }
+            page::page(ui, resources, scripts, &item, &shown);
         }
         if item.shelf.heard() {
             large::loudness(ui, resources);
