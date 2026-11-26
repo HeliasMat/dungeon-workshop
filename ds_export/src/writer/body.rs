@@ -4,9 +4,12 @@
 
 use engine::{BodyBeat, Direction, Play, Point, Who};
 
-use super::{BESIDE, Writer, way_to};
+use super::{BESIDE, Writer, names, way_to};
 use crate::notes::{Fate, Kind};
 use crate::sky::{HIDDEN, direction};
+
+/// A fade at least so long blinks (shorter: a pop, as in the game's smoke).
+const BLINKING: f32 = 12.0;
 
 impl Writer<'_> {
     /// A body beat: put, turned, shown or hidden (the rest is `acting`'s).
@@ -62,9 +65,9 @@ impl Writer<'_> {
             BodyBeat::Stop(_) | BodyBeat::Fidget { .. } => {}
             BodyBeat::Gone(who) => {
                 let Some(actor) = self.who(number, *who) else { return };
-                self.line(&format!("SetOutputAttribute<actor {actor}>({HIDDEN});"));
+                self.hide(*who, &actor);
             }
-            BodyBeat::Opacity { who, to, .. } => self.opacity(number, *who, *to),
+            BodyBeat::Opacity { who, to, frames } => self.opacity(number, *who, *to, frames.0),
             other => self.acting(number, word, other),
         }
     }
@@ -158,16 +161,67 @@ impl Writer<'_> {
     }
 
     /// Shown where they stand, or hidden (put hidden before it appears:
-    /// hidden from the start).
-    fn opacity(&mut self, number: i32, who: Who, to: f32) {
+    /// hidden from the start); fading (a while): blinking in or out as Sky
+    /// fades its actors (`SetBlink`, `m01a10a`).
+    fn opacity(&mut self, number: i32, who: Who, to: f32, frames: f32) {
         let Some(actor) = self.who(number, who) else { return };
+        let blinks = self.started && frames >= BLINKING;
         if to > 0.5 {
             let at = self.at.get(&who).copied().unwrap_or(self.camera);
             self.show_at(who, &actor, at);
-        } else if self.actors.get(&who).is_some_and(|one| one.hidden && one.first.is_some()) {
+            if blinks {
+                self.blink(&actor, frames, true);
+            }
+        } else if blinks && self.opening.is_none() {
+            self.blink(&actor, frames, false);
+            self.line(&format!("SetOutputAttribute<actor {actor}>({HIDDEN});"));
+        } else if self.actors.get(&who).is_some_and(|one| one.hidden && one.first.is_some() && !one.seen) {
             // Put, hidden, before it appears: hidden from the start.
         } else {
+            self.hide(who, &actor);
+        }
+    }
+
+    /// A blink in so many frames, in three steps: shown 2 frames in 3, then
+    /// 1 in 2, then 1 in 3 (out; the other way in), then steady. The film's
+    /// wait for the fade counts its time.
+    fn blink(&mut self, actor: &str, frames: f32, coming: bool) {
+        let mut steps = [(2, 1), (1, 1), (1, 2)];
+        if coming {
+            steps.reverse();
+        }
+        let each = (frames / 3.0).round().max(2.0) as i32;
+        for (shown, hidden) in steps {
+            self.line(&format!("SetBlink<actor {actor}>({shown}, {hidden});"));
+            self.line(&format!("Wait({each});"));
+        }
+        self.line(&format!("SetBlink<actor {actor}>(0, 0);"));
+        self.ahead += (each * 3) as f32;
+    }
+
+    /// Hidden; in the scene's opening (nothing has happened yet), hidden
+    /// from the start instead, what it did before left out: no one shows on
+    /// the first frames to go at once (`gyarados put`, `gyarados dive`).
+    fn hide(&mut self, who: Who, actor: &str) {
+        let Some(start) = self.opening.filter(|start| *start <= self.body.len()) else {
             self.line(&format!("SetOutputAttribute<actor {actor}>({HIDDEN});"));
+            return;
+        };
+        let lines: Vec<String> = self.body[start..].lines().map(str::to_string).collect();
+        self.body.truncate(start);
+        for line in lines {
+            // (A block of others beside the script keeps its start.)
+            let others = line.trim_start().starts_with("// dw-beside ") && line.split_whitespace().skip(3).any(|one| one != actor);
+            if !names(&line, actor) || others {
+                self.body.push_str(&line);
+                self.body.push('\n');
+            }
+        }
+        self.floating.retain(|one| one != actor);
+        self.showing.retain(|one| one != actor);
+        self.stand_after.retain(|one| one != actor);
+        if let Some(one) = self.actors.get_mut(&self.became.get(&who).copied().unwrap_or(who)) {
+            one.hidden = true;
         }
     }
 

@@ -30,7 +30,12 @@ impl Writer<'_> {
                 if std::mem::take(&mut self.said_over) {
                     // (The time a caption shows: the game waits for its key.)
                 } else if self.started && (!self.thread || self.capture.is_some()) && !(self.talking && frames.0 < 15.0) {
-                    self.line(&format!("Wait({});", frames.0.round() as i32));
+                    // (What a shake or a blink already took of it: the rest.)
+                    let left = frames.0 - self.ahead;
+                    self.ahead = (self.ahead - frames.0).max(0.0);
+                    if left >= 1.0 {
+                        self.line(&format!("Wait({});", left.round() as i32));
+                    }
                     self.shown_for += frames.0;
                 }
             }

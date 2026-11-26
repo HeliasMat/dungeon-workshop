@@ -145,6 +145,9 @@ impl Writer<'_> {
         let fade = "screen_FadeIn";
         let _ = white;
         self.line(&format!("{fade}(1, {frames});"));
+        if first {
+            self.opening = Some(self.body.len());
+        }
     }
 
     /// A flash: Sky's own (white: `screen_WhiteOut` and back; a colour: `screen_FlushOut`).
@@ -212,10 +215,23 @@ impl Writer<'_> {
         if self.tint == Some(tint) {
             return;
         }
-        if let Some(old) = self.tint.take() {
-            self.flush("In", 0, old);
+        // (From one light to another: the old one goes in half the time, the
+        // new one comes in the other half; a FlushOut over another changes at
+        // once, seen; a FlushIn at once flashed the day between.)
+        match self.tint.take() {
+            Some(old) if frames >= 2 => {
+                let half = frames / 2;
+                self.flush("In", half, old);
+                self.line(&format!("Wait({half});"));
+                self.ahead += half as f32;
+                self.flush("Out", frames - half, tint);
+            }
+            Some(old) => {
+                self.flush("In", 0, old);
+                self.flush("Out", frames, tint);
+            }
+            None => self.flush("Out", frames, tint),
         }
-        self.flush("Out", frames, tint);
         self.tint = Some(tint);
     }
 }

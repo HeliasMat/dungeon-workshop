@@ -76,6 +76,7 @@ impl Writer<'_> {
     /// A line said: its face (or the species' normal one, or its name
     /// alone), its box, as Sky's message operations show it.
     pub(super) fn say(&mut self, number: i32, word: Option<&str>, entity: Option<Who>, face: Option<u16>, text: &str) {
+        self.opening = None;
         // (`{value}`: Sky's texts print no variable of a script: the number as last written before.)
         let mut text = text.to_string();
         for (name, value) in &self.values {

@@ -203,11 +203,15 @@ fn a_rider_follows_his_mount() {
     let lines: Vec<&str> = script.lines().map(str::trim).collect();
     let walks: Vec<usize> = lines.iter().enumerate().filter(|(_, line)| line.starts_with("MovePositionMark<actor ")).map(|(at, _)| at).collect();
     let slides: Vec<usize> = lines.iter().enumerate().filter(|(_, line)| line.starts_with("SlidePositionMark<actor ")).map(|(at, _)| at).collect();
-    assert_eq!(slides.len(), 1, "once, with the first walk: {script}");
-    let walk = walks.iter().copied().filter(|at| *at < slides[0]).last().expect("the mount's walk first");
+    // (His leap onto it, once with the first walk, his leap off it: up, across, down.)
+    assert_eq!(slides.len(), 3, "{script}");
+    for leap in [slides[0], slides[2]] {
+        assert!(lines[leap - 2].starts_with("MoveHeight<actor "), "{script}");
+    }
+    let walk = walks.iter().copied().filter(|at| *at < slides[1]).last().expect("the mount's walk first");
     let pace = |line: &str| line.split_once(">(").and_then(|(_, rest)| rest.split_once(',')).map(|(pace, _)| pace.to_string());
-    assert_eq!(pace(lines[walk]), pace(lines[slides[0]]), "{script}");
-    assert!(lines[slides[0] - 1].starts_with("SetDirection<actor "), "turned as his mount: {script}");
+    assert_eq!(pace(lines[walk]), pace(lines[slides[1]]), "{script}");
+    assert!(lines[slides[1] - 1].starts_with("SetDirection<actor "), "turned as his mount: {script}");
 }
 
 /// An item on a path loops in its object's routine, started by the script;
@@ -225,4 +229,112 @@ fn an_item_on_a_path_is_its_objects_routine() {
     assert!(script.contains("WaitLockObject(17, OBJECT_N66);\n    Unlock(17);"), "waited for: {script}");
     assert!(script.contains("    Lock(17);\n    hold;"), "{script}");
     assert!(!told_.iter().any(|said| said.contains("engine's command")), "{told_:?}");
+}
+
+/// The lines of the script from the first one starting so on, trimmed.
+fn from<'a>(script: &'a str, start: &str) -> Vec<&'a str> {
+    let lines: Vec<&str> = script.lines().map(str::trim).collect();
+    let at = lines.iter().position(|line| line.starts_with(start)).unwrap_or_else(|| panic!("no {start}: {script}"));
+    lines[at..].to_vec()
+}
+
+/// A trembling is Sky's own shiver: a pixel right and back, two frames
+/// each, eight times, its pain looped; `shiver` (two trembles) shakes once.
+#[test]
+fn a_trembling_is_skys_shiver() {
+    let (script, _) =
+        exported("tremble", "scene: beach pikachu munchlax\npikachu put 200 150\nmunchlax put 260 150\npikachu tremble\nmunchlax shiver\nwait 2s\n");
+    for actor in ["ACTOR_NPC_TEST001", "ACTOR_NPC_TEST002"] {
+        let right = format!("SlidePositionOffset<actor {actor}>(1, 1, 0);");
+        let back = format!("SlidePositionOffset<actor {actor}>(1, -1, 0);");
+        assert_eq!(script.matches(&right).count(), 8, "{actor}: {script}");
+        assert_eq!(script.matches(&back).count(), 8, "{actor}: {script}");
+        let shake = from(&script, &right);
+        assert_eq!(&shake[..4], &[right.as_str(), "Wait(2);", back.as_str(), "Wait(2);"], "{script}");
+    }
+}
+
+/// Hurt: knocked back the way he looks, shaken a moment, his pain.
+#[test]
+fn hurt_knocks_back_and_shakes() {
+    let (script, _) = exported("hurt", "scene: beach pikachu\npikachu put 200 150\npikachu hurt\n");
+    let knock = from(&script, "SlidePositionMark<actor ACTOR_NPC_TEST001>(");
+    assert_eq!(knock[1], "WaitExecuteLives(ACTOR_NPC_TEST001);", "{script}");
+    assert_eq!(knock[2], "SlidePositionOffset<actor ACTOR_NPC_TEST001>(1, 1, 0);", "{script}");
+    assert_eq!(script.matches("SlidePositionOffset<actor ACTOR_NPC_TEST001>(1, -1, 0);").count(), 3, "{script}");
+    assert!(knock.iter().any(|line| line.starts_with("SetAnimation<actor ACTOR_NPC_TEST001>(") && !line.ends_with("(2);")), "his pain: {script}");
+}
+
+/// A jump to a place is an arc in three: up, across in the air, down; a
+/// laugh's hops rise 6 pixels at least, at Sky's hop's pace or faster.
+#[test]
+fn jumps_and_laughs_arc() {
+    let (script, _) = exported("jump", "scene: beach pikachu\npikachu put 200 150\npikachu jump to 260 150\npikachu laugh\n");
+    let arc = from(&script, "MoveHeight<actor ACTOR_NPC_TEST001>(2, 16);");
+    assert_eq!(arc[1], "WaitExecuteLives(ACTOR_NPC_TEST001);", "{script}");
+    assert!(arc[2].starts_with("SlidePositionMark<actor ACTOR_NPC_TEST001>("), "across: {script}");
+    assert_eq!(arc[4], "MoveHeight<actor ACTOR_NPC_TEST001>(2, 0);", "down: {script}");
+    let hops: Vec<&str> = arc[5..].iter().copied().filter(|line| line.starts_with("MoveHeight<") && !line.ends_with(", 0);")).collect();
+    assert_eq!(hops.len(), 2, "{script}");
+    for hop in hops {
+        let (pace, up) = hop.trim_end_matches(");").split_once(">(").and_then(|(_, rest)| rest.split_once(", ")).expect("pace, height");
+        assert!(pace.parse::<f32>().expect("a pace") >= 1.0 && up.parse::<f32>().expect("a height") >= 6.0, "{hop}");
+    }
+}
+
+/// Staggering: his lost balance and a stumble, a lurch each way and back
+/// where he stood.
+#[test]
+fn a_stagger_stumbles() {
+    let (script, _) = exported("stagger", "scene: beach pikachu\npikachu put 200 150\npikachu stagger\n");
+    let lurches: Vec<i32> = script
+        .lines()
+        .map(str::trim)
+        .filter_map(|line| line.strip_prefix("SlidePositionOffset<actor ACTOR_NPC_TEST001>("))
+        .filter_map(|rest| rest.split(", ").nth(1)?.parse().ok())
+        .collect();
+    assert_eq!(lurches.len(), 3, "{script}");
+    assert_eq!(lurches.iter().sum::<i32>(), 0, "back where he stood: {script}");
+}
+
+/// Fading out or in: Sky's blinking (`SetBlink`) in three steps, then
+/// hidden or steady; a smoke stays a pop under its cloud.
+#[test]
+fn vanishing_and_appearing_blink() {
+    let (script, _) = exported(
+        "blink",
+        "scene: beach pikachu munchlax\npikachu put 200 150\nmunchlax put 260 150\npikachu: Hi.\npikachu vanish\nwait 1s\npikachu appear 200 150 fade\nmunchlax vanish smoke\n",
+    );
+    let out = from(&script, "SetBlink<actor ACTOR_NPC_TEST001>(2, 1);");
+    let blinks: Vec<&str> = out.iter().copied().filter(|line| line.starts_with("SetBlink<")).take(4).collect();
+    assert_eq!(
+        blinks[1..],
+        ["SetBlink<actor ACTOR_NPC_TEST001>(1, 1);", "SetBlink<actor ACTOR_NPC_TEST001>(1, 2);", "SetBlink<actor ACTOR_NPC_TEST001>(0, 0);"],
+        "{script}"
+    );
+    let hidden = out.iter().position(|line| *line == "SetOutputAttribute<actor ACTOR_NPC_TEST001>(128);").expect("hidden");
+    let shown = out.iter().position(|line| *line == "ResetOutputAttribute<actor ACTOR_NPC_TEST001>(128);").expect("shown");
+    assert!(hidden < shown && out[shown + 1] == "SetBlink<actor ACTOR_NPC_TEST001>(1, 2);", "blinking in, the other way: {script}");
+    assert!(!script.contains("SetBlink<actor ACTOR_NPC_TEST002>"), "{script}");
+}
+
+/// Who goes at once as the scene opens (put, then gone) is hidden from the
+/// start: never on its first frames, what it did then left out.
+#[test]
+fn who_goes_as_the_scene_opens_is_hidden_from_the_start() {
+    let (script, _) = exported("opening", "scene: beach pikachu munchlax\npikachu put 200 150\nmunchlax put 260 150\nmunchlax vanish\npikachu: Hi.\n");
+    let hide = script.find("SetOutputAttribute<actor ACTOR_NPC_TEST002>(128);").expect("hidden");
+    let fade = script.find("screen_FadeIn(1, ").expect("the scene fades in");
+    assert!(hide < fade, "{script}");
+    assert!(!script.contains("SetBlink<actor ACTOR_NPC_TEST002>"), "{script}");
+}
+
+/// From one light to another, the old one goes in half the time and the
+/// new one comes in the other half: never the day flashed between.
+#[test]
+fn one_light_turns_to_another_through_its_halves() {
+    let (script, _) = exported("light", "scene: beach pikachu\npikachu put 200 150\npikachu: Hi.\ndaytime evening 2s\nwait 3s\ndaytime night 2s\nwait 3s\n");
+    let night = from(&script, "screen_FlushIn(1, 60, 4, 224, 176, 136);");
+    assert_eq!(night[1..3], ["Wait(60);", "screen_FlushOut(1, 60, 4, 80, 112, 144);"], "{script}");
+    assert!(!script.contains("screen_FlushIn(1, 0, 4, 224, 176, 136);"), "{script}");
 }

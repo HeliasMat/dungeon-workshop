@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use engine::{AnimId, Beat, BodyBeat, Play, Who};
+use engine::{AnimId, Beat, BodyBeat, MoveId, Play, Who};
 
 use super::{Actor, Writer};
 use crate::notes::{Fate, Kind, Note};
@@ -22,7 +22,7 @@ fn data() -> String {
 
 fn game(data: &str) -> Game {
     let names = [(172, "Pichu"), (228, "Unown"), (25, "Pikachu"), (143, "Snorlax")].into_iter().map(|(at, name)| (at, name.to_string())).collect();
-    Game { levels: HashMap::new(), actors: Vec::new(), data: data.to_string(), move_types: Vec::new(), names, decors: HashMap::new() }
+    Game { levels: HashMap::new(), actors: Vec::new(), data: data.to_string(), move_types: Vec::new(), move_effects: Vec::new(), names, decors: HashMap::new() }
 }
 
 /// A form SpriteCollab adds is its base species on DS, a Pokémon Sky
@@ -103,7 +103,15 @@ fn a_crowd_with_no_one_idle_keeps_its_speakers_and_movers() {
         let name = format!("FREE{at:02}");
         writer.actors.insert(
             who,
-            Actor { name: name.clone(), species: Some(25), kind: 25, first: Some((100.0 + f32::from(at) * 10.0, 100.0, "DIR_DOWN")), hidden: false, layer: 0 },
+            Actor {
+                name: name.clone(),
+                species: Some(25),
+                kind: 25,
+                first: Some((100.0 + f32::from(at) * 10.0, 100.0, "DIR_DOWN")),
+                hidden: false,
+                seen: false,
+                layer: 0,
+            },
         );
         writer.film_names.insert(who, format!("pikachu{at}"));
         let line = match at {
@@ -124,4 +132,33 @@ fn a_crowd_with_no_one_idle_keeps_its_speakers_and_movers() {
     // (The farthest from the crowd's middle first: the last ones, at its end.)
     assert!(told.contains("pikachu24"), "{told}");
     assert_eq!(writer.body.lines().count(), 21, "their lines left out with them:\n{}", writer.body);
+}
+
+/// A move shows its own effect on the one it reaches (the game's tables:
+/// Thunderbolt's 236), its type's without them; at a place, its own as
+/// it strikes, on its user.
+#[test]
+fn a_move_shows_its_own_effect() {
+    let data = data();
+    let mut tables = game(&data);
+    tables.move_effects = vec![[0; 4]; 538];
+    tables.move_effects[129] = [22, 0, 236, 0];
+    tables.move_effects[537] = [613, 610, 612, 611];
+    let (pikachu, pichu) = (Who::Monster(25), Who::Monster(172));
+    let mut writer = Writer::new(&tables);
+    writer.started = true;
+    writer.beat(3, Some("use"), &Beat::Body(BodyBeat::Move { who: pikachu, id: MoveId(129), target: Some(pichu) }));
+    let (user, target) = (writer.actors[&pikachu].name.clone(), writer.actors[&pichu].name.clone());
+    assert!(writer.body.contains(&format!("SetEffect<actor ACTOR_{target}>(236, 3);")), "{}", writer.body);
+    writer.beat(4, Some("use"), &Beat::Body(BodyBeat::Move { who: pikachu, id: MoveId(537), target: Some(Who::Spot(900)) }));
+    assert!(writer.body.contains(&format!("SetEffect<actor ACTOR_{user}>(610, 3);")), "{}", writer.body);
+    // (No tables: Ember's type, Fire.)
+    let mut types = game(&data);
+    types.move_types = vec![0; 263];
+    types.move_types[262] = 2;
+    let mut writer = Writer::new(&types);
+    writer.started = true;
+    writer.beat(3, Some("attack"), &Beat::Body(BodyBeat::Move { who: pikachu, id: MoveId(262), target: Some(pichu) }));
+    let target = writer.actors[&pichu].name.clone();
+    assert!(writer.body.contains(&format!("SetEffect<actor ACTOR_{target}>(6, 3);")), "{}", writer.body);
 }

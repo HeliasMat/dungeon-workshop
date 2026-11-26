@@ -31,7 +31,7 @@ pub const WORDS: &[Word] = &[
     ).family("Speech").ds_close("top: the portrait on top (FACE_POS_TOP_L_FACEINW); Sky keeps the box at the bottom", "the box stays at the bottom: only the portrait goes on top")
     .maybe(read_box_auto),
     // Presence.
-    Word::new("vanish", &["who:pokemon [smoke|fade|flash|vision]"], "gone in the game's smoke, a fade (by default), a flash or a vision").family("Presence").ds_close("smoke: SetEffect(99); hidden with SetOutputAttribute(128): at once, no fading out", "no fading out: hidden at once").maybe(read_vanished),
+    Word::new("vanish", &["who:pokemon [smoke|fade|flash|vision]"], "gone in the game's smoke, a fade (by default), a flash or a vision").family("Presence").ds_close("fade, vision: SetBlink in three steps (2 shown 1 hidden, 1-1, 1-2), then SetOutputAttribute(128), as Sky fades its actors (m01a10a); smoke: SetEffect(99), hidden under it; gone as the scene opens: hidden from the start", "a blink, not a fade: Sky's actors have no see-through").maybe(read_vanished),
     // Movement.
     Word::new(
         "shift",
@@ -43,7 +43,7 @@ pub const WORDS: &[Word] = &[
         "jump",
         &["who:pokemon [to] where:place [height h:number]", "who:pokemon height h:number", "who:pokemon"],
         "a leap of his body, higher than a hop: on the spot, or to a place, so high",
-    ).family("Movement").ds_close("MoveHeight up and down; to a place: a run there (no arc)", "no arc to a place: a run there")
+    ).family("Movement").ds_close("on the spot: MoveHeight up and down at Sky's hop's pace (CORO_JUMP_…: 2 a frame); to a place: MoveHeight up (Sky's hop's pace), SlidePositionMark across in the air, MoveHeight down: Sky's actors do one move at a time", "to a place: the arc in three straight legs, not a curve")
     .maybe(read_jumped),
     Word::new(
         "hop",
@@ -76,7 +76,7 @@ pub const WORDS: &[Word] = &[
     Word::new("sit", GESTURE_FORMS, "sits down and stays sitting: his Sit animation (else lying, else asleep); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
     Word::new("lie_down", GESTURE_FORMS, "lies down and stays there: his Laying animation (else asleep); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
     Word::new("headbutt", GESTURE_FORMS, "a butt of the head: his Head animation (else his Attack); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
-    Word::new("stagger", GESTURE_FORMS, "loses his balance and stays unsteady: his LostBalance animation (else Pain, else Hurt); once, again and again (loop) or held (hold)").family("Body").ds_direct(GESTURE_DS).maybe(gestured),
+    Word::new("stagger", GESTURE_FORMS, "loses his balance and stays unsteady: his LostBalance animation (else Pain, else Hurt); once, again and again (loop) or held (hold)").family("Body").ds_direct("SetAnimation<actor>(n) as the other gestures (ds_animations.txt), then a stumble: SlidePositionOffset 4 pixels one way, 6 the other, 2 back").maybe(gestured),
     Word::new("bow", GESTURE_FORMS, "a bow: his Bow animation (else a nod); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
     Word::new("dance", GESTURE_FORMS, "a little dance: his Dance animation (else a twirl, a spin, a hop); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
     Word::new("twirl", GESTURE_FORMS, "twirls round: his Twirl animation (else a spin); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
@@ -96,9 +96,9 @@ pub const WORDS: &[Word] = &[
     Word::new("lick", GESTURE_FORMS, "a lick: his Lick animation (else eating, his Attack); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
     Word::new("focus", GESTURE_FORMS, "gathers his power, a special attack's stance: his SpAttack animation (else a charge); once, again and again (loop) or held (hold)").family("Body").ds_close(COMMUNITY_DS, COMMUNITY_LOST).maybe(gestured),
     Word::new("sleep", &["who:pokemon off"], "awake: his Wake animation, the sleep's mark gone").family("Body").ds_direct("SetAnimation(62), as Sky's INIT_SLEEP; off: its waking, once (63)").maybe(read_woke),
-    Word::new("hurt", &["who:pokemon [hard] [back n:number]"], "his Pain animation, knocked back the way he looks; hard: further, the view shaking").family("Body").ds_close("its pain animation, once; no knock back", "no knock back")
+    Word::new("hurt", &["who:pokemon [hard] [back n:number]"], "his Pain animation, knocked back the way he looks; hard: further, the view shaking").family("Body").ds_close("SlidePositionMark back from who struck in 10 frames (the way he looks, from himself), Sky's shiver 3 times (SlidePositionOffset a pixel right and back), its pain animation once", "no little hop as he is knocked back: Sky's actors do one move at a time")
         .maybe(read_hurt),
-    Word::new("tremble", &["who:pokemon off", "who:pokemon"], "trembles until told off").family("Body").ds_close("its pain animation, looped: Sky has no shiver", "no shiver: its pain animation looped").maybe(read_trembled),
+    Word::new("tremble", &["who:pokemon off", "who:pokemon"], "trembles until told off").family("Body").ds_close("its pain animation looped and Sky's own shiver (SlidePositionOffset a pixel right and back every 2 frames, 8 times, as its scenes shake someone); off: standing", "the shiver lasts half a second (the script waits for it), then its pain stays looped").maybe(read_trembled),
     Word::new("fall", &["who:pokemon [over|back|trip]"], "falls and stays down: his Tumble (over), TumbleBack (back) or Trip animation").family("Body").ds_direct("SetAnimation (tumble), once").maybe(read_fell),
     Word::new("faint", &["who:pokemon off", "who:pokemon"], "his Faint animation, held, until he gets up (off: his Wake animation)").family("Body").ds_direct("SetAnimation (faint), once; off: waking").maybe(read_fainted),
     // Emotions.

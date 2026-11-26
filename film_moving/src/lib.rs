@@ -79,7 +79,7 @@ pub const WORDS: &[Word] = &[
             "rest...",
         ],
         "find, put; in the game's smoke (by default), a fade, a flash, a vision, or the light that gathers into a ring (light)",
-    ).family("Presence").ds_close("smoke: SetEffect(99); light: 2 blinks, se_Play(6920), SetEffect(638) on it hidden; then ResetOutputAttribute(128), no fade", "no fading in: shown at once")
+    ).family("Presence").ds_close("smoke: SetEffect(99), shown under it; fade, vision: ResetOutputAttribute(128) then SetBlink in three steps (1 shown 2 hidden, 1-1, 2-1), as Sky fades its actors (m01a10a); light: 2 blinks, se_Play(6920), SetEffect(638) on it hidden", "a blink, not a fade: Sky's actors have no see-through")
     .does(appeared)
     .arrives(&["who"]),
     Word::new(

@@ -7,6 +7,8 @@ written.
         [--core <libretro core> | --desmume]
     python tools/ds/watch.py <film> --prepare [--scene n] [--core <core>]
 
+- `<film>` an `.exps` (a script written by hand, as `export-ds` writes
+  them): played as it is, not exported.
 - `--scene n`: from the film's n-th scene on (`ds_cache.py --scene`).
 - `--headless`: no window: `--frames` frames (1200, 20 s of game) played
   from the ready state, A every `--period` (40), a shot every `--every`
@@ -263,7 +265,11 @@ def main():
     exps = os.path.join(os.path.dirname(copy), f'{stem}.exps')
     times = []
     started = time.time()
-    export(film, exps)
+    if film.endswith('.exps'):
+        # (A script of one's own, as patch_rom.py reads it: played as it is.)
+        exps = film
+    else:
+        export(film, exps)
     times.append(('export', time.time() - started))
     lap = time.time()
     paths = ds_cache.film_rom(rom, exps, copy, scene, tell=lambda line: print(f'  {line}'))

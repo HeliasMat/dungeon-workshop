@@ -21,13 +21,13 @@ pub const WORDS: &[Word] = &[
             "who:pokemon mount:pokemon [h:number] [b:number]",
         ],
         "face, throw onto it, ride: on its back (as high as its middle, by the game's points) or its head; he follows his mount, turns with it as it goes, rises and sinks with it (its back or head on each frame, by the game's points); high, behind: so many pixels up, behind its middle; a heavy rider sinks his mount 1 to 3 pixels (the game's weights), one much heavier is remarked",
-    ).family("Movement").ds_close("a run to the mount (no arc), MoveHeight up to its back, drawn in front of it; given each of its moves (the same path and pace, SlidePositionMark), turned as it goes", "no arc onto it; he sits over its middle, not its back's point, and doesn't rise and sink with it; the mount doesn't sink under a heavy one")
+    ).family("Movement").ds_close("a leap onto the mount (MoveHeight up, SlidePositionMark across), MoveHeight to its back, drawn in front of it; given each of its moves (the same path and pace, SlidePositionMark), turned as it goes", "the leap in straight legs; he sits over its middle, not its back's point, and doesn't rise and sink with it; the mount doesn't sink under a heavy one")
     .maybe(rode),
     Word::new(
         "get_off",
         &["who:pokemon [to] x:number y:number", "who:pokemon [to] where:place", "who:pokemon"],
         "ride off, hop down: there, or beside his mount",
-    ).family("Movement").ds_close("MoveHeight down, a run to where he hops (no arc)", "no arc: a run down to the place")
+    ).family("Movement").ds_close("a leap off: MoveHeight up (Sky's hop's pace), SlidePositionMark across in the air, MoveHeight down: Sky's actors do one move at a time", "the leap in three straight legs, not a curve")
     .does(got_off),
     Word::new(
         "dismount",
@@ -39,13 +39,13 @@ pub const WORDS: &[Word] = &[
         "carry",
         &["who:pokemon what:pokemon"],
         "face, throw onto him, ride over his head (as high as his head, by the game's points): carried wherever he goes, turned with him",
-    ).family("Body").ds_close("a run to the carrier (no arc), MoveHeight up over its head, drawn in front; given each of the carrier's moves", "no arc onto him; he sits over the carrier's middle, not its head's point")
+    ).family("Body").ds_close("a leap onto the carrier (MoveHeight up, SlidePositionMark across), MoveHeight over its head, drawn in front; given each of the carrier's moves", "the leap in straight legs; he sits over the carrier's middle, not its head's point")
     .does(carried),
     Word::new(
         "put_down",
         &["who:pokemon what:pokemon [to] x:number y:number", "who:pokemon what:pokemon [to] where:place", "who:pokemon what:pokemon"],
         "ride off, hop down: there, or before him",
-    ).family("Body").ds_close("MoveHeight down, a run to where he hops (no arc)", "no arc: a run down to the place")
+    ).family("Body").ds_close("a leap off: MoveHeight up (Sky's hop's pace), SlidePositionMark across in the air, MoveHeight down: Sky's actors do one move at a time", "the leap in three straight legs, not a curve")
     .does(put_down),
 ];
 

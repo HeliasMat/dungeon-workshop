@@ -36,7 +36,7 @@ pub const WORDS: &[Word] = &[
         "get_out",
         &["who:pokemon [to] where:place", "who:pokemon"],
         "out of the water: a splash, hop onto the shore there (the nearest free ground; beside, if not told), walking again (lands)",
-    ).family("Movement").ds_close("a run to the shore (no arc)", "no arc: a run to the shore")
+    ).family("Movement").ds_close("a leap to the shore: MoveHeight up (Sky's hop's pace), SlidePositionMark across in the air, MoveHeight down: Sky's actors do one move at a time", "the leap in three straight legs, not a curve")
     .does(gets_out),
 ];
 

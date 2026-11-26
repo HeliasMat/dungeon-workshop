@@ -46,6 +46,8 @@ pub(crate) struct Actor {
     kind: u16,
     first: Option<(f32, f32, &'static str)>,
     hidden: bool,
+    /// Shown since, once hidden (`show_at`).
+    seen: bool,
     /// The layer of the scene's layout it is in: 0 from the start, a later
     /// one loaded when it comes in (past Sky's 21 at once).
     layer: usize,
@@ -108,6 +110,15 @@ pub(crate) struct Writer<'a> {
     said_over: bool,
     /// How long the emotes showing have been waited on.
     shown_for: f32,
+    /// The frames a motion of Sky's took in the script (a shake, a blink)
+    /// that the film's next waits already count: taken off them.
+    ahead: f32,
+    /// The last line and actor a shake was for (`shake`).
+    shaken: Option<(i32, String)>,
+    /// Where the body was when the scene faded in, while nothing has
+    /// happened yet but people put and hidden: who hides then is hidden from
+    /// the start (`body::hide`), never seen on the first frames.
+    opening: Option<usize>,
     /// The place's things (the game's objects) and where each first stands.
     objects: BTreeMap<u16, (f32, f32)>,
     /// Who has become whom (`evolve`): the later lines' name, the new one's actor.
@@ -256,6 +267,10 @@ fn names(line: &str, actor: &str) -> bool {
     line.match_indices(actor).any(|(at, _)| !line[at + actor.len()..].starts_with(|c: char| c.is_ascii_alphanumeric() || c == '_'))
 }
 
+/// The words of a scene's opening: what sets it, before anything happens
+/// (`Writer::opening`).
+const OPENING: [&str; 12] = ["put", "dive", "vanish", "hide", "sink", "face", "turn", "music", "sound", "weather", "daytime", "sky"];
+
 /// Beside someone, so far (the engine's own distance between two at rest).
 const BESIDE: f32 = 24.0;
 
@@ -302,6 +317,9 @@ impl<'a> Writer<'a> {
             white_all: false,
             said_over: false,
             shown_for: 0.0,
+            ahead: 0.0,
+            shaken: None,
+            opening: None,
             words: HashMap::new(),
             objects: BTreeMap::new(),
             became: HashMap::new(),
@@ -345,6 +363,10 @@ impl<'a> Writer<'a> {
             self.lines_seen.insert(number);
         }
         if let Beat::Flow(FlowBeat::Line { number: line, .. }) = beat {
+            // (The scene's opening lasts while people are only put, turned or hidden.)
+            if word.is_some_and(|word| !OPENING.contains(&word)) {
+                self.opening = None;
+            }
             self.stand();
             // An emote shown long enough goes once its line is over (Sky loops some).
             if self.shown_for >= 30.0 {
@@ -517,7 +539,7 @@ impl<'a> Writer<'a> {
         self.cast.insert(who, (name.clone(), species, kind));
         // Who comes in after the scene opens is hidden until then.
         let hidden = self.started;
-        self.actors.insert(who, Actor { name: name.clone(), species, kind, first: None, hidden, layer: 0 });
+        self.actors.insert(who, Actor { name: name.clone(), species, kind, first: None, hidden, seen: false, layer: 0 });
         Some(format!("ACTOR_{name}"))
     }
 
@@ -727,6 +749,9 @@ impl<'a> Writer<'a> {
             self.set_along(who, at);
         }
         self.at.insert(who, at);
+        if let Some(one) = self.actors.get_mut(&who) {
+            one.seen = true;
+        }
         self.line(&format!("ResetOutputAttribute<actor {actor}>({HIDDEN});"));
     }
 

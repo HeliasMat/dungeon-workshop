@@ -178,7 +178,7 @@ pub const TEXT_WORDS: &[Word] = &[
         "transition",
         &["kind:fade|white|boss|wipe|iris|cut"],
         "how the next scene comes: whitein, iris, wipe, fadein (and their way out); with in or out, now (verbs/pictures.rs)",
-    ).family("Structure").ds_close("fade: screen_FadeIn/Out; white: screen_WhiteOut, then screen_FadeIn back (as Sky); boss: CallCommon(CORO_BOSS_WIPE_FUNC), Sky's own; wipe and iris: a fade (Sky has neither)", "a wipe or an iris becomes a fade"),
+    ).family("Structure").ds_close("fade: screen_FadeIn/Out; white: screen_WhiteOut, then screen_FadeIn back (as Sky); boss: CallCommon(CORO_BOSS_WIPE_FUNC), Sky's own; wipe and iris: a fade (Sky's scenes go only to black or white, and its boss wipe: no wipe, no iris among its screen operations)", "a wipe or an iris becomes a fade"),
     Word::new("define", &["name:word text..."], "nothing: its lines in the place of its name").family("Structure").ds_direct("nothing: recipes are written out before the export"),
     Word::new("repeat", &["n:number"], "nothing: its lines so many times").family("Structure").ds_direct("nothing: its turns are written out before the export"),
     Word::new("else", &[""], "else: the other branch of if … endif (engine commands)").family("Structure").ds_direct("} else {"),

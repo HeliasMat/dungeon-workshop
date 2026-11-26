@@ -7,7 +7,7 @@ use film_core::verbs::{Line, Word};
 use film_core::words::{DAY, of, plain};
 
 pub const WORDS: &[Word] = &[
-    Word::new("daytime", &["moment:word [stars] [d:duration]"], "light (morning, day, evening, night; dawn); tint (18h30); stars: the stars twinkling (weather sparkles)").family("Effects").ds_close("screen_FlushOut(1, d, 4, 224, 176, 136) evening, (…, 4, 80, 112, 144) night (the light of Sky's own evening and night guild crossroads); day: screen_FlushIn; the light's own colour is lost; as a scene opens, the place's own level gives it", "the light's own colour").maybe(hour_said),
+    Word::new("daytime", &["moment:word [stars] [d:duration]"], "light (morning, day, evening, night; dawn); tint (18h30); stars: the stars twinkling (weather sparkles)").family("Effects").ds_close("screen_FlushOut(1, d, 4, 224, 176, 136) evening, (…, 4, 80, 112, 144) night (the light of Sky's own evening and night guild crossroads); day: screen_FlushIn; one light to another: FlushIn the old in half the time, FlushOut the new in the other half (a FlushOut over another changes at once); as a scene opens, the place's own level gives it", "the screen multiplied by the light's colour, not its own veil; from one light to another through the day's, in half the time each").maybe(hour_said),
     Word::new(
         "status",
         &["who:pokemon off", "who:pokemon stat:word up|down", "who:pokemon kind:word"],

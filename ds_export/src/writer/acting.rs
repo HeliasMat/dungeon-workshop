@@ -8,6 +8,10 @@ use super::scene::Part;
 use crate::notes::{Fate, Kind};
 use crate::sky::{EFFECTS, animation, move_effect, own_named, pose_on_ds, speed};
 
+/// How many times a trembling shakes (Sky's shiver, 4 frames each) before
+/// its pain is left looped.
+const SHIVERS: u32 = 8;
+
 impl Writer<'_> {
     /// A body beat of what someone does: an animation, an effect, a jump, a move.
     pub(super) fn acting(&mut self, number: i32, word: Option<&str>, beat: &BodyBeat) {
@@ -18,34 +22,49 @@ impl Writer<'_> {
             BodyBeat::MoveShot { to, id, .. } => self.plain(number, word, &Beat::Body(BodyBeat::MoveEffect { who: *to, id: *id })),
             // Hops: Sky's own jumps (`CORO_JUMP_…`), happy, surprised or angry.
             BodyBeat::Anim { who, anim, play } if anim.0 == 10 => self.hops(number, *who, play),
-            BodyBeat::Anim { who, anim, play } => self.animate(number, who, anim, play),
+            BodyBeat::Anim { who, anim, play } => {
+                self.animate(number, who, anim, play);
+                // (Losing his balance: a stumble to one side and back.)
+                if word == Some("stagger") {
+                    self.stumble(number, *who);
+                }
+            }
             BodyBeat::Pose { who, pose } => self.pose(number, *who, pose),
-            // A trembling: Sky shows pain (its looped animation), never a shiver.
+            // A trembling: its pain looped and Sky's own shiver, a pixel
+            // left and right every two frames (`m26a0615`), a while.
             BodyBeat::Tremble { who, frames, .. } => {
                 let Some(actor) = self.who(number, *who) else { return };
-                // (Its pain looped, or its hurt one: sweat over the head, as seen in the game.)
-                let set = if frames.0 > 0.0 { self.set(*who, 19, true).unwrap_or(14) } else { 2 };
-                self.line(&format!("SetAnimation<actor {actor}>({set});"));
+                if frames.0 > 0.0 {
+                    let set = self.set(*who, 19, true).unwrap_or(14);
+                    self.line(&format!("SetAnimation<actor {actor}>({set});"));
+                    self.shake(&actor, SHIVERS);
+                } else {
+                    self.line(&format!("SetAnimation<actor {actor}>(2);"));
+                }
             }
+            // A leap on the spot: up and down at Sky's hop's pace (its
+            // `CORO_JUMP_…` rise 10 pixels at 2 a frame), 6 pixels at least.
             BodyBeat::Jump { who, height, frames } => {
                 let Some(actor) = self.who(number, *who) else { return };
-                let up = (*height).round().max(4.0) as i32;
-                let pace = speed(height * 2.0, frames.0.max(2.0));
+                let up = height.round().max(6.0);
+                let pace = speed((up * 2.0 / frames.0.max(2.0)).max(1.0) * 256.0, 256.0);
                 self.line(&format!("MoveHeight<actor {actor}>({pace}, {up});"));
                 self.wait_for(&actor);
                 self.line(&format!("MoveHeight<actor {actor}>({pace}, 0);"));
                 self.wait_for(&actor);
             }
-            BodyBeat::Hop { who, at, .. } => {
+            // A leap to a place: up, across in the air, down (Sky's actors
+            // do one move at a time: the arc in three).
+            BodyBeat::Hop { who, at, height, frames } => {
                 let (Some(actor), Some(to)) = (self.who(number, *who), self.point(at)) else { return };
-                self.go(*who, &actor, to, "2", false);
-                self.wait_for(&actor);
+                self.leap(*who, &actor, to, *height, frames.0, true);
             }
-            // Onto someone (`ride`, `carry`): a run to where it stands (no arc).
-            BodyBeat::Throw { who, at, .. } => {
+            // Onto someone (`ride`, `carry`): a leap to where it stands, left
+            // up there for its back's height (`Ride`).
+            BodyBeat::Throw { who, at, height, frames } => {
                 let (Some(actor), Some(&to)) = (self.who(number, *who), self.at.get(at)) else { return };
-                self.go(*who, &actor, to, "2", false);
-                self.wait_for(&actor);
+                let onto = matches!(word, Some("ride" | "carry" | "lift" | "boost"));
+                self.leap(*who, &actor, to, *height, frames.0, !onto);
             }
             // On its back, up there, given each of its moves (`things`).
             BodyBeat::Ride { who, on, high, .. } => {
@@ -87,7 +106,7 @@ impl Writer<'_> {
         }
     }
 
-    /// A move's effect, of its type, on someone; at a place: on the camera
+    /// A move's own effect (`shown`) on someone; at a place: on the camera
     /// (performer 0), in the middle of the screen.
     fn move_effect(&mut self, number: i32, who: Who, id: MoveId) {
         let on = match who {
@@ -97,8 +116,8 @@ impl Writer<'_> {
                 None => return,
             },
         };
-        let kind = self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1);
-        self.line(&format!("SetEffect<{on}>({}, 3);", move_effect(kind)));
+        let effect = self.shown(&id);
+        self.line(&format!("SetEffect<{on}>({effect}, 3);"));
         self.line(&format!("WaitEffect<{on}>();"));
         self.line(&format!("SetEffect<{on}>(EFFECT_NONE, 3);"));
     }
@@ -276,20 +295,77 @@ impl Writer<'_> {
         let to = (at.0 + away.0 * distance, at.1 + away.1 * distance);
         self.go(who, &actor, to, &speed(distance, 10.0), true);
         self.wait_for(&actor);
+        // (Shaken by it a moment, as the engine's 14 frames of trembling.)
+        self.shake(&actor, 3);
+    }
+
+    /// A leap there in so many frames (Sky's actors do one move at a time:
+    /// the arc in three): up at Sky's hop's pace, across in the air
+    /// (`SlidePositionMark`, facing as it was), down if it lands.
+    fn leap(&mut self, who: Who, actor: &str, to: (f32, f32), height: f32, frames: f32, lands: bool) {
+        let up = height.round().max(8.0);
+        let from = self.at.get(&who).copied().unwrap_or(to);
+        let across = ((to.0 - from.0).powi(2) + (to.1 - from.1).powi(2)).sqrt();
+        let rise = speed(2.0 * 256.0, 256.0);
+        self.line(&format!("MoveHeight<actor {actor}>({rise}, {up});"));
+        self.wait_for(actor);
+        self.go(who, actor, to, &speed(across, (frames - up).max(6.0)), true);
+        self.wait_for(actor);
+        if lands {
+            self.line(&format!("MoveHeight<actor {actor}>({rise}, 0);"));
+            self.wait_for(actor);
+        }
+    }
+
+    /// Sky's shiver (`m26a0615`, `n09a1207`): a pixel right, two frames, a
+    /// pixel back, two frames, so many times; the film's next waits count
+    /// its time.
+    pub(super) fn shake(&mut self, actor: &str, times: u32) {
+        // (Once a line: a word's beats may tremble twice, `shiver`.)
+        let shaken = (self.at_line, actor.to_string());
+        if self.shaken.as_ref() == Some(&shaken) {
+            return;
+        }
+        self.shaken = Some(shaken);
+        for _ in 0..times {
+            self.line(&format!("SlidePositionOffset<actor {actor}>(1, 1, 0);"));
+            self.line("Wait(2);");
+            self.line(&format!("SlidePositionOffset<actor {actor}>(1, -1, 0);"));
+            self.line("Wait(2);");
+        }
+        self.ahead += 4.0 * times as f32;
+    }
+
+    /// A stumble (`stagger`): a lurch of a few pixels to one side, a step
+    /// too far the other way, and back where he stood.
+    fn stumble(&mut self, number: i32, who: Who) {
+        let Some(actor) = self.who(number, who) else { return };
+        for (dx, pace) in [(-4, "1"), (6, "1.5"), (-2, "0.5")] {
+            self.line(&format!("SlidePositionOffset<actor {actor}>({pace}, {dx}, 0);"));
+            self.wait_for(&actor);
+        }
+        self.ahead += 16.0;
     }
 
     /// A move, as LIMITS staged it: a wind-up, a lunge, the effect of its type on the target, a small shake.
     fn attack(&mut self, number: i32, who: &Who, id: &MoveId, target: &Option<Who>) {
         let Some(actor) = self.who(number, *who) else { return };
-        let kind = self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1);
         // Its pain once, crouched, then its own attack (group 1, which every sprite has).
         let crouch = self.set(*who, 19, false).unwrap_or(11);
         self.line(&format!("SetAnimation<actor {actor}>({crouch});"));
         self.line("Wait(12);");
         self.line(&format!("SetAnimation<actor {actor}>(13);"));
-        // (Aimed at an unseen point, where one dodged from: on no one, it missed.)
+        // (Aimed at an unseen point, where one dodged from, or at a place:
+        // on no one; the move's own effect as it strikes, on its user, if it has one.)
         if let Some(Who::Spot(_)) = target {
-            self.line("Wait(20);");
+            match self.game.move_effects.get(usize::from(id.0)).and_then(|effects| [effects[1], effects[0]].into_iter().find(|effect| *effect != 0)) {
+                Some(effect) => {
+                    self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
+                    self.line(&format!("WaitEffect<actor {actor}>();"));
+                    self.line(&format!("SetEffect<actor {actor}>(EFFECT_NONE, 3);"));
+                }
+                None => self.line("Wait(20);"),
+            }
             self.line(&format!("SetAnimation<actor {actor}>(2);"));
             return;
         }
@@ -297,12 +373,22 @@ impl Writer<'_> {
             Some(target) => target,
             None => actor.clone(),
         };
-        self.line(&format!("SetEffect<actor {on}>({}, 3);", move_effect(kind)));
+        let effect = self.shown(id);
+        self.line(&format!("SetEffect<actor {on}>({effect}, 3);"));
         self.line("camera_SetEffect(2, 1, 1.0);");
         self.line(&format!("WaitEffect<actor {on}>();"));
         self.line("camera_SetEffect(0, 0, 0);");
         self.line(&format!("SetEffect<actor {on}>(EFFECT_NONE, 3);"));
         self.line(&format!("SetAnimation<actor {actor}>(2);"));
+    }
+
+    /// What a move shows on the one it reaches: the move's own effect, as
+    /// a dungeon shows it on its target (else as it strikes), Sky's scripts
+    /// playing the game's effects by the same ids; a move the game's tables
+    /// don't give (no data): the script effect of its type.
+    pub(super) fn shown(&self, id: &MoveId) -> u16 {
+        let own = self.game.move_effects.get(usize::from(id.0)).and_then(|effects| [effects[2], effects[1]].into_iter().find(|effect| *effect != 0));
+        own.unwrap_or_else(|| move_effect(self.game.move_types.get(usize::from(id.0)).copied().unwrap_or(1)))
     }
 
     /// A state, as an effect on someone (LIMITS: confusion's stars, bubbles, Zs, ice).
