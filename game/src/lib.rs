@@ -430,7 +430,7 @@ impl Game {
                     }
                     // (A maze of the Dojo chosen: into it; the personality test taken: the team it made.)
                     if let Some(maze) = screen.maze() {
-                        self.into_maze(maze);
+                        self.enter_maze(maze);
                     }
                     self.quizzed(&screen);
                 }
@@ -845,9 +845,9 @@ impl Game {
         }
     }
 
-    /// Into a maze of Marowak's Dojo (`shop dojo`): the rules' own table,
+    /// Enters a maze of Marowak's Dojo (`shop dojo`): the rules' own table,
     /// gone through by the game's team, lent; nobody at the keys, passed.
-    fn into_maze(&mut self, maze: u16) {
+    fn enter_maze(&mut self, maze: u16) {
         if self.nobody {
             return;
         }
@@ -901,7 +901,7 @@ impl Game {
             let art = self.art.as_ref().or_else(|| self.film().map(|film| &film.art))?;
             let mut rgba = art.portrait(face.0, 0)?;
             if face.1 {
-                for pixel in rgba.chunks_exact_mut(4).filter(|pixel| pixel[3] > 0) {
+                for pixel in rgba.as_chunks_mut::<4>().0.iter_mut().filter(|pixel| pixel[3] > 0) {
                     pixel[..3].copy_from_slice(&SHADOW);
                 }
             }

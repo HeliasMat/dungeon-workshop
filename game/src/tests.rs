@@ -606,6 +606,6 @@ fn the_guild_s_extras_sentry_duty_the_dojo_the_sos_the_quiz_and_a_new_leader() {
 
     // (Into the maze chosen: a dungeon of the rules' own, the team lent.)
     game.nobody = false;
-    game.into_maze(rules::dojo::FIRST);
+    game.enter_maze(rules::dojo::FIRST);
     assert!(game.diving.is_some() && game.log.last().map(String::as_str) == Some("maze Normal Maze"), "{:?} {:?}", game.log, game.said);
 }

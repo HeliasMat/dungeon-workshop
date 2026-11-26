@@ -975,13 +975,7 @@ pub fn terrain_word(colour: [u8; 3], wall: bool) -> &'static str {
                 "grass"
             }
         }
-        _ if (12.0..40.0).contains(&hue) => {
-            if value > 0.62 && saturation < 0.6 {
-                "sand"
-            } else {
-                "earth"
-            }
-        }
+        _ if (12.0..40.0).contains(&hue) && value > 0.62 && saturation < 0.6 => "sand",
         _ => "earth",
     };
     match word {

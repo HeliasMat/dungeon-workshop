@@ -162,10 +162,8 @@ pub fn picker(ui: &mut egui::Ui, resources: &mut Resources, decors: &Decors, scr
     if !hovered_audio && !hovered_card {
         resources.picker.resting = None;
     }
-    if !hovered_audio {
-        if resources.picker.hover_heard.take().is_some_and(|key| resources.heard.as_deref() == Some(key.as_str())) {
-            hush(resources);
-        }
+    if !hovered_audio && resources.picker.hover_heard.take().is_some_and(|key| resources.heard.as_deref() == Some(key.as_str())) {
+        hush(resources);
     }
     if let Some(asset) = written {
         if let Asset::Pokemon { word } = &asset {

@@ -62,7 +62,7 @@ pub struct SentryDuty {
 
 enum Duty {
     Asked(ListCursor),
-    OnDuty(Sentry),
+    Standing(Sentry),
     Over(String),
 }
 
@@ -79,7 +79,7 @@ impl SentryDuty {
     /// Whose footprints are on show (in shadow until told).
     pub fn face(&self) -> Option<Face> {
         match &self.step {
-            Duty::OnDuty(sentry) => sentry.shown(),
+            Duty::Standing(sentry) => sentry.shown(),
             _ => None,
         }
     }
@@ -92,7 +92,7 @@ impl SentryDuty {
             Duty::Asked(cursor) => match cursor.press(pressed, 2) {
                 Picked::Chosen(0) => {
                     let draw = &mut self.draw;
-                    self.step = Duty::OnDuty(Sentry::new(&run.book.tables.sentry, |below| draw.below(below)));
+                    self.step = Duty::Standing(Sentry::new(&run.book.tables.sentry, |below| draw.below(below)));
                     self.play(None, run)
                 }
                 Picked::Chosen(_) | Picked::Left => (true, (String::new(), Vec::new(), 0)),
@@ -104,7 +104,7 @@ impl SentryDuty {
                     (false, (asked, yes_no(), cursor.at))
                 }
             },
-            Duty::OnDuty(sentry) => {
+            Duty::Standing(sentry) => {
                 sentry.tick(FRAME);
                 if let Some(pressed) = pressed {
                     sentry.press(pressed);

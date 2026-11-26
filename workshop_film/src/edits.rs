@@ -48,7 +48,7 @@ pub(super) fn frames_of(word: &str) -> Option<usize> {
 
 /// So many frames as a film writes them: seconds when a whole tenth (`1s`, `1.5s`), else frames (`18f`).
 pub(super) fn time_said(frames: usize) -> String {
-    if frames % STEP == 0 {
+    if frames.is_multiple_of(STEP) {
         let seconds = frames as f64 / SECOND;
         if seconds.fract() == 0.0 { format!("{seconds:.0}s") } else { format!("{seconds:.1}s") }
     } else {

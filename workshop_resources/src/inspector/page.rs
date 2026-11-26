@@ -206,8 +206,7 @@ pub(in super::super) fn film_words(anim: &str) -> String {
 /// double click writes it in the film.
 fn animations(ui: &mut egui::Ui, resources: &mut Resources, scripts: &mut Scripts, item: &Item, shown: &Shown) {
     let number = item.number;
-    let (games, others): (Vec<(u8, String)>, Vec<(u8, String)>) =
-        shown.anims.iter().cloned().partition(|(file, _)| the_games(&resources.session, number, *file));
+    let (games, others): (Vec<_>, Vec<_>) = shown.anims.iter().cloned().partition(|(file, _)| the_games(&resources.session, number, *file));
     let mut written = None;
     for (title, anims) in [("The Game's", games), (if item.number >= 2000 { "Its Animations" } else { "The Community's" }, others)] {
         if anims.is_empty() {

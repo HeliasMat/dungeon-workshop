@@ -849,6 +849,11 @@ pub fn decor_title(name: &str, text: &str) -> String {
         .unwrap_or_else(|| name.to_string())
 }
 
+/// The place of the game a decor is made like (`like <level>`), else the one it is laid on (its backdrop).
+pub fn own_place(text: &str) -> Option<i64> {
+    edit::setting(text, "like").and_then(|like| like.split_whitespace().next()?.parse().ok()).or_else(|| edit::backdrop_of(text).map(|(_, level)| level))
+}
+
 #[cfg(test)]
 mod tests {
     use super::merges;
@@ -862,9 +867,4 @@ mod tests {
         assert!(!merges("removed: put e1_1", "removed: put e1_1"));
         assert!(!merges("moved: put e1_1", "moved: put e1_2"));
     }
-}
-
-/// The place of the game a decor is made like (`like <level>`), else the one it is laid on (its backdrop).
-pub fn own_place(text: &str) -> Option<i64> {
-    edit::setting(text, "like").and_then(|like| like.split_whitespace().next()?.parse().ok()).or_else(|| edit::backdrop_of(text).map(|(_, level)| level))
 }
