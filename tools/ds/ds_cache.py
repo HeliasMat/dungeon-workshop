@@ -63,7 +63,7 @@ CACHE = os.path.join(ROOT, 'target', 'ds', 'cache')
 
 # What the base is made with: a change of these files (or of VERSION) makes it again.
 VERSION = 1
-TOOLS = ('ds_cache.py', 'patch_rom.py', 'add_monsters.py', 'decor_map.py', 'add_items.py')
+TOOLS = ('ds_cache.py', 'patch_rom.py', 'add_monsters.py', 'decor_map.py', 'add_items.py', 'megapatch.py', 'patches.toml', 'cot_build.py')
 SLOTS = 64
 SLOT_LEVEL = 'T00P01'
 SLOT_PREFIX = 'dwscen'
@@ -118,10 +118,13 @@ def rom_key(rom_path):
 
 
 def tools_key():
+    import megapatch
     digest = hashlib.sha1(str(VERSION).encode())
     for name in TOOLS:
         with open(os.path.join(HERE, name), 'rb') as file:
             digest.update(file.read())
+    # (The mega patch: its choice, DW_PATCHES, and its patches' files.)
+    digest.update(megapatch.key().encode())
     return digest.hexdigest()[:10]
 
 
@@ -267,6 +270,9 @@ def build_base(paths, monsters, tell=print):
     patcher = Patcher(rom, config)
     if not patcher.is_applied('ActorAndLevelLoader'):
         patcher.apply('ActorAndLevelLoader')
+    # The mega patch: the community's patches for cutscenes (patches.toml).
+    import megapatch
+    patched = megapatch.apply(rom, config, patcher, tell)
     # The spare actors a film casts its Pokémon as, each of a species no
     # Pokémon has (MARK + n) until a film gives it one.
     actors = FileType.SIR0.unwrap_obj(FileType.SIR0.deserialize(rom.getFileByName(ACTOR_LIST)), ActorListBin)
@@ -340,6 +346,7 @@ def build_base(paths, monsters, tell=print):
     manifest = {
         'tools': tools_key(), 'own_species': own, 'slots': SLOTS, 'slot_level': SLOT_LEVEL,
         'jump_byte': at, 'slot_targets': targets, 'end_target': end, 'files': files, 'first_spare': first_spare,
+        'patches': patched['applied'], 'special_processes': patched['special_processes'],
         'monsters': {str(one.species): {'number': given.get(one.species, one.instead), 'instead': one.instead,
                                         'name': one.name, 'folder': one.folder} for one in monsters},
     }

@@ -294,6 +294,50 @@ The copies, the cache, its savestates and screenshots are your game's:
 never commit them (`target/` and the settings folder are out of the
 repository).
 
+## Patches
+
+The base is your ROM with the community's patches that help cutscenes,
+all at once (the "mega patch"): `tools/ds/patches.toml` lists them, each
+with its author, source, licence, what it gives, what it needs, whether it
+is on, and whether the reference films still played with it;
+`tools/ds/megapatch.py` applies them in the order of their needs.
+
+- **SkyTemple's own** (GPL-3): ExtraSpace, FixMemorySoftlock (a sprite
+  that does not fit is drawn as a default one instead of hanging),
+  AntiSoftlock (A+B+X+Y frees a stuck scene), ChangePortraitMidText
+  (`[FACE:x]` in a line), BoldText (`[BS]...[BR]`), ChangeTextSound
+  (`[TS:x:y]`), DisplayScriptVariable (`[var:x:y]`), ExtractObjectTable,
+  ExtractSPCode, ChooseStarter and SkipQuiz (after a film, no quiz).
+- **Others'**: Chesyon's AlwaysAllowPortraitDefault (a missing emotion
+  shows the Normal portrait) and his special process set-portrait-monster
+  (a portrait of any Pokémon without an actor); Adex's special processes
+  set_text_SE and set_textbox_transparency (GPL-3) and dynamic_actor;
+  marius851000's FasterFlushMode4.
+- **c-of-time**, one build per ROM (`tools/ds/cot_build.py`, no `make`:
+  the ARM GNU toolchain called from Python), holding Chesyon's Kabuto
+  Handler: an abort or fatal error is shown on screen (melonDS).
+
+The special processes' ids are told when the base is made (and kept in
+`base.json`): a script calls one with `ProcessSpecial(id, a, b)`. With
+the patches as they are: 64 set-portrait-monster (`species, emotion`), 65
+set_text_SE (`sound, 0`), 66 set_textbox_transparency (`1` see-through,
+`0` solid; it acts when the next box opens), 67 dynamic_actor (`species,
+2 * n`). What each patch was seen doing: `tools/ds/LIMITS.md` ("The mega
+patch").
+
+`DW_PATCHES` changes the choice (`+Name` adds one that is off, `-Name`
+takes one away, `only:A,B` keeps only those); the base is made again when
+the choice or a patch changes. `python tools/ds/megapatch.py --list` shows
+them all.
+
+The patches without a stated licence (Adex's jam patches, marius851000's,
+the Kabuto Handler) are never in the repository: `megapatch.py --fetch`
+reads their source from GitHub (text files, through `gh api`) into
+`target/ds/megapatch/community/`. To give your hack to others, the patch
+holds only those that may be shared:
+
+    python tools/ds/megapatch.py <rom> --out target/ds/megapatch/shared.nds --share --bps target/ds/megapatch/shared.bps
+
 ## A film that leads into its dungeon (a trial)
 
 A dungeon of the Workshop (`.dungeon`) and the boss fight it ends with

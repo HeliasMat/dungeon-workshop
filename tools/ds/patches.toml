@@ -1,0 +1,468 @@
+# The mega patch: the community's ROM patches for Explorers of Sky that help
+# cutscenes, applied together (`tools/ds/megapatch.py`) into the DS export's
+# cached base (`ds_cache.py`), in the order of their dependencies.
+#
+# Each entry:
+#   name      the patch's own name (SkyTemple's id for a built-in)
+#   kind      skytemple: a SkyTemple built-in (skytemple_files' Patcher)
+#             skypatch:  a SkyTemple patch package, read from a folder (`path`)
+#             sp:        a special process (armips source `path`), added to
+#                        BALANCE/process.bin after ExtractSPCode; called from a
+#                        script with ProcessSpecial(id, a, b), its id told by
+#                        megapatch.py and kept in the base's manifest
+#             cot:       a c-of-time module (`path`), merged into the ROM's one
+#                        c-of-time build (cot_build.py)
+#   author, source (where it comes from), licence
+#   gives     what it gives cutscenes
+#   depends   patches it needs first (SkyTemple's own dependencies are added)
+#   regions   the releases it works on as it is here (our ROM: EU)
+#   share     yes: its code may go in the shareable .bps (a stated, free licence)
+#             no:  no licence stated: used in your own base only
+#   default   on: in the base; off: listed, not applied (DW_PATCHES=+Name adds it)
+#   tested    ok / broke / not yet: the three reference films played headless
+#             with it (watch.py --headless), and what was seen
+#   path      a folder or file: tools/ds/community/... (licensed, in the
+#             repository) or target/ds/megapatch/community/... (no licence:
+#             read from its source by `megapatch.py --fetch`, never committed)
+#   params    a SkyTemple patch's parameters
+#   notes     for a patch left out (kind "left-out"): why, and what it would take
+#
+# Overlay 36 (ExtraSpace) is shared by area (https://wiki.skytemple.org/index.php/Extra_Overlay_Areas):
+# FixMemorySoftlock 0x780 and 0x1420, AntiSoftlock 0xBC0, the Adex text tags
+# theirs; the common area from 0x30F70: Chesyon's skypatches its first 0x54
+# bytes, c-of-time from 0x30F70 + 0x100 (cot_build.SKIP) to the end.
+
+# --- The base: what everything else needs ------------------------------------
+
+[[patch]]
+name = "ActorAndLevelLoader"
+kind = "skytemple"
+author = "psy_commando"
+source = "SkyTemple built-in (pmd2_asm_mods)"
+licence = "GPL-3"
+gives = "Actors and levels read from files: the 64 spare actors the films cast their Pokémon as, the decors' spare levels."
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (the base's own since the fast loop)"
+
+[[patch]]
+name = "ExtraSpace"
+kind = "skytemple"
+author = "Frostbyte"
+source = "SkyTemple built-in (EoS-ASM-Hacks)"
+licence = "GPL-3"
+gives = "Overlay 36: room for the code of the patches below and c-of-time."
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 1: the three films as before)"
+
+# --- Crashes and hangs --------------------------------------------------------
+
+[[patch]]
+name = "FixMemorySoftlock"
+kind = "skytemple"
+author = "Frostbyte"
+source = "SkyTemple built-in (EoS-ASM-Hacks)"
+licence = "GPL-3"
+gives = "A sprite that does not fit in memory is drawn as a default sprite instead of hanging the game: a scene with too many species still plays."
+depends = ["ExtraSpace"]
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 1: the three films as before)"
+
+[[patch]]
+name = "AntiSoftlock"
+kind = "skytemple"
+author = "Frostbyte"
+source = "SkyTemple built-in (EoS-ASM-Hacks)"
+licence = "GPL-3"
+gives = "A+B+X+Y in a cutscene frees every lock: a scene waiting for something that never comes goes on."
+depends = ["ExtraSpace"]
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 1: the three films as before)"
+
+# --- Text and portraits -------------------------------------------------------
+
+[[patch]]
+name = "ChangePortraitMidText"
+kind = "skytemple"
+author = "Adex"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Text tag [FACE:x]: the portrait's emotion changes in the middle of a line."
+depends = ["ExtraSpace"]
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 2: films as before; [FACE:1] changed the face mid-line in sp_test.exps)"
+
+[[patch]]
+name = "BoldText"
+kind = "skytemple"
+author = "Adex"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Text tags [BS]...[BR]: bold words."
+depends = ["ExtraSpace"]
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 2: films as before; [BS]...[BR] drawn bold in sp_test.exps)"
+
+[[patch]]
+name = "ChangeTextSound"
+kind = "skytemple"
+author = "Adex"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Text tags [TS:x:y] and [TR]: the typing sound of a line and its volume (a voice for each character)."
+depends = ["ExtraSpace"]
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 2: films as before; the sound not heard, sheets are silent)"
+
+[[patch]]
+name = "DisplayScriptVariable"
+kind = "skytemple"
+author = "Adex"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Text tag [var:x:y]: a script variable said in a line (a count, a score)."
+depends = ["ExtraSpace"]
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 2: films as before; the tag not tried)"
+
+[[patch]]
+name = "AlwaysAllowPortraitDefault"
+kind = "skypatch"
+author = "Chesyon"
+source = "https://github.com/Chesyon/chesyon-eos-asm/tree/main/skypatches/AlwaysAllowPortraitDefault"
+path = "tools/ds/community/chesyon/AlwaysAllowPortraitDefault"
+licence = "MIT source, GPL-3 distribution (tools/ds/community/chesyon/LICENSE_MIT)"
+gives = "A missing emotion falls back to the Normal portrait instead of no portrait: a SpriteCollab Pokémon with few portraits still shows a face."
+depends = ["ExtraSpace"]
+regions = "EU, US (its JP address looks wrong)"
+share = "yes"
+default = "on"
+tested = "ok (group 2: films as before; its arm9 hook checked in place)"
+
+[[patch]]
+name = "ChangeTextBoxBackground"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "The textbox's background colour and see-through (one colour for the whole game)."
+params = { Red = 32, Green = 32, Blue = 32, Alpha = 144 }
+regions = "EU, US, JP"
+share = "yes"
+default = "off"
+tested = "not yet (changes every textbox's look: a choice of style)"
+
+[[patch]]
+name = "ExpandPortraitStructs"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Larger portrait structures, for portrait sets edited beyond the usual entries."
+regions = "EU, US, JP"
+share = "yes"
+default = "off"
+tested = "not yet (no film needs it)"
+
+# --- Objects ------------------------------------------------------------------
+
+[[patch]]
+name = "ExtractObjectTable"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "The ground objects' table in its own file: room to add objects (props, held items)."
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 2: films as before, items held still drawn)"
+
+# --- Special processes --------------------------------------------------------
+
+[[patch]]
+name = "ExtractSPCode"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "The special processes in BALANCE/process.bin: the special processes below are added to it."
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 3: films play; the four special processes are 64 to 67)"
+
+[[patch]]
+name = "set-portrait-monster"
+kind = "sp"
+author = "Chesyon"
+source = "https://github.com/Chesyon/chesyon-eos-asm/blob/main/SP/set-portrait-monster.asm"
+path = "tools/ds/community/chesyon/sp/set-portrait-monster.asm"
+licence = "MIT (tools/ds/community/chesyon/LICENSE_MIT)"
+gives = "ProcessSpecial(id, species, emotion): the dialogue's portrait of any Pokémon, without an actor (a voice off, a narrator, a memory)."
+depends = ["ExtractSPCode"]
+regions = "EU (US addresses in its comments)"
+share = "yes"
+default = "on"
+tested = "ok (group 3; ProcessSpecial(64, 6, 0) showed Charizard's face in Pikachu's box, sp_test.exps)"
+
+[[patch]]
+name = "set_text_SE"
+kind = "sp"
+author = "Adex"
+source = "https://github.com/Adex-8x/EoS-ASM-Effects/blob/main/special_processes/set_text_SE.asm"
+path = "tools/ds/community/adex/sp/set_text_SE.asm"
+licence = "GPL-3 (tools/ds/community/adex/LICENSE)"
+gives = "ProcessSpecial(id, sound, 0): the typing sound of the next lines (16133 the game's own)."
+depends = ["ExtractSPCode"]
+regions = "EU (its EU lines chosen by megapatch.py), US"
+share = "yes"
+default = "on"
+tested = "ok (group 3: films play; the sound not heard)"
+
+[[patch]]
+name = "set_textbox_transparency"
+kind = "sp"
+author = "Adex"
+source = "https://github.com/Adex-8x/EoS-ASM-Effects/blob/main/special_processes/set_textbox_transparency.asm"
+path = "tools/ds/community/adex/sp/set_textbox_transparency.asm"
+licence = "GPL-3 (tools/ds/community/adex/LICENSE)"
+gives = "ProcessSpecial(id, 1, 0): see-through textboxes (0: solid again), the scene seen behind the words."
+depends = ["ExtractSPCode"]
+regions = "EU (its EU lines chosen by megapatch.py), US"
+share = "yes"
+default = "on"
+tested = "ok (group 3; ProcessSpecial(66, 1, 0) then a new box: see-through, sp_test.exps; it acts when a box opens)"
+
+[[patch]]
+name = "dynamic_actor"
+kind = "sp"
+author = "Adex"
+source = "https://github.com/Adex-8x/jam-patches/blob/master/psychic-puppets/dynamic_actor.asm"
+path = "target/ds/megapatch/community/adex_jam/sp/dynamic_actor.asm"
+licence = "none stated"
+gives = "ProcessSpecial(id, species, 2 * n): the species of the n-th special actor set while the script runs (SPECIAL_ACTORS, checked in pmdsky-debug): one actor, several Pokémon in turn."
+depends = ["ExtractSPCode"]
+regions = "EU (its EU line's typo 'DynamicActorList.' fixed by megapatch.py), US"
+share = "no"
+default = "on"
+tested = "ok (group 3: films play; not called yet)"
+
+# --- Screen -------------------------------------------------------------------
+
+[[patch]]
+name = "FasterFlushMode4"
+kind = "skypatch"
+author = "marius851000"
+source = "https://github.com/marius851000/eos-marius-patch/tree/HEAD/patches/faster_flush_mode_4"
+path = "target/ds/megapatch/community/marius/FasterFlushMode4"
+licence = "none stated"
+gives = "Screen flush mode 4 computed faster (divide by 256, not 255): DeSmuME no longer skips half the frames of those fades."
+regions = "EU, US (same addresses)"
+share = "no"
+default = "on"
+tested = "ok (group 3: films play, fades as before in melonDS; its three arm9 words checked)"
+
+# --- New game -----------------------------------------------------------------
+
+[[patch]]
+name = "ChooseStarter"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "A menu to choose the starter during the personality test (SkipQuiz needs it)."
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 3: films play; the menu after the film not reached in 20 s)"
+
+[[patch]]
+name = "SkipQuiz"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "The personality quiz skipped (only the gender asked): after a film, the game goes on at once."
+depends = ["ChooseStarter"]
+regions = "EU, US, JP"
+share = "yes"
+default = "on"
+tested = "ok (group 3: films play; after the film not reached in 20 s)"
+
+# --- c-of-time (one build: cot_build.py) --------------------------------------
+
+[[patch]]
+name = "KabutoHandler"
+kind = "cot"
+author = "Chesyon"
+source = "https://github.com/Chesyon/kabuto-handler"
+path = "target/ds/megapatch/community/kabuto-handler"
+licence = "none stated (c-of-time itself: MIT, its build scripts GPL-3)"
+gives = "The debug build's error screen: an abort, a fatal error or an assert is shown with the registers instead of a black screen (melonDS; DeSmuME has no exception vectors)."
+depends = ["ExtraSpace"]
+regions = "EU, US, JP"
+share = "no"
+default = "on"
+tested = "ok (group 4, everything on: films as with group 1; its two arm9 hooks and its code at overlay 36 + 0x31070 checked; no crash seen to show)"
+
+# --- Listed, not applied ------------------------------------------------------
+
+[[patch]]
+name = "ExtractAnimData"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Effect and move animation data in files (DungeonInterrupt needs it)."
+depends = ["ActorAndLevelLoader"]
+regions = "EU, US, JP"
+share = "yes"
+default = "off"
+tested = "not yet"
+
+[[patch]]
+name = "ChangePokemonGroundAnim"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "The ground idle animation from an editable table, per species."
+regions = "EU, US, JP"
+share = "yes"
+default = "off"
+tested = "not yet (nothing edits the table yet)"
+
+[[patch]]
+name = "AddExperienceShare"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Nothing for cutscenes: dungeon experience shared (gameplay)."
+depends = ["ExtractDungeonData"]
+params = { PercentageShared = 100 }
+regions = "EU, US, JP"
+share = "yes"
+default = "off"
+tested = "not yet (gameplay)"
+
+[[patch]]
+name = "ExtractDungeonData"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Nothing for cutscenes: dungeon tables in files (AddExperienceShare needs it)."
+regions = "EU, US, JP"
+share = "yes"
+default = "off"
+tested = "not yet (gameplay)"
+
+[[patch]]
+name = "AddTypes"
+kind = "skytemple"
+author = "Anonymous (Irdkwia)"
+source = "SkyTemple built-in"
+licence = "GPL-3"
+gives = "Nothing for cutscenes: the Fairy type and the Gen 6 type chart (gameplay)."
+params = { FairyTypeMatchup = 1 }
+regions = "EU, US, JP"
+share = "yes"
+default = "off"
+tested = "not yet (gameplay)"
+
+# --- Left out (kind "left-out": never applied; why in `notes`) --------------
+
+[[patch]]
+name = "CustomOpcodes"
+kind = "left-out"
+author = "Adex"
+source = "https://github.com/Adex-8x/jam-patches/tree/master/strung-up-by-sketches/CustomOpcodes"
+licence = "none stated"
+gives = "Script opcodes 11621-11629: letterboxes (cinema bars), textbox position, size and colour, input checks, a cutscene skip."
+regions = "NA (its EU stub is another patch's: OpcodeCheck and the others undefined for EU)"
+share = "no"
+default = "off"
+tested = "not tried"
+notes = "To port: about 15 overlay 11 / arm9 addresses to find for EU; it uses overlay 36's common area from 0x30F70 (Chesyon's skypatches and c-of-time are there: move it); our SSB writer would have to know its opcodes; its skip hook and CRASS's both hook ExecuteActing (pick one). c-of-time opcodes would do the same in our own build."
+
+[[patch]]
+name = "FlushGrayscale"
+kind = "left-out"
+author = "Adex"
+source = "https://github.com/Adex-8x/jam-patches/tree/master/strung-up-by-sketches/FlushGrayscale"
+licence = "none stated"
+gives = "A grayscale screen flush: flashbacks and memories."
+regions = "NA (its EU stub is a TODO; the code jumps to NA addresses such as 0x0200AEC0)"
+share = "no"
+default = "off"
+tested = "not tried"
+notes = "To port: the NA addresses in patch_ov36.asm to EU (pmdsky-debug), and an overlay 36 area of its own (it sits in the common area after CustomOpcodes)."
+
+[[patch]]
+name = "CRASS"
+kind = "left-out"
+author = "Adex, packaged by Chesyon"
+source = "https://github.com/Chesyon/standalone-crass"
+licence = "GPL-3 / MIT"
+gives = "Select skips, redirects or speeds up a scene played by supervision_ExecuteActingSub (the films' slots)."
+regions = "EU"
+share = "yes"
+default = "off"
+tested = "not tried"
+notes = "A c-of-time module: later, in the same build as the Kabuto Handler (only Kabuto for now, as asked). Exclusive with CustomOpcodes' skip."
+
+[[patch]]
+name = "SetAnimation-multithreaded"
+kind = "left-out"
+author = "marius851000"
+source = "https://github.com/marius851000/eos-marius-patch/tree/HEAD/process/multithreaded"
+licence = "none stated"
+gives = "A special process setting an actor's direction while the other actors' code runs."
+regions = "EU"
+share = "no"
+default = "off"
+tested = "not tried"
+notes = "A multithreaded special process: not a plain process.bin entry; to look at with its repository's notes."
+
+[[patch]]
+name = "SND Stream, FifoHooks, MoreSamplesAndPresets, PlayMoreBgm"
+kind = "left-out"
+author = "Irdkwia, adakite1; Adex"
+source = "https://github.com/adakite1/Asm-patches, https://github.com/irdkwia/snd-stream-c, https://github.com/Adex-8x/jam-patches"
+licence = "none stated"
+gives = "Streamed or custom music for a film."
+regions = "all (PlayMoreBgm NA)"
+share = "no"
+default = "off"
+tested = "not tried"
+notes = "To get: adakite1's are shipped as .skypatch archives (not downloaded); the asm SND Stream is on SkyTemple's Discord; snd-stream-c would go in the c-of-time build."
+
+[[patch]]
+name = "eos-eu-speedup"
+kind = "left-out"
+author = "steph-lion"
+source = "https://github.com/steph-lion/eos-eu-speedup"
+licence = "MIT / GPL-3"
+gives = "Hold B for instant text (quicker tests), 1x-4x dungeon speed."
+regions = "EU"
+share = "yes"
+default = "off"
+tested = "not tried"
+notes = "A c-of-time project of its own: to merge into our one build later."

@@ -523,13 +523,41 @@ SMD/SWD files.
 
 ## What code (ASM) would add
 
-Needs armips (SkyTemple's patches) or an ARM gcc + make (c-of-time):
+Needs armips (SkyTemple's patches) or the ARM GNU toolchain (c-of-time,
+built without make by `cot_build.py`, seen 2026-11-27: 11 files, Kabuto
+Handler included, 5.7 KB of code, 8 s once):
 
 - more actors and new places (ActorAndLevelLoader, above);
 - new script operations through c-of-time's custom `ProcessSpecial`s:
   e.g. a dungeon move's animation in a cutscene, items drawn by the item
   code, a custom title-screen entry;
 - a title-screen hook ("Watch the film" next to "New Game").
+
+## The mega patch (`patches.toml`, `megapatch.py`, seen 2026-11-27)
+
+The base holds 19 community patches (docs/DS.md, "Patches"); the three
+reference films (the_night_crossing, the_little_festival, the_lost_oran)
+played headless after each group, compared shot by shot with the first:
+
+- groups 1 (ExtraSpace, FixMemorySoftlock, AntiSoftlock), 2 (the text
+  tags, AlwaysAllowPortraitDefault, ExtractObjectTable) and 4 (everything,
+  c-of-time and Kabuto included): the same shots as before, but for one
+  fade a frame apart;
+- group 3 (the special processes, FasterFlushMode4, SkipQuiz): the films
+  play right, about 20 frames earlier in places (the ready state taken
+  again; group 4 is back to group 1's timing).
+- `target/ds/megapatch/films/sp_test.exps` (by hand): `[FACE:1]` changes
+  the face mid-line, `[BS]...[BR]` is bold, `ProcessSpecial(64, 6, 0)`
+  (set-portrait-monster) shows Charizard's face in a box, and
+  `ProcessSpecial(66, 1, 0)` (set_textbox_transparency) makes the next box
+  that opens see-through (not the one already open).
+- The special processes' ids: 64 set-portrait-monster, 65 set_text_SE,
+  66 set_textbox_transparency, 67 dynamic_actor (the game's own are 0-63).
+- Making the base takes about 15 s more (SkyTemple's patches through
+  armips, c-of-time's build kept once made); a film's copy is unchanged.
+- Not seen: a sound (the sheets are silent), the Kabuto screen (no crash
+  to show; melonDS only), dynamic_actor called, ChooseStarter's menu after
+  a film.
 
 ## Dungeons and boss fights (`patch_rom.py --dungeon`, seen 2026-11-22)
 
