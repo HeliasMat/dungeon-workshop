@@ -272,6 +272,40 @@ impl Film {
         (sim.focus, sim.stage.view.zoom.now) = (focus, close);
     }
 
+    /// Whether the screen's effects hide the scene now: a fade, a title on
+    /// black, a picture instead of it, black wiping over, an iris closed,
+    /// the light wholly of one colour.
+    pub fn screen_hides(&self) -> bool {
+        let stage = &self.play.sim.stage;
+        let light = &stage.light;
+        light.fade.level >= 0.05
+            || stage.words.caption.is_some()
+            || light.cutaway.is_some()
+            || light.wipe.shown >= 0.5
+            || (light.spotlight.black && light.spotlight.shown >= 0.5)
+            || light.tint.now[3] >= 200.0
+    }
+
+    /// Drawn as `draw` (or `draw_whole`) does, the screen's effects off: no
+    /// fade, title, curtain, picture instead of the scene, wipe, iris,
+    /// flash nor tint; the stage as it stands under them (the staging view
+    /// of the Workshop). The effects kept as they were.
+    pub fn draw_staged(&mut self, canvas: &mut Canvas, world: &mut Screen, whole: bool) {
+        let stage = &mut self.play.sim.stage;
+        let (light, caption, credits, letterbox) = (stage.light.clone(), stage.words.caption.take(), stage.words.credits.take(), stage.words.letterbox);
+        let off = &mut stage.light;
+        (off.fade, off.flash, off.wipe, off.cutaway, off.tint) = (engine::Fade::CLEAR, Default::default(), Default::default(), None, Default::default());
+        off.spotlight.shown = 0.0;
+        stage.words.letterbox = Default::default();
+        if whole {
+            self.draw_whole(canvas, world);
+        } else {
+            self.draw(canvas, world);
+        }
+        let stage = &mut self.play.sim.stage;
+        (stage.light, stage.words.caption, stage.words.credits, stage.words.letterbox) = (light, caption, credits, letterbox);
+    }
+
     /// The stage drawn with the camera on that point, as close as it is now
     /// (no words over it), and the view it was drawn with; the view the film
     /// has, kept as it was. For a close look at someone the film's camera

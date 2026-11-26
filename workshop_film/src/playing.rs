@@ -86,7 +86,7 @@ pub(super) fn work(own: &workshop_base::session::Session, asked: &Receiver<Ask>,
                     worker.playing(on);
                     None
                 }
-                Ask::Show(frame, whole) if Some(at) == last_show => worker.show(frame, whole),
+                Ask::Show(frame, whole, staged) if Some(at) == last_show => worker.show(frame, whole, staged),
                 Ask::Text(..) | Ask::Show(..) => None,
             };
             if let Some(reply) = reply {
@@ -168,7 +168,10 @@ impl Worker {
         let mut cast: Vec<String> = report.names.iter().map(|(_, name)| name.clone()).collect();
         cast.sort();
         cast.dedup();
-        let played = Played { revision, end: session.end().unwrap_or(0), timeline: report.timeline.clone(), wrong, fields: report.fields.clone(), cast };
+        // (Its first frame seen, looked for in its first minute.)
+        let first_seen = session.first_seen(60 * super::SECOND as usize);
+        let played =
+            Played { revision, end: session.end().unwrap_or(0), timeline: report.timeline.clone(), wrong, fields: report.fields.clone(), cast, first_seen };
         self.shown = None;
         Some(Answer::Played(Box::new(played)))
     }
@@ -198,7 +201,7 @@ impl Worker {
     }
 
     /// A frame drawn, and who is seen on it.
-    fn show(&mut self, frame: usize, whole: bool) -> Option<Answer> {
+    fn show(&mut self, frame: usize, whole: bool, staged: bool) -> Option<Answer> {
         self.session.as_ref()?;
         // (Gone to, not played on to: silent there; heard from there if it plays.)
         if jumped(self.shown, frame) {
@@ -213,7 +216,13 @@ impl Worker {
         self.shown = Some(frame);
         let session = self.session.as_mut()?;
         let (canvas, screen) = (&mut self.canvas, &mut self.screen);
-        let drawn = if whole { session.draw_whole(frame, canvas, screen) } else { session.draw(frame, canvas, screen) };
+        let drawn = if staged {
+            session.draw_staged(frame, whole, canvas, screen)
+        } else if whole {
+            session.draw_whole(frame, canvas, screen)
+        } else {
+            session.draw(frame, canvas, screen)
+        };
         if !drawn {
             return None;
         }
@@ -249,6 +258,7 @@ impl Worker {
         });
         Some(Answer::Frame(Box::new(Frame {
             frame,
+            staged,
             wide: screen.wide,
             high: screen.high,
             scale: screen.scale,

@@ -58,8 +58,9 @@ const PLAYED_AFTER: Duration = Duration::from_millis(400);
 enum Ask {
     /// The film's text, of that revision: played (again).
     Text(u64, String),
-    /// That frame drawn (the whole place, or what the view shows).
-    Show(usize, bool),
+    /// That frame drawn (the whole place, or what the view shows; staged:
+    /// the screen's effects off).
+    Show(usize, bool, bool),
     /// Heard or not.
     Heard(bool),
     /// Playing, or paused (what is heard paused with it).
@@ -79,6 +80,8 @@ enum Answer {
 /// the box around each, in its pixels).
 pub struct Frame {
     frame: usize,
+    /// Drawn with the screen's effects off (the staging view).
+    staged: bool,
     wide: usize,
     high: usize,
     /// So many of its pixels for one of the game's (wide and high are its own).
@@ -105,6 +108,8 @@ struct Played {
     wrong: Vec<(i32, String)>,
     fields: BTreeMap<usize, film::ReadAs>,
     cast: Vec<String>,
+    /// Its first frame seen (no fade or title over it).
+    first_seen: Option<usize>,
 }
 
 /// The film played, as the window knows it.
@@ -121,11 +126,18 @@ pub struct Films {
     /// What playing it found wrong (its line, what).
     pub wrong: Vec<(i32, String)>,
     pub failed: Option<String>,
-    /// The frame shown, and its picture; the frame asked last.
+    /// The frame shown, and its picture; the frame asked last (and whether staged).
     shown: Option<usize>,
     texture: Option<egui::TextureHandle>,
     picture_size: Vec2,
-    asked: Option<usize>,
+    asked: Option<(usize, bool)>,
+    /// The staging view: the frame was reached from the Script (its cursor,
+    /// a line gone to), so shown paused with the screen's effects off (no
+    /// fade, title, iris…): where one places the scene. Playing or going
+    /// elsewhere shows the effects again.
+    pub staged: bool,
+    /// The frame shown was drawn staged.
+    shown_staged: bool,
     /// Where it stands (in frames), whether it plays, how fast, since when.
     pub at: f64,
     pub playing: bool,
@@ -217,6 +229,8 @@ impl Films {
             texture: None,
             picture_size: vec2(256.0, 192.0),
             asked: None,
+            staged: false,
+            shown_staged: false,
             at: 0.0,
             playing: false,
             numbers: BTreeMap::new(),
@@ -273,9 +287,23 @@ impl Films {
         (self.at.max(0.0) as usize).min(self.end)
     }
 
-    /// Gone to that frame (stopped there if it played past the end).
+    /// Gone to that frame (stopped there if it played past the end), shown
+    /// as it plays (its screen's effects on).
     pub fn go(&mut self, frame: usize) {
         self.at = frame.min(self.end) as f64;
+        self.staged = false;
+    }
+
+    /// Gone to that frame from the Script (its cursor, a line gone to): the
+    /// staging view, its screen's effects off.
+    pub fn go_staged(&mut self, frame: usize) {
+        self.go(frame);
+        self.staged = true;
+    }
+
+    /// Whether the frame shown is the staging view (drawn with the screen's effects off).
+    pub fn shows_staged(&self) -> bool {
+        self.shown_staged && !self.playing
     }
 
     /// Each frame: what the thread answered taken; the Script's text sent to
@@ -285,14 +313,17 @@ impl Films {
         while let Ok(answer) = self.answers.try_recv() {
             match answer {
                 Answer::Played(played) => {
-                    let Played { revision, end, timeline, wrong, fields, cast } = *played;
+                    let Played { revision, end, timeline, wrong, fields, cast, first_seen } = *played;
                     let first = self.played == 0;
                     (self.played, self.end, self.timeline, self.wrong, self.failed) = (revision, end, timeline, wrong, None);
                     (self.fields, self.cast) = (fields, cast);
                     self.asked = None;
                     if first {
-                        // (Played the first time: where the Script's cursor is, as it follows it.)
-                        self.followed_line = 0;
+                        // (Played the first time: where the Script's cursor is, as it follows it; on
+                        // its first line, at the film's first frame seen, not on black.)
+                        let cursor = scripts.open.as_ref().map_or(1, |open| open.cursor_line());
+                        self.followed_line = if cursor <= 1 { cursor } else { 0 };
+                        self.go(first_seen.unwrap_or(0));
                         self.asked_instant();
                     }
                 }
@@ -310,6 +341,7 @@ impl Films {
                         None => self.texture = Some(context.load_texture("the film", image, options)),
                     }
                     (self.shown, self.picture_size) = (Some(drawn.frame), vec2((drawn.wide / drawn.scale) as f32, (drawn.high / drawn.scale) as f32));
+                    self.shown_staged = drawn.staged;
                     self.numbers = drawn.numbers.clone();
                     self.drawn = Some(drawn);
                 }
@@ -347,7 +379,7 @@ impl Films {
         if self.follow && line != self.followed_line && !self.playing {
             self.followed_line = line;
             if let Some(frame) = self.timeline.as_ref().and_then(|timeline| line_frame(timeline, line)) {
-                self.go(frame);
+                self.go_staged(frame);
             }
         }
         // (Going on, as it plays.)
@@ -392,10 +424,14 @@ impl Films {
             self.told_playing = self.playing;
             _ = self.asks.send(Ask::Playing(self.playing));
         }
+        // (Playing shows the screen's effects again.)
+        if self.playing {
+            self.staged = false;
+        }
         let frame = self.frame();
-        if self.played > 0 && self.asked != Some(frame) {
-            self.asked = Some(frame);
-            _ = self.asks.send(Ask::Show(frame, self.whole));
+        if self.played > 0 && self.asked != Some((frame, self.staged)) {
+            self.asked = Some((frame, self.staged));
+            _ = self.asks.send(Ask::Show(frame, self.whole, self.staged));
         }
     }
 
@@ -428,7 +464,7 @@ impl Films {
     /// The film gone to where that line plays (stopped there).
     pub fn go_to_line(&mut self, line: usize) {
         if let Some(frame) = self.timeline.as_ref().and_then(|timeline| line_frame(timeline, line)) {
-            self.go(frame);
+            self.go_staged(frame);
             self.playing = false;
             self.followed_line = line;
         }

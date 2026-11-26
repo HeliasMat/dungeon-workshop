@@ -135,6 +135,15 @@ fn head(ui: &mut egui::Ui, films: &mut Films, full: Rect) -> (Rect, bool) {
     top.separator();
     top.checkbox(&mut films.looped, "Loop").on_hover_text("played again from the start at the end");
     top.checkbox(&mut films.follow, "Follow the Script").on_hover_text("the film goes where the Script's cursor is");
+    if films.staged && !films.playing {
+        top.separator();
+        let staging = top
+            .selectable_label(true, "Staging")
+            .on_hover_text("the staging view: the scene as it stands at the Script's line, the screen's effects off (fades, title, iris…); a click shows them");
+        if staging.clicked() {
+            films.staged = false;
+        }
+    }
     if films.look != 1.0 || films.pan != Vec2::ZERO {
         top.separator();
         top.label(RichText::new(format!("×{:.1}", films.look)).color(theme::WEAK));
@@ -188,6 +197,9 @@ fn picture_drawn(ui: &egui::Ui, films: &Films, scripts: &mut Scripts, view: &Vie
     };
     ui.painter_at(room).image(texture.id(), view.shown, Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
     let place_point = films.drawn.as_ref().and_then(|drawn| marks::over(ui, films, scripts, drawn, view, head, picture));
+    if films.shows_staged() {
+        workshop_decor::tag(&ui.painter_at(room), view.seen.left_bottom() + vec2(4.0, -4.0), "staging · effects off", theme::FILM);
+    }
     if !films.fresh(scripts) {
         ui.painter().text(
             view.shown.right_top() + vec2(-6.0, 6.0),

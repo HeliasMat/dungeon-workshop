@@ -93,7 +93,8 @@ And also:
 - **The film plays** on a thread of its own, as `scene_player check` plays it: a moment after each change of the Script, only from the line changed.
 - **The Scene** shows the game's picture, its pixels whole, at the moment one is at.
   - Under it, a bar: the time (to drag), ⏮ ▶ ⏭ (next scene), the speed (0.5×, 1×, 2×), **Sound**, **Follow the Script**.
-  - With **Follow the Script**, the film goes to the line where the cursor is.
+  - With **Follow the Script**, the film goes to the line where the cursor is, shown as the **staging view**: the stage as it stands at that line with the screen's effects off (fades, the title, a curtain, an iris, white or black screens), so the `put` lines of a scene's start show the place, not black (**Staging** above the picture, and a tag on it; a click on **Staging** shows the effects). Playing, or going elsewhere with the bar or the Timeline, shows them again.
+  - A film opens on its first frame seen (no fade or title over it), unless the Script's cursor is on a later line.
   - On the keyboard, the pointer over it: Space plays, ← → by a second (Shift: by a frame), Home.
   - What keeps the film from playing shows in red at the top.
 - **Above the picture**:

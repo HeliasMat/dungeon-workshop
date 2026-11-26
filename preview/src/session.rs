@@ -294,4 +294,24 @@ impl Session {
         played.film.draw_whole(canvas, screen);
         true
     }
+
+    /// That frame (or the whole place then) drawn with the screen's effects
+    /// off: the stage as it stands under a fade or a title; false if it does
+    /// not play.
+    pub fn draw_staged(&mut self, frame: usize, whole: bool, canvas: &mut Canvas, screen: &mut Screen) -> bool {
+        if self.seek(frame).is_none() {
+            return false;
+        }
+        let played = self.played.as_mut().expect("played");
+        played.film.draw_staged(canvas, screen, whole);
+        true
+    }
+
+    /// The first frame whose scene is seen (no fade, title or other effect of
+    /// the screen over it), looked for in the first `within` frames; none if
+    /// it does not play or stays hidden that long.
+    pub fn first_seen(&mut self, within: usize) -> Option<usize> {
+        let end = self.end()?.min(within);
+        (0..=end).find(|frame| self.seek(*frame).is_some_and(|film| !film.screen_hides()))
+    }
 }
