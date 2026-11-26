@@ -58,7 +58,8 @@ pub struct LaunchOptions {
     pub music: Option<String>,
     /// `WORKSHOP_TILEQUANT=<file.png>`: the image converter open on that picture.
     pub tilequant: Option<String>,
-    /// `WORKSHOP_RESOURCE=drawing:bouee`: that shelf, that one chosen.
+    /// `WORKSHOP_RESOURCE=drawing:bouee`: that shelf, that one chosen (`pokemon:eevee:faces`: that part of its
+    /// page; `pokemon?eevee`: that sought).
     pub resource: Option<String>,
     /// `WORKSHOP_PICKER=<tab>[:<pokemon>[:<search>]]`: the Film's Assets panel on that tab
     /// (pokemon, faces, gestures, music, sounds, things, places, effects), for that Pokémon, searching that.
