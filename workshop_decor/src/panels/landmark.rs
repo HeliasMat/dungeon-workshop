@@ -30,7 +30,12 @@ pub(super) fn landmark(ui: &mut egui::Ui, decors: &mut Decors, item: &Item) {
         let mut to = words.get(6).cloned().unwrap_or_else(|| "224".to_string());
         let mut entrance = words.get(7).cloned().unwrap_or_default();
         if item.kind != Kind::Exit {
-            prop(ui, "Name", |ui| ui.add(egui::TextEdit::singleline(&mut name).desired_width(ui.available_width())));
+            let hint = match item.kind {
+                Kind::Spot => "a name, e.g. by_the_well",
+                Kind::Zone => "a name, e.g. the_dock",
+                _ => "a name, e.g. north_gate (optional)",
+            };
+            prop(ui, "Name", |ui| ui.add(egui::TextEdit::singleline(&mut name).hint_text(hint).desired_width(ui.available_width())));
         }
         prop(ui, "Position", |ui| {
             ui.add(egui::DragValue::new(&mut point[0]).speed(1.0).prefix("X "));

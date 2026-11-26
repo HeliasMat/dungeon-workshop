@@ -506,6 +506,22 @@ impl Resources {
         self.catalog.clone().unwrap_or_default()
     }
 
+    /// The Pokémon that answer a search of the catalog, the closest first, as
+    /// a decor's resident takes them: each its word and its name, those with
+    /// pictures here only (none of SpriteCollab's not imported); at most `most`.
+    pub fn species_found(&mut self, said: &str, most: usize) -> Vec<(String, String)> {
+        let catalog = self.catalog();
+        catalog
+            .search(said)
+            .into_iter()
+            .flat_map(|found| found.entries.into_iter().map(move |entry| (found.species, entry)))
+            .map(|(species, entry)| &catalog.species[species].entries[entry])
+            .filter(|entry| entry.source != catalog::Source::Missing)
+            .take(most)
+            .map(|entry| (entry.word.clone(), entry.name.clone()))
+            .collect()
+    }
+
     /// Whether a species' forms are shown (`by_itself`: as the search would have it).
     fn species_open(&self, species: &catalog::Species, by_itself: bool) -> bool {
         pokemon_cards::is_open(&self.open_species, &self.shut_species, species, by_itself)

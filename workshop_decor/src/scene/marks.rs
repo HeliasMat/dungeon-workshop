@@ -187,3 +187,30 @@ pub(super) fn rulers(painter: &egui::Painter, view: View, pointer: Option<Pos2>)
     }
     painter.rect_filled(Rect::from_min_size(rect.min, vec2(SIDE, SIDE)), 0.0, Color32::from_rgb(0x22, 0x22, 0x22));
 }
+
+/// A marker tool in hand: a handle on each thing of its kind (a ring at a
+/// resident's feet, at a spot's or an entrance's point, at an exit's or a
+/// zone's corner), the one pointed at stronger; elsewhere, under the
+/// pointer, what a click lays.
+pub(super) fn handles(painter: &egui::Painter, decors: &Decors, read: &Read, view: View, marker: crate::markers::Marker, under: Option<usize>) {
+    let colour = theme::POINTED;
+    for (at, one) in read.items.iter().enumerate().filter(|(_, one)| one.kind == marker.kind()) {
+        let point = match one.kind {
+            crate::edit::Kind::Exit | crate::edit::Kind::Zone => view.on_screen(read.boxes[at]).center(),
+            _ => view.to_screen(one.corner),
+        };
+        let pointed = under == Some(at);
+        painter.circle_stroke(point, if pointed { 7.0 } else { 5.0 }, Stroke::new(if pointed { 2.5_f32 } else { 1.5 }, colour));
+        painter.circle_filled(point, 2.0, colour);
+        if one.kind == crate::edit::Kind::Lives {
+            tag(painter, view.on_screen(read.boxes[at]).left_top() + vec2(0.0, -2.0), &one.name, theme::STRONG);
+        }
+    }
+    if under.is_none()
+        && decors.marker_window.is_none()
+        && let Some(at) = painter.ctx().pointer_hover_pos().filter(|at| view.seen().contains(*at))
+    {
+        painter.circle_stroke(at, 6.0, Stroke::new(1.0_f32, colour.gamma_multiply(0.7)));
+        tag(painter, at + vec2(12.0, 18.0), &format!("click: a {} here", marker.name().to_lowercase()), colour);
+    }
+}

@@ -90,11 +90,16 @@ pub(super) fn add(ui: &mut egui::Ui, decors: &mut Decors, made: &mut Option<Stri
         }
     });
     prop(ui, "Resident", |ui| {
-        ui.add(egui::TextEdit::singleline(&mut decors.resident).hint_text("pikachu").desired_width(80.0));
+        ui.add(egui::TextEdit::singleline(&mut decors.resident).hint_text("a Pokémon, e.g. pikachu").desired_width(110.0));
         if ui.button("Add").on_hover_text("someone who lives there, by their Pokémon name without accents").clicked() && !decors.resident.trim().is_empty() {
             line = Some(format!("resident {} {x} {y}", decors.resident.trim()));
         }
     });
+    ui.label(theme::text(
+        "Here: in the middle of the view. Where you want: the toolbar's Resident (K), Spot (T), Entrance (E), Exit (X), Zone (Z), a click on the scene.",
+        theme::SMALL,
+        theme::FAINT,
+    ));
     ui.label(theme::text("The pieces: the Library, below (click or drag).", theme::SMALL, theme::FAINT));
     if let Some(line) = line {
         let text = open.with_added(&line);

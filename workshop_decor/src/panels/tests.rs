@@ -4,7 +4,7 @@
 use std::collections::HashSet;
 
 use super::hierarchy::{Row, chosen_after_click, new_group_name, row_after_arrow, tree_rows};
-use super::layers::{layer_meaning, placeable};
+use super::layers::{layer_meaning, placeable, walls_count, walls_said};
 
 /// The rows: a group's head before its first line; its lines hidden when it is folded, unless something is sought.
 #[test]
@@ -53,4 +53,14 @@ fn a_piece_is_changed() {
     assert_eq!(decors_moved(text, 2, false), None, "not before the decor's line");
     assert_eq!(decors_moved(text, 3, true), None, "the last");
     assert_eq!((talk_word(None), talk_word(Some("film a_film")), talk_word(Some("shop"))), ("only speaks", "film", "shop"));
+}
+
+/// The Walls layer counts the tiles walled as baked (3,760 of a beach), not
+/// only those painted by hand; before a bake, those painted.
+#[test]
+fn the_walls_layer_counts_the_baked_walls() {
+    assert_eq!(walls_count(Some(3760), 0), 3760);
+    assert_eq!(walls_count(None, 12), 12);
+    assert!(walls_said(Some(3760), 2, 1).contains("3760 tiles of 8 walled"));
+    assert!(walls_said(None, 2, 1).contains("not baked yet"));
 }

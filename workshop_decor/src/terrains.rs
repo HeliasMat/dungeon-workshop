@@ -37,6 +37,19 @@ pub enum Tool {
     Walls,
     /// Walks a Pokémon, to try the walls.
     Walk,
+    /// Lays a resident, a spot, an entrance, an exit or a zone (`markers`);
+    /// takes and carries those of its kind.
+    Marker(crate::markers::Marker),
+}
+
+impl Tool {
+    /// The marker it lays, if it is a marker tool.
+    pub fn marker(self) -> Option<crate::markers::Marker> {
+        match self {
+            Tool::Marker(marker) => Some(marker),
+            _ => None,
+        }
+    }
 }
 
 /// How a terrain is painted.
@@ -287,7 +300,7 @@ pub fn interact(
     scale: f32,
 ) {
     match decors.brushes.tool {
-        Tool::Choose => {}
+        Tool::Choose | Tool::Marker(_) => {}
         Tool::Terrain => paint(ui, decors, response, painter, to_screen, to_place, scale),
         Tool::Strew => strew(ui, decors, response, painter, to_screen, to_place, scale),
         Tool::Walls => walls(ui, decors, response, painter, to_screen, to_place),
@@ -745,6 +758,7 @@ pub fn terrain_panel(ui: &mut egui::Ui, decors: &mut Decors) {
     }
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
+        let words = terrain_words(terrains.iter().map(|(info, _)| (info.colour, info.wall)));
         for (at, (info, patch)) in terrains.iter().enumerate() {
             let (rect, response) = ui.allocate_exact_size(vec2(52.0, 64.0), Sense::click());
             let chosen = decors.brushes.terrain as usize == at;
@@ -767,15 +781,24 @@ pub fn terrain_panel(ui: &mut egui::Ui, decors: &mut Decors) {
             if info.wall {
                 ui.painter().rect_stroke(square, 0.0, Stroke::new(1.0_f32, theme::WRONG), StrokeKind::Inside);
             }
-            ui.painter().text(
+            // (Named by what it looks like, its colour read: grass, sand, water…)
+            let word = words[at].as_str();
+            ui.painter().with_clip_rect(rect).text(
                 pos2(rect.center().x, rect.bottom() - 7.0),
                 egui::Align2::CENTER_CENTER,
-                format!("{}  {:.0}%", info.letter, info.share * 100.0),
+                word,
                 egui::FontId::proportional(theme::SMALL - 1.0),
                 theme::TEXT,
             );
             let wall = if info.wall { "\nwall: not walkable" } else { "" };
-            if response.on_hover_text(format!("terrain {} · {:.1} % of the place{wall}", info.letter, info.share * 100.0)).clicked() {
+            let response = response.on_hover_ui(|ui| {
+                if let Some(patch) = patch {
+                    ui.add(egui::Image::new((patch.id(), vec2(96.0, 96.0))));
+                }
+                ui.label(RichText::new(word).strong());
+                ui.label(theme::weak(format!("terrain {} · {:.1} % of the place{wall}", info.letter, info.share * 100.0)));
+            });
+            if response.clicked() {
                 decors.brushes.terrain = at as u8;
             }
         }
@@ -916,9 +939,89 @@ pub fn terrain_inspector(ui: &mut egui::Ui, decors: &mut Decors, number: usize) 
     }
 }
 
+/// What a terrain is, by its colour (the game names none): water, grass,
+/// sand, earth, rock, snow, lava, crystal, shadow; a wall of earth or rock a cliff.
+pub fn terrain_word(colour: [u8; 3], wall: bool) -> &'static str {
+    let [r, g, b] = colour.map(|part| f32::from(part) / 255.0);
+    let (high, low) = (r.max(g).max(b), r.min(g).min(b));
+    let (value, chroma) = (high, high - low);
+    let saturation = if high > 0.0 { chroma / high } else { 0.0 };
+    let hue = if chroma == 0.0 {
+        0.0
+    } else if high == r {
+        60.0 * ((g - b) / chroma).rem_euclid(6.0)
+    } else if high == g {
+        60.0 * ((b - r) / chroma + 2.0)
+    } else {
+        60.0 * ((r - g) / chroma + 4.0)
+    };
+    let word = match () {
+        _ if value < 0.16 => "shadow",
+        _ if saturation < 0.16 => {
+            if value > 0.78 {
+                "snow"
+            } else {
+                "rock"
+            }
+        }
+        _ if saturation > 0.75 && value > 0.7 && !(25.0..330.0).contains(&hue) => "lava",
+        _ if (175.0..255.0).contains(&hue) => "water",
+        _ if (75.0..175.0).contains(&hue) => "grass",
+        _ if (255.0..330.0).contains(&hue) => "crystal",
+        _ if (40.0..75.0).contains(&hue) => {
+            if saturation < 0.6 && value > 0.55 {
+                "sand"
+            } else {
+                "grass"
+            }
+        }
+        _ if (12.0..40.0).contains(&hue) => {
+            if value > 0.62 && saturation < 0.6 {
+                "sand"
+            } else {
+                "earth"
+            }
+        }
+        _ => "earth",
+    };
+    match word {
+        "earth" | "rock" if wall => "cliff",
+        _ => word,
+    }
+}
+
+/// The terrains of a place named, those named alike numbered (`water`, `water 2`).
+pub fn terrain_words(terrains: impl Iterator<Item = ([u8; 3], bool)>) -> Vec<String> {
+    let mut seen: HashMap<&str, usize> = HashMap::new();
+    terrains
+        .map(|(colour, wall)| {
+            let word = terrain_word(colour, wall);
+            let count = seen.entry(word).or_insert(0);
+            *count += 1;
+            if *count == 1 { word.to_string() } else { format!("{word} {count}") }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A terrain named by its colour.
+    #[test]
+    fn a_terrain_is_named_by_its_colour() {
+        assert_eq!(terrain_word([0x48, 0xA0, 0x40], false), "grass");
+        assert_eq!(terrain_word([0xE8, 0xD0, 0x98], false), "sand");
+        assert_eq!(terrain_word([0x38, 0x70, 0xD0], true), "water");
+        assert_eq!(terrain_word([0x8A, 0x60, 0x38], false), "earth");
+        assert_eq!(terrain_word([0x8A, 0x60, 0x38], true), "cliff");
+        assert_eq!(terrain_word([0x80, 0x80, 0x84], false), "rock");
+        assert_eq!(terrain_word([0xF0, 0xF4, 0xF8], false), "snow");
+        assert_eq!(terrain_word([0xF0, 0x40, 0x10], false), "lava");
+        assert_eq!(terrain_word([0x10, 0x10, 0x14], false), "shadow");
+        let blue = ([0x38, 0x70, 0xD0], true);
+        assert_eq!(terrain_words([blue, ([0xE8, 0xD0, 0x98], false), blue].into_iter()), ["water", "sand", "water 2"]);
+    }
 
     fn painting(terrain: u8) -> Painting {
         let painted = Painted { level: 1, x: 0, y: 0, corners: decor::pixels::Grid::filled(1, 1, NONE), walls: None };

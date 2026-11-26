@@ -24,8 +24,10 @@ pub struct LaunchOptions {
     pub folded: Vec<String>,
     /// `WORKSHOP_CHOSEN=n`: line n of the decor open chosen.
     pub chosen: Option<usize>,
-    /// `WORKSHOP_TOOL=terrain|scatter|walls|walk`: that brush in hand.
+    /// `WORKSHOP_TOOL=terrain|scatter|walls|walk|resident|spot|entrance|exit|zone`: that tool in hand.
     pub tool: Option<String>,
+    /// `WORKSHOP_MARKER=resident:400:250`: that marker laid there in the decor open, its window open (a picture writes no decor).
+    pub marker: Option<String>,
     /// `WORKSHOP_CAPTURE=<file.png>`: a picture of the window written there
     /// after `WORKSHOP_AFTER` seconds (3), then the Workshop closes.
     pub capture: Option<PathBuf>,
@@ -124,6 +126,7 @@ impl LaunchOptions {
             folded: var("WORKSHOP_FOLDED").unwrap_or_default().split(',').map(str::trim).filter(|part| !part.is_empty()).map(str::to_string).collect(),
             chosen: number("WORKSHOP_CHOSEN"),
             tool: var("WORKSHOP_TOOL"),
+            marker: var("WORKSHOP_MARKER"),
             capture: std::env::var_os("WORKSHOP_CAPTURE").map(PathBuf::from),
             capture_after: number("WORKSHOP_AFTER"),
             view: var("WORKSHOP_VIEW"),

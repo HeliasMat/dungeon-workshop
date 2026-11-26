@@ -104,14 +104,30 @@ pub(super) fn choose(
     if response.drag_stopped() {
         drag_ended(response, read, view, &chosen_now, toggling, &mut asked);
     }
-    let stamping = decors.stamp.is_some();
+    // (A marker tool: no stamp; a click on the empty lays its marker there.)
+    let marker = read.tool.marker();
+    let stamping = decors.stamp.is_some() && marker.is_none();
     if stamping {
         stamp(decors, response, painter, read, view, snap, space, &mut asked);
     } else if response.clicked() {
-        asked.chose = Some(match under {
-            Some(at) => chosen_on_click(&read.selection, (read.items[at].line, read.items[at].at), toggling),
-            None if toggling => read.selection.clone(),
-            None => Vec::new(),
+        let point =
+            response.interact_pointer_pos().map(|at| view.to_place(at)).filter(|[x, y]| (0.0..=view.size.x).contains(x) && (0.0..=view.size.y).contains(y));
+        asked.chose = Some(match (under, marker, point) {
+            (Some(at), ..) => {
+                if marker.is_some() {
+                    decors.marker_window = Some(read.items[at].line);
+                }
+                chosen_on_click(&read.selection, (read.items[at].line, read.items[at].at), toggling)
+            }
+            (None, Some(marker), Some(point)) if !toggling && !space => {
+                let (made, laid) = crate::markers::laid(&read.text, marker, snap.of(point), &decors.resident);
+                asked.made = Some(made);
+                decors.marker_window = laid.map(|(line, _)| line);
+                decors.species.sought.clear();
+                laid.into_iter().collect()
+            }
+            (None, ..) if toggling => read.selection.clone(),
+            _ => Vec::new(),
         });
     }
     dropped(decors, response, painter, read, view, snap, &mut asked);
@@ -524,6 +540,10 @@ fn done(ui: &egui::Ui, decors: &mut Decors, response: &egui::Response, view: Vie
     open.carried = asked.carry;
     open.marquee = asked.marquee;
     if let Some(chose) = asked.chose {
+        // (The window beside a marker closes once it is no longer chosen.)
+        if !chose.iter().any(|(line, _)| Some(*line) == decors.marker_window) {
+            decors.marker_window = None;
+        }
         open.choose(chose);
     }
     if let Some(made) = asked.made {

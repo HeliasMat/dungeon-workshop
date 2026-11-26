@@ -15,6 +15,7 @@
 
 pub mod edit;
 pub mod library;
+pub mod markers;
 pub mod panels;
 pub mod placing;
 pub mod scene;
@@ -398,6 +399,10 @@ pub struct Decors {
     pub snap: bool,
     /// The stamp: a piece of the Library laid at each click on the scene, until Esc.
     pub stamp: Option<crate::placing::Stamp>,
+    /// The window beside a marker laid or chosen with a marker tool (its line), its essentials to fill.
+    pub marker_window: Option<usize>,
+    /// The Pokémon sought for a resident, in that window.
+    pub species: crate::markers::Species,
 }
 
 impl Decors {
@@ -452,6 +457,8 @@ impl Decors {
             backdrops: Vec::new(),
             snap: false,
             stamp: None,
+            marker_window: None,
+            species: crate::markers::Species::default(),
         }
     }
 
@@ -473,6 +480,15 @@ impl Decors {
             "over" => format!("put {name} {points} layer over"),
             _ => format!("put {name} {points}"),
         }
+    }
+
+    /// A marker laid there in the decor open (one change), chosen, its window open.
+    pub fn lay_marker(&mut self, marker: crate::markers::Marker, point: [f32; 2]) {
+        let Some(open) = &mut self.open else { return };
+        let (made, laid) = crate::markers::laid(&open.text, marker, point, &self.resident);
+        open.change(made);
+        open.choose(laid.into_iter().collect());
+        self.marker_window = laid.map(|(line, _)| line);
     }
 
     /// Something asked of the workshop.
@@ -574,7 +590,9 @@ impl Decors {
         let Some(open) = &mut self.open else {
             return None;
         };
-        if open.changed.is_some_and(|changed| changed.elapsed() >= WRITTEN_AFTER) {
+        // (A picture being taken writes no decor: what it changed neither saved nor baked.)
+        let picture = self.session.launch.capture.is_some();
+        if open.changed.is_some_and(|changed| changed.elapsed() >= WRITTEN_AFTER) && !picture {
             open.changed = None;
             if let Err(why) = open.save() {
                 told = Some(why);

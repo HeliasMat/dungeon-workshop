@@ -10,7 +10,7 @@ use super::edit::{Item, Kind};
 use crate::Decors;
 use workshop_base::theme;
 
-mod fields;
+pub(crate) mod fields;
 mod hierarchy;
 mod history;
 mod inspector;

@@ -76,11 +76,10 @@ pub(super) fn layers(ui: &mut egui::Ui, decors: &mut Decors, read: &Read, asked:
 /// it the active layer, a double-click chooses all it holds, a line dropped goes there.
 fn layer_row(ui: &mut egui::Ui, decors: &mut Decors, read: &Read, asked: &mut Asked, word: &'static str, name: &str) {
     let keys = layer_elements(read, word);
+    let (walled, free) = edit::painted_walls(&read.text);
+    let baked = decors.walls_grid.as_ref().map(|walls| walls.tiles.iter().filter(|wall| **wall).count());
     let count = match word {
-        "walls" => {
-            let (walled, free) = edit::painted_walls(&read.text);
-            walled.len() + free.len()
-        }
+        "walls" => walls_count(baked, walled.len()),
         _ => keys.len(),
     };
     let placeable = placeable(word);
@@ -122,8 +121,9 @@ fn layer_row(ui: &mut egui::Ui, decors: &mut Decors, read: &Read, asked: &mut As
         if active { theme::DECOR } else { theme::FAINT },
     );
     layer_actions(ui, decors, rect, word, shown);
+    let walls_said = if word == "walls" { walls_said(baked, walled.len(), free.len()) } else { String::new() };
     let response = response.on_hover_text(format!(
-        "{}{}",
+        "{}{walls_said}{}",
         layer_meaning(word),
         if placeable { "\nclick: what is put goes there · double-click: all its elements chosen" } else { "" }
     ));
@@ -219,4 +219,16 @@ fn layer_menu(ui: &mut egui::Ui, decors: &mut Decors, asked: &mut Asked, word: &
         decors.opacity.remove(word);
         ui.close();
     }
+}
+
+/// How many tiles the Walls layer counts: those walled as the decor was
+/// baked last (those painted by hand among them), else those painted.
+pub(super) fn walls_count(baked: Option<usize>, painted: usize) -> usize {
+    baked.unwrap_or(painted)
+}
+
+/// What the Walls layer says of its tiles, when pointed at.
+pub(super) fn walls_said(baked: Option<usize>, painted: usize, freed: usize) -> String {
+    let baked = baked.map_or("not baked yet".to_string(), |baked| format!("{baked} tiles of 8 walled, as baked last"));
+    format!("\n{baked} · painted by hand: {painted} walled, {freed} freed")
 }

@@ -120,6 +120,8 @@ pub struct Library {
     /// it has none); larger, for the backdrops' cards.
     pub thumbs: HashMap<i64, Option<egui::TextureHandle>>,
     pub pictures: HashMap<i64, Option<egui::TextureHandle>>,
+    /// The decor it last opened on its place for (a decor opened: on "This Decor's Place", once).
+    pub opened_on: Option<PathBuf>,
 }
 
 impl Default for Library {
@@ -140,6 +142,7 @@ impl Default for Library {
             folded: HashSet::new(),
             thumbs: HashMap::new(),
             pictures: HashMap::new(),
+            opened_on: None,
         }
     }
 }
@@ -225,8 +228,24 @@ struct Picked {
 fn own_place(decors: &Decors, places: &[Place]) -> Option<Place> {
     let open = decors.open.as_ref()?;
     let level = edit::setting(&open.text, "level").and_then(|level| level.trim().parse::<i64>().ok());
-    let backdrop = edit::backdrop_of(&open.text).map(|(_, level)| level);
-    [backdrop, level].into_iter().flatten().find_map(|level| places.iter().find(|(known, ..)| *known == level).cloned())
+    // (Made like a place, laid on its backdrop, or numbered as one.)
+    [crate::own_place(&open.text), level].into_iter().flatten().find_map(|level| places.iter().find(|(known, ..)| *known == level).cloned())
+}
+
+/// A decor newly open: the Library on "This Decor's Place" (if it has one,
+/// and the Library is on All Elements, nothing sought), once for that decor.
+fn opened_on_own_place(decors: &mut Decors, own: Option<&Place>) {
+    let Some(path) = decors.open.as_ref().map(|open| open.path.clone()) else { return };
+    if decors.lib.opened_on.as_ref() == Some(&path) {
+        return;
+    }
+    decors.lib.opened_on = Some(path);
+    if let Some((level, ..)) = own
+        && decors.lib.source == Source::All
+        && decors.lib.sought.is_empty()
+    {
+        decors.lib.source = Source::Place(*level);
+    }
 }
 
 /// What the Library's parts asked, done once all is drawn.
@@ -262,6 +281,7 @@ pub fn library(ui: &mut egui::Ui, decors: &mut Decors, decor_files: &[Entry]) {
     let side = 230.0_f32.min(below.width() * 0.3);
     let left = Rect::from_min_size(below.min, vec2(side, below.height()));
     let own = own_place(decors, &places);
+    opened_on_own_place(decors, own.as_ref());
     sources(ui, decors, left, &pieces, &places, models.len(), own.as_ref());
     // --- What is there, on the right ---
     let right = Rect::from_min_max(pos2(left.max.x + 1.0, below.min.y + 4.0), below.max);

@@ -16,6 +16,7 @@ mod bug;
 mod capture;
 mod commands;
 mod shortcuts;
+mod try_film;
 mod video;
 
 fn main() -> eframe::Result {

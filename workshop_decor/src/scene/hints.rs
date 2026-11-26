@@ -44,6 +44,7 @@ pub(super) fn hints(now: Now) -> &'static [(&'static str, &'static str)] {
         Tool::Strew => &[("drag", "scatter the piece chosen in the Library"), ("V", "back to choosing")],
         Tool::Walls => &[("drag", "wall"), ("right drag", "free"), ("V", "back to choosing")],
         Tool::Walk => &[("arrows / WASD", "walk"), ("V", "back to choosing")],
+        Tool::Marker(_) => &[("click", "lay one here"), ("drag", "move one"), ("Esc", "close its window"), ("V", "back to choosing")],
     }
 }
 
@@ -99,7 +100,7 @@ mod tests {
     /// Each tool has its keys; the stamp says how to stop it; what is chosen, how to move it.
     #[test]
     fn each_tool_says_its_keys() {
-        for tool in [Tool::Choose, Tool::Terrain, Tool::Strew, Tool::Walls, Tool::Walk] {
+        for tool in [Tool::Choose, Tool::Terrain, Tool::Strew, Tool::Walls, Tool::Walk, Tool::Marker(crate::markers::Marker::Resident)] {
             assert!(!hints(Now { tool, stamping: false, chosen: false }).is_empty());
         }
         let stamping = hints(Now { tool: Tool::Choose, stamping: true, chosen: true });

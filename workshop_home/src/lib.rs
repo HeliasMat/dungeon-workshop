@@ -169,9 +169,9 @@ fn place_film(entry: &Entry) -> Option<String> {
     Some(format!("scene: {place}\nwait 1.5s\n# {changed}\n"))
 }
 
-/// The place of the game a decor is made like (`like 11`), its number.
+/// The place of the game a decor is made like (`like 11`), else the one it is laid on (its backdrop, `put r11 0 0`), its number.
 fn like_of(entry: &Entry) -> Option<String> {
-    (entry.kind == Kind::Decor).then(|| entry.text.lines().find_map(|line| line.trim().strip_prefix("like ").map(|like| like.trim().to_string())))?
+    (entry.kind == Kind::Decor).then(|| workshop_decor::own_place(&entry.text).map(|level| level.to_string()))?
 }
 
 impl Home {

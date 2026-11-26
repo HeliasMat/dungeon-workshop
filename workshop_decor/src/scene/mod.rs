@@ -5,7 +5,9 @@
 //! fit. With the tool Choisir: things chosen by a click (Ctrl or Maj: one
 //! more), by a rectangle drawn over the empty, carried to the pixel (Alt: on
 //! the grid of 8), moved by the arrows, copied, cut, pasted, duplicated,
-//! taken out. The other tools: `terrains`.
+//! taken out. A marker tool (`markers`): a click on the empty lays one, its
+//! window beside it (`window.rs`); those of its kind taken and carried as
+//! with Choisir. The other tools: `terrains`.
 //!
 //! Here the view (how close, where) and the order of it all; `drawn.rs` what
 //! is drawn, `marks.rs` what is drawn over it (what is chosen, measures,
@@ -27,6 +29,7 @@ mod marks;
 mod moving;
 #[cfg(test)]
 mod tests;
+mod window;
 
 /// A thing of the decor: its line, its place on the line.
 type Element = (usize, usize);
@@ -141,8 +144,14 @@ pub fn scene(ui: &mut egui::Ui, decors: &mut Decors) {
     let seconds = if decors.living { ui.input(|input| input.time) } else { 0.0 };
     let (selection, carry, marquee, text) = (open.selection(), open.carried, open.marquee, open.text.clone());
     let items = items_carried(&text, &selection, carry);
+    // (A marker tool in hand: the residents and the markers shown, to take and move.)
+    let marker = decors.brushes.tool.marker();
     let mut read = Read {
-        hidden: edit::LAYERS.iter().map(|(word, _)| *word).filter(|word| decors.is_hidden(word)).collect(),
+        hidden: edit::LAYERS
+            .iter()
+            .map(|(word, _)| *word)
+            .filter(|word| decors.is_hidden(word) && !(marker.is_some() && matches!(*word, "residents" | "markers")))
+            .collect(),
         locked: decors.locked.clone(),
         tool: decors.brushes.tool,
         boxes: Vec::new(),
@@ -161,11 +170,15 @@ pub fn scene(ui: &mut egui::Ui, decors: &mut Decors) {
         decors.body_now(word);
     }
     read.boxes = read.items.iter().map(|one| decors.item_box(one)).collect();
-    let choosing = read.tool == Tool::Choose;
+    let choosing = read.tool == Tool::Choose || marker.is_some();
     let pointer = response.hover_pos();
-    let under = pointer
-        .filter(|_| choosing)
-        .and_then(|at| (0..read.items.len()).rev().find(|at_one| read.takeable(&read.items[*at_one]) && view.on_screen(read.boxes[*at_one]).contains(at)));
+    // (A marker tool takes only its own kind: elsewhere, a click lays one.)
+    let under = pointer.filter(|_| choosing).and_then(|at| {
+        (0..read.items.len()).rev().find(|at_one| {
+            let one = &read.items[*at_one];
+            read.takeable(one) && marker.is_none_or(|marker| one.kind == marker.kind()) && view.on_screen(read.boxes[*at_one]).contains(at)
+        })
+    });
     let together = marks::chosen_framed(&painter, decors, &read, view, under, response.interact_pointer_pos());
     if ui.input(|input| input.modifiers.alt) && read.carry.is_none() {
         marks::measured(&painter, &read, view, together, pointer);
@@ -181,6 +194,9 @@ pub fn scene(ui: &mut egui::Ui, decors: &mut Decors) {
     if response.hovered() && ui.input(|input| input.modifiers.command && input.key_pressed(egui::Key::F)) {
         decors.lib.focus = true;
     }
+    if let Some(marker) = marker {
+        marks::handles(&painter, decors, &read, view, marker, under);
+    }
     if choosing {
         choosing::choose(ui, decors, &response, &painter, view, &read, under, space, middle, camera);
     } else {
@@ -193,9 +209,20 @@ pub fn scene(ui: &mut egui::Ui, decors: &mut Decors) {
     }
     // (The hint bar, under the rulers: what is on, the keys of the tool in hand.)
     let chosen = decors.open.as_ref().is_some_and(|open| open.chosen.is_some());
-    let now = hints::Now { tool: decors.brushes.tool, stamping: decors.stamp.is_some() && choosing, chosen };
+    let now = hints::Now { tool: decors.brushes.tool, stamping: decors.stamp.is_some() && read.tool == Tool::Choose, chosen };
     let below_rulers = if decors.rulers { Rect::from_min_max(rect.min + vec2(18.0, 19.0), rect.max) } else { rect };
     hints::bar(&painter, below_rulers, decors, now, grid_step(&read.text));
+    // (The window beside the marker laid or taken: its essentials.)
+    if let Some(number) = decors.marker_window {
+        let items = decors.open.as_ref().map(|open| edit::items(&open.text)).unwrap_or_default();
+        match items.iter().find(|one| one.line == number) {
+            Some(one) => {
+                let place = view.on_screen(decors.item_box(one));
+                window::window(ui, decors, number, place.right_top() + vec2(12.0, 0.0));
+            }
+            None => decors.marker_window = None,
+        }
+    }
 }
 
 /// How close the decor open is seen, and how far moved.

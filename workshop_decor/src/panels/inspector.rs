@@ -134,7 +134,7 @@ pub fn inspector(ui: &mut egui::Ui, decors: &mut Decors) {
         Tool::Strew => return crate::terrains::strew_panel(ui, decors),
         Tool::Walls => return crate::terrains::walls_panel(ui, decors),
         Tool::Walk => return crate::walk::walk_panel(ui, decors),
-        Tool::Choose => {}
+        Tool::Choose | Tool::Marker(_) => {}
     }
     let selection = open.selection();
     let text = open.text.clone();
@@ -379,11 +379,12 @@ fn settings(ui: &mut egui::Ui, decors: &mut Decors) {
             }
             decors.size_edit = None;
         }
-        for (word, label, low, high, said) in [
-            ("grid", "Grid", 1, 256, "the grid's step, in pixels"),
-            ("level", "Level", 0, 9999, "its number in the game (else the first free one)"),
-            ("music", "Music", 0, 999, "the number of the place's music"),
-            ("seed", "Seed", 0, 99999, "the chance of `scatter`"),
+        // (Each one not said: what it is then, and what ticking it does, said in its place.)
+        for (word, label, low, high, said, unsaid) in [
+            ("grid", "Grid", 1, 256, "the grid's step, in pixels", "8 px · tick: a step of your own, e.g. 16"),
+            ("level", "Level", 0, 9999, "its number in the game (else the first free one)", "the first free · tick: a number, e.g. 496"),
+            ("music", "Music", 0, 999, "the number of the place's music", "none · tick: a song's number, e.g. 12"),
+            ("seed", "Seed", 0, 99999, "the chance of `scatter`", "0 · tick: another scatter, e.g. 7"),
         ] {
             let now: Option<i64> = edit::setting(&text, word).and_then(|value| value.parse().ok());
             prop(ui, label, |ui| {
@@ -392,10 +393,13 @@ fn settings(ui: &mut egui::Ui, decors: &mut Decors) {
                     let value = if on { Some(if word == "grid" { "8".to_string() } else { low.max(1).to_string() }) } else { None };
                     made = Some(edit::with_setting(&text, word, value.as_deref()));
                 }
-                if let Some(mut value) = now
-                    && ui.add(egui::DragValue::new(&mut value).range(low..=high)).changed()
-                {
-                    made = Some(edit::with_setting(&text, word, Some(&value.to_string())));
+                match now {
+                    Some(mut value) => {
+                        if ui.add(egui::DragValue::new(&mut value).range(low..=high)).changed() {
+                            made = Some(edit::with_setting(&text, word, Some(&value.to_string())));
+                        }
+                    }
+                    None => _ = ui.label(theme::text(unsaid, theme::SMALL, theme::FAINT)).on_hover_text(said),
                 }
             });
         }

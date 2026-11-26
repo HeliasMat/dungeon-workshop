@@ -262,6 +262,10 @@ pub struct App {
     pressed: Option<(egui::Modifiers, egui::Key)>,
     /// File › Export Video, while it is made and until its window is closed.
     export: Option<crate::video::Export>,
+    /// Try in a Film: the scratch film being made, while it is.
+    trying: Option<crate::try_film::Trying>,
+    /// A film to play once it is read (the scratch film of Try in a Film).
+    play_when_read: Option<PathBuf>,
 }
 
 impl App {
@@ -316,6 +320,8 @@ impl App {
             shortcuts_sought: String::new(),
             pressed: None,
             export: None,
+            trying: None,
+            play_when_read: None,
         };
         if app.welcome {
             app.first_steps();
@@ -359,14 +365,34 @@ impl App {
         {
             open.choose(vec![(line, 0)]);
         }
-        // (`WORKSHOP_TOOL=terrain|scatter|walls|walk`: that brush in hand, for a picture.)
+        // (`WORKSHOP_TOOL=terrain|scatter|walls|walk|resident|spot|entrance|exit|zone`: that tool in hand, for a picture.)
+        use workshop_decor::terrains::Tool;
         app.work.decors.brushes.tool = match launch.tool.as_deref() {
-            Some("terrain") => workshop_decor::terrains::Tool::Terrain,
-            Some("scatter") => workshop_decor::terrains::Tool::Strew,
-            Some("walls") => workshop_decor::terrains::Tool::Walls,
-            Some("walk") => workshop_decor::terrains::Tool::Walk,
-            _ => workshop_decor::terrains::Tool::Choose,
+            Some("terrain") => Tool::Terrain,
+            Some("scatter") => Tool::Strew,
+            Some("walls") => Tool::Walls,
+            Some("walk") => Tool::Walk,
+            Some(word) => workshop_decor::markers::Marker::of_word(word).map_or(Tool::Choose, Tool::Marker),
+            None => Tool::Choose,
         };
+        // (A marker tool and `WORKSHOP_CHOSEN=n`: the window beside that marker open.)
+        if app.work.decors.brushes.tool.marker().is_some() {
+            app.work.decors.marker_window = launch.chosen;
+        }
+        // (`WORKSHOP_MARKER=resident:400:250`: that marker laid there, its tool in hand, its window open; never written.)
+        if let Some(asked) = &launch.marker {
+            let parts: Vec<&str> = asked.split(':').collect();
+            if let [word, x, y] = parts[..]
+                && let (Some(marker), Ok(x), Ok(y)) = (workshop_decor::markers::Marker::of_word(word), x.parse(), y.parse())
+            {
+                app.work.decors.brushes.tool = Tool::Marker(marker);
+                app.work.decors.lay_marker(marker, [x, y]);
+            }
+        }
+        // (`WORKSHOP_TRY=1` in the Decor space: Try in a Film at once.)
+        if app.space == Space::Decor && launch.try_dungeon {
+            app.try_in_film();
+        }
         app
     }
 
@@ -566,6 +592,21 @@ impl App {
         };
         let name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
         ui.label(theme::weak(format!("{name}{}", if self.unsaved(Space::Film) { " •" } else { "" })));
+        // (A scratch film of Try in a Film: kept in the library only if asked.)
+        if crate::try_film::is_scratch(&self.work.session, &path) {
+            ui.label(theme::text("scratch film", theme::SMALL, theme::FILM)).on_hover_text("made by Try in a Film, in target/: not in your library");
+            if ui.button("Keep in Library").on_hover_text("copy it into your films, to keep and edit").clicked() {
+                _ = self.work.scripts.save_now();
+                match crate::try_film::keep(&self.work.session, &path) {
+                    Ok(kept) => {
+                        self.work.said = format!("kept: {}", kept.display());
+                        self.work.project = Project::read(&self.work.session);
+                        self.work.session.ask(Ask::Film { path: kept, line: 0 });
+                    }
+                    Err(why) => self.work.said = why,
+                }
+            }
+        }
         let text = self.work.scripts.open.as_ref().filter(|open| open.path == path).map(|open| open.text.clone()).unwrap_or_default();
         let named = named_in_film(&self.work.session, &path, &text);
         if named.is_empty() {
@@ -713,26 +754,34 @@ impl App {
     /// The Decor's tools: living or still, how close, written out or not, what is wrong.
     fn decor_tools(&mut self, ui: &mut egui::Ui) {
         let decors = &mut self.work.decors;
-        let Some(open) = &decors.open else {
+        if decors.open.is_none() {
             ui.label(theme::weak("no decor open"));
             return;
-        };
-        // (What the mouse does: choose, paint terrains, strew.)
+        }
+        // (What the mouse does: choose, paint terrains, strew, paint walls, walk; then lay a marker.)
         use workshop_decor::terrains::Tool;
+        let tool_button = |ui: &mut egui::Ui, decors: &mut workshop_decor::Decors, tool: Tool, word: &str, said: String| {
+            let chosen = decors.brushes.tool == tool;
+            let text = RichText::new(word).color(if chosen { theme::GROUND } else { theme::TEXT });
+            if ui.add(egui::Button::new(text).fill(if chosen { theme::DECOR } else { theme::FIELD })).on_hover_text(said).clicked() {
+                decors.brushes.tool = tool;
+            }
+        };
         for (tool, word, key, said) in [
             (Tool::Choose, "Choose", "V", "take, move the elements"),
             (Tool::Terrain, "Terrain", "B", "paint terrains with the tiles of a place of the game"),
             (Tool::Strew, "Scatter", "N", "scatter a piece under the brush"),
-            (Tool::Walls, "Walls", "M", "paint where one walks, tile by tile"),
+            (Tool::Walls, "Walls", "M", "paint where one cannot walk, tile by tile (right: free them)"),
             (Tool::Walk, "Walk", "P", "walk a Pokémon around to try the walls"),
         ] {
-            let chosen = decors.brushes.tool == tool;
-            let text = RichText::new(word).color(if chosen { theme::GROUND } else { theme::TEXT });
-            if ui.add(egui::Button::new(text).fill(if chosen { theme::DECOR } else { theme::FIELD })).on_hover_text(format!("{said} ({key})")).clicked() {
-                decors.brushes.tool = tool;
-            }
+            tool_button(ui, decors, tool, word, format!("{said} ({key})"));
         }
         ui.separator();
+        for marker in workshop_decor::markers::Marker::ALL {
+            tool_button(ui, decors, Tool::Marker(marker), marker.name(), format!("{} ({})", marker.about(), marker.key().0));
+        }
+        ui.separator();
+        let Some(open) = &decors.open else { return };
         let living = decors.living;
         let word = if living { "⏸ Animated" } else { "▶ Animate" };
         let fill = if living { theme::DECOR } else { theme::FIELD };
@@ -760,7 +809,8 @@ impl App {
         let snap_said = toggle(ui, "Snap", decors.snap)
             .on_hover_text(format!("what is laid or carried lands on the grid of {step:.0} pixels (S; Alt held: the other way for a moment)"));
         let walls_shown = !decors.is_hidden("walls");
-        let walls_said = toggle(ui, "Walls", walls_shown).on_hover_text("where the characters cannot walk, in red over the decor (C)");
+        let walls_said =
+            toggle(ui, "Show Walls", walls_shown).on_hover_text("where the characters cannot walk, in red over the decor (C); the Walls tool paints them");
         ui.separator();
         // (The layer what is laid goes on: under the characters, as the game, or in front of them.)
         let mut layer = decors.active_layer;
@@ -785,14 +835,34 @@ impl App {
             ui.label(theme::weak(format!("{remarks} remark(s)")))
                 .on_hover_text(open.said.iter().map(|said| format!("line {}: {}", said.line, said.text)).collect::<Vec<_>>().join("\n"));
         }
+        let trying = self.trying.is_some();
+        let mut try_asked = false;
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            // (▶ Try in a Film: once baked, a scratch film walking round it, played in the Film space.)
+            let ready = open.is_baked() && !trying;
+            let word = if trying { "making the film…" } else { "▶ Try in a Film" };
+            let said = if open.is_baked() {
+                "a scratch film in this decor (kept in target/, not your library): two walk to each entrance, played in the Film space"
+            } else {
+                "a moment: the decor is being baked for the films"
+            };
+            try_asked = ui
+                .add_enabled(ready, egui::Button::new(RichText::new(word).color(theme::GROUND)).fill(theme::FILM))
+                .on_hover_text(said)
+                .on_disabled_hover_text(said)
+                .clicked();
             let state = match (open.saved(), open.is_baked()) {
                 (false, _) => "saving…",
-                (true, false) => "saved · baking for the films…",
+                (true, false) => "saved · baking…",
                 (true, true) => "saved · ready for the films",
             };
             ui.label(theme::weak(state));
         });
+        if try_asked {
+            self.try_in_film();
+            return;
+        }
+        let decors = &mut self.work.decors;
         if said_living.clicked() {
             decors.living = !living;
         }
@@ -807,6 +877,34 @@ impl App {
         }
         if walls_said.clicked() {
             toggle_walls(decors);
+        }
+    }
+
+    /// Try in a Film: the scratch film of the decor open begun on a thread.
+    fn try_in_film(&mut self) {
+        match crate::try_film::begin(&self.work.session, &mut self.work.decors) {
+            Ok(trying) => {
+                self.work.said = "making a film in this decor…".to_string();
+                self.trying = Some(trying);
+            }
+            Err(why) => self.work.said = why,
+        }
+    }
+
+    /// The scratch film, once made: opened in the Film space (read again if it was open), played.
+    fn tried(&mut self) {
+        let Some(done) = self.trying.as_ref().and_then(crate::try_film::Trying::done) else { return };
+        self.trying = None;
+        match done {
+            Ok(path) => {
+                if self.work.scripts.open.as_ref().is_some_and(|open| open.path == path) {
+                    self.work.scripts.open = None;
+                }
+                self.work.said = format!("a scratch film: {} (Keep in Library keeps it)", path.display());
+                self.play_when_read = Some(path.clone());
+                self.work.session.ask(Ask::Film { path, line: 0 });
+            }
+            Err(why) => self.work.said = why,
         }
     }
 
@@ -868,7 +966,7 @@ impl App {
         if save {
             self.save();
         }
-        // (V, B, N: the mouse chooses, paints terrains, strews.)
+        // (V, B, N, M, P: the mouse chooses, paints terrains, strews, paints walls, walks; K, T, E, X, Z: it lays a marker.)
         use workshop_decor::terrains::Tool;
         let tool = context.input(|input| {
             if input.modifiers.any() {
@@ -876,6 +974,8 @@ impl App {
             }
             [(egui::Key::V, Tool::Choose), (egui::Key::B, Tool::Terrain), (egui::Key::N, Tool::Strew), (egui::Key::M, Tool::Walls), (egui::Key::P, Tool::Walk)]
                 .into_iter()
+                .chain(workshop_decor::markers::Marker::ALL.map(|marker| (marker.key().1, Tool::Marker(marker))))
+                .filter(|(_, tool)| !walking || !matches!(tool, Tool::Marker(_)))
                 .find(|(key, _)| input.key_pressed(*key))
                 .map(|(_, tool)| tool)
         });
@@ -1234,8 +1334,24 @@ impl eframe::App for App {
             self.work.scripts.open(&path);
         }
         self.work.films.tick(context, &mut self.work.scripts);
+        // (The scratch film played from its first frame seen, once it is read.)
+        if let Some(path) = &self.play_when_read
+            && self.work.scripts.open.as_ref().is_some_and(|open| &open.path == path)
+            && self.work.films.fresh(&self.work.scripts)
+        {
+            self.work.films.playing = true;
+            self.play_when_read = None;
+        }
         if let Some(told) = self.work.decors.tick(context) {
             self.work.said = told;
+        }
+        // (A resident's Pokémon sought in the Decor: the Resources' catalog answers.)
+        if let Some(sought) = self.work.decors.species.asked.take() {
+            self.work.decors.species.found = self.work.resources.species_found(&sought, 24);
+        }
+        self.tried();
+        if self.trying.is_some() {
+            context.request_repaint_after(std::time::Duration::from_millis(100));
         }
         self.early_keys(context);
         self.palette(context);
