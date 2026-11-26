@@ -19,6 +19,7 @@ stage_view = { path = "../stage_view" }
 eframe = { version = "0.32", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
 # Native dialogs to pick a file or a folder (beside drag and drop).
 rfd = "0.15"
+image.workspace = true
 
 [lints]
 workspace = true

@@ -74,6 +74,8 @@ pub struct Home {
     grid: bool,
     favourites: BTreeSet<PathBuf>,
     pictures: workshop_base::example::Examples,
+    /// The pictures of the places of the game a decor is made like (its backdrop), shown while its own is made.
+    backdrops: HashMap<String, Option<egui::TextureHandle>>,
     /// What the language says of a film (when it was read: its errors, its remarks).
     problems: HashMap<PathBuf, (Option<SystemTime>, usize, usize)>,
     renaming: Option<(String, bool)>,
@@ -96,7 +98,9 @@ impl Home {
             sort: (Column::Changed, true),
             grid: false,
             favourites,
-            pictures: workshop_base::example::Examples::with_room(session, context, 400),
+            // (Made once on a thread, then kept: target/workshop/pictures.)
+            pictures: workshop_base::example::Examples::with_room(session, context, 400).kept_in(session.root().join("target/workshop/pictures")),
+            backdrops: HashMap::new(),
             problems: HashMap::new(),
             renaming: None,
             trashing: false,
@@ -157,7 +161,34 @@ fn place_film(entry: &Entry) -> Option<String> {
         Kind::Film => entry.places.first()?.clone(),
         Kind::Decor => entry.path.file_stem()?.to_string_lossy().into_owned(),
     };
-    Some(format!("scene: {place}\nwait 1.5s\n"))
+    // (A decor's picture made again when it changes: when it changed, written in a comment.)
+    let changed = match entry.kind {
+        Kind::Decor => entry.changed.and_then(|when| when.duration_since(SystemTime::UNIX_EPOCH).ok()).map_or(0, |since| since.as_secs()),
+        Kind::Film => 0,
+    };
+    Some(format!("scene: {place}\nwait 1.5s\n# {changed}\n"))
+}
+
+/// The place of the game a decor is made like (`like 11`), its number.
+fn like_of(entry: &Entry) -> Option<String> {
+    (entry.kind == Kind::Decor).then(|| entry.text.lines().find_map(|line| line.trim().strip_prefix("like ").map(|like| like.trim().to_string())))?
+}
+
+impl Home {
+    /// The backdrop of a place of the game by its number (its picture without its elements), read once.
+    fn backdrop(&mut self, context: &egui::Context, number: &str) -> Option<egui::TextureHandle> {
+        let data = self.session.data().to_string();
+        self.backdrops
+            .entry(number.to_string())
+            .or_insert_with(|| {
+                let path = assets::data::path(&data, &format!("backdrops/{number}.png"));
+                let picture = image::open(path).ok()?.to_rgba8();
+                let size = [picture.width() as usize, picture.height() as usize];
+                let image = egui::ColorImage::from_rgba_unmultiplied(size, picture.as_raw());
+                Some(context.load_texture(format!("backdrop {number}"), image, egui::TextureOptions::NEAREST))
+            })
+            .clone()
+    }
 }
 
 /// A place as the game names it.
@@ -172,7 +203,17 @@ fn place_said(session: &Session, word: &str) -> String {
 /// A file's picture painted in a room (its place, as the game shows it); its kind's colour while it is made.
 fn paint_picture(painter: &egui::Painter, home: &mut Home, context: &egui::Context, entry: &Entry, room: Rect) {
     painter.rect_filled(room, 2.0, theme::GROUND);
-    let picture = place_film(entry).map(|film| home.pictures.picture(context, &film));
+    let mut picture = place_film(entry).map(|film| home.pictures.picture(context, &film));
+    // (A decor's own picture not made yet, or that cannot be: the place of the game it is made like.)
+    if !matches!(picture, Some(Ok(Some(_))))
+        && let Some(like) = like_of(entry)
+        && let Some(texture) = home.backdrop(context, &like)
+    {
+        if matches!(picture, Some(Ok(None))) {
+            context.request_repaint_after(std::time::Duration::from_millis(150));
+        }
+        picture = Some(Ok(Some(texture)));
+    }
     match picture {
         Some(Ok(Some(texture))) => {
             // (Its middle, filling the room.)
@@ -845,14 +886,14 @@ fn details(ui: &mut egui::Ui, desk: &Desk, entry: &Entry, problems: Option<(usiz
                 .collect();
             let more = entry.cast.len().saturating_sub(10);
             pair(ui, "Characters", RichText::new(format!("{}{}", cast.join(", "), if more > 0 { format!(" and {more} others") } else { String::new() })));
-            pair(ui, "Lines", RichText::new(lines_said(&entry.text).to_string()));
+            pair(ui, "Lines Said", RichText::new(lines_said(&entry.text).to_string()));
         } else {
             pair(ui, "Size", RichText::new(entry.about.clone()));
             let films =
                 if used.is_empty() { "none".to_string() } else { format!("{} : {}", used.len(), used.iter().take(6).cloned().collect::<Vec<_>>().join(", ")) };
             pair(ui, "In the Films", RichText::new(films));
         }
-        pair(ui, "Lines", RichText::new(entry.lines.to_string()));
+        pair(ui, "Lines of Text", RichText::new(entry.lines.to_string()));
         if let Some((wrong, remarked)) = problems {
             let (said, colour) = state_said(wrong, remarked);
             pair(ui, "State", RichText::new(said).color(colour));

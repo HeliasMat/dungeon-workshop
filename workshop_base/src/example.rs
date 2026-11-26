@@ -37,6 +37,8 @@ pub struct Examples {
     failed: HashMap<String, String>,
     began: Instant,
     room: usize,
+    /// Where the last pictures are kept between launches (none: not kept).
+    disk: Option<std::path::PathBuf>,
 }
 
 impl Examples {
@@ -51,15 +53,32 @@ impl Examples {
         let waker = context.clone();
         let session = session.clone();
         std::thread::spawn(move || work(&session, &asked, &answer, &waker));
-        Examples { asks, answers, asked: None, waiting: HashSet::new(), clips: HashMap::new(), failed: HashMap::new(), began: Instant::now(), room }
+        Examples { asks, answers, asked: None, waiting: HashSet::new(), clips: HashMap::new(), failed: HashMap::new(), began: Instant::now(), room, disk: None }
     }
 
-    /// What the thread played meanwhile, made pictures.
+    /// Their last pictures kept in that folder between launches: one asked again shows at once, made only once.
+    pub fn kept_in(mut self, folder: std::path::PathBuf) -> Examples {
+        self.disk = Some(folder);
+        self
+    }
+
+    /// Where a film's last picture is kept, if they are (by its text: a film changed, another).
+    fn kept_at(&self, film: &str) -> Option<std::path::PathBuf> {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        film.hash(&mut hasher);
+        Some(self.disk.as_ref()?.join(format!("{:016x}.png", hasher.finish())))
+    }
+
+    /// What the thread played meanwhile, made pictures (the last kept on disk, if they are).
     fn receive(&mut self, context: &egui::Context) {
         while let Ok((said, played)) = self.answers.try_recv() {
             self.waiting.remove(&said);
             match played {
                 Ok(images) => {
+                    if let (Some(path), Some(last)) = (self.kept_at(&said), images.last()) {
+                        keep(&path, last);
+                    }
                     let options = egui::TextureOptions::NEAREST;
                     let frames = images.into_iter().enumerate().map(|(at, image)| context.load_texture(format!("example {at}"), image, options)).collect();
                     self.clips.insert(said, Clip { frames, used: Instant::now() });
@@ -85,6 +104,11 @@ impl Examples {
         }
         if let Some(why) = self.failed.get(film) {
             return Err(why.clone());
+        }
+        if let Some(image) = self.kept_at(film).filter(|_| !self.waiting.contains(film)).and_then(|path| kept(&path)) {
+            let texture = context.load_texture("example kept", image, egui::TextureOptions::NEAREST);
+            self.clips.insert(film.to_string(), Clip { frames: vec![texture.clone()], used: Instant::now() });
+            return Ok(Some(texture));
         }
         if self.waiting.insert(film.to_string()) {
             _ = self.asks.send((film.to_string(), true, 0));
@@ -227,4 +251,23 @@ fn work(session: &crate::session::Session, asked: &Receiver<Asked>, answer: &Sen
         }
         waker.request_repaint();
     }
+}
+
+/// A picture written where it is kept (what goes wrong let be: it is made again next time).
+fn keep(path: &std::path::Path, image: &egui::ColorImage) {
+    let pixels: Vec<u8> = image.pixels.iter().flat_map(|colour| colour.to_array()).collect();
+    let [wide, high] = image.size.map(|side| side as u32);
+    if let Some(parent) = path.parent() {
+        _ = std::fs::create_dir_all(parent);
+    }
+    if let Some(picture) = image::RgbaImage::from_raw(wide, high, pixels) {
+        _ = picture.save(path);
+    }
+}
+
+/// A picture kept, read back.
+fn kept(path: &std::path::Path) -> Option<egui::ColorImage> {
+    let picture = image::open(path).ok()?.to_rgba8();
+    let size = [picture.width() as usize, picture.height() as usize];
+    Some(egui::ColorImage::from_rgba_unmultiplied(size, picture.as_raw()))
 }
