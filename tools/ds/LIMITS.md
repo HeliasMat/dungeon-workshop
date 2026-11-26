@@ -603,6 +603,9 @@ mode.
 | legends21: Pikachu + 20 of Sky's largest (Groudon, Kyogre, Rayquaza, Dialga, Palkia, Giratina, Lugia, Wailord...) | 17 | 20; the 21st (0xB190) a square: arena 1 kept its 0x20000 |
 | the_far_shore, 15 of SpriteCollab's | 10 | 13; 2 squares |
 
+"Before" is the base without it (`DW_PATCHES=-GroundSpriteRoom`): with
+FixMemorySoftlock the scenes play, the sprites past the room drawn as
+squares (seen on the sheets), no longer black.
 So any 21 of Sky's usual species fit; the largest ones about 20; of
 SpriteCollab's about 13. A smaller reserve (0x18000) would give one more;
 kept at 0x20000 until arena 1's other users (flags 8, 16) are known.
