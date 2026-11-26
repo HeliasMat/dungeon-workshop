@@ -124,6 +124,42 @@ turned as it goes, until he gets off. How far it goes, and what is lost
 (the arcs, the seat's exact point, a swimmer's rising and sinking):
 `tools/ds/LIMITS.md` ("Items and riders").
 
+## Motion
+
+What moves on DS moves as Sky's own scenes move their actors, one move
+at a time (an actor given a new move while busy makes the script wait for
+it, seen):
+
+- `tremble`, `shiver`, `cry`, a strain (`boost`, `lift`): its pain looped
+  and Sky's own shiver, a pixel right and back every two frames, eight
+  times (half a second; Sky shakes its frightened ones so, in routines of
+  their own, `m26a0615`), then the pain stays looped until `off`;
+- `hurt`, a blow struck: knocked back the way he looks (from who struck),
+  shaken three times, his pain;
+- `jump`, `hop` on the spot, `laugh`, `high_five`: Sky's hop, up and down
+  at its pace (`CORO_JUMP_…` rise 10 pixels at 2 a frame), 6 pixels at
+  least; a jump to a place, getting off or out, a leap onto a mount: up,
+  across in the air, down: the arc in three straight legs;
+- `stagger`: his lost balance and a stumble, 4 pixels one way, 6 the
+  other, 2 back;
+- `vanish` and `appear` by a fade or a vision: a blink in three steps
+  (`SetBlink`, as Sky fades its actors), then hidden or steady; by smoke: a
+  pop under the cloud, as in the game. Who goes as a scene opens (put, then
+  gone at once: a Gyarados put in the sea and diving) is hidden from the
+  start, never seen on the first frames;
+- `use`, `attack`: the move's own effect on the target, as a dungeon shows
+  it (Thunderbolt's bolt, Ember's flame, Leaf Storm's leaves; at a place,
+  its own as it strikes, on its user): Sky's scripts play the game's
+  effects by the same numbers. Without the game's tables, its type's;
+- `daytime`: Sky's tints (the screen multiplied by the evening's or the
+  night's colour), one light to another through the day's, half the time
+  each;
+- `transition wipe` and `iris`: a fade (Sky's scenes go only to black or
+  white, and its boss wipe).
+
+A shake's or a blink's time is taken off the film's next waits, so the
+film keeps its length. How each was found: `tools/ds/LIMITS.md` ("Motion").
+
 ## Pokémon of SpriteCollab's
 
 A film may cast a Pokémon of a later generation (`grookey`) or a form
@@ -227,7 +263,8 @@ ready state without a window (melonDS through the `emulator` program, else
 py-desmume) and writes `target/ds/watch/sheet.png` (a shot every 30 frames);
 about 6 to 9 s in all. Without `--headless`, the Workshop opens and plays it
 in its Emulator space. `--frames`, `--every`, `--period` (A every n
-frames), `--out` and `--rom` as its help says.
+frames), `--out` and `--rom` as its help says. Given an `.exps` (a script
+written by hand, to try Sky's operations), it plays it as it is.
 
 How the base and the ready state work (`tools/ds/ds_cache.py`):
 

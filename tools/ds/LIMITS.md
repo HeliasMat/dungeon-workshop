@@ -211,9 +211,9 @@ Lost (`R-DS-LOSS` on the scene, `film_core/src/ds.rs` `DECOR_LOSS`):
 | follow | **Fake works** (seen) | `MovePositionMark<actor A>(1, mark); Wait(16); MovePositionLives<actor B>(1, ACTOR_A);` B walks to where A is (actions given to an actor run alongside the script; `WaitExecuteLives(ACTOR_B)` waits). A longer walk: a few legs. |
 | chase | **Fake works** (seen) | The same with speed 3 for both (`MovePositionMark<actor A>(3, …)`, `MovePositionLives<actor B>(3, ACTOR_A)`). |
 | wander | **Fake works** (seen) | `ExecuteCommon<actor X>(CORO_MOVE_RANDOM, 0)`: Sky's own random stroll (turn, step, wait 48 frames, for ever, until the scene ends or another action is given). |
-| daytime | **Fake works** (seen) | Sky's scripts never tint for dusk: they switch to the place's evening or night level (`G01P01B`, `G01P01C`; `LEVEL_D01P11B` is the beach at sunset), and dim a room at bedtime with `screen_FadeChange(1, 60, 0, 192)`. Their only warm tint, `screen_FlushOut(1, 4, 4, 128, 96, 64)`, shows mode 4 multiplies the screen by the colour (seen: 255, 128, 64 turned the sand orange and the sea green: far too strong). So mid-scene: evening `screen_FlushOut(1, 30, 4, 224, 176, 136)`, night `screen_FlushOut(1, 30, 4, 80, 112, 144)`, the factors measured between the guild's crossroads by day and its evening and night levels (**seen** side by side: `target/ds/lab/tint2_grid.png`); back to day: `screen_FlushIn` with the same numbers. The tint stays until then. Mode 3 fills the screen with the colour and `FlushIn` did not undo it: avoid. Sky also has evening variants of some places as levels of their own (`LEVEL_D01P11B` is the beach at sunset): the exporter can pick the level when the film's light says evening. |
+| daytime | **Fake works** (seen) | Sky's scripts never tint for dusk: they switch to the place's evening or night level (`G01P01B`, `G01P01C`; `LEVEL_D01P11B` is the beach at sunset), and dim a room at bedtime with `screen_FadeChange(1, 60, 0, 192)`. Their only warm tint, `screen_FlushOut(1, 4, 4, 128, 96, 64)`, shows mode 4 multiplies the screen by the colour (seen: 255, 128, 64 turned the sand orange and the sea green: far too strong). So mid-scene: evening `screen_FlushOut(1, 30, 4, 224, 176, 136)`, night `screen_FlushOut(1, 30, 4, 80, 112, 144)`, the factors measured between the guild's crossroads by day and its evening and night levels (**seen** side by side: `target/ds/lab/tint2_grid.png`); back to day: `screen_FlushIn` with the same numbers. The tint stays until then. A `FlushOut` over another tint changes at once, and a `FlushIn` at once flashes the day: one light to another goes in half the time, the new one comes in the other half (seen). Mode 3 fills the screen with the colour and `FlushIn` did not undo it: avoid. Sky also has evening variants of some places as levels of their own (`LEVEL_D01P11B` is the beach at sunset): the exporter can pick the level when the film's light says evening. |
 | status | **Fake works** (seen) | Effects on the actor: `EFFECT_CONFUSE` (stars), `EFFECT_POISION_BUBBLE` (sic), `EFFECT_GIANT_Z` (asleep), `EFFECT_TRAPPED_IN_ICE` (frozen), `EFFECT_STATS_DOWN_EFFECT`, `EFFECT_STATS_UP_EFFECT` and `EFFECT_YAWN` (not tried); with poses below (asleep: animation 25 or 33; shivering: 27 or 47). |
-| attack | **Fake works** (parts seen) | Wind-up `SetAnimation<actor A>(28)`, strike `SetAnimation<actor A>(48)` (a lunge), then on the target an effect: `EFFECT_PUNCH_ATTACK`, `EFFECT_LIGHTNING_STRIKE` (a bolt from the sky), `EFFECT_FIRE_ATTACK` (a tall flame), `EFFECT_SLASH_ATTACK`, `EFFECT_EXPLOSION_SMALL` (seen; `EFFECT_WATER_EXPLOSION`, `EFFECT_AIR_BLADES` and others of the table not tried); the target's hurt pose `SetAnimation(22)` or `(36)`; a shake `camera_SetEffect(2, 1, 1.0)` ... `camera_SetEffect(0, 0, 0)`; back to standing `SetAnimation(2)`. Real move animations (Thunderbolt as in a dungeon) need code: the dungeon's effect system is not loaded in ground mode. |
+| attack | **Exported** (seen) | Wind-up `SetAnimation<actor A>(28)`, strike `SetAnimation<actor A>(48)` (a lunge), then on the target an effect: `EFFECT_PUNCH_ATTACK`, `EFFECT_LIGHTNING_STRIKE` (a bolt from the sky), `EFFECT_FIRE_ATTACK` (a tall flame), `EFFECT_SLASH_ATTACK`, `EFFECT_EXPLOSION_SMALL` (seen; `EFFECT_WATER_EXPLOSION`, `EFFECT_AIR_BLADES` and others of the table not tried); the target's hurt pose `SetAnimation(22)` or `(36)`; a shake `camera_SetEffect(2, 1, 1.0)` ... `camera_SetEffect(0, 0, 0)`; back to standing `SetAnimation(2)`. The move's own effect on the target, seen (2026-11-26): `SetEffect` plays the game's effects by the numbers the dungeons' move table gives (`rules::tables::Tables::move_effects`, the same ids as `data/rom/effects/`), Thunderbolt's bolt (236), Ember's flame (317), Leaf Storm's leaves (612) and swirl (610); what flies from the user and the move's own motion of its sprite still need code (below, "Motion"). |
 | fight | **Exported** (seen) | Each blow the fights' rules played (a directed fight's as written: `scenes::fight::host::played`, the same battle the engine plays) staged as `attack`: the fighter turns to its target, its wind-up and lunge, the move type's effect on the target, a shake; the target slides back (`SlidePositionMark`, further and the view shaking hard for a critical), its pain once, and back to its place; missed: the target hops. A knock out: its faint. The lines said in the fight's moments play where they come; no bars, no log, no "Missed!". Below, "Routines, floating, fights". |
 | hold | **Exported** (seen) | The item an object of the scene's, its sprite the item's icon, at the holder's hands and given his moves (below, "Items and riders"). |
 | give | **Exported** (seen) | The item's object up, across, down into the other's hands, then his. |
@@ -317,7 +317,7 @@ under a heavy rider.
   first (`MoveHeight<actor X>(1, 0)`).
 - **Recoils** (`hurt`, a blow): a slide back from who struck (from oneself:
   back the way it looks), `SlidePositionMark`, facing as it was, over 10
-  frames.
+  frames, then Sky's shiver three times (below, "Motion").
 - **A plain `fight a vs b`** (by the rules) is played to its end when the
   film is exported, with the seed the line has, so the blows are those the
   engine plays (with clear weather and no one choosing: a `Played` fight's
@@ -329,6 +329,45 @@ under a heavy rider.
   Kyogre's Water Pulse lands), the lake's floating Latias and Latios, and the
   amphitheater's directed final: six blows, the lines said between them,
   Hitmonlee's faint.
+
+## Motion (seen 2026-11-26, `target/ds/ds6/lab1.exps`, `lab2.exps`)
+
+Measured on headless shots a frame apart (melonDS, `watch.py <lab>.exps
+--every 1`, the actor's outline tracked pixel by pixel):
+
+- **One move at a time.** `MovePositionMark<actor>` then `MoveHeight<actor>`
+  without a wait: the walk, then the rise; six `SlidePositionOffset` given
+  at once: one after the other, and the script waited for them (a tint
+  after them came 26 frames late). An actor can't rise while it goes: an arc
+  is up, across in the air (the height kept), down. `SlideHeight(2, 12)`
+  plays as `MoveHeight` (12 pixels up in 6 frames).
+- **The shiver** (`m26a0615`, `m03a0801`, `n09a1207`: in a routine,
+  `forever { SlidePositionOffset(1, 1, 0); Wait(2); SlidePositionOffset(1,
+  -1, 0); Wait(2); }` until a variable says): told by the script, the same
+  lines shake it (2 pixels seen, x 20-22-20). The export writes 8 times a
+  pixel (32 frames) for a tremble, 3 after a recoil, and takes their time
+  off the film's next waits; the engine's tremble lasts until `off`, the
+  DS's half a second (a routine would last, but any order the script gives
+  the actor ends it, "Routines" above: most actors are told something first).
+- **A knock back**: `SlidePositionOffset(4, 8, 0)` moved it 8 pixels in 2
+  frames, `(1, -8, 0)` back in 8: the export keeps the engine's slide
+  (10 frames, no return: the engine leaves him there).
+- **Blinking**: `SetBlink<actor>(shown, hidden)` frames on and off (the
+  player's in `m01a10a`: 2-1, 1-1, 1-2, then 0-0 to stop), seen 1-1 and
+  1-2 exactly; with `SetOutputAttribute(128)` after it, a fade out, and
+  `ResetOutputAttribute` then 1-2, 1-1, 2-1, a fade in. Sky's actors have
+  no see-through (`ghost`: none).
+- **Move effects**: the ids of the dungeons' move table play with
+  `SetEffect<actor>` in a scene (above, `attack`); on `performer 0` (the
+  camera) Leaf Storm's 612 did not show: at a place, the export plays the
+  move's effect as it strikes on its user.
+- **The light**: `screen_FlushOut` over another changes at once (evening to
+  night in a frame, seen), `screen_FlushIn(1, 30, …)` fades back to day.
+- **Not found**: no wipe nor iris among Sky's screen operations (`screen_`
+  fades to black, white, `FlushOut` tints, `FadeChange` dims; the boss wipe
+  `CORO_BOSS_WIPE_FUNC` is its own `supervision_SpecialActing(13)`);
+  `screen_FlushChange` (8 numbers) is used by none of its scripts, not
+  tried.
 
 ## Species the ROM lacks (SpriteCollab's)
 
@@ -628,7 +667,7 @@ the table says):
 | Camera | As the engine; a frame wider than the screen pans across. |
 | Screen | `flash` of a colour: Sky's FlushOut and FlushIn; `memory`: Sky's sepia. |
 | Sound | A sound played in a loop by name (`chirp`) and faded: left out. |
-| Effects | `effect … from a to b`: the effect on b (no shot flying). `weather sparkles`, sand, fog, sun: nothing. `daytime`: Sky's evening / night tints. |
+| Effects | `effect … from a to b`: the effect on b (no shot flying). `weather sparkles`, sand, fog, sun: nothing. `daytime`: Sky's evening / night tints, one to another through the day's. |
 | Objects | `hold`, `give`, `drop`, `throw`, `put object`: the item an object of its own, its icon (below, "Items and riders"); arcs in three steps. `open`/`close`: as the engine. |
 | Fights | `fight` by the rules: its blows as attacks (the Wiki's: one Thunder, Piplup faints, as the engine plays it). `dodge`: no "Missed!". `finish`: no slow motion. |
 | Time | `at 2s:` and `at mark + 1s:`: from where the line is written. `together`: at once. |
