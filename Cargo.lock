@@ -4423,6 +4423,7 @@ dependencies = [
 name = "workshop_film"
 version = "0.3.0"
 dependencies = [
+ "assets",
  "eframe",
  "engine",
  "film",

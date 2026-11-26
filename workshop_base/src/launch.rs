@@ -63,6 +63,9 @@ pub struct LaunchOptions {
     /// `WORKSHOP_PICKER=<tab>[:<pokemon>[:<search>]]`: the Film's Assets panel on that tab
     /// (pokemon, faces, gestures, music, sounds, things, places, effects), for that Pokémon, searching that.
     pub picker: Option<String>,
+    /// `WORKSHOP_TIMELINE=all[,insert:<track>:<seconds>][,fold:<track>]`: the Film's Timeline
+    /// showing the whole film, its window to write a line open on that track at that time, a track folded.
+    pub timeline: Option<String>,
     /// `WORKSHOP_PROJECT=open|versions|search:<word>|beside:<film>`: that window of the Script open.
     pub project: Option<String>,
     /// `WORKSHOP_FOCUS`: the Script in concentration.
@@ -134,6 +137,7 @@ impl LaunchOptions {
             tilequant: var("WORKSHOP_TILEQUANT"),
             resource: var("WORKSHOP_RESOURCE"),
             picker: var("WORKSHOP_PICKER"),
+            timeline: var("WORKSHOP_TIMELINE"),
             project: var("WORKSHOP_PROJECT"),
             focus: set("WORKSHOP_FOCUS"),
             line: number("WORKSHOP_LINE"),

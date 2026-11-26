@@ -157,6 +157,23 @@ impl Script {
         }
     }
 
+    /// A Script of that text, of no file (what other panels' edits are tried on).
+    pub fn of_text(text: &str) -> Script {
+        Script {
+            path: PathBuf::from("untitled.film"),
+            saved: text.to_string(),
+            text: text.to_string(),
+            revision: next_revision(),
+            asked: 0,
+            told: Vec::new(),
+            told_for: 0,
+            changed: None,
+            cursor: 0,
+            jump: None,
+            root: PathBuf::new(),
+        }
+    }
+
     pub fn saved(&self) -> bool {
         self.text == self.saved
     }

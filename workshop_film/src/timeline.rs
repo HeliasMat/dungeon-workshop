@@ -6,8 +6,11 @@
 use eframe::egui::{self, Color32, FontId, Rect, Sense, Stroke, StrokeKind, pos2, vec2};
 use preview::played::Timeline;
 
-use super::bands::{Asked, bands};
-use super::lines::{edited_lines, with_seconds};
+use super::adding::adding;
+use super::bands::{Asked, NAMES_WIDE, bands};
+use super::edits::{STEP, course_of, inserted_beside, inserted_in_sequence, is_beside, moved_beside, retimed, toggled_beside, with_duration, with_performer};
+use super::lanes::Lane;
+use super::lines::edited_lines;
 use super::playing::clock;
 use super::scene::toggle;
 use super::{BarAct, Films, SECOND};
@@ -96,13 +99,15 @@ pub fn timeline(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
         return;
     };
     let end = films.end.max(1);
-    let fit = head(ui, films, &timeline);
+    let fit = head(ui, films, &timeline) || launched(films);
     let full = ui.available_rect_before_wrap();
-    let names_wide = 84.0;
-    let content = Rect::from_min_max(pos2(full.min.x + names_wide, full.min.y), full.max);
+    let content = Rect::from_min_max(pos2(full.min.x + NAMES_WIDE, full.min.y), full.max);
     if fit {
         films.zoom = zoom_to_fill(content.width(), end);
         films.left = 0.0;
+    }
+    if let Some(open) = films.inserting.as_mut() {
+        open.placed(|frame| pos2(content.min.x + (frame as f32 - films.left) * films.zoom / SECOND as f32, content.min.y + 90.0));
     }
     let visible = content.width() / (films.zoom / SECOND as f32);
     let pointer = ui.input(|input| input.pointer.hover_pos()).filter(|at| full.contains(*at));
@@ -121,7 +126,13 @@ pub fn timeline(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
         films.zoom = zoom_to_fill(content.width(), until - start);
         films.left = start as f32;
     }
-    bars_asked(films, scripts, &asked);
+    bars_asked(films, scripts, &timeline, &asked);
+    if let Some((frame, words, beside)) = adding(ui.ctx(), films) {
+        written_at(films, scripts, &timeline, frame, &words, beside);
+    }
+    if let Some((frame, words, beside)) = asked.inserted.clone() {
+        written_at(films, scripts, &timeline, frame, &words, beside);
+    }
     whole_film(ui, films, &timeline, overview, end, visible);
     playhead_on_ruler(ui, films, axis, ruler, pointer);
     if let Some(frame) = asked.go {
@@ -136,6 +147,35 @@ pub fn timeline(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
         keys(ui, films, &timeline);
     }
     ui.allocate_rect(full, Sense::hover());
+}
+
+/// What `WORKSHOP_TIMELINE` asks, once (for a picture): the whole film
+/// (whether it is asked), a track folded, the window to write a line open.
+fn launched(films: &mut Films) -> bool {
+    if std::mem::replace(&mut films.timeline_launched, true) {
+        return false;
+    }
+    let asked = films.session.launch.timeline.clone().unwrap_or_default();
+    let lane = |name: &str| match name {
+        "camera" => Lane::Camera,
+        "sound" => Lane::Sound,
+        "screen" => Lane::Screen,
+        "other" => Lane::Other,
+        who => Lane::Who(who.to_string()),
+    };
+    let mut all = false;
+    for part in asked.split(',') {
+        match part.split(':').collect::<Vec<_>>().as_slice() {
+            ["all"] => all = true,
+            ["fold", track] => _ = films.folded.insert(lane(track)),
+            ["insert", track, seconds] => {
+                let frame = seconds.parse::<f64>().map_or(0, |seconds| (seconds * SECOND) as usize);
+                films.inserting = Some(super::adding::Inserting::new(lane(track), frame, pos2(0.0, 0.0)).unplaced());
+            }
+            _ => {}
+        }
+    }
+    all
 }
 
 /// The head: what it holds, the kinds' colours (a click hides them), who it
@@ -191,10 +231,13 @@ fn wheel(ui: &egui::Ui, films: &mut Films, content: Rect, end: usize, pointer: O
         }
     }
     let Some(at) = pointer else { return };
-    let (command, wheel, wheel_x) = ui.input(|input| (input.modifiers.command, input.smooth_scroll_delta.y, input.smooth_scroll_delta.x));
-    if command && wheel != 0.0 {
+    let (command, wheel, wheel_x, zoomed) =
+        ui.input(|input| (input.modifiers.command, input.smooth_scroll_delta.y, input.smooth_scroll_delta.x, input.zoom_delta()));
+    // (Ctrl+wheel comes as a zoom; a wheel with Ctrl still told, as some systems give it.)
+    if zoomed != 1.0 || (command && wheel != 0.0) {
         let under = films.left + (at.x - content.min.x).max(0.0) / per_frame;
-        films.zoom = (films.zoom * (wheel * 0.003).exp()).clamp(4.0, 400.0);
+        let by = if zoomed != 1.0 { zoomed } else { (wheel * 0.003).exp() };
+        films.zoom = (films.zoom * by).clamp(4.0, 400.0);
         let per = films.zoom / SECOND as f32;
         films.left = (under - (at.x - content.min.x).max(0.0) / per).max(0.0);
     } else if wheel_x != 0.0 || (ui.input(|input| input.modifiers.shift) && wheel != 0.0) {
@@ -269,20 +312,59 @@ fn time_ruler(ui: &egui::Ui, painter: &egui::Painter, films: &mut Films, timelin
     });
 }
 
-/// What the bars asked of the Script: a line made longer or shorter, gone to,
-/// a wait after it, doubled, deleted; a line looped.
-fn bars_asked(films: &mut Films, scripts: &mut Scripts, asked: &Asked) {
+/// A line written to start at that frame (beside the film or in sequence):
+/// one change of the Script, its cursor on it, said.
+fn written_at(films: &mut Films, scripts: &mut Scripts, timeline: &Timeline, frame: usize, words: &str, beside: bool) {
     let Some(open) = scripts.open.as_mut() else { return };
-    if let Some((line, seconds)) = asked.stretched
+    let course = course_of(timeline);
+    let made = if beside {
+        inserted_beside(&open.text, &course, frame, words).map(|(text, line)| (text, line, format!("line {line}: {words} & (beside the film)")))
+    } else {
+        inserted_in_sequence(&open.text, &course, frame, words)
+    };
+    match made {
+        Ok((text, line, said)) => {
+            open.set_text(text);
+            open.go_to_line(line);
+            films.said = Some(said);
+        }
+        Err(why) => films.said = Some(why),
+    }
+}
+
+/// What the bars asked of the Script: a line made longer or shorter, moved
+/// in time or onto another's track, gone to, a wait after it, alongside or
+/// in sequence, doubled, deleted; a line looped.
+fn bars_asked(films: &mut Films, scripts: &mut Scripts, timeline: &Timeline, asked: &Asked) {
+    let Some(open) = scripts.open.as_mut() else { return };
+    if let Some((line, frames)) = asked.stretched
         && let Some(words) = open.text.split('\n').nth(line - 1)
     {
-        let made = with_seconds(words, seconds);
+        let made = with_duration(words, frames);
         let text = edited_lines(&open.text, |lines| lines[line - 1] = made.clone());
         open.set_text(text);
         films.said = Some(format!("line {line}: {}", made.trim()));
     }
+    if let Some(moved) = &asked.moved {
+        let read = films.fields.get(&moved.line);
+        match bar_moved(&open.text, &course_of(timeline), read, moved.line, moved.start, moved.by, moved.ripple, &moved.from, &moved.to) {
+            Ok((text, line, said)) => {
+                open.set_text(text);
+                open.go_to_line(line);
+                films.said = Some(said);
+            }
+            Err(why) => films.said = Some(why),
+        }
+    }
     match asked.bar_act {
         Some(BarAct::Script(line)) => open.go_to_line(line),
+        Some(BarAct::Beside(line)) => match toggled_beside(&open.text, line) {
+            Ok((text, beside)) => {
+                open.set_text(text);
+                films.said = Some(format!("line {line}: {}", if beside { "alongside (&)" } else { "back in sequence" }));
+            }
+            Err(why) => films.said = Some(why),
+        },
         Some(BarAct::Wait(line)) => {
             let text = edited_lines(&open.text, |lines| {
                 let lead: String = lines[line - 1].chars().take_while(|letter| letter.is_whitespace()).collect();
@@ -307,6 +389,48 @@ fn bars_asked(films: &mut Films, scripts: &mut Scripts, asked: &Asked) {
         }
         None => {}
     }
+}
+
+/// The text with a bar moved: onto another's track (they do it), then by so
+/// many frames (its wait; beside the film: written where it then starts).
+/// The text, the line's number then, what was done.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn bar_moved(
+    text: &str,
+    course: &[super::edits::Course],
+    read: Option<&film::ReadAs>,
+    line: usize,
+    start: usize,
+    by: i64,
+    ripple: bool,
+    from: &Lane,
+    to: &Lane,
+) -> Result<(String, usize, String), String> {
+    let mut made = text.to_string();
+    let mut said = Vec::new();
+    if let (Some(from), Some(to)) = (from.who(), to.who())
+        && from != to
+    {
+        made = with_performer(&made, line, read, from, to)?;
+        said.push(format!("line {line}: {to} does it"));
+    }
+    let mut number = line;
+    if by.unsigned_abs() as usize >= STEP {
+        let words = made.split('\n').nth(line - 1).unwrap_or_default();
+        if is_beside(words) {
+            let (moved, at) = moved_beside(&made, course, line, (start as i64 + by).max(0) as usize)?;
+            (made, number) = (moved, at);
+            said.push(format!("line {at}: beside the film from {}", clock((start as i64 + by).max(0) as f64)));
+        } else {
+            let (moved, at, told) = retimed(&made, line, by, ripple)?;
+            (made, number) = (moved, at);
+            said.push(told);
+        }
+    }
+    if said.is_empty() {
+        return Err(format!("line {line}: not moved"));
+    }
+    Ok((made, number, said.join("; ")))
 }
 
 /// The whole film, small, under it all: its scenes, what is seen of it, the playhead; a click or a drag goes there.

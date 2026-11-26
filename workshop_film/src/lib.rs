@@ -34,8 +34,13 @@ use preview::played::Timeline;
 use playing::{line_frame, next_step, steps, work};
 use workshop_script::Scripts;
 
+mod adding;
 mod bands;
+mod edits;
+#[cfg(test)]
+mod edits_tests;
 mod inspector;
+mod lanes;
 mod lines;
 mod playing;
 mod scene;
@@ -186,6 +191,15 @@ pub struct Films {
     focus_who: Option<String>,
     stretching: Option<(usize, usize)>,
     menu_bar: Option<(usize, usize, usize)>,
+    /// The Timeline: a bar held (moved in time, onto another's track); the
+    /// time held to move across it (the frame at its left edge then, where
+    /// it was taken); the tracks folded; the small window of a line to write.
+    bar_drag: Option<bands::BarDrag>,
+    pan_from: Option<(f32, f32)>,
+    folded: std::collections::BTreeSet<lanes::Lane>,
+    inserting: Option<adding::Inserting>,
+    /// What `WORKSHOP_TIMELINE` asked of the Timeline, done.
+    timeline_launched: bool,
     /// Step by line: the film stops at the start of each line of its own
     /// course; the start it plays to (its frame, its line); the one it stopped at.
     pub step: bool,
@@ -198,6 +212,7 @@ enum BarAct {
     Script(usize),
     Loop(usize, usize),
     Wait(usize),
+    Beside(usize),
     Twice(usize),
     Gone(usize),
 }
@@ -271,6 +286,11 @@ impl Films {
             focus_who: None,
             stretching: None,
             menu_bar: None,
+            bar_drag: None,
+            pan_from: None,
+            folded: std::collections::BTreeSet::new(),
+            inserting: None,
+            timeline_launched: false,
             step: session.launch.step.as_deref() == Some("1"),
             target: None,
             stepped: None,

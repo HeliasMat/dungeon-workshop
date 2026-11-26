@@ -170,7 +170,7 @@ fn layout(space: Space) -> DockState<Panel> {
         Space::Film => {
             let mut dock = DockState::new(vec![Panel::FilmScene]);
             let surface = dock.main_surface_mut();
-            let [scene, _] = surface.split_below(NodeIndex::root(), 0.74, vec![Panel::Timeline]);
+            let [scene, _] = surface.split_below(NodeIndex::root(), 0.64, vec![Panel::Timeline]);
             let [scene, _] = surface.split_left(scene, 0.4, vec![Panel::Script]);
             // (On the right: the assets to drag onto the Scene or the Script; under them, the line's Inspector and the State.)
             let [_, assets] = surface.split_right(scene, 0.68, vec![Panel::FilmAssets]);
