@@ -432,7 +432,8 @@ fn add_animations(places: &Places, monster: u32, folder: &Path, over: Over, shee
     let mut added = 0;
     for anim in animations(folder).values() {
         let dungeon = DUNGEON.iter().find(|(group, _)| *group == anim.group).map(|(_, index)| *index);
-        let indexes: Vec<u32> = [anim.group].into_iter().chain(anim.also).map(|group| SCENE + group).chain(dungeon).filter(|index| !sheets.kept((monster, *index), over)).collect();
+        let indexes: Vec<u32> =
+            [anim.group].into_iter().chain(anim.also).map(|group| SCENE + group).chain(dungeon).filter(|index| !sheets.kept((monster, *index), over)).collect();
         if indexes.is_empty() {
             continue;
         }
@@ -806,6 +807,56 @@ fn plain_word(word: &str) -> String {
     plain
 }
 
+/// A variant's word as a film can write it: plain, and never ending in a number, which a film reads as another
+/// of the same kind (`pikachu2`: a second Pikachu); its number said in letters (`zygarde_10` → `zygarde_ten`,
+/// `eevee_alternate2` → `eevee_alternate_two`).
+pub fn variant_word(word: &str) -> String {
+    let plain = plain_word(word);
+    let base = plain.trim_end_matches(|letter: char| letter.is_ascii_digit());
+    if base.len() == plain.len() {
+        return plain;
+    }
+    let number: usize = plain[base.len()..].parse().unwrap_or(usize::MAX);
+    let base = base.trim_end_matches('_');
+    match number_in_letters(number) {
+        Some(said) if !base.is_empty() => format!("{base}_{said}"),
+        _ => format!("{plain}_form"),
+    }
+}
+
+/// A number up to 99 in letters, its words joined by `_`.
+fn number_in_letters(number: usize) -> Option<String> {
+    const SMALL: [&str; 20] = [
+        "zero",
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "ten",
+        "eleven",
+        "twelve",
+        "thirteen",
+        "fourteen",
+        "fifteen",
+        "sixteen",
+        "seventeen",
+        "eighteen",
+        "nineteen",
+    ];
+    const TENS: [&str; 10] = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+    match number {
+        0..20 => Some(SMALL[number].to_string()),
+        20..100 if number % 10 == 0 => Some(TENS[number / 10].to_string()),
+        20..100 => Some(format!("{}_{}", TENS[number / 10], SMALL[number % 10])),
+        _ => None,
+    }
+}
+
 /// Whom a SpriteBot folder goes to: a monster (in place of its sheets), or
 /// a variant of a species, under a word.
 #[derive(Clone, Debug)]
@@ -826,7 +877,7 @@ pub fn import_from(places: &Places, source: &Path, into: Target) -> Result<Strin
         let monster = match into {
             Target::Monster(monster) => monster,
             Target::Variant { word, of } => {
-                let word = plain_word(&word);
+                let word = variant_word(&word);
                 if word.is_empty() {
                     return Err("a variant needs a word".to_string());
                 }
@@ -882,6 +933,16 @@ pub fn import_from(places: &Places, source: &Path, into: Target) -> Result<Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A variant's word never ends in a number (a film would read it as another of the same kind).
+    #[test]
+    fn variant_words_are_film_words() {
+        assert_eq!(variant_word("Zygarde 10"), "zygarde_ten");
+        assert_eq!(variant_word("eevee_alternate2"), "eevee_alternate_two");
+        assert_eq!(variant_word("pikachu_form23"), "pikachu_form_twenty_three");
+        assert_eq!(variant_word("vulpix_alola"), "vulpix_alola");
+        assert_eq!(variant_word("x_1234"), "x_1234_form");
+    }
 
     /// A monster written out for SpriteBot and read back as a variant keeps its animation and faces.
     #[test]

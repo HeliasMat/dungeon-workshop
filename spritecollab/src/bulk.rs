@@ -348,7 +348,7 @@ pub fn import_all(places: &Places, over: Over, progress: &mut dyn FnMut(&str)) -
                     totals.species += 1;
                 } else {
                     let told = forms.get(&form).map(|name| plain_word(name)).filter(|name| !name.is_empty()).unwrap_or_else(|| format!("form{form}"));
-                    let word = plain_word(&format!("{species}_{told}"));
+                    let word = super::variant_word(&format!("{species}_{told}"));
                     let number = *words.entry(word.clone()).or_insert_with(|| {
                         next += 1;
                         next - 1
