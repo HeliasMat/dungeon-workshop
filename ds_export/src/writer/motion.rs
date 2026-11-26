@@ -3,6 +3,7 @@
 use engine::{Beat, MotionBeat};
 
 use super::{BESIDE, Writer};
+use crate::notes::{Fate, Kind};
 use crate::sky::speed;
 
 impl Writer<'_> {
@@ -11,7 +12,7 @@ impl Writer<'_> {
         match beat {
             MotionBeat::Go { who, at, frames, slide } => {
                 let (Some(actor), Some(to)) = (self.who(number, *who), self.point(at)) else {
-                    self.problems.push(format!("line {number}: where {who:?} goes is not known before the film plays"));
+                    self.problem(number, Kind::Logic, Fate::LeftOut, "where they go is not known before the film plays", "left out");
                     return;
                 };
                 let from = self.at.get(who).copied().unwrap_or(to);

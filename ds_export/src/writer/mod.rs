@@ -23,13 +23,14 @@ mod view;
 
 pub(crate) use fight::fights_played;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
 
 use engine::{Beat, Cam, Course, Direction, FlowBeat, Formation, Num, Point, SpeechBeat, Spot, Who};
 
 use ::film::ds::{Drawn, STAND_IN, drawn_on_ds};
 
+use crate::notes::{Fate, Kind, Note};
 use crate::sky::{FREE_ACTORS, Game, HIDDEN, animation, direction, own_group, speed, tiles};
 use fight::Played;
 use scene::{Capture, Part};
@@ -111,10 +112,17 @@ pub(crate) struct Writer<'a> {
     became: HashMap<Who, Who>,
     /// The words each line of the film was given, by its number.
     pub(crate) words: HashMap<i32, Vec<String>>,
-    pub(crate) problems: Vec<String>,
-    pub(crate) notes: Vec<String>,
-    /// What the export changed to fit the DS, told as it exports.
-    pub(crate) told: Vec<String>,
+    /// What keeps the film from exporting (left out, `--partial`).
+    pub(crate) problems: Vec<Note>,
+    /// What the export changed to fit the DS, or left out, as it exports.
+    pub(crate) notes: Vec<Note>,
+    /// How it was made to fit, no loss (Sky's routines, the layout's layers): told, no note.
+    pub(crate) info: Vec<String>,
+    /// The line of the beat being written; the line the scene's place is on;
+    /// every line that played.
+    pub(crate) at_line: i32,
+    pub(crate) scene_line: i32,
+    pub(crate) lines_seen: BTreeSet<i32>,
     /// Those a frame of a few named (never left out).
     framed: Vec<Who>,
     /// `--tall`: the top screen shows the place above the bottom one, where it is tall enough.
@@ -189,6 +197,33 @@ fn pan(points: &[(f32, f32)]) -> Option<((f32, f32), (f32, f32))> {
     (across >= 24.0).then_some((from, to))
 }
 
+/// What an engine's beat is, in a few words (its kind's name, `View(Zoom
+/// {..})` as "zoom"), and the kind of note it makes.
+fn beat_said(beat: &Beat) -> (Kind, String) {
+    let debug = format!("{beat:?}");
+    let names: Vec<&str> =
+        debug.split(|letter: char| !letter.is_alphanumeric()).filter(|name| name.starts_with(|letter: char| letter.is_ascii_uppercase())).take(2).collect();
+    let kind = match names.first().copied() {
+        Some("View") => Kind::Camera,
+        Some("Screen") => Kind::Screen,
+        Some("Sound") => Kind::Sound,
+        Some("Speech") => Kind::Speech,
+        _ => Kind::Engine,
+    };
+    let name = names.get(1).or(names.first()).copied().unwrap_or("step");
+    let mut said = String::new();
+    for letter in name.chars() {
+        if letter.is_ascii_uppercase() && !said.is_empty() {
+            said.push(' ');
+        }
+        said.push(letter.to_ascii_lowercase());
+    }
+    if said == "zoom" {
+        return (Kind::Camera, "zoom (Sky has none)".to_string());
+    }
+    (kind, said)
+}
+
 /// The way from one point to another, of the eight.
 fn way_to(from: (f32, f32), to: (f32, f32)) -> Direction {
     let (dx, dy) = (to.0 - from.0, to.1 - from.1);
@@ -254,7 +289,10 @@ impl<'a> Writer<'a> {
             became: HashMap::new(),
             problems: Vec::new(),
             notes: Vec::new(),
-            told: Vec::new(),
+            info: Vec::new(),
+            at_line: 0,
+            scene_line: 0,
+            lines_seen: BTreeSet::new(),
             framed: Vec::new(),
             tall_asked: false,
             tall: false,
@@ -275,6 +313,10 @@ impl<'a> Writer<'a> {
     }
 
     pub(crate) fn beat(&mut self, number: i32, word: Option<&str>, beat: &Beat) {
+        self.at_line = number;
+        if number > 0 {
+            self.lines_seen.insert(number);
+        }
         if let Beat::Flow(FlowBeat::Line { number: line, .. }) = beat {
             self.stand();
             // An emote shown long enough goes once its line is over (Sky loops some).
@@ -330,7 +372,22 @@ impl<'a> Writer<'a> {
 
     /// A beat the export has nothing for yet: an error (or, `--partial`, left out).
     fn unexported(&mut self, number: i32, word: Option<&str>, beat: &Beat) {
-        self.problems.push(format!("line {number}: the engine's {beat:?} doesn't export to DS yet ({})", word.unwrap_or("a line said")));
+        let (kind, what) = beat_said(beat);
+        let message = match word {
+            Some(word) => format!("{word}: its {what} isn't played"),
+            None => format!("the engine's {what} isn't played"),
+        };
+        self.problem(number, kind, Fate::LeftOut, message, "nothing");
+    }
+
+    /// Something changed to fit the DS, or left out, on that line.
+    pub(crate) fn note(&mut self, line: i32, kind: Kind, fate: Fate, message: impl Into<String>, instead: impl Into<String>) {
+        self.notes.push(Note::new(line, kind, fate, message, instead));
+    }
+
+    /// What keeps the film from exporting as it is (`--partial`: left out).
+    pub(crate) fn problem(&mut self, line: i32, kind: Kind, fate: Fate, message: impl Into<String>, instead: impl Into<String>) {
+        self.problems.push(Note::new(line, kind, fate, message, instead));
     }
 
     /// Sky's `SetAnimation` number for the engine's group on that one's
@@ -438,21 +495,25 @@ impl<'a> Writer<'a> {
     fn drawn(&mut self, who: Who, species: u16) -> Drawn {
         let drawn = drawn_on_ds(&self.game.data, species);
         if let Drawn::Added(instead) = drawn {
-            self.added.insert(species, instead);
+            if self.added.insert(species, instead).is_none() {
+                let name = self.film_names.get(&who).cloned().unwrap_or_else(|| self.game.name(species));
+                let message = format!("{name} (species {species}): a Pokémon SpriteCollab adds");
+                self.note(self.at_line, Kind::Added, Fate::Added, message, "put in the ROM from its sheets, its portraits with it");
+            }
         } else if drawn != Drawn::Own {
             let name = self.film_names.get(&who).cloned().unwrap_or_else(|| self.game.name(species));
-            let told = match drawn {
-                Drawn::Base(base) => format!(
-                    "{name} (species {species}, a form SpriteCollab adds): drawn as {}, its base species, on DS (the data has no sheets of its own for it)",
-                    self.game.name(base)
+            let (message, instead) = match drawn {
+                Drawn::Base(base) => (
+                    format!("{name} (species {species}): a form SpriteCollab adds, with no sheets of its own in the data"),
+                    format!("drawn as {}, its base species", self.game.name(base)),
                 ),
-                _ => format!(
-                    "{name} (species {species}, a Pokémon Sky doesn't have): drawn as a stand-in, {} “?”, on DS, its name said in its lines (the data has no sheets for it)",
-                    self.game.name(STAND_IN)
+                _ => (
+                    format!("{name} (species {species}): a Pokémon Sky doesn't have, with no sheets in the data"),
+                    format!("drawn as a stand-in, {} “?”, its name said in its lines", self.game.name(STAND_IN)),
                 ),
             };
-            if !self.told.contains(&told) {
-                self.told.push(told);
+            if !self.notes.iter().any(|note| note.kind == Kind::Species && note.message == message) {
+                self.note(self.at_line, Kind::Species, Fate::Changed, message, instead);
             }
         }
         drawn
@@ -466,7 +527,19 @@ impl<'a> Writer<'a> {
     fn who(&mut self, number: i32, who: Who) -> Option<String> {
         let actor = self.actor(who);
         if actor.is_none() {
-            self.problems.push(format!("line {number}: “{who:?}” has no actor in the game (only Pokémon, and {} new species at most)", FREE_ACTORS.len()));
+            match who {
+                Who::Item { .. } | Who::Thing { .. } => {
+                    self.problem(number, Kind::Item, Fate::LeftOut, "the item isn't shown", "nothing: Sky's scenes show no items")
+                }
+                Who::Drawn { .. } => self.problem(number, Kind::Item, Fate::LeftOut, "a picture of the film's own isn't shown", "nothing"),
+                _ => self.problem(
+                    number,
+                    Kind::Logic,
+                    Fate::LeftOut,
+                    format!("{who:?} has no actor in the game (only Pokémon, and {} new species at most)", FREE_ACTORS.len()),
+                    "left out",
+                ),
+            }
         }
         actor
     }

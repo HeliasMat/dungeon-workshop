@@ -5,6 +5,7 @@ use engine::{AnimId, Beat, BodyBeat, Direction, EmoteId, MoveId, Play, Pose, Scr
 
 use super::Writer;
 use super::scene::Part;
+use crate::notes::{Fate, Kind};
 use crate::sky::{EFFECTS, animation, move_effect, own_named, pose_on_ds, speed};
 
 impl Writer<'_> {
@@ -316,7 +317,7 @@ impl Writer<'_> {
                 "up" | "boost" => "691",
                 "down" | "slow" | "weak" => "685",
                 _ => {
-                    self.notes.push(format!("line {number}: the state {icon} (no effect of Sky's for it)"));
+                    self.note(number, Kind::Effect, Fate::LeftOut, format!("the state {icon}: Sky has no effect for it"), "nothing");
                     return;
                 }
             },

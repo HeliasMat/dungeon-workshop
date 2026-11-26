@@ -38,12 +38,14 @@ use engine::{Beat, FlowBeat, Who};
 
 mod dungeon;
 mod map;
+mod notes;
 mod sky;
 #[cfg(test)]
 mod tests;
 mod writer;
 
 pub use dungeon::dungeon;
+pub use notes::{Fate, Kind, Note, Report, Summary};
 
 use sky::{DECOR_LEVEL, Game};
 use writer::Writer;
@@ -68,36 +70,92 @@ pub struct Options {
     pub tall: bool,
 }
 
-/// What an export wrote: how many actors, the first scene's place.
+/// What an export wrote: how many actors, the first scene's place, what it
+/// tells of the film (`Report`).
 pub struct Exported {
     pub actors: usize,
     pub place: Option<String>,
+    pub report: Report,
 }
 
 /// The film written to `out` (ExplorerScript), each decor its scenes are in
 /// as a map beside it (`<out>.decor<level>.*`). `tell` is given, as it
-/// goes, what was left out and what was changed to fit the DS. Err: what
+/// goes, each note of the report (what was left out and what was changed
+/// to fit the DS, a line each) and how the maps were made. Err: what
 /// doesn't export (unless `partial`), or a file that can't be read or written.
 pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(String)) -> Result<Exported, String> {
-    let (name, written) = (film.name, film.written);
+    let game = game_of(film);
+    let mut writer = write(film, &game, options);
+    if !writer.problems.is_empty() {
+        let problems: Vec<String> = writer.problems.iter().map(Note::to_string).collect();
+        return Err(format!("{} doesn't export to DS:\n  {}", film.name, problems.join("\n  ")));
+    }
+    let mut text = writer.finish(film.name);
+    let report = report_of(film, &writer);
+    for note in &report.notes {
+        tell(format!("  {note}"));
+    }
+    for info in &writer.info {
+        tell(format!("  {info}"));
+    }
+    if let Some(folder) = out.parent() {
+        let _ = std::fs::create_dir_all(folder);
+    }
+    // The decors the scenes are in, each as a map beside the export; the
+    // Pokémon SpriteCollab adds, each as its sheets.
+    let maps = decor_maps(&game, film.tables, &text, out, tell)? + &added_monsters(&game, &writer.added, out, tell)?;
+    if !maps.is_empty() {
+        let at = text.find('\n').map_or(0, |end| end + 1);
+        text.insert_str(at, &maps);
+    }
+    std::fs::write(out, text).map_err(|error| format!("{}: {error}", out.display()))?;
+    Ok(Exported { actors: writer.actors.len(), place: writer.level.clone(), report })
+}
+
+/// What the film loses on DS, as `film` would tell it with `--partial`,
+/// nothing written: the Workshop's DS Report and the Script's DS marks.
+pub fn report(film: &Film) -> Report {
+    let game = game_of(film);
+    let mut writer = write(film, &game, Options { partial: true, tall: false });
+    let _ = writer.finish(film.name);
+    report_of(film, &writer)
+}
+
+/// What the export knows of Sky for that film: the game's data, the
+/// moves' types of its project, its decors.
+fn game_of(film: &Film) -> Game {
     let move_types = film.art.map(|art| art.tables.move_slots.iter().map(|slot| slot.type_id).collect()).unwrap_or_default();
     let mut game = Game::read(&film.tables.data, move_types);
     // (Two decors built on one level: the first by name.)
     for (name, (level, ..)) in &film.tables.decors {
         game.decors.entry(*level).or_insert_with(|| name.clone());
     }
-    let mut writer = Writer::new(&game);
+    game
+}
+
+/// The film's beats written, each word looked up first; `partial`: what
+/// keeps it from exporting made a note of what is left out.
+fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
+    let written = film.written;
+    let mut writer = Writer::new(game);
     writer.tall_asked = options.tall;
     if let Some(art) = film.art {
-        writer.fights = writer::fights_played(written, art, &game);
+        writer.fights = writer::fights_played(written, art, game);
     }
-    // (A word the film defines, `define greet`: its lines are written out already.)
-    let defined: Vec<&str> = film.text.lines().filter_map(|line| line.trim().strip_prefix("define ")?.split_whitespace().next()).collect();
+    let defined = defined(film.text);
     for (number, read) in written.read_as.iter().filter(|(_, read)| !defined.contains(&read.word.as_str())) {
-        match export_of(&read.word) {
+        let line = *number as i32;
+        let on_ds = ::film::ds::on_ds(&read.word);
+        let instead = on_ds.and_then(|ds| ds.fix).map_or("left out".to_string(), |fix| format!("left out ({fix})"));
+        match on_ds.map(|ds| ds.export) {
             Some(Export::Direct | Export::Close) => {}
-            Some(_) => writer.problems.push(format!("line {number}: “{}” doesn't export to DS yet", read.word)),
-            None => writer.problems.push(format!("line {number}: “{}” (not a word of the vocabulary) doesn't export to DS yet", read.word)),
+            Some(Export::Work) => writer.problem(line, Kind::Word, Fate::Impossible, format!("“{}”: the export doesn't write it yet", read.word), instead),
+            Some(Export::None) => {
+                let why = on_ds.map_or("Sky has nothing for it", |ds| ds.how);
+                writer.problem(line, Kind::Word, Fate::Impossible, format!("“{}”: {why}", read.word), instead);
+            }
+            // (An engine's command outside the vocabulary: trackpath, shadow, gone...)
+            None => writer.problem(line, Kind::Engine, Fate::Impossible, format!("“{}”: an engine's command, with no DS operation", read.word), instead),
         }
     }
     for (number, read) in &written.read_as {
@@ -134,31 +192,34 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
         let problems = std::mem::take(&mut writer.problems);
         writer.notes.extend(problems);
     }
-    if !writer.problems.is_empty() {
-        return Err(format!("{name} doesn't export to DS:\n  {}", writer.problems.join("\n  ")));
-    }
-    let mut text = writer.finish(name);
-    for note in &writer.notes {
-        tell(format!("  left out: {note}"));
-    }
-    for told in &writer.told {
-        tell(format!("  {told}"));
+    writer
+}
+
+/// The words the film defines (`define greet`): their lines are written out already.
+fn defined(text: &str) -> Vec<&str> {
+    text.lines().filter_map(|line| line.trim().strip_prefix("define ")?.split_whitespace().next()).collect()
+}
+
+/// The writer's notes made the film's report: with them, each word's own
+/// loss on its line (`film::ds::lost`), and each pose a sprite lacks on
+/// each line it is asked.
+fn report_of(film: &Film, writer: &Writer) -> Report {
+    let mut notes = writer.notes.clone();
+    let defined = defined(film.text);
+    for (number, read) in film.written.read_as.iter().filter(|(_, read)| !defined.contains(&read.word.as_str())) {
+        if export_of(&read.word) == Some(Export::Close) {
+            let lost = ::film::ds::lost(&read.word).unwrap_or("less than the film shows");
+            notes.push(Note::new(*number as i32, Kind::Word, Fate::Changed, format!("{}: {lost}", read.word), ""));
+        }
     }
     for ((species, asked, shown), lines) in &writer.instead_poses {
-        tell(format!("  {species}'s Sky sprite has no {asked}: {shown} instead on DS ({})", on_lines(lines)));
+        for line in lines {
+            notes.push(Note::new(*line, Kind::Pose, Fate::Changed, format!("{species}'s Sky sprite has no {asked} pose"), format!("{shown} instead")));
+        }
     }
-    if let Some(folder) = out.parent() {
-        let _ = std::fs::create_dir_all(folder);
-    }
-    // The decors the scenes are in, each as a map beside the export; the
-    // Pokémon SpriteCollab adds, each as its sheets.
-    let maps = decor_maps(&game, film.tables, &text, out, tell)? + &added_monsters(&game, &writer.added, out, tell)?;
-    if !maps.is_empty() {
-        let at = text.find('\n').map_or(0, |end| end + 1);
-        text.insert_str(at, &maps);
-    }
-    std::fs::write(out, text).map_err(|error| format!("{}: {error}", out.display()))?;
-    Ok(Exported { actors: writer.actors.len(), place: writer.level.clone() })
+    let mut lines: std::collections::BTreeSet<usize> = writer.lines_seen.iter().filter_map(|line| usize::try_from(*line).ok()).collect();
+    lines.extend(film.written.read_as.keys().copied());
+    Report::of(notes, lines.len(), writer.added.len())
 }
 
 /// The face a line said in a bubble is given by its brackets (`pichu
@@ -173,17 +234,6 @@ fn bubble_face(line: &str) -> Option<u16> {
     }
     let face = words.iter().find_map(|word| ::film::words::of(&::film::words::FACES, word)).unwrap_or("normal");
     scenes::vocabulary::POKEMON.face(face).or(Some(0))
-}
-
-/// Lines told by their numbers: `line 4`, `lines 4, 9 and 12`.
-fn on_lines(lines: &[i32]) -> String {
-    let mut lines = lines.to_vec();
-    lines.dedup();
-    match lines.as_slice() {
-        [one] => format!("line {one}"),
-        [rest @ .., last] => format!("lines {} and {last}", rest.iter().map(i32::to_string).collect::<Vec<_>>().join(", ")),
-        [] => String::new(),
-    }
 }
 
 /// Each decor the export's scenes are in (`LEVEL_DECOR_<n>`), written as a

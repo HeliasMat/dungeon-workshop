@@ -6,6 +6,7 @@ use engine::{Beat, BodyBeat, Course, Play, Who};
 use scenes::fight::Sight;
 
 use super::Writer;
+use crate::notes::{Fate, Kind};
 use crate::sky::Game;
 
 /// What the fights' rules played and how it ended, by the fight's line.
@@ -55,7 +56,7 @@ impl Writer<'_> {
                     self.blow(number, who, 0, Some(target), false, false);
                 }
             }
-            self.notes.push(format!("line {number}: the fight's blows (not played by its rules here): a short exchange instead"));
+            self.note(number, Kind::Fight, Fate::Changed, "the fight's blows, not played by its rules here", "a short exchange between the first of each side");
             return;
         };
         let _ = sides;
@@ -88,7 +89,7 @@ impl Writer<'_> {
                 _ => {}
             }
         }
-        self.told.push(format!("line {number}: the fight staged as its blows, with Sky's attacks (no bars, no log)"));
+        self.note(number, Kind::Fight, Fate::Changed, "the fight: no bars, no log", "staged as its blows, with Sky's attacks");
     }
 
     /// A blow of a fight: who strikes turns to its target and attacks

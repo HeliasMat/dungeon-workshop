@@ -4,6 +4,7 @@
 use engine::{Beat, BodyBeat, CrowdForm, CrowdShape, Direction, Exit, Gait, Num, Pace, PlaceBeat, Point, Spot, Who};
 
 use super::{BESIDE, OFF_SCREEN, Writer, way_to};
+use crate::notes::{Fate, Kind};
 use crate::sky::{HIDDEN, speed};
 
 impl Writer<'_> {
@@ -39,7 +40,7 @@ impl Writer<'_> {
                 Some(point) => {
                     self.places.insert(var.clone(), point);
                 }
-                None => self.problems.push(format!("line {number}: the spot {spot:?} doesn't export to DS yet")),
+                None => self.problem(number, Kind::Logic, Fate::LeftOut, "this spot isn't known on DS yet", "left out"),
             },
             PlaceBeat::Goes { who, points, gait } => self.walk(number, who, points, gait),
             // A crowd: each one a free actor, round the place, facing it
@@ -75,7 +76,7 @@ impl Writer<'_> {
     /// Someone arriving: from off the screen, on its side (or the way they came), to where they stop.
     fn arrive(&mut self, number: i32, who: &Who, to: &Point, gait: &Gait, from: &Option<Exit>) {
         let (Some(actor), Some(to)) = (self.who(number, *who), self.point(to)) else {
-            self.problems.push(format!("line {number}: where {who:?} arrives is not known before the film plays"));
+            self.problem(number, Kind::Logic, Fate::LeftOut, "where they arrive is not known before the film plays", "left out");
             return;
         };
         let shown = self.at.contains_key(who) && !self.actors.get(who).is_some_and(|one| one.hidden && one.first.is_none());
@@ -125,7 +126,7 @@ impl Writer<'_> {
         self.calm();
         for point in points {
             let Some(point) = self.point(point) else {
-                self.problems.push(format!("line {number}: where {who:?} goes is not known before the film plays"));
+                self.problem(number, Kind::Logic, Fate::LeftOut, "where they go is not known before the film plays", "left out");
                 return;
             };
             self.go(*who, &actor, point, &speed(pace * 256.0, 256.0), false);

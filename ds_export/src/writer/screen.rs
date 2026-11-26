@@ -4,6 +4,7 @@
 use engine::{Beat, Frames, ScreenBeat, Weather};
 
 use super::Writer;
+use crate::notes::{Fate, Kind};
 use crate::sky::{DECOR_LEVEL, TOP_SCREENS, light, quoted};
 
 impl Writer<'_> {
@@ -87,6 +88,12 @@ impl Writer<'_> {
     /// the Workshop's: a map of its own, `LEVEL_DECOR_<n>` until patch_rom.py
     /// gives it a level.)
     fn backdrop(&mut self, number: i32, id: u16) {
+        self.scene_line = number;
+        if !self.game.levels.contains_key(&id)
+            && let Some(name) = self.game.decors.get(&id).cloned()
+        {
+            self.note(number, Kind::Decor, Fate::Changed, format!("{name}: a decor of your own, made a map of Sky's"), ::film::ds::DECOR_LOSS);
+        }
         let level = self
             .game
             .levels
@@ -94,7 +101,7 @@ impl Writer<'_> {
             .cloned()
             .or_else(|| self.game.decors.contains_key(&id).then(|| format!("{}{id}", DECOR_LEVEL.trim_start_matches("LEVEL_"))));
         let Some(level) = level else {
-            self.problems.push(format!("line {number}: no level {id} in the game's data"));
+            self.problem(number, Kind::Logic, Fate::Impossible, format!("no level {id} in the game's data"), "left out");
             return;
         };
         self.top = TOP_SCREENS.iter().find(|(place, _)| *place == level).map(|(_, top)| *top);
@@ -105,7 +112,7 @@ impl Writer<'_> {
         self.tall = self.tall_asked && self.top.is_none() && self.size.is_some_and(|(_, high)| high >= 384.0);
         if self.tall_asked && !self.tall {
             let why = if self.top.is_some() { "Sky's own top picture for it kept" } else { "too short for two screens (384 pixels)" };
-            self.told.push(format!("{level}: no tall view, {why}"));
+            self.note(number, Kind::Screen, Fate::Changed, format!("{level}: no tall view"), why);
         }
         if self.tall {
             self.top = None;
@@ -175,7 +182,13 @@ impl Writer<'_> {
             Weather::Rain => 698,
             Weather::Hail | Weather::Snow => 20,
             other => {
-                self.notes.push(format!("line {number}: the weather {other:?} (Sky has no such effect)"));
+                self.note(
+                    number,
+                    Kind::Weather,
+                    Fate::LeftOut,
+                    format!("the weather {}: Sky has no such effect", format!("{other:?}").to_lowercase()),
+                    "nothing",
+                );
                 return;
             }
         };

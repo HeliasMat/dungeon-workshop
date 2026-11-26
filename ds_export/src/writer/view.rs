@@ -3,6 +3,7 @@
 use engine::{Beat, ScreenBeat, ViewBeat};
 
 use super::{FEW, PAN, Writer, pan};
+use crate::notes::{Fate, Kind};
 
 impl Writer<'_> {
     /// A view beat: where the camera goes, how the screen shakes.
@@ -17,7 +18,7 @@ impl Writer<'_> {
                 let mut points: Vec<(f32, f32)> = who.iter().filter_map(|one| self.at.get(one).copied()).collect();
                 points.extend(at.iter().map(|point| (point.x, point.y)));
                 if points.is_empty() {
-                    self.problems.push(format!("line {number}: where to frame is not known before the film plays"));
+                    self.problem(number, Kind::Logic, Fate::LeftOut, "where to frame is not known before the film plays", "left out");
                     return;
                 }
                 // A frame of a few: those are never left out of a crowded scene.
@@ -37,14 +38,20 @@ impl Writer<'_> {
                         self.line("WaitExecutePerformer(0);");
                         let back = ((middle.0 - to.0).powi(2) + (middle.1 - to.1).powi(2)).sqrt();
                         self.camera_to(middle, back / PAN);
-                        self.told.push(format!("line {number}: the frame is wider than the screen: a pan across it ({across:.0} pixels)"));
+                        self.note(
+                            number,
+                            Kind::Camera,
+                            Fate::Changed,
+                            "the frame is wider than the screen (Sky has no zoom)",
+                            format!("a pan across it ({across:.0} pixels)"),
+                        );
                     }
                     None => self.camera_to(middle, frames.0),
                 }
             }
             ViewBeat::Pan { to, frames } | ViewBeat::PanStays { to, frames } => match self.cam(to) {
                 Some(point) => self.camera_to(point, frames.0),
-                None => self.problems.push(format!("line {number}: where the camera goes is not known before the film plays")),
+                None => self.problem(number, Kind::Logic, Fate::LeftOut, "where the camera goes is not known before the film plays", "left out"),
             },
             ViewBeat::Camera(cam) => {
                 let to = cam.as_ref().and_then(|cam| self.cam(cam)).or(self.middle);

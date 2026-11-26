@@ -3,6 +3,7 @@
 use engine::{Beat, SoundBeat};
 
 use super::Writer;
+use crate::notes::{Fate, Kind};
 
 impl Writer<'_> {
     /// A sound beat: a song, its volume, a sound, a jingle.
@@ -19,7 +20,7 @@ impl Writer<'_> {
             SoundBeat::Sound(sound) | SoundBeat::SoundFrom { id: sound, .. } => self.line(&format!("se_Play({});", sound.0)),
             SoundBeat::OnHit { sound, .. } => match sound.as_ref() {
                 SoundBeat::Sound(sound) => self.line(&format!("se_Play({});", sound.0)),
-                other => self.notes.push(format!("line {number}: {other:?} (a move's own sound plays in dungeons only)")),
+                _ => self.note(number, Kind::Sound, Fate::LeftOut, "a move's own sound on the hit", "nothing: it plays in dungeons only"),
             },
             SoundBeat::Jingle(jingle) => self.line(&format!("me_Play({jingle});")),
             other => self.unexported(number, word, &Beat::Sound(other.clone())),

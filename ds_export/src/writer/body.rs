@@ -5,6 +5,7 @@
 use engine::{BodyBeat, Direction, Play, Point, Who};
 
 use super::{BESIDE, Writer, way_to};
+use crate::notes::{Fate, Kind};
 use crate::sky::{HIDDEN, direction};
 
 impl Writer<'_> {
@@ -12,7 +13,9 @@ impl Writer<'_> {
     pub(super) fn body(&mut self, number: i32, word: Option<&str>, beat: &BodyBeat) {
         match beat {
             // Floating words (`Missed!`): Sky's scenes have none.
-            BodyBeat::Popup { text, .. } => self.notes.push(format!("line {number}: the words {text:?} floating up")),
+            BodyBeat::Popup { text, .. } => {
+                self.note(number, Kind::Effect, Fate::LeftOut, format!("the words “{}” floating up", text.trim()), "nothing: Sky's scenes have none")
+            }
             BodyBeat::Put { who: Who::Thing { object, .. }, at, .. } => self.put_thing(object, at),
             BodyBeat::Anim { who: Who::Thing { object, .. }, play, .. } => self.thing_anim(number, *object, play),
             BodyBeat::ThingName { who: Who::Thing { .. }, .. } => {}
@@ -81,7 +84,7 @@ impl Writer<'_> {
     /// its first picture held (9).
     fn thing_anim(&mut self, number: i32, object: u16, play: &Play) {
         if !self.objects.contains_key(&object) {
-            self.problems.push(format!("line {number}: the thing {object} is not put in the scene"));
+            self.problem(number, Kind::Item, Fate::LeftOut, format!("the thing {object} is not put in the scene"), "nothing");
             return;
         }
         let set = match play {
@@ -171,7 +174,7 @@ impl Writer<'_> {
     fn put(&mut self, number: i32, who: &Who, at: &Point, way: &Direction) {
         let Some(actor) = self.who(number, *who) else { return };
         let Some(point) = self.point(at) else {
-            self.problems.push(format!("line {number}: where {who:?} is put is not known before the film plays"));
+            self.problem(number, Kind::Logic, Fate::LeftOut, "where they are put is not known before the film plays", "left out");
             return;
         };
         self.at.insert(*who, point);

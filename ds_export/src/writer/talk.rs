@@ -5,6 +5,7 @@
 use engine::{Beat, EmoteId, SpeechBeat, Voice, Who};
 
 use super::Writer;
+use crate::notes::{Fate, Kind};
 use crate::sky::{FACES, quoted};
 
 /// A chatter's bubble as the emote Sky shows over the one saying it: `!`,
@@ -42,7 +43,9 @@ impl Writer<'_> {
             }
             SpeechBeat::BoxSide { top } => self.box_top = *top,
             SpeechBeat::BoxAuto => self.box_top = false,
-            SpeechBeat::Mood { .. } => self.notes.push(format!("line {number}: a face changed in the middle of a line (Sky changes it between lines)")),
+            SpeechBeat::Mood { .. } => {
+                self.note(number, Kind::Speech, Fate::LeftOut, "a face changed in the middle of a line", "Sky changes faces between lines only")
+            }
             other => self.unexported(number, word, &Beat::Speech(other.clone())),
         }
     }
@@ -54,6 +57,8 @@ impl Writer<'_> {
     /// waits for its key again. No two at once: one after the other.
     fn bubble_line(&mut self, number: i32, word: Option<&str>, who: Who, frames: f32, text: &str, voice: Voice) {
         let face = self.bubble_faces.get(&number).copied();
+        let message = if voice == Voice::Thought { "a thought in a bubble" } else { "a line in a bubble" };
+        self.note(number, Kind::Bubble, Fate::Changed, message, "a line of Sky's box that closes by itself");
         // (Its words cut to the box, not to a bubble.)
         let text = ::film::screen::wrap(&text.replace('\n', " ")).join("\n");
         let frames = frames.round().max(30.0) as i32;

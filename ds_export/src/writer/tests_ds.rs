@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use engine::{AnimId, Beat, BodyBeat, Play, Who};
 
 use super::{Actor, Writer};
+use crate::notes::{Fate, Kind, Note};
 use crate::sky::Game;
 
 /// A data folder of the tests' own: Pichu, Unown, and one form of
@@ -41,8 +42,10 @@ fn a_species_the_rom_lacks_is_its_base_or_the_stand_in_told() {
     let species = |who: Who| writer.actors[&who].species;
     assert_eq!(species(Who::Monster(5257)), Some(172));
     assert_eq!(species(Who::Monster(2570)), Some(::film::ds::STAND_IN));
-    assert!(writer.told.iter().any(|told| told.starts_with("pichu_spiky (species 5257") && told.contains("drawn as Pichu")), "{:?}", writer.told);
-    assert!(writer.told.iter().any(|told| told.starts_with("zorua (species 2570") && told.contains("stand-in, Unown")), "{:?}", writer.told);
+    let species: Vec<&Note> = writer.notes.iter().filter(|note| note.kind == Kind::Species && note.fate == Fate::Changed).collect();
+    assert!(species.iter().any(|note| note.message.starts_with("pichu_spiky (species 5257") && note.instead.contains("drawn as Pichu")), "{species:?}");
+    assert!(species.iter().any(|note| note.message.starts_with("zorua (species 2570") && note.instead.contains("stand-in, Unown")), "{species:?}");
+    assert_eq!(species.len(), 2, "each told once: {species:?}");
     // (The stand-in has no portrait: its own name said in its line.)
     writer.say(4, None, Some(Who::Monster(2570)), Some(1), "Hi.");
     assert!(writer.body.contains("message_ResetActor();\n") && writer.body.contains("message_Talk(\" Zorua: Hi.\");"), "{}", writer.body);
@@ -68,7 +71,8 @@ fn a_species_with_its_sheets_is_put_in_the_rom() {
     let actor = writer.actor(grookey).expect("an actor");
     assert_eq!(writer.actors[&grookey].species, Some(2810));
     assert_eq!(writer.added.get(&2810), Some(&::film::ds::STAND_IN));
-    assert!(writer.told.is_empty(), "{:?}", writer.told);
+    assert!(writer.notes.iter().all(|note| note.kind == Kind::Added && note.fate == Fate::Added), "{:?}", writer.notes);
+    assert_eq!(writer.notes.len(), 1, "{:?}", writer.notes);
     writer.say(4, None, Some(grookey), Some(0), "Hi.");
     assert!(writer.body.contains(&format!("message_SetFace({actor}, FACE_NORMAL")), "{}", writer.body);
 }
@@ -113,7 +117,9 @@ fn a_crowd_with_no_one_idle_keeps_its_speakers_and_movers() {
     assert_eq!(writer.actors.len(), 21);
     assert!(writer.actors.values().any(|actor| actor.name == "FREE00"), "the speaker kept");
     assert!((1..=10).all(|at| writer.actors.values().any(|actor| actor.name == format!("FREE{at:02}"))), "the movers kept");
-    let told = writer.told.join("\n");
+    let crowd: Vec<&Note> = writer.notes.iter().filter(|note| note.kind == Kind::Crowd).collect();
+    assert!(crowd.iter().all(|note| note.fate == Fate::LeftOut), "{crowd:?}");
+    let told = crowd.iter().map(|note| format!("{}: {}", note.message, note.instead)).collect::<Vec<_>>().join("\n");
     assert!(told.contains("25 Pokémon from the start") && told.contains("(only acting where they stand)") && !told.contains("left out none"), "{told}");
     // (The farthest from the crowd's middle first: the last ones, at its end.)
     assert!(told.contains("pikachu24"), "{told}");

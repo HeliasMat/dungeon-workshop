@@ -8,6 +8,7 @@ use std::fmt::Write as _;
 use engine::Who;
 
 use super::{AT_ONCE, Actor, Writer, names};
+use crate::notes::{Fate, Kind};
 use crate::sky::{HIDDEN, quoted, tiles};
 
 /// An actor's part of a block played beside the script.
@@ -251,7 +252,13 @@ impl Writer<'_> {
         }
         // (Sky's scripts use locks 0 to 19.)
         if next > 20 {
-            self.told.push(format!("{}: too many routines beside the script for Sky's locks: played in it", self.level.as_deref().unwrap_or("?")));
+            self.notes.push(crate::notes::Note::new(
+                self.scene_line,
+                Kind::Timing,
+                Fate::Changed,
+                "too many lines played beside the script for Sky's locks",
+                "played in the script, one after the other",
+            ));
             own.clear();
         }
         let mut body = String::new();
@@ -320,7 +327,7 @@ impl Writer<'_> {
             defs.push_str("    hold;\n}\n");
         }
         if !own.is_empty() {
-            self.told.push(format!("{}: {} routines beside the script, as Sky's (def n for actor)", self.level.as_deref().unwrap_or("?"), own.len()));
+            self.info.push(format!("{}: {} routines beside the script, as Sky's (def n for actor)", self.level.as_deref().unwrap_or("?"), own.len()));
         }
         defs
     }
@@ -338,7 +345,8 @@ impl Writer<'_> {
         next.words = std::mem::take(&mut self.words);
         next.problems = std::mem::take(&mut self.problems);
         next.notes = std::mem::take(&mut self.notes);
-        next.told = std::mem::take(&mut self.told);
+        next.info = std::mem::take(&mut self.info);
+        next.lines_seen = std::mem::take(&mut self.lines_seen);
         next.tall_asked = self.tall_asked;
         next.vars = std::mem::take(&mut self.vars);
         next.became = std::mem::take(&mut self.became);
@@ -444,16 +452,26 @@ impl Writer<'_> {
                     parts.push(format!("{} ({what})", names.join(", ")));
                 }
             }
-            self.told.push(format!(
-                "{level}: {} Pokémon from the start, Sky shows {AT_ONCE} at once: left out {}, the farthest from the crowd's middle first; their lines left out with them",
-                start.len(),
-                if parts.is_empty() { "none".to_string() } else { parts.join("; ") }
-            ));
+            let fate = if parts.is_empty() { Fate::Changed } else { Fate::LeftOut };
+            self.note(
+                self.scene_line,
+                Kind::Crowd,
+                fate,
+                format!("{level}: {} Pokémon from the start, Sky shows {AT_ONCE} at once", start.len()),
+                if parts.is_empty() {
+                    "no one left out".to_string()
+                } else {
+                    format!("left out, the farthest from the crowd's middle first, their lines with them: {}", parts.join("; "))
+                },
+            );
             if start.len() - dropped.len() > AT_ONCE {
-                self.told.push(format!(
-                    "{level}: still {} too many, each speaking or framed: the game won't show the last ones of the layout",
-                    start.len() - dropped.len() - AT_ONCE
-                ));
+                self.note(
+                    self.scene_line,
+                    Kind::Crowd,
+                    Fate::LeftOut,
+                    format!("{level}: still {} too many, each speaking or framed", start.len() - dropped.len() - AT_ONCE),
+                    "the game won't show the last ones of the layout",
+                );
             }
         }
         // Who comes in later: loaded then, where some have left.
@@ -477,7 +495,13 @@ impl Writer<'_> {
             dropped.extend(over.iter().copied());
             if !over.is_empty() {
                 let names: Vec<String> = over.iter().map(|who| self.game.name(self.actors[who].kind)).collect();
-                self.told.push(format!("{level}: no room yet for {} when they come in ({AT_ONCE} at once): left out", names.join(", ")));
+                self.note(
+                    self.scene_line,
+                    Kind::Crowd,
+                    Fate::LeftOut,
+                    format!("{level}: no room yet for {} when they come in ({AT_ONCE} at once)", names.join(", ")),
+                    "left out",
+                );
             }
             if fits.is_empty() {
                 continue;
@@ -493,7 +517,7 @@ impl Writer<'_> {
             inserts.push((line, put));
         }
         if layer > 0 {
-            self.told.push(format!("{level}: who comes in later is loaded then, in {layer} more layers of the layout, in the slots of who has left"));
+            self.info.push(format!("{level}: who comes in later is loaded then, in {layer} more layers of the layout, in the slots of who has left"));
         }
         for (line, put) in inserts.into_iter().rev() {
             let indent: String = lines[line].chars().take_while(|c| c.is_whitespace()).collect();

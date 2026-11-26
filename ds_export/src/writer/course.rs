@@ -5,6 +5,7 @@ use engine::{Beat, BodyBeat, Compare, Course, DataBeat, Direction, FlowBeat, Mot
 
 use super::fight::fight_label;
 use super::{BESIDE, Writer};
+use crate::notes::{Fate, Kind};
 use crate::sky::{LOCALS, quoted};
 
 impl Writer<'_> {
@@ -125,7 +126,9 @@ impl Writer<'_> {
                         self.values.insert(var.clone(), if *op == "+" { now + by as f64 } else { now - by as f64 });
                         self.line(&format!("{name} {op}= {by};"));
                     }
-                    None => self.problems.push(format!("line {number}: the calculation {a:?} {op} {b:?} doesn't export to DS (only adding to a variable)")),
+                    None => {
+                        self.problem(number, Kind::Logic, Fate::Impossible, format!("the calculation with {op}: only adding to a variable exports"), "left out")
+                    }
                 }
             }
             // A number drawn: Sky's `switch ( random(n) )`, its cases a tenth of the range each.
@@ -155,7 +158,7 @@ impl Writer<'_> {
                         self.values.insert(var.clone(), *value);
                         self.line(&format!("{name} = {};", *value as i64));
                     }
-                    Value::Var(_) => self.problems.push(format!("line {number}: a variable set from another doesn't export to DS")),
+                    Value::Var(_) => self.problem(number, Kind::Logic, Fate::Impossible, "a variable set from another", "left out"),
                 }
             }
             other => self.unexported(number, word, &Beat::Data(other.clone())),
@@ -244,7 +247,7 @@ impl Writer<'_> {
         };
         let var = LOCALS.get(at).copied();
         if var.is_none() {
-            self.problems.push(format!("line {number}: “{name}”: a scene has {} variables at most on DS", LOCALS.len()));
+            self.problem(number, Kind::Logic, Fate::Impossible, format!("“{name}”: a scene has {} variables at most on DS", LOCALS.len()), "left out");
         }
         var
     }
@@ -253,14 +256,14 @@ impl Writer<'_> {
         let mut any = Vec::new();
         for all in &test.any {
             let [condition] = all.as_slice() else {
-                self.problems.push(format!("line {number}: “and” in a test doesn't export to DS (nest two ifs)"));
+                self.problem(number, Kind::Logic, Fate::Impossible, "“and” in a test (nest two ifs)", "left out");
                 return None;
             };
             let var = self.var(number, &condition.var)?;
             let value = match &condition.value {
                 Value::Number(value) => *value as i64,
                 Value::Var(_) => {
-                    self.problems.push(format!("line {number}: a test against a variable doesn't export to DS"));
+                    self.problem(number, Kind::Logic, Fate::Impossible, "a test against a variable", "left out");
                     return None;
                 }
             };
