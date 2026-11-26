@@ -352,7 +352,28 @@ impl Body<'_> {
             FontId::proportional(theme::SMALL),
             colour,
         );
-        ui.painter().with_clip_rect(status.with_max_x(shown.min.x - 10.0)).text(
+        // (DS Mode: the film on DS in one line, left of the problems.)
+        let mut left = shown.min.x;
+        if film::ds::written_for_ds(&self.open.text)
+            && let Some(report) = &self.scripts.ds.report
+        {
+            let summary = report.summary();
+            let worst = report.notes.iter().map(|note| note.fate).filter(|fate| *fate != ds_export::Fate::Added).max();
+            let colour = worst.map_or(Color32::from_rgb(90, 200, 120), crate::ds::fate_colour);
+            let ds = ui.painter().text(
+                shown.left_center() - vec2(14.0, 0.0),
+                egui::Align2::RIGHT_CENTER,
+                summary.said(),
+                FontId::proportional(theme::SMALL),
+                colour,
+            );
+            ui.interact(ds.expand(3.0), self.text_id.with("ds status"), Sense::hover()).on_hover_text(format!(
+                "of the {} lines that play: {} as written, {} changed to fit, {} left out, {} not possible (View › Add Panel › DS Report: each of them)",
+                summary.lines, summary.as_written, summary.changed, summary.left_out, summary.impossible
+            ));
+            left = ds.min.x;
+        }
+        ui.painter().with_clip_rect(status.with_max_x(left - 10.0)).text(
             status.left_center() + vec2(8.0, 0.0),
             egui::Align2::LEFT_CENTER,
             said,

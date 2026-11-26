@@ -253,3 +253,22 @@ fn problems_said_alike_are_one_line() {
     assert!(!problems_shown(None, 0) && problems_shown(None, 2), "open when something is wrong");
     assert!(problems_shown(Some(true), 0) && !problems_shown(Some(false), 2), "as asked");
 }
+
+/// DS Preview: the lines the DS leaves out made comments, a bubble said in
+/// the box, a block's head and the other lines kept, line for line.
+#[test]
+fn the_ds_preview_leaves_out_what_the_ds_does() {
+    use ds_export::{Fate, Kind, Note, Report};
+    let text = "scene: beach pikachu piplup\npikachu hold Apple\npiplup (bubble, joyous): Yum!\ntogether:\n  zoom 2 30f\npikachu: Hi.";
+    let notes = vec![
+        Note::new(2, Kind::Word, Fate::Impossible, "“hold”: no held item", ""),
+        Note::new(3, Kind::Bubble, Fate::Changed, "a line in a bubble", ""),
+        Note::new(4, Kind::Engine, Fate::LeftOut, "together: its step isn't played", ""),
+        Note::new(5, Kind::Word, Fate::Impossible, "“zoom”: no zoom", ""),
+    ];
+    let shown = crate::ds::ds_look(text, &Report::of(notes, 6, 0));
+    assert_eq!(
+        shown,
+        "scene: beach pikachu piplup\n# (DS Preview: left out) pikachu hold Apple\npiplup (joyous): Yum!\ntogether:\n  # (DS Preview: left out) zoom 2 30f\npikachu: Hi."
+    );
+}

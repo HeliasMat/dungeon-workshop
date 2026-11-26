@@ -54,6 +54,7 @@ mod body;
 mod cast;
 mod completion;
 mod debug;
+mod ds;
 mod editor;
 mod edits;
 mod head;
@@ -76,6 +77,7 @@ mod windows;
 mod workspace;
 
 pub use assets::{asset_written, cast_of, lines_after, scene_of};
+pub use ds::ds_panel;
 pub use editor::script;
 pub(crate) use highlight::speaker;
 pub(crate) use knowledge::species_of;
@@ -298,6 +300,11 @@ pub struct Scripts {
     /// The problems under the text open or closed, as asked (None: open when something is wrong); a panel of their own.
     problems_open: Option<bool>,
     pub problems_docked: bool,
+    /// The film on DS (`ds_export::report`), made again as it changes; the DS Report docked (View › Add Panel).
+    pub(crate) ds: ds::Ds,
+    pub ds_docked: bool,
+    /// The Scene plays the film as the DS shows it (`ds::ds_look`): no bubbles, no items, no zoom.
+    pub ds_preview: bool,
     pub said: Option<String>,
     finding: Option<Finding>,
     going_to: Option<String>,
@@ -461,6 +468,9 @@ impl Scripts {
             renaming: None,
             problems_open: None,
             problems_docked: false,
+            ds: ds::Ds::new(&session.context, context),
+            ds_docked: false,
+            ds_preview: false,
             said: None,
             finding: None,
             going_to: None,
@@ -573,6 +583,8 @@ impl Scripts {
             // (`WORKSHOP_PANELS=layout,wiki`: those beside the text, for a picture.)
             let beside = self.session.launch.panels.clone().unwrap_or_default();
             (self.plan_shown, self.wiki_shown) = (self.plan_shown || beside.contains("layout"), self.wiki_shown || beside.contains("wiki"));
+            // (`ds_preview`: the Scene plays the film as the DS shows it.)
+            self.ds_preview = self.ds_preview || beside.split(',').any(|one| one.trim() == "ds_preview");
             // (`WORKSHOP_WORDS=family`: the words by family open, on that family.)
             if let Some(family) = self.session.launch.words.clone() {
                 let family =
@@ -594,6 +606,11 @@ impl Scripts {
         }
         let Some(open) = &mut self.open else { return };
         let quiet = open.changed.map_or(Duration::MAX, |when| when.elapsed());
+        let wanted = self.ds_docked || self.ds_preview || film::ds::written_for_ds(&open.text);
+        self.ds.tick(wanted, &open.path, open.revision, &open.text, quiet);
+        if wanted && self.ds.stale(open.revision) {
+            context.request_repaint_after(Duration::from_millis(200));
+        }
         if open.asked != open.revision && quiet >= LOOKED_AFTER {
             _ = self.asks.send((open.revision, open.text.clone(), u8::from(self.typography) | u8::from(self.french_spaces) << 1));
             open.asked = open.revision;

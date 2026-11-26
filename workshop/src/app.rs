@@ -35,6 +35,8 @@ pub enum Panel {
     Wiki,
     /// The Script's problems, a panel of their own (else under the text).
     Problems,
+    /// What the film loses on DS, by kind (`ds_export::report`).
+    DsReport,
     // Decor.
     Hierarchy,
     History,
@@ -65,6 +67,7 @@ impl Panel {
             Panel::FilmAssets => "Assets",
             Panel::Wiki => "Wiki",
             Panel::Problems => "Problems",
+            Panel::DsReport => "DS Report",
         }
     }
 
@@ -72,9 +75,17 @@ impl Panel {
     fn of(space: Space) -> &'static [Panel] {
         match space {
             Space::Home => &[Panel::Project, Panel::List, Panel::Preview],
-            Space::Film => {
-                &[Panel::Script, Panel::FilmScene, Panel::FilmAssets, Panel::FilmInspector, Panel::FilmState, Panel::Timeline, Panel::Problems, Panel::Wiki]
-            }
+            Space::Film => &[
+                Panel::Script,
+                Panel::FilmScene,
+                Panel::FilmAssets,
+                Panel::FilmInspector,
+                Panel::FilmState,
+                Panel::Timeline,
+                Panel::Problems,
+                Panel::DsReport,
+                Panel::Wiki,
+            ],
             Space::Decor => &[Panel::Hierarchy, Panel::History, Panel::DecorScene, Panel::DecorInspector, Panel::Library],
             Space::Assets => &[Panel::AssetTree, Panel::AssetGrid, Panel::AssetInspector],
             Space::Dungeon | Space::Game | Space::Emulator => &[],
@@ -94,6 +105,7 @@ impl Panel {
             Panel::Wiki => &[Panel::FilmAssets, Panel::FilmInspector, Panel::Timeline],
             Panel::Timeline => &[Panel::FilmState],
             Panel::Problems => &[Panel::Timeline, Panel::FilmState],
+            Panel::DsReport => &[Panel::Problems, Panel::Timeline, Panel::FilmState],
             Panel::Hierarchy | Panel::History => &[Panel::History, Panel::Hierarchy],
             Panel::DecorInspector | Panel::Library => &[Panel::DecorInspector, Panel::Library],
             Panel::Project | Panel::Preview => &[Panel::Preview, Panel::Project],
@@ -1045,6 +1057,7 @@ impl App {
     fn wiki_docked(&mut self) {
         let dock = &mut self.docks[Space::Film.at()];
         self.work.scripts.problems_docked = dock.find_tab(&Panel::Problems).is_some();
+        self.work.scripts.ds_docked = dock.find_tab(&Panel::DsReport).is_some();
         if self.work.scripts.wiki_asked() {
             opened(dock, Panel::Wiki);
             if let Some(at) = dock.find_tab(&Panel::Wiki) {
@@ -1216,6 +1229,7 @@ impl egui_dock::TabViewer for Panels<'_> {
             }
             Panel::Wiki => workshop_script::wiki(ui, &mut self.work.scripts),
             Panel::Problems => workshop_script::problems_panel(ui, &mut self.work.scripts),
+            Panel::DsReport => workshop_script::ds_panel(ui, &mut self.work.scripts),
             Panel::AssetTree => workshop_resources::tree(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetGrid => workshop_resources::grid(ui, &mut self.work.resources, &mut self.work.decors),
             Panel::AssetInspector => {

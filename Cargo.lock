@@ -4529,6 +4529,7 @@ version = "0.4.0"
 dependencies = [
  "assets",
  "decor",
+ "ds_export",
  "eframe",
  "film",
  "image",

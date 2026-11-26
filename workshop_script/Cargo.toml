@@ -11,6 +11,8 @@ publish.workspace = true
 [dependencies]
 assets = { path = "../assets" }
 decor = { path = "../decor" }
+# The film as the DS would play it: its DS marks and Report.
+ds_export = { path = "../ds_export" }
 film = { path = "../film" }
 rules = { path = "../rules" }
 scenes = { path = "../scenes" }

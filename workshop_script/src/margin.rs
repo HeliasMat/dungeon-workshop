@@ -196,6 +196,14 @@ impl Body<'_> {
         if scripts.breakpoints.contains(&line) {
             painter.circle_filled(pos2(editor_rect.min.x + GUTTER - 22.0, (top + bottom) / 2.0), 4.5, Color32::from_rgb(0xE5, 0x14, 0x00));
         }
+        // (DS Mode: what the line loses on DS, a mark just left of the text; faint with the DS Report open alone.)
+        if let Some(report) = &scripts.ds.report {
+            let on = film::ds::written_for_ds(&self.open.text);
+            if on || scripts.ds_docked {
+                let at = crate::ds::mark_rect(editor_rect.min.x, top, bottom);
+                crate::ds::margin_mark(ui, painter, self.text_id, report, line, at, !on);
+            }
+        }
         if scripts.bookmarks.contains(&line) {
             painter.rect_filled(Rect::from_min_max(pos2(editor_rect.min.x + 1.0, top + 2.0), pos2(editor_rect.min.x + 4.0, bottom - 2.0)), 1.0, theme::DECOR);
         }

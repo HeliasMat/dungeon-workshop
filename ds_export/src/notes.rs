@@ -244,7 +244,8 @@ impl Report {
         self.on_line(line).map(|note| note.fate).filter(|fate| *fate != Fate::Added).max()
     }
 
-    /// The notes of each kind, the kinds in their order, with how many.
+    /// The notes of each kind, with how many: the kinds that lose most first (then in their order), the notes
+    /// that lose most first in each.
     pub fn by_kind(&self) -> Vec<(Kind, Vec<&Note>)> {
         let mut kinds: Vec<(Kind, Vec<&Note>)> = Vec::new();
         let mut sorted: Vec<&Note> = self.notes.iter().collect();
@@ -255,6 +256,8 @@ impl Report {
                 _ => kinds.push((note.kind, vec![note])),
             }
         }
+        // (The kinds that lose most first.)
+        kinds.sort_by_key(|(kind, notes)| (std::cmp::Reverse(notes.iter().map(|note| note.fate).max()), *kind));
         kinds
     }
 
@@ -312,7 +315,7 @@ mod tests {
         assert_eq!(summary.percent(), 80);
         assert_eq!(summary.said(), "on DS: 80% as written, 2 changed, 1 left out, 1 not possible, 1 new Pokémon added");
         let kinds: Vec<(Kind, usize)> = report.by_kind().into_iter().map(|(kind, notes)| (kind, notes.len())).collect();
-        assert_eq!(kinds, [(Kind::Word, 2), (Kind::Bubble, 1), (Kind::Item, 1), (Kind::Pose, 1), (Kind::Added, 1), (Kind::Crowd, 1)]);
+        assert_eq!(kinds, [(Kind::Word, 2), (Kind::Item, 1), (Kind::Crowd, 1), (Kind::Bubble, 1), (Kind::Pose, 1), (Kind::Added, 1)]);
         assert_eq!(report.notes.iter().find(|note| note.line.is_none()).map(Note::to_string).as_deref(), Some("25 Pokémon from the start (left out)"));
         assert_eq!(
             Note::new(4, Kind::Bubble, Fate::Changed, "a line in a bubble", "a box line").to_string(),

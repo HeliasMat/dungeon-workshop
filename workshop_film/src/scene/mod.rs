@@ -96,7 +96,7 @@ pub fn scene(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
         return;
     }
     scripts.lit_who_scene = None;
-    let (head, capture) = head(ui, films, full);
+    let (head, capture) = head(ui, films, &mut scripts.ds_preview, full);
     let room = Rect::from_min_max(pos2(full.min.x + 8.0, head.max.y + 8.0), pos2(full.max.x - 8.0, full.max.y - BAR_HEIGHT - SUBTITLE));
     let view = view(ui, films, room);
     let picture = ui.interact(view.seen, ui.id().with("film image"), Sense::click_and_drag());
@@ -133,7 +133,7 @@ pub fn scene(ui: &mut egui::Ui, films: &mut Films, scripts: &mut Scripts) {
 }
 
 /// Over the picture: what is shown of it; its place, whether it is asked written out.
-fn head(ui: &mut egui::Ui, films: &mut Films, full: Rect) -> (Rect, bool) {
+fn head(ui: &mut egui::Ui, films: &mut Films, ds_preview: &mut bool, full: Rect) -> (Rect, bool) {
     let head = Rect::from_min_size(full.min, vec2(full.width(), 30.0));
     ui.painter().rect_filled(head, 0.0, theme::TOOLS);
     let mut top = ui.new_child(egui::UiBuilder::new().max_rect(head.shrink2(vec2(8.0, 3.0))).layout(egui::Layout::left_to_right(egui::Align::Center)));
@@ -147,6 +147,10 @@ fn head(ui: &mut egui::Ui, films: &mut Films, full: Rect) -> (Rect, bool) {
     top.separator();
     top.checkbox(&mut films.looped, "Loop").on_hover_text("played again from the start at the end");
     top.checkbox(&mut films.follow, "Follow the Script").on_hover_text("the film goes where the Script's cursor is");
+    top.separator();
+    top.checkbox(ds_preview, "DS Preview").on_hover_text(
+        "the film as the DS would show it: what it leaves out (items, a zoom, a word it lacks) not played, the bubbles said in the box (the DS Report: what each line loses)",
+    );
     if films.staged && !films.playing {
         top.separator();
         let staging = top

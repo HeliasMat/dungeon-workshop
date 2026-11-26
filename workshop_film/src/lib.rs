@@ -128,6 +128,8 @@ pub struct Films {
     /// The Script's revision sent to be played, the one played; its last frame, when things are.
     sent: u64,
     played: u64,
+    /// DS Preview: the revision of the DS report the text sent was made with (none: the text as written).
+    ds_sent: Option<u64>,
     pub end: usize,
     pub timeline: Option<Timeline>,
     /// What playing it found wrong (its line, what).
@@ -244,6 +246,7 @@ impl Films {
             answers,
             sent: 0,
             played: 0,
+            ds_sent: None,
             end: 0,
             timeline: None,
             wrong: Vec::new(),
@@ -402,9 +405,14 @@ impl Films {
         }
         let Some(open) = &scripts.open else { return };
         // (Played again a moment after the text changed.)
-        if open.revision() != self.sent && open.quiet() >= PLAYED_AFTER {
+        // (DS Preview: the film as the DS shows it, played again when its report is made again.)
+        let ds = scripts.ds_preview.then(|| scripts.ds_preview_text()).flatten();
+        let ds_made = ds.as_ref().map(|(made, _)| *made);
+        if (open.revision() != self.sent && open.quiet() >= PLAYED_AFTER) || ds_made != self.ds_sent {
             self.sent = open.revision();
-            _ = self.asks.send(Ask::Text(self.sent, open.text.clone()));
+            self.ds_sent = ds_made;
+            let text = ds.map_or_else(|| open.text.clone(), |(_, text)| text);
+            _ = self.asks.send(Ask::Text(self.sent, text));
         }
         // (Following the Script: its cursor's line, when it plays.)
         let line = open.cursor_line();
