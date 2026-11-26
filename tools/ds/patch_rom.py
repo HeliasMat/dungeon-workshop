@@ -24,10 +24,16 @@ Explorers of Sky ROM, and write the patched copy.
   the ten test actors and the story's actors that no scene places nor any
   script names (FREE_ACTORS, 45 in all), its species changed in the game's
   actor table. The exporter may name such an actor `ACTOR_NPC_TEST001` or any
-  placeholder (`ACTOR_FREE07`): it is renamed here. A species the ROM has
-  no entry for (past `BALANCE/monster.md`'s: a form or a Pokémon
-  SpriteCollab adds) is refused, never let alias another Pokémon; the
-  exporter draws those as their base species or a stand-in.
+  placeholder (`ACTOR_FREE07`): it is renamed here.
+- A Pokémon SpriteCollab adds (a form, or one of a later generation: the
+  export's `// ds-export monster` lines, its sheets beside the export) is
+  put in the ROM as a monster of its own, on one of the list's 34 spare
+  entries, its sprite and portraits made from those sheets
+  (`tools/ds/add_monsters.py`), and the film's actors of it are of that
+  monster. One that can't be is told and drawn as its base species or the
+  stand-in (Unown "?", its name said in its lines, no portrait). A species
+  neither the ROM has (an entry of `BALANCE/monster.md`) nor put in is
+  refused, never let alias another Pokémon.
 - The place's things (`// ds-export object OBJECT_N<number> x .. y ..`)
   are objects of the game put in the layout; the script names them by
   number and they are renamed here to the game's names.
@@ -73,6 +79,7 @@ from skytemple_files.script.ssa_sse_sss.position import SsaPosition
 from skytemple_files.script.ssb.script_compiler import ScriptCompiler
 
 from bps import apply_bps, bps
+import add_monsters
 import decor_map
 import dungeon
 
@@ -96,6 +103,9 @@ FREE_ACTORS = [f'NPC_TEST{n:03d}' for n in range(1, 11)] + [
     'NPC_RUNPAPPA3', 'NPC_RUNPAPPA4', 'NPC_RUNPAPPA5', 'NPC_NASSHII', 'NPC_KOIKINGU',
     'NPC_HINBASU', 'NPC_MASUKIPPA6', 'NPC_MERIIPU', 'NPC_OTACHI',
 ]
+
+# Who stands in for a Pokémon that couldn't be put in (Unown "?", as the export's).
+STAND_IN = 228
 
 # The new game's first event: the personality quiz, played right after the
 # title. --boot plays the film before it.
@@ -211,18 +221,44 @@ def more_actors(rom, config, scenes):
     return {renamed[name]: species for name, species in wanted.items()}
 
 
-def check_species(rom, scenes):
-    """Every species the film gives an actor is one the ROM has (an entry of
-    `BALANCE/monster.md`): past them the game would show some other
-    Pokémon in its place, so it is refused, saying which."""
-    known = len(FileType.MD.deserialize(rom.getFileByName('BALANCE/monster.md')).entries)
+def own_species(rom):
+    """How many monsters the ROM has of its own (`BALANCE/monster.md`'s entries)."""
+    return len(FileType.MD.deserialize(rom.getFileByName('BALANCE/monster.md')).entries)
+
+
+def check_species(known, scenes, added=()):
+    """Every species the film gives an actor is one the ROM has (`known`:
+    its own entries of `BALANCE/monster.md`, before any were added) or one
+    put in (`added`): past them the game would show some other Pokémon in
+    its place, so it is refused, saying which."""
     for scene in scenes:
         for name, fields in scene.actors:
-            if 'species' in fields and not 0 < int(fields['species']) < known:
+            if 'species' in fields and not (0 < int(fields['species']) < known or int(fields['species']) in added):
                 raise SystemExit(
                     f'{name}: species {fields["species"]} is not in this ROM (its species are 1 to {known - 1}): '
                     'the game would draw another Pokémon; export the film again (a form is drawn as its base species, '
                     'a Pokémon Sky lacks as a stand-in)')
+
+
+def put_monsters(rom, config, scenes, monsters):
+    """The Pokémon SpriteCollab adds put in the ROM (`add_monsters.add`);
+    the actors of each of the ROM's monster made of it, or of the one drawn
+    instead (the stand-in's lines then say its name, with no portrait).
+    The species put in."""
+    given = add_monsters.add(rom, config, monsters)
+    names = {one.species: one.name for one in monsters}
+    for scene in scenes:
+        text = scene.source
+        for name, fields in scene.actors:
+            asked = int(fields.get('species', 0))
+            if asked not in given:
+                continue
+            fields['species'] = str(given[asked])
+            if given[asked] == STAND_IN:
+                said = re.compile(rf'message_Set(?:Face|Actor)\(ACTOR_{name}\b[^;]*\);(\s*)message_(Talk|Monologue)\("')
+                text = said.sub(lambda m: f'message_ResetActor();{m.group(1)}message_{m.group(2)}(" {names[asked]}:', text)
+        scene.lines = text.splitlines()
+    return {number for asked, number in given.items() if number != next(one.instead for one in monsters if one.species == asked)}
 
 
 def set_species(rom, config, region, actor_id, species):
@@ -410,7 +446,12 @@ def main():
         for lost in dungeon.put(rom, config, dump):
             print(f'  lost: {lost}')
         boss = [scene for text in dungeon.boss_scenes(dump, *boss_place(scenes)) for scene in scenes_of(text)]
-    check_species(rom, scenes + boss)
+    known = own_species(rom)
+    monsters = add_monsters.monsters_of(source, os.path.dirname(os.path.abspath(film_path))) if scenes else []
+    added = set()
+    if monsters:
+        added = put_monsters(rom, config, scenes + boss, monsters)
+    check_species(known, scenes + boss, added)
     if extra:
         for name, species in more_actors(rom, config, scenes + boss).items():
             print(f'ACTOR_{name}: species {species} (a new actor)')

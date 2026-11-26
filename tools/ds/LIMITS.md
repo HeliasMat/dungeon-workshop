@@ -231,14 +231,50 @@ any place.
 
 Sky's sprites are `monster.md`'s 1,155 entries. A species past them given
 to an actor is drawn as some other Pokémon (seen: `pichu_spiky`, 5257, as a
-second Delibird), so the export never passes one on: a form SpriteCollab
-adds (`variants.txt`, from 5000) becomes its base species (`pichu_spiky` →
-Pichu 172), a Pokémon of a later generation (2000 + its Pokédex number)
-the stand-in Unown “?” (228), its own name said in its lines with no
-portrait; both told (`R-DS-SPECIES` in DS Mode). `patch_rom.py` refuses
-any species the ROM's `BALANCE/monster.md` has no entry for. Their own
-sprites and portraits in the ROM (WAN/KAO, skytemple_files) are the real
-fix, not done yet.
+second Delibird), so the export never passes one on.
+
+**Put in the ROM** (`tools/ds/add_monsters.py`, docs/DS.md "Pokémon of
+SpriteCollab's"): a species the data has sheets for (walking and standing
+at least) becomes a monster of the ROM's own, on one of the list's spare
+entries, its sprite made from the sheets with SkyTemple's import
+(`import_sheets`, `split_wan`) and its faces in `kaomado.kao`.
+
+- **How many**: 34 a ROM, the spare entries 537-551 (named "??????????")
+  and 581-599 (`reserve_27`...`reserve_45`), never shown by the game, each
+  with its own name string (the 600-1154 second-gender entries share the
+  first's name: not used). An entry is taken only while its name is still
+  the placeholder. Past 34 in one film, the rest are drawn as below.
+- **Sizes** (seen 2026-11-26): a Pokémon's three sprite parts are 86-96 KB
+  (Snivy 88, Grookey 86, Scorbunny 96, Sobble 87; pichu_spiky's 125 KB:
+  its sheets are larger), about 40 groups each; a face is under 1 KB in
+  `kaomado.kao` (16 to 18 a Pokémon). The 34 spare entries at 125 KB at
+  most are 4 MB; the cartridge's file system has room for that (the patched
+  copy stays a 128 MB ROM).
+- **Time**: about 8 s a Pokémon in `patch_rom.py` (SkyTemple reads each
+  sheet in Python): the_little_festival with its four took 93 s, no_name
+  with one 59 s, on a busy machine (the patch alone is 10-20 s on a quiet one).
+- **What it shows**: its poses are its sheets' (by name, the nearest where
+  they lack one); its faces where the data has them (a line of one without
+  faces shows its name only, `message_SetActor`); its name, cut at 10
+  letters, in every language. In dungeons it would have Pikachu's (or its
+  base's) stats, moves and types: only the scenes use it.
+- **SkyTemple's ExpandPokeList** (the list grown to 2,048 entries, each its
+  own name; what the task first tried): its five dependencies
+  (ActorAndLevelLoader, ChangeEvoSystem, ExternalizeWazaFile,
+  ExternalizeMappaFile, SpriteSizeInMonsterData) apply in 2-3 s each with
+  armips, but ExpandPokeList itself ran over 11 minutes on the EU ROM with
+  5 to 8.7 GB of memory without ending (stopped), and within `patch_rom.py`
+  it failed after 3 min 31 s with an empty error (skytemple_files 1.8.5).
+  Far too slow for a patch made at each play; the spare entries are enough
+  for a film.
+
+Without its sheets (or where putting it in fails, told by `patch_rom.py`),
+a form SpriteCollab adds (`variants.txt`, from 5000) becomes its base
+species (`pichu_spiky` → Pichu 172), a Pokémon of a later generation (2000
++ its Pokédex number) the stand-in Unown “?” (228), its own name said in
+its lines with no portrait; told by the export, and by DS Mode
+(`R-DS-SPECIES`) when the data has no sheets. `patch_rom.py` refuses any
+species neither in the ROM's `BALANCE/monster.md` nor put in.
 
 ## Poses (`SetAnimation<actor X>(n)`)
 
@@ -280,6 +316,13 @@ back2_SetGround(LEVEL_…); camera2_SetPositionMark(Position<'m', x, y>);
 screen2_FadeIn(1, 30);` (and `screen2_FadeOut` at the end). Seen working;
 a place with animated parts (the guild's torches) showed blank squares in
 their place, so a still place reads better.
+
+A picture of your own there (not done): the DS side would be small (the
+picture made a map of 256x192 as a decor is, `map::map_of`, on a spare
+level, shown by `back2_SetGround`; it shares the four spare levels with the
+decors), but a film has no way to name one: the engine's `topimage <file>`
+is not a word of the film language (`scene_player check` refuses it), so it
+needs a film word first.
 
 ## Seeing more of a scene: no zoom, a tall view, pans
 

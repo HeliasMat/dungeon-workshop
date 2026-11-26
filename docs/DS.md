@@ -37,11 +37,16 @@ Nothing is lost in silence, and no Pokémon becomes another:
   endings time theirs). One at a time: no two bubbles side by side.
   `chatter`: Sky's emotes over the crowd (!, ?, laughing, joy, sweat).
 - **A Pokémon or form SpriteCollab adds** (numbered past Sky's 1,155: 2000 +
-  its Pokédex number, variants from 5000): a form is drawn as its base species
+  its Pokédex number, variants from 5000) **is put in the ROM** when the data
+  has its sheets (`data/extra/sprites`, `sprites.txt`, its faces in
+  `data/extra/portraits`): a monster of the game's own, its name, its sprite
+  and its portraits (below, "Pokémon of SpriteCollab's"). Without its sheets,
+  or where putting it in fails, a form is drawn as its base species
   (`pichu_spiky` as Pichu), a Pokémon Sky lacks as a stand-in, Unown “?”, its
-  name said in its lines (no portrait). Told by the export and by DS Mode
-  (`R-DS-SPECIES`) until its sprites are put in the ROM. `patch_rom.py`
-  refuses a species past the ROM's `monster.md` instead of letting it alias.
+  name said in its lines (no portrait); told by the export, and by DS Mode
+  (`R-DS-SPECIES`) when the data has no sheets. `patch_rom.py` refuses a
+  species neither in the ROM's `monster.md` nor put in, instead of letting
+  it alias.
 - **A pose a species' Sky sprite lacks** (Nod, Sit, Rotate...): the nearest
   one every sprite has (as the film words' `nearest`: a hop, its sleep, its
   attack), told once a species and pose.
@@ -49,6 +54,33 @@ Nothing is lost in silence, and no Pokémon becomes another:
   then those only acting where they stand, then those moving, never one who
   speaks or is framed among a few; their lines go with them, and the export
   names each one left out.
+
+## Pokémon of SpriteCollab's
+
+A film may cast a Pokémon of a later generation (`grookey`) or a form
+(`pichu_spiky`) that SpriteCollab adds and the data has imported: on DS it
+is itself. `export-ds` writes its sheets in SpriteBot's layout beside the
+export (`x.exps.monster<species>/sprite/AnimData.xml`, `<Anim>-Anim.png`,
+`<Anim>-Shadow.png`, `portrait/<Face>.png`: `spritecollab::export`) and a
+line `// ds-export monster <species> <instead> <folder> <name>`; then
+`patch_rom.py` (`tools/ds/add_monsters.py`, with skytemple_files):
+
+- takes one of the monster list's 34 spare entries (537 to 551, 581 to
+  599: never shown by the game, each with a name of its own), gives it the
+  numbers of its base species or Pikachu's, and its name in every language;
+- makes its sprite from the sheets as SkyTemple's sprite import does
+  (`import_sheets`, `split_wan`), adds the three parts to
+  `MONSTER/monster.bin`, `m_ground.bin` and `m_attack.bin`, its sizes in
+  the game's table;
+- puts each face in the portraits (`FONT/kaomado.kao`), so its lines show it;
+- casts the film's actors of it as that monster.
+
+Its poses are the ones its sheets have (each by its name: a pose they lack
+plays the nearest, as for Sky's own). One that can't be put in (no spare
+entry left, sheets SkyTemple can't read) is told and drawn as `<instead>`,
+its base species or the stand-in. Only the species the film casts are put
+in, so the ROM stays small. What it costs and how far it goes:
+`tools/ds/LIMITS.md` ("Species the ROM lacks").
 
 
 ## A place of your own
