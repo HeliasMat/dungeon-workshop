@@ -121,143 +121,34 @@ pub(crate) const LOCALS: [&str; 4] = ["$LOCAL0", "$LOCAL1", "$LOCAL2", "$LOCAL3"
 /// The output attribute that hides an actor (`SetOutputAttribute<actor>(128)`).
 pub(crate) const HIDDEN: u16 = 128;
 
-/// The groups past 12 in the order the starters' sprites share (the
-/// engine's `AnimId`s are these): 13 EventSleep ... 34 HitGround.
-const SHARED: &str =
-    "EventSleep Wake Eat Tumble Pose Pull Pain Float DeepBreath Nod Sit LookUp Sink Trip Laying LeapForth Head Cringe LostBalance TumbleBack Faint HitGround";
-
-/// Where each species whose sprite orders its groups past 12 its own way is
-/// told: the groups it has and their names, read from one's own ROM by
-/// `tools/ds/animations.py` into the data (never in the repository; the
-/// names are SkyTemple's). Without it, every species shares the starters'
-/// order.
-const OWN_ORDER: &str = "extra/ds_animations.txt";
-
 /// The data folder the exporter reads, for the table of the sprites' own
-/// orders.
+/// orders (`film::ds::own_group`).
 static DATA: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
-/// What shows a pose when a sprite has no group of that name, in turn
-/// (a name of the first thirteen groups, which every sprite has, ends it).
-fn instead(name: &str) -> &'static [&'static str] {
-    match name {
-        "EventSleep" => &["Sleep"],
-        "Wake" => &["StandingUp", "Idle"],
-        "Tumble" | "TumbleBack" | "Trip" => &["Tumble", "TumbleBack", "Trip", "Hurt"],
-        "Pose" | "Float" | "LeapForth" => &["Hop"],
-        "Pull" => &["Charge"],
-        "Pain" | "Cringe" | "LostBalance" => &["Pain", "Hurt"],
-        "Laying" => &["Fainted", "Sleep"],
-        // (Their own "Faint" may rise again, as Dusknoir's 25: their lying one, held, reads better.)
-        "Sink" | "Faint" | "HitGround" => &["Fainted", "Laying", "Sleep"],
-        // (The community's own, past Sky's groups.)
-        "Bow" => &["Nod", "Hop"],
-        "Yawn" | "Swell" | "Sing" | "Sound" => &["DeepBreath", "Charge"],
-        "Dance" | "Twirl" | "Appeal" | "Wave" | "RaiseArms" | "Shake" | "Wiggle" | "RearUp" | "FlapAround" | "Hover" => &["Pose", "Hop"],
-        "Withdraw" | "Injured" | "Cry" => &["Cringe", "Pain", "Hurt"],
-        "StandingUp" => &["Wake", "Hop"],
-        "SpAttack" | "Emit" | "Shock" | "Gas" | "Roar" | "Rumble" => &["Charge"],
-        "Stomp" | "DigOut" => &["HitGround", "Hop"],
-        "DigIn" => &["Sink", "Hurt"],
-        "Fainted" => &["Laying", "Sleep"],
-        "CarefulWalk" => &["Walk"],
-        "Punch" | "Jab" | "Uppercut" | "TailWhip" | "Lick" | "Kick" | "Strike" | "QuickStrike" | "MultiStrike" | "Slam" | "Bite" | "Scratch"
-        | "MultiScratch" | "Slice" | "Chop" | "Slap" | "Ricochet" => &["Attack"],
-        _ => &["Idle"],
-    }
-}
-
-/// The first thirteen groups, the same in every sprite.
-fn common_group(name: &str) -> Option<u16> {
-    Some(match name {
-        "Walk" => 0,
-        "Attack" => 1,
-        "Sleep" => 5,
-        "Hurt" => 6,
-        "Idle" => 7,
-        "Hop" => 10,
-        "Charge" => 11,
-        _ => return None,
-    })
-}
-
-/// The group of that species' own sprite that shows what the engine's
-/// group shows (the starters' order): itself for most of the story's
-/// heroes, another one, or a close one, for the sprites ordered their own
-/// way (Dusknoir's faint is its 25). `None`: it would only stand.
-fn own_groups() -> &'static HashMap<u16, Vec<(u16, String)>> {
-    use std::sync::OnceLock;
-    static TABLE: OnceLock<HashMap<u16, Vec<(u16, String)>>> = OnceLock::new();
-    TABLE.get_or_init(|| {
-        let told = DATA.get().map(|data| std::fs::read_to_string(game_file(data, OWN_ORDER)).unwrap_or_default()).unwrap_or_default();
-        told.lines()
-            .filter(|line| !line.starts_with('#'))
-            .filter_map(|line| {
-                let (species, groups) = line.split_once('\t')?;
-                let groups =
-                    groups.split(',').filter_map(|pair| pair.split_once('=')).filter_map(|(at, name)| Some((at.parse().ok()?, name.to_string()))).collect();
-                Some((species.parse().ok()?, groups))
-            })
-            .collect()
-    })
+/// The data folder read (none in a test without it).
+fn data() -> &'static str {
+    DATA.get().map_or("", String::as_str)
 }
 
 /// The group of that species' own sprite named so (`Roar`), if it has one
 /// Sky's table reaches.
 pub(crate) fn own_named(species: u16, name: &str) -> Option<u16> {
-    own_groups().get(&species)?.iter().find(|(at, own)| own == name && *at <= 34).map(|(at, _)| *at)
+    ::film::ds::own_named(data(), species, name)
 }
 
+/// The group of that species' own sprite that shows the engine's group
+/// (`film::ds::own_group`).
 pub(crate) fn own_group(species: u16, group: u16) -> Option<u16> {
-    let table = own_groups();
-    // (One of the community's own, past Sky's groups: the species' own group
-    // of that name where it has one, else the nearest Sky's sprites share.)
-    if usize::from(group) >= assets::tables::NAMED_GROUPS {
-        let name = scenes::vocabulary::POKEMON.animations.iter().find(|(_, at)| *at == usize::from(group)).map_or("", |(name, _)| *name);
-        let own = table.get(&species).filter(|_| species != 0);
-        let named = |name: &str| own.and_then(|own| own.iter().find(|(at, own)| *own == name && *at <= 34).map(|(at, _)| *at));
-        return named(name).or_else(|| instead(name).iter().find_map(|name| common_group(name).or_else(|| named(name)))).filter(|at| *at != 7);
-    }
-    let Some(own) = table.get(&species).filter(|_| species != 0) else { return Some(group) };
-    let Some(name) = group.checked_sub(13).and_then(|at| SHARED.split(' ').nth(usize::from(at))) else { return Some(group) };
-    // (Sky's table reaches groups 0 to 34 only.)
-    let named = |name: &str| own.iter().find(|(at, own)| *own == name && *at <= 34).map(|(at, _)| *at);
-    if let Some(at) = named(name).filter(|_| name != "Faint") {
-        return Some(at);
-    }
-    instead(name).iter().find_map(|name| common_group(name).or_else(|| named(name))).filter(|at| *at != 7)
+    ::film::ds::own_group(data(), species, group)
 }
 
-/// The sprite's animation groups (the engine's `AnimId`) as Sky's
-/// `SetAnimation` numbers (its table `SETANIMATION_TABLE`): played once
-/// and kept, or looped.
-pub(crate) fn animation(group: u16, looped: bool) -> Option<u16> {
-    let once = match group {
-        0 => Some(83),
-        1 => Some(13),
-        2 => Some(12),
-        3 => Some(18),
-        4 => Some(19),
-        6 => Some(11),
-        10 => Some(17),
-        13..=32 => Some(22 + group - 13),
-        33 => Some(81),
-        34 => Some(82),
-        _ => None,
-    };
-    let looping = match group {
-        0 => Some(5),
-        3 => Some(20),
-        4 => Some(21),
-        5 => Some(6),
-        6 => Some(14),
-        7 => Some(4),
-        11 => Some(9),
-        13..=32 => Some(42 + group - 13),
-        _ => None,
-    };
-    if looped { looping.or(once) } else { once.or(looping) }
+/// The pose the DS plays for the engine's group on that species' sprite,
+/// the nearest every sprite has where its own lacks it (`film::ds::pose_on_ds`).
+pub(crate) fn pose_on_ds(species: u16, group: u16, looped: bool) -> Option<::film::ds::PoseOnDs> {
+    ::film::ds::pose_on_ds(data(), species, group, looped)
 }
+
+pub(crate) use ::film::ds::animation;
 
 /// The script effect closest to a move, by its type (the game's numbers:
 /// 1 Normal ... 17 Steel).
@@ -393,29 +284,10 @@ mod tests {
     }
 
     #[test]
-    fn animations_go_through_skys_table() {
-        // Sleep looped (42, the same entry as Sky's 62) and waking once (23, as its 63).
-        assert_eq!(animation(13, true), Some(42));
-        assert_eq!(animation(14, false), Some(23));
-        // A group with no looped entry plays once.
-        assert_eq!(animation(33, true), Some(81));
-        assert_eq!(animation(12, false), None);
-    }
-
-    /// One of the community's own animations, which Sky's sprites lack: the nearest they share.
-    #[test]
-    fn the_community_s_animations_play_the_nearest_sky_has() {
-        let group = |name: &str| scenes::vocabulary::POKEMON.animations.iter().find(|(one, _)| *one == name).map(|(_, at)| *at as u16).unwrap();
-        assert_eq!(own_group(0, group("Bow")), Some(10));
-        assert_eq!(own_group(0, group("Punch")), Some(1));
-        assert_eq!(own_group(0, group("Swell")), Some(11));
-    }
-
-    #[test]
     fn each_species_poses_with_its_own_sprites_group() {
         // (The table is read from one's own ROM into the data: where it is.)
         let data = concat!(env!("CARGO_MANIFEST_DIR"), "/../data");
-        if !game_file(data, OWN_ORDER).exists() {
+        if !game_file(data, ::film::ds::OWN_ORDER).exists() {
             return;
         }
         _ = DATA.set(data.to_string());
@@ -425,9 +297,9 @@ mod tests {
         // Dusknoir faints lying with its 27 (its own "Faint", 25, rises again).
         assert_eq!(own_group(519, 33), Some(27));
         assert_eq!(own_group(519, 27), Some(27));
-        // Snorlax has none of them: asleep for lying, nothing for a nod.
+        // Snorlax has none of them: asleep for lying, a hop for a nod.
         assert_eq!(own_group(143, 33), Some(5));
-        assert_eq!(own_group(143, 22), None);
+        assert_eq!(own_group(143, 22), Some(10));
     }
 
     #[test]

@@ -13,8 +13,10 @@ use film_core::words::{EMOTION_SOUNDS, EMOTIONS, of, plain};
 pub const WORDS: &[Word] = &[
     Word::new("bubble", &["who:pokemon text..."], "bubble")
         .family("Advanced")
-        .ds_none("Sky has no speech bubbles: its words are in the box")
-        .ds_fix("a line said in the box: “who: text”")
+        .ds_close(
+            "a line of Sky's box (its portrait, its words), closing by itself after the bubble's time: message_SetWaitMode(frames, 0), message_Talk, message_Close",
+            "a box, not a bubble: one at a time, at the bottom of the screen, never two side by side",
+        )
         .names(Names::NoOne)
         .maybe(bubble_said),
     Word::new("choice", &["text..."], "ask")
@@ -26,7 +28,10 @@ pub const WORDS: &[Word] = &[
     Word::new("emote", &["who:pokemon kind:word", "who:word kind:word d:duration"], "emote, sound").maybe(emotion_said),
     Word::new("chatter", &["*who [n:number]"], "short bubbles here and there among them, by chance (!, ..., a word): 6 if not told, one every few frames")
         .family("Speech")
-        .ds_close("nothing shown: Sky has no speech bubbles; the film waits as long", "no bubbles: nothing is shown")
+        .ds_close(
+            "each bubble as Sky's emote over the one saying it (!, ?, laughing, joy, sweat): SetEffect(EFFECT_…, 3); the film waits as long",
+            "no words: Sky's emotes over the crowd instead",
+        )
         .word_first()
         .does(chattered),
 ];

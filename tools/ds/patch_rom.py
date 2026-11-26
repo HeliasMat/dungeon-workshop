@@ -24,7 +24,10 @@ Explorers of Sky ROM, and write the patched copy.
   the ten test actors and the story's actors that no scene places nor any
   script names (FREE_ACTORS, 45 in all), its species changed in the game's
   actor table. The exporter may name such an actor `ACTOR_NPC_TEST001` or any
-  placeholder (`ACTOR_FREE07`): it is renamed here.
+  placeholder (`ACTOR_FREE07`): it is renamed here. A species the ROM has
+  no entry for (past `BALANCE/monster.md`'s: a form or a Pokémon
+  SpriteCollab adds) is refused, never let alias another Pokémon; the
+  exporter draws those as their base species or a stand-in.
 - The place's things (`// ds-export object OBJECT_N<number> x .. y ..`)
   are objects of the game put in the layout; the script names them by
   number and they are renamed here to the game's names.
@@ -206,6 +209,20 @@ def more_actors(rom, config, scenes):
         scene.lines = text.splitlines()
         scene.actors = [(renamed.get(name, name), fields) for name, fields in scene.actors]
     return {renamed[name]: species for name, species in wanted.items()}
+
+
+def check_species(rom, scenes):
+    """Every species the film gives an actor is one the ROM has (an entry of
+    `BALANCE/monster.md`): past them the game would show some other
+    Pokémon in its place, so it is refused, saying which."""
+    known = len(FileType.MD.deserialize(rom.getFileByName('BALANCE/monster.md')).entries)
+    for scene in scenes:
+        for name, fields in scene.actors:
+            if 'species' in fields and not 0 < int(fields['species']) < known:
+                raise SystemExit(
+                    f'{name}: species {fields["species"]} is not in this ROM (its species are 1 to {known - 1}): '
+                    'the game would draw another Pokémon; export the film again (a form is drawn as its base species, '
+                    'a Pokémon Sky lacks as a stand-in)')
 
 
 def set_species(rom, config, region, actor_id, species):
@@ -393,6 +410,7 @@ def main():
         for lost in dungeon.put(rom, config, dump):
             print(f'  lost: {lost}')
         boss = [scene for text in dungeon.boss_scenes(dump, *boss_place(scenes)) for scene in scenes_of(text)]
+    check_species(rom, scenes + boss)
     if extra:
         for name, species in more_actors(rom, config, scenes + boss).items():
             print(f'ACTOR_{name}: species {species} (a new actor)')

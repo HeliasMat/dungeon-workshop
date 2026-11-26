@@ -122,6 +122,10 @@ impl Other {
 pub const OTHERS: &[Other] = &[
     syntax("Structure", "if", "if test ... else ... end").ds_direct("if ( $LOCALn … ) { }: a film's variables are the scene's four local ones"),
     syntax("Speech", "(line)", "who (face): text").ds_direct("message_SetFace(ACTOR, FACE_…, FACE_POS_STANDARD) (a face the species lacks: its normal one; none: message_SetActor, its name alone), message_Talk, message_Close"),
+    syntax("Speech", "(bubble)", "who (bubble[, face]): text").ds_close(
+        "a line of Sky's box, its face as the brackets say, closing by itself after the bubble's time (message_SetWaitMode)",
+        "a box, not a bubble: one at a time, at the bottom of the screen, never two side by side",
+    ),
     recipe("Speech", "explain", "who explain").ds_direct("ExecuteCommon(CORO_EXPLANATION_FUNC_SERIES), Sky's own"),
     recipe("Speech", "whisper", "who whisper other").ds_close("its words: walks over, an emote; no smaller text", "no smaller text"),
     recipe("Body", "cower", "who cower [from other]").ds_close("its words: cringe, pain looped, an emote", "an emote and its pain looped"),
@@ -130,7 +134,7 @@ pub const OTHERS: &[Other] = &[
     recipe("Body", "cheer", "who cheer").ds_direct("its words: hops, pose"),
     recipe("Body", "shiver", "who shiver").ds_close("its words: its pain animation looped (Sky has no shiver), sweat", "no shiver: its pain animation looped"),
     recipe("Body", "stretch", "who stretch").ds_direct("its words: two poses (look up, deep breath), each the group of that species' own sprite"),
-    recipe("Body", "celebrate", "who celebrate").ds_direct("its words: a spin, happy hops, its proud pose"),
+    recipe("Body", "celebrate", "who celebrate").ds_close("its words: a hop for the spin (Sky's table plays no Rotate), happy hops, its proud pose", "no spin: a hop instead"),
     recipe("Body", "tug", "who tug other").ds_close("its words: he walks back, the other runs after him (no pull)", "the other runs after him: no one is pulled"),
     recipe("Body", "tickle", "who tickle other").ds_direct("its words: an animation, the laughing effect, hops"),
     recipe("Body", "chomp", "who chomp other").ds_direct("its words: a head animation, the other's pain, an effect"),

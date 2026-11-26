@@ -32,11 +32,13 @@ use ::film::ds::{Export, export_of};
 use ::film::tables::{Tables, game_file};
 use ::film::{Written, vocabulary};
 
-use engine::{Beat, FlowBeat};
+use engine::{Beat, FlowBeat, Who};
 
 mod dungeon;
 mod map;
 mod sky;
+#[cfg(test)]
+mod tests;
 mod writer;
 
 pub use dungeon::dungeon;
@@ -100,6 +102,17 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
         let words = read.values.iter().flat_map(|value| value.words.iter().cloned()).collect();
         writer.words.insert(*number as i32, words);
     }
+    // (The film's names of its Pokémon, and the faces of its lines said in bubbles.)
+    for (code, name) in &written.names {
+        if let Some(who) = Who::parse(code) {
+            writer.film_names.entry(who).or_insert_with(|| name.clone());
+        }
+    }
+    for (at, line) in film.text.lines().enumerate() {
+        if let Some(face) = bubble_face(line) {
+            writer.bubble_faces.insert(at as i32 + 1, face);
+        }
+    }
     // The typed beats the engine plays, each after the line it is of.
     let mut number = 0;
     for scene in written.events.iter().flat_map(|event| &event.scenes) {
@@ -129,6 +142,9 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
     for told in &writer.told {
         tell(format!("  {told}"));
     }
+    for ((species, asked, shown), lines) in &writer.instead_poses {
+        tell(format!("  {species}'s Sky sprite has no {asked}: {shown} instead on DS ({})", on_lines(lines)));
+    }
     if let Some(folder) = out.parent() {
         let _ = std::fs::create_dir_all(folder);
     }
@@ -140,6 +156,31 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
     }
     std::fs::write(out, text).map_err(|error| format!("{}: {error}", out.display()))?;
     Ok(Exported { actors: writer.actors.len(), place: writer.level.clone() })
+}
+
+/// The face a line said in a bubble is given by its brackets (`pichu
+/// (bubble, joyous): …`): none if it is not said in a bubble, its normal
+/// one if they give none.
+fn bubble_face(line: &str) -> Option<u16> {
+    let (head, _) = line.trim().split_once(':')?;
+    let brackets = head.trim_end().strip_suffix(')')?.split_once('(')?.1;
+    let words: Vec<String> = brackets.split(',').map(::film::words::plain).collect();
+    if !words.iter().any(|word| word == "bubble" || word == "top") {
+        return None;
+    }
+    let face = words.iter().find_map(|word| ::film::words::of(&::film::words::FACES, word)).unwrap_or("normal");
+    scenes::vocabulary::POKEMON.face(face).or(Some(0))
+}
+
+/// Lines told by their numbers: `line 4`, `lines 4, 9 and 12`.
+fn on_lines(lines: &[i32]) -> String {
+    let mut lines = lines.to_vec();
+    lines.dedup();
+    match lines.as_slice() {
+        [one] => format!("line {one}"),
+        [rest @ .., last] => format!("lines {} and {last}", rest.iter().map(i32::to_string).collect::<Vec<_>>().join(", ")),
+        [] => String::new(),
+    }
 }
 
 /// Each decor the export's scenes are in (`LEVEL_DECOR_<n>`), written as a

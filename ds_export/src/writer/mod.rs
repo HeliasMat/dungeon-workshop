@@ -17,6 +17,8 @@ mod scene;
 mod screen;
 mod sound;
 mod talk;
+#[cfg(test)]
+mod tests_ds;
 mod view;
 
 pub(crate) use fight::fights_played;
@@ -25,6 +27,8 @@ use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 
 use engine::{Beat, Cam, Course, Direction, FlowBeat, Formation, Num, Point, SpeechBeat, Spot, Who};
+
+use ::film::ds::{Drawn, STAND_IN, drawn_on_ds};
 
 use crate::sky::{FREE_ACTORS, Game, HIDDEN, animation, direction, own_group, speed, tiles};
 use fight::Played;
@@ -136,6 +140,14 @@ pub(crate) struct Writer<'a> {
     /// The film's numbers as last written (`{value}` in a line), and when
     /// lines beside it play (`at`), by name.
     values: HashMap<String, f64>,
+    /// The poses a species' Sky sprite lacks, the one shown instead, by
+    /// the lines they are on: told once each.
+    pub(crate) instead_poses: BTreeMap<(String, String, &'static str), Vec<i32>>,
+    /// The film's own names of its Pokémon, to tell who is drawn as whom.
+    pub(crate) film_names: HashMap<Who, String>,
+    /// The face of each line said in a bubble, by its line (the bubble's
+    /// beat has none: read from the line's brackets).
+    pub(crate) bubble_faces: HashMap<i32, u16>,
 }
 
 /// A frame of so many at most is of a few: they are never left out.
@@ -251,6 +263,9 @@ impl<'a> Writer<'a> {
             passages: HashMap::new(),
             passage: None,
             values: HashMap::new(),
+            instead_poses: BTreeMap::new(),
+            film_names: HashMap::new(),
+            bubble_faces: HashMap::new(),
         }
     }
 
@@ -391,14 +406,18 @@ impl<'a> Writer<'a> {
                 let (name, kind) = self.game.actors.get(usize::from(number))?.clone();
                 (name, None, kind)
             }
-            Who::Monster(species) => {
+            Who::Monster(species) if self.drawn(who, species) == Drawn::Own => {
                 let own = self.game.actors.iter().find(|(name, of)| *of == species && name.starts_with("NPC_") && !name.starts_with("NPC_TEST"));
                 match own {
                     Some((name, _)) => (name.clone(), None, species),
                     None => (free(&self.cast)?, Some(species), species),
                 }
             }
-            Who::Another { species, .. } => (free(&self.cast)?, Some(species), species),
+            // (A species the ROM has no sprite for: its base, or the stand-in, on a free actor of its own.)
+            Who::Monster(species) | Who::Another { species, .. } => {
+                let shown = self.drawn(who, species).species(species);
+                (free(&self.cast)?, Some(shown), shown)
+            }
             _ => return None,
         };
         self.cast.insert(who, (name.clone(), species, kind));
@@ -406,6 +425,35 @@ impl<'a> Writer<'a> {
         let hidden = self.started;
         self.actors.insert(who, Actor { name: name.clone(), species, kind, first: None, hidden, layer: 0 });
         Some(format!("ACTOR_{name}"))
+    }
+
+    /// How that one's species is drawn on the DS (`film::ds::drawn_on_ds`),
+    /// told the first time when it isn't itself: never another Pokémon by
+    /// chance, never in silence.
+    fn drawn(&mut self, who: Who, species: u16) -> Drawn {
+        let drawn = drawn_on_ds(&self.game.data, species);
+        if drawn != Drawn::Own {
+            let name = self.film_names.get(&who).cloned().unwrap_or_else(|| self.game.name(species));
+            let told = match drawn {
+                Drawn::Base(base) => format!(
+                    "{name} (species {species}, a form SpriteCollab adds): drawn as {}, its base species, on DS (the ROM has no sprite of its own for it yet)",
+                    self.game.name(base)
+                ),
+                _ => format!(
+                    "{name} (species {species}, a Pokémon Sky doesn't have): drawn as a stand-in, {} “?”, on DS, its name said in its lines (the ROM has no sprite for it yet)",
+                    self.game.name(STAND_IN)
+                ),
+            };
+            if !self.told.contains(&told) {
+                self.told.push(told);
+            }
+        }
+        drawn
+    }
+
+    /// Whether that one is drawn as the stand-in (no portrait of its own).
+    fn stand_in(&self, who: Who) -> bool {
+        matches!(who, Who::Monster(species) | Who::Another { species, .. } if drawn_on_ds(&self.game.data, species) == Drawn::StandIn)
     }
 
     fn who(&mut self, number: i32, who: Who) -> Option<String> {

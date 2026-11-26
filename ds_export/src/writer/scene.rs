@@ -345,6 +345,9 @@ impl Writer<'_> {
         next.values = std::mem::take(&mut self.values);
         next.fights = std::mem::take(&mut self.fights);
         next.passages = std::mem::take(&mut self.passages);
+        next.instead_poses = std::mem::take(&mut self.instead_poses);
+        next.film_names = std::mem::take(&mut self.film_names);
+        next.bubble_faces = std::mem::take(&mut self.bubble_faces);
         *self = next;
     }
 
@@ -400,25 +403,54 @@ impl Writer<'_> {
             let count = start.len() as f32;
             let at: Vec<(f32, f32)> = start.iter().map(|who| first(&self.actors[who])).collect();
             let centre = (at.iter().map(|one| one.0).sum::<f32>() / count, at.iter().map(|one| one.1).sum::<f32>() / count);
-            let mut idle: Vec<(f32, Who)> = start
+            // What each does in the scene: idle (no line names it), acting
+            // (an emote, a pose, a turn), moving, speaking (or framed among
+            // a few): the least first, then the farthest from the crowd's middle.
+            let rank = |who: &Who| -> u8 {
+                let token = format!("ACTOR_{}", self.actors[who].name);
+                let speaks = |line: &String| (line.contains("message_SetFace(") || line.contains("message_SetActor(")) && names(line, &token);
+                let moves = |line: &String| {
+                    names(line, &token) && ["MovePosition", "SlidePosition", "Turn2Direction", "ExecuteCommon", "MoveHeight"].iter().any(|op| line.contains(op))
+                };
+                if self.framed.contains(who) || lines.iter().any(speaks) {
+                    3
+                } else if lines.iter().any(moves) {
+                    2
+                } else if spans[who].2 {
+                    1
+                } else {
+                    0
+                }
+            };
+            let mut ranked: Vec<(u8, f32, Who)> = start
                 .iter()
-                .filter(|who| !spans[*who].2 && !self.framed.contains(who))
                 .map(|who| {
                     let (x, y) = first(&self.actors[who]);
-                    ((x - centre.0).powi(2) + (y - centre.1).powi(2), *who)
+                    (rank(who), (x - centre.0).powi(2) + (y - centre.1).powi(2), *who)
                 })
                 .collect();
-            idle.sort_by(|a, b| b.0.total_cmp(&a.0));
-            dropped = idle.into_iter().take(start.len() - AT_ONCE).map(|(_, who)| who).collect();
-            let names: Vec<String> = dropped.iter().map(|who| self.game.name(self.actors[who].kind)).collect();
+            ranked.sort_by(|a, b| a.0.cmp(&b.0).then(b.1.total_cmp(&a.1)));
+            // (Never one who speaks or is framed: those the game can't show are told.)
+            let leaving: Vec<(u8, Who)> =
+                ranked.iter().filter(|(rank, ..)| *rank < 3).take(start.len() - AT_ONCE).map(|(rank, _, who)| (*rank, *who)).collect();
+            dropped = leaving.iter().map(|(_, who)| *who).collect();
+            let named = |who: &Who| self.film_names.get(who).cloned().unwrap_or_else(|| self.game.name(self.actors[who].kind));
+            let of_rank = |wanted: u8| -> Vec<String> { leaving.iter().filter(|(rank, _)| *rank == wanted).map(|(_, who)| named(who)).collect() };
+            let mut parts = Vec::new();
+            for (rank, what) in [(0, "idle"), (1, "only acting where they stand"), (2, "moving, never speaking")] {
+                let names = of_rank(rank);
+                if !names.is_empty() {
+                    parts.push(format!("{} ({what})", names.join(", ")));
+                }
+            }
             self.told.push(format!(
-                "{level}: {} Pokémon from the start, Sky shows {AT_ONCE} at once: left out {} (idle in the crowd, the farthest from its middle)",
+                "{level}: {} Pokémon from the start, Sky shows {AT_ONCE} at once: left out {}, the farthest from the crowd's middle first; their lines left out with them",
                 start.len(),
-                if names.is_empty() { "none".to_string() } else { names.join(", ") }
+                if parts.is_empty() { "none".to_string() } else { parts.join("; ") }
             ));
             if start.len() - dropped.len() > AT_ONCE {
                 self.told.push(format!(
-                    "{level}: still {} too many, each speaking, acting or framed: the game won't show the last ones of the layout",
+                    "{level}: still {} too many, each speaking or framed: the game won't show the last ones of the layout",
                     start.len() - dropped.len() - AT_ONCE
                 ));
             }
@@ -468,8 +500,15 @@ impl Writer<'_> {
                 lines.insert(line + n, format!("{indent}{text}"));
             }
         }
+        // (Those left out, their lines with them: no order to one the game hasn't loaded.)
         for who in dropped.iter().chain(&left_out) {
-            self.actors.remove(who);
+            if let Some(actor) = self.actors.remove(who) {
+                let token = format!("ACTOR_{}", actor.name);
+                lines.retain(|line| !names(line, &token));
+                for parts in &mut self.besides {
+                    parts.retain(|part| part.actor != token);
+                }
+            }
         }
         self.body = lines.into_iter().map(|line| line + "\n").collect();
     }

@@ -5,7 +5,7 @@ use engine::{AnimId, Beat, BodyBeat, Direction, EmoteId, MoveId, Play, Pose, Scr
 
 use super::Writer;
 use super::scene::Part;
-use crate::sky::{EFFECTS, animation, move_effect, own_named, speed};
+use crate::sky::{EFFECTS, animation, move_effect, own_named, pose_on_ds, speed};
 
 impl Writer<'_> {
     /// A body beat of what someone does: an animation, an effect, a jump, a move.
@@ -75,7 +75,7 @@ impl Writer<'_> {
     }
 
     /// An emote or an effect over someone, shown a while.
-    fn effect(&mut self, number: i32, who: Who, id: EmoteId) {
+    pub(super) fn effect(&mut self, number: i32, who: Who, id: EmoteId) {
         let Some(actor) = self.who(number, who) else { return };
         let effect = EFFECTS.iter().find(|(of, _)| *of == id.0).map_or(id.0.to_string(), |(_, name)| name.to_string());
         self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
@@ -328,10 +328,15 @@ impl Writer<'_> {
     fn animate(&mut self, number: i32, who: &Who, anim: &AnimId, play: &Play) {
         let Some(actor) = self.who(number, *who) else { return };
         let looped = matches!(play, Play::Loop);
-        let Some(set) = self.set(*who, anim.0, looped) else {
-            self.notes.push(format!("line {number}: the animation {} (none of this sprite's shows it)", anim.0));
-            return;
-        };
+        // (A pose its sprite lacks: the nearest every sprite has, told by species.)
+        let kind = self.actors.get(&self.became.get(who).copied().unwrap_or(*who)).map_or(0, |one| one.kind);
+        let Some(pose) = pose_on_ds(kind, anim.0, looped) else { return };
+        if let Some(shown) = pose.instead {
+            let asked = ::film::ds::group_name(anim.0);
+            let asked = if asked.is_empty() { anim.0.to_string() } else { asked.to_string() };
+            self.instead_poses.entry((self.game.name(kind), asked, shown)).or_default().push(number);
+        }
+        let set = pose.set;
         match play {
             Play::Times(times) => {
                 for _ in 1..*times {
