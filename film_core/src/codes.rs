@@ -38,6 +38,12 @@ pub const DS_HERO: &str = "E-DS-HERO";
 /// In a film `for ds`: a zoom, or a frame wider than the screen, where the
 /// view would step back: Sky has no zoom.
 pub const DS_ZOOM: &str = "R-DS-ZOOM";
+/// In a film `for ds`: a Pokémon or a form the ROM has no sprite for (one
+/// SpriteCollab adds): drawn as its base species, or as a stand-in.
+pub const DS_SPECIES: &str = "R-DS-SPECIES";
+/// In a film `for ds`: what the export leaves out, the DS drawing nothing
+/// of it yet: an item, an engine's command with no DS operation.
+pub const DS_LEFT: &str = "R-DS-LEFT";
 
 /// What the words of a film say, with no code of their own yet, as the
 /// language's service tells it (`crate::service::diagnostics`).
@@ -61,6 +67,8 @@ pub const ALL: &[(&str, &str)] = &[
     (DS_PLACE, "in a film for ds: a place that is neither a map of Explorers of Sky's nor a decor of yours"),
     (DS_HERO, "in a film for ds: the hero or the partner, before the player chose them"),
     (DS_ZOOM, "in a film for ds: a zoom, or a frame wider than the screen: Sky has no zoom"),
+    (DS_SPECIES, "in a film for ds: a Pokémon or form the ROM has no sprite for: drawn as its base species or a stand-in"),
+    (DS_LEFT, "in a film for ds: what the export leaves out: an item (not drawn yet), an engine's command with no DS operation"),
 ];
 
 #[cfg(test)]

@@ -5,10 +5,10 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use engine::{Beat, BodyBeat, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Point, Scene, ScreenBeat, Spot, ViewBeat, Who};
+use engine::{Beat, BodyBeat, Course, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Play, Point, Role, Scene, ScreenBeat, SpeechBeat, Spot, ViewBeat, Who};
 
 use crate::codes;
-use crate::ds::{AT_ONCE, DECOR_LOSS, Export, Mode};
+use crate::ds::{AT_ONCE, DECOR_LOSS, Drawn, Export, Mode, drawn_on_ds, group_name, pose_on_ds};
 use crate::film::Film;
 
 /// What the DS can't play of the film, added to its problems.
@@ -19,11 +19,37 @@ pub(crate) fn tell(film: &mut Film, mode: Mode, scenes: &[Scene]) {
     if mode.boot {
         heroes(film, &lines);
     }
+    species(film, &lines);
+    let mut poses_told = BTreeMap::new();
     for scene in scenes {
         place(film, scene, &lines);
         at_once(film, scene);
         view(film, scene, &lines);
+        items(film, scene, &lines);
+        poses(film, scene, &mut poses_told);
     }
+    for ((who, asked, shown), numbers) in poses_told {
+        let message = format!("{who}'s Sky sprite has no {asked}: {shown} instead on DS{}", more_lines(numbers.len()));
+        let bytes = word_at(&lines, numbers[0], &who);
+        film.problems.push(Diagnostic::at(numbers[0], message).as_remark().on(bytes).coded(codes::DS_LOSS));
+    }
+}
+
+/// ` (and on 2 more lines)`, after what is told of the first of so many.
+fn more_lines(count: usize) -> String {
+    match count.saturating_sub(1) {
+        0 => String::new(),
+        1 => " (and on 1 more line)".to_string(),
+        many => format!(" (and on {many} more lines)"),
+    }
+}
+
+/// Whether a line is said in a bubble (`pichu (bubble, happy): …`, or
+/// over another, `(top)`): the DS says it in its box.
+fn in_a_bubble(line: &str) -> bool {
+    let Some((head, _)) = line.split_once(':') else { return false };
+    let Some(brackets) = head.trim_end().strip_suffix(')').and_then(|head| head.split_once('(')).map(|(_, inside)| inside) else { return false };
+    brackets.split(',').map(crate::words::plain).any(|word| word == "bubble" || word == "top")
 }
 
 /// Each line of the text, where it starts.
@@ -64,10 +90,17 @@ fn word_of(film: &Film, number: usize, line: &str) -> Option<String> {
 /// exports with less (`R-DS-ZOOM` for a zoom).
 fn words(film: &mut Film, lines: &[(usize, &str)]) {
     let mut losses: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    // (The film's own words, `define greet`: their lines are its words'.)
+    let source = film.source.clone();
+    let defined: Vec<&str> = source.lines().filter_map(|line| line.trim().strip_prefix("define ")?.split_whitespace().next()).collect();
     for (at, (_, line)) in lines.iter().enumerate() {
         let number = at + 1;
         let trimmed = line.trim_start();
         if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if in_a_bubble(trimmed) {
+            losses.entry(BUBBLE_LINE.to_string()).or_default().push(number);
             continue;
         }
         let Some(word) = word_of(film, number, trimmed) else { continue };
@@ -79,21 +112,133 @@ fn words(film: &mut Film, lines: &[(usize, &str)]) {
             }
             Some(Export::Direct) => {}
             Some(Export::Close) => losses.entry(word).or_default().push(number),
-            // (Not a word of the vocabulary: an engine's command, or a recipe of the film's own, checked by its words.)
-            None => {}
+            // (A recipe of the film's own: checked by its words.)
+            None if defined.contains(&word.as_str()) => {}
+            // (Not a word of the vocabulary: an engine's command, which the export leaves out.)
+            None => {
+                let what = if crate::words::engine_word(&word) { "an engine's command" } else { "not a word of the vocabulary" };
+                let message = format!("“{word}”, {what}: the DS export has nothing for it and leaves it out");
+                film.problems.push(Diagnostic::at(number, message).as_remark().on(bytes).coded(codes::DS_LEFT));
+            }
             _ => film.problems.push(Diagnostic::at(number, film.lexicon.ds_refused(&word)).on(bytes).coded(codes::DS_WORD)),
         }
     }
     for (word, numbers) in losses {
-        let more = match numbers.len() - 1 {
-            0 => String::new(),
-            1 => " (and on 1 more line)".to_string(),
-            many => format!(" (and on {many} more lines)"),
+        let more = more_lines(numbers.len());
+        let lost = film.lexicon.on_ds(&word).and_then(|ds| ds.lost).unwrap_or("less than the film shows");
+        let message = if word == BUBBLE_LINE {
+            format!("a line said in a bubble exports to DS as a line of Sky's box, closing by itself: {lost}{more}")
+        } else {
+            format!("“{word}” exports to DS with a loss: {lost}{more}")
         };
-        let message =
-            format!("“{word}” exports to DS with a loss: {}{more}", film.lexicon.on_ds(&word).and_then(|ds| ds.lost).unwrap_or("less than the film shows"));
-        let bytes = word_at(lines, numbers[0], &word);
+        let bytes =
+            if word == BUBBLE_LINE { word_at(lines, numbers[0], "bubble").or(word_at(lines, numbers[0], "top")) } else { word_at(lines, numbers[0], &word) };
         film.problems.push(Diagnostic::at(numbers[0], message).as_remark().on(bytes).coded(codes::DS_LOSS));
+    }
+}
+
+/// The vocabulary's entry of a line said in a bubble (`film_core::vocabulary::OTHERS`).
+const BUBBLE_LINE: &str = "(bubble)";
+
+/// `R-DS-SPECIES`: a Pokémon or a form the ROM has no sprite for (one
+/// SpriteCollab adds, numbered past Sky's): drawn as its base species, or
+/// as a stand-in, until its sprites are put in the ROM. Told on the first
+/// line that names it.
+fn species(film: &mut Film, lines: &[(usize, &str)]) {
+    let mut actors: Vec<(String, String)> = film.actors.iter().map(|(name, code)| (name.clone(), code.clone())).collect();
+    actors.sort();
+    for (name, code) in actors {
+        let Some(Who::Monster(species) | Who::Another { species, .. }) = Who::parse(&code) else { continue };
+        let drawn = drawn_on_ds(&film.tables.data, species);
+        let shown = match drawn {
+            Drawn::Own => continue,
+            Drawn::Base(base) => format!("a form SpriteCollab adds: drawn as {}, its base species", monster_name(film, base)),
+            Drawn::StandIn => {
+                format!("a Pokémon Sky doesn't have: drawn as a stand-in, {} “?”, its name said in its lines", monster_name(film, crate::ds::STAND_IN))
+            }
+        };
+        let first = (1..=lines.len()).find_map(|number| {
+            let trimmed = lines[number - 1].1.trim_start();
+            (!trimmed.starts_with('#')).then(|| word_at(lines, number, &name).map(|bytes| (number, bytes))).flatten()
+        });
+        let Some((number, bytes)) = first else { continue };
+        let message = format!("“{name}” (species {species}) on DS: {shown}, the ROM having no sprite of its own for it yet");
+        film.problems.push(Diagnostic::at(number, message).as_remark().on(Some(bytes)).coded(codes::DS_SPECIES));
+    }
+}
+
+/// A species' name, as the game's table has it.
+fn monster_name(film: &Film, species: u16) -> String {
+    let code = species.to_string();
+    film.tables.monsters.values().find(|named| named.0 == code).map_or_else(|| format!("species {species}"), |named| named.1.clone())
+}
+
+/// `R-DS-LEFT`: an item (`put object apple`, a held one, one thrown, a
+/// picture of the film's own) on a line: Sky's scenes draw no items, the
+/// export leaves it out. Not where the word itself is told (`hold`, `give`:
+/// `E-DS-WORD`).
+fn items(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
+    let mut names: HashMap<Who, String> = HashMap::new();
+    for beat in &scene.beats {
+        if let Beat::Body(BodyBeat::ThingName { who, name }) = beat {
+            names.insert(*who, name.clone());
+        }
+    }
+    let mut number = 0;
+    let mut told: Vec<usize> = Vec::new();
+    for beat in &scene.beats {
+        if let Beat::Flow(FlowBeat::Line { number: line, .. }) = beat {
+            number = usize::try_from(*line).unwrap_or(0);
+        }
+        if number == 0 || told.contains(&number) {
+            continue;
+        }
+        let named: Vec<Who> = [Role::Comes, Role::Acts, Role::Named].into_iter().flat_map(|role| beat.naming(role)).collect();
+        let Some(item) = named.into_iter().find(|who| matches!(who, Who::Item { .. } | Who::Drawn { .. })) else { continue };
+        let word = film.read_as.get(&number).map(|read| read.word.clone());
+        if word.as_deref().is_some_and(|word| !film.lexicon.export_of(word).is_none_or(Export::exports)) {
+            continue;
+        }
+        told.push(number);
+        let what = names.get(&item).map_or_else(
+            || if matches!(item, Who::Drawn { .. }) { "a picture of the film's own".to_string() } else { "an item".to_string() },
+            |name| format!("“{name}”"),
+        );
+        let message = format!("{what}: Sky's scenes draw no items yet, the DS export leaves it out (and what is done with it)");
+        let bytes = word.as_deref().and_then(|word| word_at(lines, number, word));
+        film.problems.push(Diagnostic::at(number, message).as_remark().on(bytes).coded(codes::DS_LEFT));
+    }
+}
+
+/// `R-DS-LOSS`: a pose a species' Sky sprite lacks (`pikachu pose nod` on
+/// a sprite with no Nod): the nearest every sprite has instead, as the
+/// export plays it; told once a Pokémon and pose.
+fn poses(film: &Film, scene: &Scene, told: &mut BTreeMap<(String, &'static str, &'static str), Vec<usize>>) {
+    let names: HashMap<&String, &String> = film.actors.iter().map(|(name, code)| (code, name)).collect();
+    let mut number = 0;
+    for beat in &scene.beats {
+        if let Beat::Flow(FlowBeat::Line { number: line, .. }) = beat {
+            number = usize::try_from(*line).unwrap_or(0);
+        }
+        // (Hops are Sky's own jumps.)
+        let Beat::Body(BodyBeat::Anim { who, anim, play }) = beat else { continue };
+        let (Some(species), true) = (
+            match who {
+                Who::Monster(species) | Who::Another { species, .. } => Some(*species),
+                _ => None,
+            },
+            number > 0 && anim.0 != 10,
+        ) else {
+            continue;
+        };
+        let species = drawn_on_ds(&film.tables.data, species).species(species);
+        let Some(shown) = pose_on_ds(&film.tables.data, species, anim.0, matches!(play, Play::Loop)).and_then(|pose| pose.instead) else { continue };
+        let Some(name) = names.get(&who.to_string()) else { continue };
+        let asked = group_name(anim.0);
+        let lines = told.entry(((*name).clone(), asked, shown)).or_default();
+        if !lines.contains(&number) {
+            lines.push(number);
+        }
     }
 }
 
@@ -198,8 +343,30 @@ fn line_words(film: &Film, scene: &Scene) -> Vec<Option<String>> {
         .collect()
 }
 
-/// One of the scene: its first beat, its last, whether that one hides it, whether it acts.
-type Seen = (usize, usize, bool, bool);
+/// One of the scene: its first beat, its last, whether that one hides it,
+/// whether it acts, moves, speaks (or is framed among a few).
+#[derive(Clone, Copy)]
+struct Seen {
+    first: usize,
+    last: usize,
+    hides: bool,
+    acts: bool,
+    moves: bool,
+    speaks: bool,
+}
+
+impl Seen {
+    /// What the export keeps first: who speaks, then who moves, then who acts.
+    fn rank(&self) -> u8 {
+        if self.speaks {
+            3
+        } else if self.moves {
+            2
+        } else {
+            u8::from(self.acts)
+        }
+    }
+}
 
 /// A frame of more than that many is a crowd's, not of those it shows.
 const FEW: usize = 3;
@@ -247,18 +414,23 @@ fn at_once(film: &mut Film, scene: &Scene) {
         let crowd_framed = matches!(beat, Beat::View(ViewBeat::Frame { who, .. }) if who.len() > FEW);
         let setting_line = matches!(words[at].as_deref(), None | Some("crowd" | "put" | "scene"));
         let setting = !matches!(beat, Beat::Speech(_)) && (placed || crowd_framed || setting_line);
+        let speaks = matches!(beat, Beat::Course(Course::Say { .. }) | Beat::Speech(SpeechBeat::Bubble { .. }))
+            || matches!(beat, Beat::View(ViewBeat::Frame { who, .. }) if who.len() <= FEW);
+        let moves = matches!(beat, Beat::Motion(_)) && !setting;
         for field in fields.iter().filter(|field| codes_of.contains_key(*field)) {
-            let one = seen.entry(field.clone()).or_insert((at, at, false, false));
-            one.1 = at;
-            one.2 = hides;
-            one.3 |= !setting;
+            let one = seen.entry(field.clone()).or_insert(Seen { first: at, last: at, hides: false, acts: false, moves: false, speaks: false });
+            one.last = at;
+            one.hides = hides;
+            one.acts |= !setting;
+            one.moves |= moves;
+            one.speaks |= speaks;
             if number > 0 {
                 named_on.entry(field.clone()).or_insert(number);
             }
         }
     }
     let end = scene.beats.len();
-    let span = |one: &Seen| (one.0, if one.2 { one.1 } else { end });
+    let span = |one: &Seen| (one.first, if one.hides { one.last } else { end });
     // The beat most are there at once.
     let (peak, most) = (0..end.max(1))
         .map(|at| (at, seen.values().filter(|one| (span(one).0..=span(one).1).contains(&at)).count()))
@@ -269,26 +441,31 @@ fn at_once(film: &mut Film, scene: &Scene) {
     }
     let mut there: Vec<(&String, &Seen)> = seen.iter().filter(|(_, one)| (span(one).0..=span(one).1).contains(&peak)).collect();
     // (In the order they come in, then of their names: `pidgey2` before `pidgey10`.)
-    there.sort_by_key(|(code, one)| (one.0, codes_of[*code].len(), codes_of[*code].clone()));
-    let idle: Vec<&str> = there.iter().filter(|(_, one)| !one.3).map(|(code, _)| codes_of[*code].as_str()).collect();
+    there.sort_by_key(|(code, one)| (one.first, codes_of[*code].len(), codes_of[*code].clone()));
     let over = most - AT_ONCE;
-    let left = over.min(idle.len());
     let mut message = format!("{most} Pokémon at once in this scene, Sky shows {AT_ONCE}");
-    if left > 0 {
-        let among = match idle.as_slice() {
-            [first, second, .., last] if idle.len() > 4 => format!("{first}, {second} … {last}"),
+    // (The idle first, then those only acting, then those moving; never one who speaks.)
+    let mut left = 0;
+    for (rank, what) in [(0, "idle"), (1, "only acting where they stand"), (2, "moving, never speaking")] {
+        let these: Vec<&str> = there.iter().filter(|(_, one)| one.rank() == rank).map(|(code, _)| codes_of[*code].as_str()).collect();
+        let taken = (over - left).min(these.len());
+        if taken == 0 {
+            continue;
+        }
+        let among = match these.as_slice() {
+            [first, second, .., last] if these.len() > 4 => format!("{first}, {second} … {last}"),
             all => all.join(", "),
         };
         message.push_str(&format!(
-            ": the export leaves out {left} of the {} idle ones ({among}), those farthest from the crowd's middle as it stands",
-            idle.len()
+            "{} the export leaves out {taken} of the {} {what} ({among}), those farthest from the crowd's middle as it stands",
+            if left == 0 { ":" } else { ";" },
+            these.len()
         ));
+        left += taken;
     }
     if over > left {
-        message.push_str(&format!(
-            "; still {} too many, each speaking, acting or framed: the game won't show them. Let some leave first (“exit”, “vanish”)",
-            over - left
-        ));
+        message
+            .push_str(&format!("; still {} too many, each speaking or framed: the game won't show them. Let some leave first (“exit”, “vanish”)", over - left));
     }
     // (Told on the line that brought in the last of them.)
     let number = there.iter().filter_map(|(code, _)| named_on.get(*code).copied()).max().unwrap_or_else(|| first_line(scene));

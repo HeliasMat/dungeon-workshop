@@ -25,12 +25,12 @@ fn for_ds_is_read_and_written_back() {
 
 #[test]
 fn a_word_the_ds_lacks_is_wrong_with_its_fix() {
-    let film = "for ds\nscene: beach krabby pikachu\npikachu bubble Look!\n";
+    let film = "for ds\nscene: beach krabby pikachu\npikachu flip\n";
     let wrong = told(film, codes::DS_WORD);
     assert_eq!(wrong.len(), 1, "{:?}", coded(film));
-    assert!(wrong[0].contains("“bubble”") && wrong[0].contains("who: text"), "{wrong:?}");
+    assert!(wrong[0].contains("“flip”") && wrong[0].contains("“face” or “fall”"), "{wrong:?}");
     // (Not written for the DS: nothing said of it.)
-    assert!(told("scene: beach krabby pikachu\npikachu bubble Look!\n", codes::DS_WORD).is_empty());
+    assert!(told("scene: beach krabby pikachu\npikachu flip\n", codes::DS_WORD).is_empty());
 }
 
 #[test]
@@ -51,7 +51,7 @@ fn too_many_at_once_says_who_is_left_out() {
     let film = "for ds\nscene: beach krabby\ncrowd pidgey 25\nkrabby: So many.\n";
     let wrong = told(film, codes::DS_ACTORS);
     assert_eq!(wrong.len(), 1, "{:?}", coded(film));
-    assert!(wrong[0].contains("26 Pokémon at once") && wrong[0].contains("leaves out 5 of the 25 idle ones"), "{wrong:?}");
+    assert!(wrong[0].contains("26 Pokémon at once") && wrong[0].contains("leaves out 5 of the 25 idle"), "{wrong:?}");
     assert!(told("for ds\nscene: beach krabby\ncrowd pidgey 12\n", codes::DS_ACTORS).is_empty());
     assert!(told("scene: beach krabby\ncrowd pidgey 25\n", codes::DS_ACTORS).is_empty());
     // (Each scene counted alone: the bodies of every scene told at the start are no one there.)
@@ -92,4 +92,61 @@ fn a_zoom_or_a_wide_frame_would_step_back() {
     assert_eq!(told(wide, codes::DS_ZOOM).len(), 1, "{:?}", coded(wide));
     let near = "for ds\nscene: beach krabby pikachu\nkrabby put 300 200\npikachu put 340 200\nframe krabby pikachu\n";
     assert!(told(near, codes::DS_ZOOM).is_empty(), "{:?}", coded(near));
+}
+
+/// None idle: the export still makes room, leaving out those only acting,
+/// then those moving, never one who speaks; who, said.
+#[test]
+fn a_crowd_with_no_one_idle_leaves_out_who_acts_least() {
+    let names = "bulbasaur charmander charizard squirtle caterpie metapod butterfree weedle kakuna beedrill pidgey pidgeot rattata spearow ekans pikachu clefairy vulpix jigglypuff oddish diglett meowth poliwag abra";
+    let hops: Vec<String> = names.split(' ').skip(1).map(|name| format!("{name} hop")).collect();
+    let film = format!("for ds\nscene: beach {names}\n{}\nbulbasaur: So many.\n", hops.join("\n"));
+    let wrong = told(&film, codes::DS_ACTORS);
+    assert_eq!(wrong.len(), 1, "{:?}", coded(&film));
+    assert!(!wrong[0].contains("idle") && !wrong[0].contains("still"), "{wrong:?}");
+    assert!(wrong[0].contains("leaves out 3 of the 23 only acting") && !wrong[0].contains("bulbasaur"), "{wrong:?}");
+}
+
+/// A line said in a bubble: the DS's box, closing by itself (once a film).
+#[test]
+fn a_bubble_line_is_a_box_line_on_ds() {
+    let film = "for ds\nscene: beach krabby pikachu\npikachu (bubble, happy): Look!\nkrabby (bubble): Hm.\npikachu bubble Wow\n";
+    let lost = told(film, codes::DS_LOSS);
+    let line = lost.iter().find(|said| said.starts_with("a line said in a bubble")).expect("told");
+    assert!(line.contains("one at a time") && line.contains("1 more line"), "{lost:?}");
+    assert!(lost.iter().any(|said| said.starts_with("“bubble”")), "the word too: {lost:?}");
+    assert!(told(film, codes::DS_WORD).is_empty(), "{:?}", coded(film));
+}
+
+/// An engine's command the export has nothing for, an item put: left out, told.
+#[test]
+fn what_the_export_leaves_out_is_told() {
+    let film = "for ds\nscene: beach krabby pikachu\nput object apple 300 200\nkrabby shadow off\n";
+    let left = told(film, codes::DS_LEFT);
+    assert!(left.iter().any(|said| said.contains("“shadow”") && said.contains("leaves it out")), "{:?}", coded(film));
+    assert!(left.iter().any(|said| said.contains("draw no items")), "{:?}", coded(film));
+    assert!(told("scene: beach krabby pikachu\nkrabby shadow off\n", codes::DS_LEFT).is_empty());
+}
+
+/// A form SpriteCollab adds is drawn as its base species on DS: said where
+/// it is first named (where the data has the form).
+#[test]
+fn a_form_the_rom_lacks_is_told_as_its_base() {
+    let tables = crate::tests::tables();
+    if !tables.monsters.contains_key("pichu_spiky") {
+        return;
+    }
+    let film = "for ds\nscene: beach pichu_spiky\npichu_spiky: Mine!\n";
+    let drawn = told(film, codes::DS_SPECIES);
+    assert_eq!(drawn.len(), 1, "{:?}", coded(film));
+    assert!(drawn[0].contains("“pichu_spiky”") && drawn[0].contains("drawn as Pichu"), "{drawn:?}");
+    assert!(told("for ds\nscene: beach pichu\npichu: Mine!\n", codes::DS_SPECIES).is_empty());
+}
+
+/// A pose no sprite of Sky's plays: the nearest one instead, told once.
+#[test]
+fn a_pose_the_sprite_lacks_is_told_with_the_one_instead() {
+    let film = "for ds\nscene: beach pikachu\npikachu celebrate\npikachu celebrate\n";
+    let lost = told(film, codes::DS_LOSS);
+    assert!(lost.iter().any(|said| said.contains("has no Rotate: Hop instead") && said.contains("1 more line")), "{:?}", coded(film));
 }
