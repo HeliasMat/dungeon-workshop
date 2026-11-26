@@ -2,7 +2,8 @@
 //! in a small text file of their own, out of the project (`key = value`
 //! lines; `launch::LaunchOptions::settings` says where). The libretro core
 //! the Emulator space runs, the user's copy of the game a film is put in,
-//! armips. Never in the repository: these are the user's own paths.
+//! armips; whether the game-making spaces show. Never in the repository:
+//! these are the user's own.
 
 use std::path::{Path, PathBuf};
 
@@ -18,8 +19,27 @@ pub struct Settings {
 pub const CORE: &str = "libretro_core";
 pub const ROM: &str = "ds_rom";
 pub const ARMIPS: &str = "armips";
+/// `game_spaces = on|off`: the Game, Dungeon and Emulator spaces shown.
+pub const GAME_SPACES: &str = "game_spaces";
 
 impl Settings {
+    /// Whether the game-making spaces (Game, Dungeon, Emulator) show. Said
+    /// (`game_spaces`): as said. Not said: shown to one who already used
+    /// them (any setting written, all of them the game spaces': the
+    /// emulator's paths and keys; `has_games`: a game made), hidden from one
+    /// who comes new, the Workshop then opening on films and decors.
+    pub fn game_spaces(&self, has_games: bool) -> bool {
+        match self.get(GAME_SPACES) {
+            Some(said) => matches!(said.to_lowercase().as_str(), "on" | "yes" | "true" | "1"),
+            None => has_games || !self.lines.is_empty(),
+        }
+    }
+
+    /// The game-making spaces shown or hidden, and written out.
+    pub fn set_game_spaces(&mut self, on: bool) -> Result<(), String> {
+        self.set(GAME_SPACES, if on { "on" } else { "off" })
+    }
+
     /// Those of that file (none yet: empty).
     pub fn read(file: Option<PathBuf>) -> Settings {
         let text = file.as_deref().and_then(|file| std::fs::read_to_string(file).ok()).unwrap_or_default();
@@ -35,8 +55,12 @@ impl Settings {
         self.get(key).map(PathBuf::from)
     }
 
-    /// One set and written out.
+    /// One set and written out (over the file as it is now: what another part
+    /// of the Workshop wrote there since is kept).
     pub fn set(&mut self, key: &str, value: &str) -> Result<(), String> {
+        if let Some(text) = self.file.as_deref().and_then(|file| std::fs::read_to_string(file).ok()) {
+            self.lines = parse(&text);
+        }
         match self.lines.iter_mut().find(|(known, _)| known == key) {
             Some((_, old)) => *old = value.to_string(),
             None => self.lines.push((key.to_string(), value.to_string())),
@@ -89,6 +113,19 @@ mod tests {
         assert_eq!(again.get(CORE), Some("C:/cores/melonds_libretro.dll"));
         assert_eq!(again.path(ROM), Some(PathBuf::from("C:/games/sky.nds")));
         _ = std::fs::remove_file(file);
+    }
+
+    /// The game spaces: as said; not said, shown to one who used them already, hidden from one new.
+    #[test]
+    fn the_game_spaces_show_for_those_who_used_them() {
+        let read = |text: &str| Settings { file: None, lines: parse(text) };
+        assert!(!read("").game_spaces(false), "someone new: hidden");
+        assert!(read("").game_spaces(true), "a game made: shown");
+        assert!(read("ds_rom = C:/sky.nds\n").game_spaces(false), "the emulator set: shown");
+        assert!(!read("ds_rom = C:/sky.nds\ngame_spaces = off\n").game_spaces(true), "said: as said");
+        let mut settings = read("");
+        settings.set_game_spaces(true).unwrap();
+        assert!(settings.game_spaces(false));
     }
 
     #[test]
