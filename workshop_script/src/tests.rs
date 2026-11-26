@@ -223,3 +223,33 @@ fn an_asset_written_is_one_undo() {
     word.insert_at(7, "eevee");
     assert_eq!(word.text, "pikachu eevee:Hi", "a space before it, none before the colon");
 }
+
+/// The problems listed: those said alike folded into one with their lines, the errors first; the remarks only if
+/// listed; the list open when something is wrong, unless asked otherwise.
+#[test]
+fn problems_said_alike_are_one_line() {
+    use super::problems::{grouped, problems_shown};
+    let told = vec![
+        Diagnostic::at(9, "\"trackpath i109 54 catmull\": a duration without its unit, in frames; write 0.9s").as_remark(),
+        Diagnostic::at(3, "\"trackpath i2 66 lines\": a duration without its unit, in frames; write 1.1s").as_remark(),
+        Diagnostic::at(12, "unknown Pokémon “pikachou”"),
+        Diagnostic::at(5, "\"trackpath i3 30 bezier\": a duration without its unit, in frames; write 0.5s").as_remark(),
+        Diagnostic::at(7, "unknown Pokémon “pikachoo”"),
+        Diagnostic::at(4, "a line said is long").as_remark(),
+    ];
+    let groups = grouped(&told, true);
+    let said: Vec<(String, usize, Vec<usize>)> = groups.iter().map(|group| (group.said(), group.all.len(), group.lines.clone())).collect();
+    let said: Vec<(&str, usize, Vec<usize>)> = said.iter().map(|(words, count, lines)| (words.as_str(), *count, lines.clone())).collect();
+    assert_eq!(
+        said,
+        vec![
+            ("unknown Pokémon “…”", 2, vec![7, 12]),
+            ("a duration without its unit, in frames; write ns", 3, vec![3, 5, 9]),
+            ("a line said is long", 1, vec![4]),
+        ],
+        "errors first, then by their first line"
+    );
+    assert_eq!(grouped(&told, false).len(), 1, "the remarks not listed");
+    assert!(!problems_shown(None, 0) && problems_shown(None, 2), "open when something is wrong");
+    assert!(problems_shown(Some(true), 0) && !problems_shown(Some(false), 2), "as asked");
+}

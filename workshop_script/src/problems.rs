@@ -45,14 +45,218 @@ pub(super) fn problems_said(wrong: usize, remarked: usize) -> (Color32, String) 
     }
 }
 
+/// Problems said alike, as one line: the first of them, the lines they are on, all of them.
+pub(super) struct Group<'a> {
+    pub(super) first: &'a Diagnostic,
+    pub(super) lines: Vec<usize>,
+    pub(super) all: Vec<&'a Diagnostic>,
+}
+
+impl Group<'_> {
+    /// How the group is said: the problem's own words for one; for several, what they share (`shape`), without
+    /// the line it quotes first.
+    pub(super) fn said(&self) -> String {
+        if self.all.len() == 1 {
+            return self.first.message.clone();
+        }
+        let shape = shape(&self.first.message);
+        shape.strip_prefix("“…”: ").or_else(|| shape.strip_prefix("“…” ")).unwrap_or(&shape).to_string()
+    }
+}
+
+/// What a problem says, without what is its own: what it quotes (`"…"`, `“…”`) and its numbers, so that two
+/// alike on two lines say the same.
+pub(super) fn shape(message: &str) -> String {
+    let mut shape = String::new();
+    let mut quoted: Option<char> = None;
+    let mut letters = message.chars().peekable();
+    while let Some(letter) = letters.next() {
+        match (quoted, letter) {
+            (Some(end), _) if letter == end => {
+                quoted = None;
+                shape.push_str("…”");
+            }
+            (Some(_), _) => {}
+            (None, '"') => {
+                quoted = Some('"');
+                shape.push('“');
+            }
+            (None, '“') => {
+                quoted = Some('”');
+                shape.push('“');
+            }
+            (None, digit) if digit.is_ascii_digit() => {
+                while letters.peek().is_some_and(|next| next.is_ascii_digit() || *next == '.') {
+                    letters.next();
+                }
+                shape.push('n');
+            }
+            (None, other) => shape.push(other),
+        }
+    }
+    shape
+}
+
+/// The problems as they are listed: those said alike (by their `shape`, and their code) folded into one (the
+/// lines they are on kept), the errors first, then by their first line; the remarks only if they are listed.
+pub(super) fn grouped(told: &[Diagnostic], remarks: bool) -> Vec<Group<'_>> {
+    let mut groups: Vec<Group<'_>> = Vec::new();
+    for one in told.iter().filter(|one| remarks || one.is_error()) {
+        let line = one.span.start.line;
+        let alike = |group: &&mut Group<'_>| {
+            group.first.is_error() == one.is_error() && group.first.code == one.code && shape(&group.first.message) == shape(&one.message)
+        };
+        match groups.iter_mut().find(alike) {
+            Some(group) => {
+                if !group.lines.contains(&line) {
+                    group.lines.push(line);
+                }
+                group.all.push(one);
+            }
+            None => groups.push(Group { first: one, lines: vec![line], all: vec![one] }),
+        }
+    }
+    for group in &mut groups {
+        group.lines.sort_unstable();
+    }
+    groups.sort_by_key(|group| (!group.first.is_error(), group.lines.first().copied().unwrap_or(0)));
+    groups
+}
+
+/// Whether the problems under the text are open: as asked, else when something is wrong.
+pub(super) fn problems_shown(asked: Option<bool>, wrong: usize) -> bool {
+    asked.unwrap_or(wrong > 0)
+}
+
+/// What a click in the problems asks: a spot gone to, the text made so.
+#[derive(Default)]
+struct Picked {
+    go: Option<Spot>,
+    fix: Option<String>,
+}
+
+/// The problems listed, grouped (`grouped`): a click on one goes to its first
+/// line, on a line's number to that line; a fix of one, all of a group's at once.
+fn listed(ui: &mut egui::Ui, open: &crate::Script, remarks: bool, salt: impl std::hash::Hash) -> Picked {
+    let mut picked = Picked::default();
+    egui::ScrollArea::vertical().id_salt(salt).auto_shrink(false).show(ui, |ui| {
+        let groups = grouped(&open.told, remarks);
+        if groups.is_empty() {
+            ui.add_space(4.0);
+            let said = if open.told.is_empty() { "  Nothing to say." } else { "  No errors (the remarks are not listed)." };
+            ui.label(theme::text(said, theme::SMALL, theme::WEAK));
+        }
+        for group in groups {
+            ui.horizontal(|ui| {
+                ui.add_space(8.0);
+                let (dot, _) = ui.allocate_exact_size(vec2(10.0, 16.0), Sense::hover());
+                ui.painter().circle_filled(dot.center(), 3.5, severity_colour(group.first));
+                if group.all.len() > 1 {
+                    ui.label(theme::text(format!("{} ×", group.all.len()), theme::SMALL, theme::STRONG));
+                }
+                let lines = group.lines.iter().map(usize::to_string).collect::<Vec<_>>().join(", ");
+                let mut hover = format!("line {lines}");
+                if group.all.len() > 1 {
+                    hover.push_str(&format!("\nthe first: {}", group.first.message));
+                }
+                for note in &group.first.notes {
+                    hover.push_str(&format!("\n{note}"));
+                }
+                if ui.add(egui::Label::new(RichText::new(group.said()).color(theme::TEXT)).sense(Sense::click()).truncate()).on_hover_text(hover).clicked() {
+                    picked.go = Some(group.first.span.start);
+                }
+                for line in group.lines.iter().take(6) {
+                    if ui
+                        .add(egui::Button::new(theme::text(format!("{line}"), theme::SMALL, theme::FAINT)).frame(false))
+                        .on_hover_text("go to this line")
+                        .clicked()
+                    {
+                        picked.go = Some(Spot { line: *line, column: 1 });
+                    }
+                }
+                if group.lines.len() > 6 {
+                    ui.label(theme::text(format!("+{}", group.lines.len() - 6), theme::SMALL, theme::FAINT));
+                }
+                if group.all.len() == 1 {
+                    for remedy in group.first.fixes.iter().take(3) {
+                        if ui.small_button(&remedy.title).on_hover_text("fix it this way").clicked() {
+                            picked.fix = Some(film::service::applied(&open.text, &remedy.edits));
+                        }
+                    }
+                } else if let Some(remedy) = group.first.fixes.first()
+                    && group.all.iter().all(|one| !one.fixes.is_empty())
+                    && ui
+                        .small_button(format!("{} (all {})", remedy.title, group.all.len()))
+                        .on_hover_text("the first fix of each, where they do not overlap")
+                        .clicked()
+                {
+                    let all: Vec<Diagnostic> = group.all.iter().map(|one| (*one).clone()).collect();
+                    picked.fix = Some(film::service::applied(&open.text, &fixes_together(&all)));
+                }
+            });
+        }
+    });
+    picked
+}
+
+/// What was picked in the problems, done: the cursor there, the text fixed.
+fn picked_done(open: &mut crate::Script, picked: Picked) {
+    if let Some(spot) = picked.go {
+        let at = index_of(&open.text, spot);
+        open.jump = Some((at, at));
+    }
+    if let Some(made) = picked.fix {
+        open.change(made);
+    }
+}
+
+/// The Problems as a panel of their own (docked in the Film space): how many,
+/// Fix All, the remarks listed or not, the list grouped.
+pub fn problems_panel(ui: &mut egui::Ui, scripts: &mut crate::Scripts) {
+    let (wrong, remarked) = scripts.counts();
+    let Some(open) = &mut scripts.open else {
+        ui.label(theme::weak("No film open."));
+        return;
+    };
+    let mut fix_all = false;
+    ui.horizontal(|ui| {
+        let (colour, said) = problems_said(wrong, remarked);
+        ui.label(theme::text(format!("● {said}"), theme::SMALL, colour));
+        let looking = open.asked != open.told_for || open.changed.is_some();
+        if looking {
+            ui.label(theme::text("reading again…", theme::SMALL, theme::FAINT));
+        }
+        ui.checkbox(&mut scripts.remarks_listed, theme::text("remarks", theme::SMALL, theme::WEAK))
+            .on_hover_text("the remarks listed too, not only the errors");
+        let fixes = open.told.iter().filter(|told| !told.fixes.is_empty()).count();
+        if fixes > 0 {
+            fix_all =
+                ui.small_button(format!("Fix All ({fixes})")).on_hover_text("the first fix offered of each, if they do not get in each other's way").clicked();
+        }
+    });
+    ui.separator();
+    let path = open.path.clone();
+    let picked = listed(ui, open, scripts.remarks_listed, ("problems panel", path));
+    if fix_all {
+        let made = film::service::applied(&open.text, &fixes_together(&open.told));
+        open.change(made);
+    }
+    picked_done(open, picked);
+}
+
 impl Body<'_> {
-    /// The problems under the text: their head, and the list when it is open.
+    /// The problems under the text: their head, and the list when it is open
+    /// (nothing when they are a panel of their own).
     pub(super) fn problems(&mut self, ui: &mut egui::Ui, problems_rect: Rect, wrong: usize, remarked: usize) {
+        if problems_rect.height() <= 0.0 {
+            return;
+        }
         let mut panel = ui.new_child(egui::UiBuilder::new().max_rect(problems_rect));
         panel.painter().rect_filled(problems_rect, 0.0, theme::PANEL);
         self.problems_head(&mut panel, problems_rect, wrong, remarked);
-        if self.scripts.problems_open && !self.scripts.concentration {
-            self.problems_list(&mut panel);
+        if problems_shown(self.scripts.problems_open, wrong) && !self.scripts.concentration {
+            let picked = listed(&mut panel, self.open, self.scripts.remarks_listed, ("problems", self.path));
+            picked_done(self.open, picked);
         }
     }
 
@@ -60,13 +264,16 @@ impl Body<'_> {
     /// or not; a click elsewhere on it opens or closes the list.
     fn problems_head(&mut self, panel: &mut egui::Ui, problems_rect: Rect, wrong: usize, remarked: usize) {
         let Body { scripts, open, text_id, .. } = self;
+        let shown = problems_shown(scripts.problems_open, wrong);
         let (head, head_response) = panel.allocate_exact_size(vec2(problems_rect.width(), 24.0), Sense::click());
         let painter = panel.painter().clone();
         painter.rect_filled(head, 0.0, theme::TABS);
-        workshop_base::icons::chevron(&painter, pos2(head.min.x + 10.0, head.center().y), scripts.problems_open && !scripts.concentration, theme::TEXT);
+        workshop_base::icons::chevron(&painter, pos2(head.min.x + 10.0, head.center().y), shown && !scripts.concentration, theme::TEXT);
         painter.text(pos2(head.min.x + 20.0, head.center().y), egui::Align2::LEFT_CENTER, "PROBLEMS", FontId::proportional(theme::SMALL), theme::STRONG);
         let looking = open.asked != open.told_for || open.changed.is_some();
-        let counts = format!("{wrong} error(s) · {remarked} remark(s){}", if looking { " · reading again…" } else { "" });
+        let alike = grouped(&open.told, scripts.remarks_listed).len();
+        let folded = if alike < open.told.len() && scripts.remarks_listed { format!(" · {alike} kinds") } else { String::new() };
+        let counts = format!("{wrong} error(s) · {remarked} remark(s){folded}{}", if looking { " · reading again…" } else { "" });
         painter.text(
             pos2(head.min.x + 104.0, head.center().y),
             egui::Align2::LEFT_CENTER,
@@ -99,53 +306,8 @@ impl Body<'_> {
         painter.text(pos2(square.max.x + 6.0, toggle_at.center().y), egui::Align2::LEFT_CENTER, "remarks", FontId::proportional(theme::SMALL), theme::WEAK);
         if toggle.clicked() {
             scripts.remarks_listed = !scripts.remarks_listed;
-        } else if head_response.clicked() {
-            scripts.problems_open = !scripts.problems_open;
-        }
-    }
-
-    /// The problems listed (the errors first; the remarks if they are listed):
-    /// a click goes there, a fix of each made.
-    fn problems_list(&mut self, panel: &mut egui::Ui) {
-        let Body { scripts, open, path, .. } = self;
-        let mut fix: Option<String> = None;
-        let mut go: Option<Spot> = None;
-        egui::ScrollArea::vertical().id_salt(("problems", *path)).auto_shrink(false).show(panel, |ui| {
-            if open.told.is_empty() {
-                ui.add_space(4.0);
-                ui.label(theme::text("  Nothing to say.", theme::SMALL, theme::WEAK));
-            }
-            let listed = scripts.remarks_listed;
-            let mut sorted: Vec<&Diagnostic> = open.told.iter().filter(|told| listed || told.is_error()).collect();
-            sorted.sort_by_key(|told| (!told.is_error(), told.span.start.line));
-            for told in sorted {
-                ui.horizontal(|ui| {
-                    ui.add_space(8.0);
-                    let (dot, _) = ui.allocate_exact_size(vec2(10.0, 16.0), Sense::hover());
-                    ui.painter().circle_filled(dot.center(), 3.5, severity_colour(told));
-                    let said = format!("{}  ", told.message);
-                    if ui
-                        .add(egui::Label::new(RichText::new(said).color(theme::TEXT)).sense(Sense::click()).truncate())
-                        .on_hover_text(told.notes.join("\n"))
-                        .clicked()
-                    {
-                        go = Some(told.span.start);
-                    }
-                    ui.label(theme::text(format!("line {}", told.span.start.line), theme::SMALL, theme::FAINT));
-                    for remedy in told.fixes.iter().take(3) {
-                        if ui.small_button(&remedy.title).on_hover_text("fix it this way").clicked() {
-                            fix = Some(film::service::applied(&open.text, &remedy.edits));
-                        }
-                    }
-                });
-            }
-        });
-        if let Some(spot) = go {
-            let at = index_of(&open.text, spot);
-            open.jump = Some((at, at));
-        }
-        if let Some(made) = fix {
-            open.change(made);
+        } else if head_response.on_hover_text("open or close the list (View › Add Panel › Problems: a panel of their own)").clicked() {
+            scripts.problems_open = Some(!shown);
         }
     }
 

@@ -79,6 +79,7 @@ pub use assets::{asset_written, cast_of, lines_after, scene_of};
 pub use editor::script;
 pub(crate) use highlight::speaker;
 pub(crate) use knowledge::species_of;
+pub use problems::problems_panel;
 
 /// How long after a change it is written out, and looked at again.
 const WRITTEN_AFTER: Duration = Duration::from_millis(800);
@@ -294,7 +295,9 @@ pub struct Scripts {
     completion: Option<Completion>,
     hover: Option<(usize, Instant, Option<String>)>,
     renaming: Option<(Spot, String)>,
-    problems_open: bool,
+    /// The problems under the text open or closed, as asked (None: open when something is wrong); a panel of their own.
+    problems_open: Option<bool>,
+    pub problems_docked: bool,
     pub said: Option<String>,
     finding: Option<Finding>,
     going_to: Option<String>,
@@ -456,7 +459,8 @@ impl Scripts {
             completion: None,
             hover: None,
             renaming: None,
-            problems_open: true,
+            problems_open: None,
+            problems_docked: false,
             said: None,
             finding: None,
             going_to: None,
@@ -615,6 +619,35 @@ impl Scripts {
 }
 
 impl Scripts {
+    /// The film's last change undone (`redo`: made again), as Ctrl+Z in the text does it: Edit › Undo, its key
+    /// when the text does not have the keys. Whether there was one.
+    pub fn undo(&mut self, context: &egui::Context, redo: bool) -> bool {
+        let Some(open) = &mut self.open else { return false };
+        let id = egui::Id::new(("script", &open.path));
+        let Some(mut state) = egui::TextEdit::load_state(context, id) else { return false };
+        let mut undoer = state.undoer();
+        let range = state.cursor.char_range().unwrap_or_else(|| egui::text::CCursorRange::one(egui::text::CCursor::new(open.cursor)));
+        let now = (range, open.text.clone());
+        let Some((range, text)) = (if redo { undoer.redo(&now) } else { undoer.undo(&now) }).cloned() else {
+            return false;
+        };
+        state.set_undoer(undoer);
+        state.cursor.set_char_range(Some(range));
+        state.store(context, id);
+        open.change(text);
+        open.cursor = range.primary.index;
+        true
+    }
+
+    /// The film written out now (File › Save, Ctrl+S); what is said of it.
+    pub fn save_now(&mut self) -> Option<String> {
+        let open = self.open.as_mut()?;
+        Some(match open.save() {
+            Ok(()) => format!("saved {}", open.path.file_name().unwrap_or_default().to_string_lossy()),
+            Err(why) => why,
+        })
+    }
+
     /// Whether the Wiki was asked for (F1, its button) since last asked: the docked Wiki then shown.
     pub fn wiki_asked(&mut self) -> bool {
         std::mem::take(&mut self.wiki_shown)

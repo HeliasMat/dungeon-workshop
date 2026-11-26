@@ -398,7 +398,7 @@ fn board(ui: &mut egui::Ui, story: &Story, means: &mut Means) -> Option<Asked> {
                 );
                 let mut inside = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(8.0)).layout(egui::Layout::top_down(egui::Align::Min)));
                 inside.label(RichText::new(format!("{}. {}", at + 1, (means.place_of)(&scene.place))).strong().color(theme::STRONG));
-                means.examples.still(&mut inside, &format!("scene: {}\nattends 1.5s\n", scene.place), 214.0);
+                means.examples.still(&mut inside, &format!("scene: {}\nwait 1.5s\n", scene.place), 214.0);
                 inside.label(theme::text(scene.cast.iter().map(|who| (means.name_of)(who)).collect::<Vec<_>>().join(", "), theme::SMALL, theme::WEAK));
                 let said = scene.beats.iter().filter(|(_, beat)| matches!(beat, Beat::Said { .. })).count();
                 let mut counts = format!("{said} line(s) said · {} line(s)", scene.end - scene.line + 1);

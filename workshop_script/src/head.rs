@@ -122,29 +122,21 @@ impl Body<'_> {
         jump_line
     }
 
-    /// The head's right side: the Project menu, the story view, Format, the
-    /// View menu, the panels and the bars to show.
+    /// The head's right side, few: the Wiki, "…" (the project, Format, DS Mode, Dialogue, the Layout), the View
+    /// menu, the story view, Find.
     fn head_menus(&mut self, ui: &mut egui::Ui) {
-        ui.menu_button("Project", |ui| self.project_menu(ui));
         // (The Wiki at the right end: shown, however narrow the text.)
         let scripts = &mut *self.scripts;
         if ui
             .selectable_label(scripts.wiki_shown, "Wiki")
-            .on_hover_text("a window of its own, to read beside the Workshop while writing: every word of the language, what it does, how it is written, its example playing (F1: the page of the word at the cursor)")
+            .on_hover_text("every word of the language, what it does, how it is written, its example playing (F1: the page of the word at the cursor)")
             .clicked()
         {
             scripts.wiki_shown = !scripts.wiki_shown;
         }
-        let Body { scripts, open, path, .. } = self;
-        // (DS Mode: the line `for ds`, and what the DS can't play told, the completion and the Wiki by it.)
-        let for_ds = film::ds::written_for_ds(&open.text);
-        if ui
-            .selectable_label(for_ds, "DS Mode")
-            .on_hover_text("the film written for Explorers of Sky on DS (the line “for ds”): what the DS can't play is told, the completion offers only what exports, the Wiki shows each word's DS badge")
-            .clicked()
-        {
-            open.change(film::ds::with_ds(&open.text, !for_ds));
-        }
+        ui.menu_button("…", |ui| self.more_menu(ui)).response.on_hover_text("the project's films, Format, DS Mode, Dialogue, the Layout");
+        ui.menu_button("View", |ui| self.view_menu(ui));
+        let Body { scripts, path, .. } = self;
         egui::ComboBox::from_id_salt(("story view", *path))
             .selected_text(scripts.view.name())
             .width(96.0)
@@ -155,25 +147,34 @@ impl Body<'_> {
             })
             .response
             .on_hover_text("the film as text, or seen as a story: a screenplay to read, a board of scenes, its characters, a graph");
-        if ui.button("Format").on_hover_text("the blocks indented again as the language writes them (Shift+Alt+F)").clicked() {
-            let made = film::formatted(&open.text);
-            open.change(made);
-        }
-        ui.menu_button("View", |ui| self.view_menu(ui));
-        let scripts = &mut *self.scripts;
-        if ui
-            .selectable_label(scripts.dialogue, "Dialogue")
-            .on_hover_text("write a conversation: Enter after a line said begins the other's; Tab on a line begun: someone else of the scene (Ctrl+Shift+D)")
-            .clicked()
-        {
-            scripts.dialogue = !scripts.dialogue;
-        }
         if ui.button("Find").on_hover_text("Ctrl+F (replace: Ctrl+H)").clicked() {
             scripts.finding = Some(Finding { sought: String::new(), with: String::new(), replacing: false, case: false, at: 0, focus: true });
         }
-        if ui.selectable_label(scripts.plan_shown, "Layout").on_hover_text("the film's layout on the left: its scenes, its moments, what is wrong").clicked() {
-            scripts.plan_shown = !scripts.plan_shown;
+    }
+
+    /// The "⋯" menu: the project's (search, open, beside, versions, a note), then what is used less: Format, DS
+    /// Mode, Dialogue, the Layout beside the text.
+    fn more_menu(&mut self, ui: &mut egui::Ui) {
+        self.project_menu(ui);
+        ui.separator();
+        let Body { scripts, open, .. } = self;
+        if ui.button("Format  Shift+Alt+F").on_hover_text("the blocks indented again as the language writes them").clicked() {
+            let made = film::formatted(&open.text);
+            open.change(made);
+            ui.close();
         }
+        // (DS Mode: the line `for ds`, and what the DS can't play told, the completion and the Wiki by it.)
+        let mut for_ds = film::ds::written_for_ds(&open.text);
+        if ui
+            .checkbox(&mut for_ds, "DS Mode")
+            .on_hover_text("the film written for Explorers of Sky on DS (the line “for ds”): what the DS can't play is told, the completion offers only what exports, the Wiki shows each word's DS badge")
+            .changed()
+        {
+            open.change(film::ds::with_ds(&open.text, for_ds));
+        }
+        ui.checkbox(&mut scripts.dialogue, "Dialogue  Ctrl+Shift+D")
+            .on_hover_text("write a conversation: Enter after a line said begins the other's; Tab on a line begun: someone else of the scene");
+        ui.checkbox(&mut scripts.plan_shown, "Layout").on_hover_text("the film's layout on the left: its scenes, its moments, what is wrong");
     }
 
     /// The Project menu: all the films searched, a film opened by its name or beside, the versions, a note.

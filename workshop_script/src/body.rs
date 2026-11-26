@@ -247,7 +247,14 @@ impl Body<'_> {
     /// Where the editor and the problems go, under the head: the problems
     /// open (a share of the height), or their head alone.
     fn room(&self, ui: &egui::Ui, whole: Rect, full: Rect) -> Room {
-        let problems_height = if self.scripts.problems_open && !self.scripts.concentration { 150.0_f32.min(full.height() * 0.35) } else { 26.0 };
+        let wrong = self.open.told.iter().filter(|told| told.is_error()).count();
+        let problems_height = if self.scripts.problems_docked && !self.scripts.concentration {
+            0.0
+        } else if super::problems::problems_shown(self.scripts.problems_open, wrong) && !self.scripts.concentration {
+            150.0_f32.min(full.height() * 0.35)
+        } else {
+            26.0
+        };
         let editor = Rect::from_min_max(ui.cursor().min, pos2(full.max.x, full.max.y - problems_height));
         let problems = Rect::from_min_max(pos2(full.min.x, full.max.y - problems_height), full.max);
         Room { whole, full, editor, problems }
@@ -315,6 +322,7 @@ impl Body<'_> {
         let scrolling = if wrap { egui::ScrollArea::vertical() } else { egui::ScrollArea::both() };
         let center_now = scripts.concentration && scripts.centered.is_some_and(|(_, left)| left > 0);
         let caret = open.cursor;
+        let jumped = open.jump.map(|(a, _)| a);
         let size = scripts.size;
         let scroll = scrolling.id_salt(("script scrolls", *path)).auto_shrink(false).show(&mut editor, |ui| {
             ui.painter().rect_filled(ui.max_rect(), 0.0, Color32::from_rgb(0x1E, 0x1E, 0x1E));
@@ -337,6 +345,12 @@ impl Body<'_> {
             if center_now {
                 let at = shown.cursor_range.map_or(CCursor::new(caret), |range| range.primary);
                 ui.scroll_to_rect(shown.galley.pos_from_cursor(at).translate(shown.galley_pos.to_vec2()), Some(egui::Align::Center));
+            }
+            // (Put somewhere by a key, the plan, a problem, a film opened on a line: brought into sight, here, where the
+            // scrolling is; asked after it, it would be lost.)
+            if let Some(at) = jumped {
+                let rect = shown.galley.pos_from_cursor(CCursor::new(at)).translate(shown.galley_pos.to_vec2());
+                ui.scroll_to_rect(rect.expand(40.0), Some(egui::Align::Center));
             }
             shown
         });
