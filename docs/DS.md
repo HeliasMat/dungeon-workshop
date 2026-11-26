@@ -24,8 +24,32 @@ once in a scene (`E-DS-ACTORS`: who the export leaves out), a place that is
 neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor is a
 `R-DS-LOSS`, below), the hero or the partner before the player
 chose them (`E-DS-HERO`), a zoom or a frame wider than the screen
-(`R-DS-ZOOM`: Sky has no zoom). In DS Mode the completion offers only what
+(`R-DS-ZOOM`: Sky has no zoom), a Pokémon or form the ROM has no sprite for
+(`R-DS-SPECIES`), what the export leaves out (`R-DS-LEFT`: items, an engine's
+command with no DS operation). In DS Mode the completion offers only what
 exports, and the Wiki shows each word's DS badge.
+
+Nothing is lost in silence, and no Pokémon becomes another:
+
+- **A line said in a bubble** (`who (bubble[, face]): …`, `bubble`, `think`,
+  `shout`) is a line of Sky's box, its face as the brackets say, closing by
+  itself after the bubble's time (`message_SetWaitMode(frames, 0)`, as Sky's
+  endings time theirs). One at a time: no two bubbles side by side.
+  `chatter`: Sky's emotes over the crowd (!, ?, laughing, joy, sweat).
+- **A Pokémon or form SpriteCollab adds** (numbered past Sky's 1,155: 2000 +
+  its Pokédex number, variants from 5000): a form is drawn as its base species
+  (`pichu_spiky` as Pichu), a Pokémon Sky lacks as a stand-in, Unown “?”, its
+  name said in its lines (no portrait). Told by the export and by DS Mode
+  (`R-DS-SPECIES`) until its sprites are put in the ROM. `patch_rom.py`
+  refuses a species past the ROM's `monster.md` instead of letting it alias.
+- **A pose a species' Sky sprite lacks** (Nod, Sit, Rotate...): the nearest
+  one every sprite has (as the film words' `nearest`: a hop, its sleep, its
+  attack), told once a species and pose.
+- **More than 21 at once** from a scene's start: the idle are left out first,
+  then those only acting where they stand, then those moving, never one who
+  speaks or is framed among a few; their lines go with them, and the export
+  names each one left out.
+
 
 ## A place of your own
 

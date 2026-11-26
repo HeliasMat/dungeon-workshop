@@ -76,7 +76,10 @@ chapter 2 without one is a whole playthrough.
   in, one of them speaks (`target/ds/lab/room_s.png`). Too many from the
   start: the crowd's idle
   ones (no line names them, no frame of a few) farthest from its middle are
-  left out, and the export says who.
+  left out, then, if still too many, those only acting where they stand,
+  then those moving (never one who speaks or is framed among a few), their
+  lines with them; the export says who (`the_whole_pokedex`: 123 from the
+  start, 102 named as left out, 21 kept).
 - **24 or more with code** (armips): two ways. (1) Let ordinary actors use
   the three kept slots: one instruction (`mov r1, #3` to `#0` in that
   loader), 24 at once, but a hero or partner loaded after them takes slot
@@ -224,6 +227,19 @@ any place.
   amphitheater's directed final: six blows, the lines said between them,
   Hitmonlee's faint.
 
+## Species the ROM lacks (SpriteCollab's)
+
+Sky's sprites are `monster.md`'s 1,155 entries. A species past them given
+to an actor is drawn as some other Pokémon (seen: `pichu_spiky`, 5257, as a
+second Delibird), so the export never passes one on: a form SpriteCollab
+adds (`variants.txt`, from 5000) becomes its base species (`pichu_spiky` →
+Pichu 172), a Pokémon of a later generation (2000 + its Pokédex number)
+the stand-in Unown “?” (228), its own name said in its lines with no
+portrait; both told (`R-DS-SPECIES` in DS Mode). `patch_rom.py` refuses
+any species the ROM's `BALANCE/monster.md` has no entry for. Their own
+sprites and portraits in the ROM (WAN/KAO, skytemple_files) are the real
+fix, not done yet.
+
 ## Poses (`SetAnimation<actor X>(n)`)
 
 `n` goes through overlay 11's `SETANIMATION_TABLE` to a group of the
@@ -236,7 +252,9 @@ lies down with its 27, Grovyle with its 20, Wigglytuff's 13 is a roll,
 Snorlax has none). A group the sprite lacks shows it standing; the groups
 of `monster.bin` and `m_attack.bin` show too (Wigglytuff sleeps with 5).
 So the exporter picks each species' own group by name, or a close one
-(`own_group` in `ds.rs`, the table `data/extra/ds_animations.txt` (never committed) written by
+(`own_group` in `film_core/src/ds/sprites.rs`; where the sprite has none,
+the nearest one every sprite has, a hop at last, told once a species and
+pose: never left out; the table `data/extra/ds_animations.txt` (never committed) written by
 `tools/ds/animations.py` with SkyTemple's names). **Seen**: faint, waking,
 hurt, trembling and sleep on Piplup, Pikachu and Dusknoir
 (`target/ds/lab/poses_sheet.png`).
@@ -454,7 +472,7 @@ the table says):
 | Family | What the sheets show apart from the engine |
 |---|---|
 | Structure | `if chance(50)`: Sky's `switch ( random(100) )`, in tenths (seen: "Lucky!"). Transitions: fades only. |
-| Speech | `box top`: only the portrait goes up. `whisper`: normal text. |
+| Speech | `box top`: only the portrait goes up. `whisper`: normal text. A line in a bubble: a box line that closes by itself (`message_SetWaitMode`); `chatter`: emotes. |
 | Presence | `appear`/`vanish`: a smoke puff, then at once. `crowd`: still. |
 | Formations | As the engine. |
 | Movement | `jump` to a place: a run (no arc). `follow`/`chase`: catch-ups after each move. |
