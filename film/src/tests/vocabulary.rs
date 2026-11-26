@@ -67,7 +67,8 @@ fn the_vocabulary_says_who_comes_first_the_family_and_the_old_words() {
     assert_eq!(LEXICON.replaced("walk"), None);
     assert_eq!(LEXICON.replaced("rank"), None);
     assert_eq!(crate::ds::status("take_off"), Export::Direct);
-    assert!(crate::ds::refused("throw").contains("attack"));
+    assert!(crate::ds::refused("slowmo").contains("wait"));
+    assert_eq!(crate::ds::status("throw"), Export::Close);
     let families: Vec<&str> = LEXICON.vocabulary().iter().map(|planned| planned.family).collect();
     assert!(
         families.windows(2).all(|pair| FAMILIES.iter().position(|f| *f == pair[0]) <= FAMILIES.iter().position(|f| *f == pair[1])),

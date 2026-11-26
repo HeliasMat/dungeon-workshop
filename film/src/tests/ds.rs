@@ -118,13 +118,15 @@ fn a_bubble_line_is_a_box_line_on_ds() {
     assert!(told(film, codes::DS_WORD).is_empty(), "{:?}", coded(film));
 }
 
-/// An engine's command the export has nothing for, an item put: left out, told.
+/// An engine's command the export has nothing for: left out, told; an item
+/// put, held, on a path: shown on DS (an object of the scene's), not told.
 #[test]
 fn what_the_export_leaves_out_is_told() {
-    let film = "for ds\nscene: beach krabby pikachu\nput object apple 300 200\nkrabby shadow off\n";
+    let film = "for ds\nscene: beach krabby pikachu\nput object apple 300 200\nkrabby shadow off\npikachu hold Apple\ntrackpath i109 30 catmull linear / 300 200 / 320 180\n";
     let left = told(film, codes::DS_LEFT);
     assert!(left.iter().any(|said| said.contains("“shadow”") && said.contains("leaves it out")), "{:?}", coded(film));
-    assert!(left.iter().any(|said| said.contains("draw no items")), "{:?}", coded(film));
+    assert_eq!(left.len(), 1, "the items shown: {:?}", coded(film));
+    assert!(told(film, codes::DS_WORD).is_empty(), "{:?}", coded(film));
     assert!(told("scene: beach krabby pikachu\nkrabby shadow off\n", codes::DS_LEFT).is_empty());
 }
 

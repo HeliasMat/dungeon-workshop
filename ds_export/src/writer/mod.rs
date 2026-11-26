@@ -19,6 +19,7 @@ mod sound;
 mod talk;
 #[cfg(test)]
 mod tests_ds;
+mod things;
 mod view;
 
 pub(crate) use fight::fights_played;
@@ -34,6 +35,7 @@ use crate::notes::{Fate, Kind, Note};
 use crate::sky::{FREE_ACTORS, Game, HIDDEN, animation, direction, own_group, speed, tiles};
 use fight::Played;
 use scene::{Capture, Part};
+use things::{Carried, Look, Phase, Shown};
 
 /// An actor of the scene: its name in the game, the species given to it
 /// (a free test actor), its species, where it stands first, whether it
@@ -160,6 +162,22 @@ pub(crate) struct Writer<'a> {
     /// their sheets (`patch_rom.py`), and who each is drawn as where that
     /// fails (its base, or the stand-in).
     pub(crate) added: BTreeMap<u16, u16>,
+    /// The things the film shows as objects (`things`): the object showing
+    /// each now, how many of each look the scene has, the film's slot of the
+    /// n-th of a look, the files of its pictures, the objects hidden from the
+    /// start.
+    things: BTreeMap<Who, Shown>,
+    look_count: HashMap<Look, usize>,
+    slots: BTreeMap<(Look, usize), u16>,
+    drawings: HashMap<Who, String>,
+    hidden_objects: Vec<u16>,
+    /// Who or what is carried by whom (held, ridden, lifted).
+    carried: Vec<Carried>,
+    /// The things' paths, as their objects' routines, and the locks they took.
+    phases: Vec<Phase>,
+    path_locks: u16,
+    /// The lines that played a thing as an object.
+    pub(crate) item_lines: BTreeSet<i32>,
 }
 
 /// A frame of so many at most is of a few: they are never left out.
@@ -309,6 +327,15 @@ impl<'a> Writer<'a> {
             added: BTreeMap::new(),
             film_names: HashMap::new(),
             bubble_faces: HashMap::new(),
+            things: BTreeMap::new(),
+            look_count: HashMap::new(),
+            slots: BTreeMap::new(),
+            drawings: HashMap::new(),
+            hidden_objects: Vec::new(),
+            carried: Vec::new(),
+            phases: Vec::new(),
+            path_locks: 0,
+            item_lines: BTreeSet::new(),
         }
     }
 
@@ -346,6 +373,10 @@ impl<'a> Writer<'a> {
             self.skip = Some(number);
             return;
         }
+        // (An item, a picture of the film's own: an object of the scene's.)
+        if self.thing_beat(number, beat) {
+            return;
+        }
         self.course(number, word, beat);
     }
 
@@ -361,7 +392,7 @@ impl<'a> Writer<'a> {
             Beat::Sound(sound) => self.sound(number, word, sound),
             Beat::Speech(speech) => self.speech(number, word, speech),
             Beat::Flow(flow) => self.flow(number, word, flow),
-            // A mount sunk under a heavy rider, and back up: Sky's actors carry no one (R-DS-LOSS).
+            // A mount sunk under a heavy rider, and back up: not on DS (R-DS-LOSS).
             Beat::Node(engine::NodeBeat::Set { prop: engine::props::PropId::Height, .. })
                 if matches!(word, Some("ride" | "get_off" | "dismount" | "carry" | "put_down")) => {}
             Beat::Course(Course::Host(fields)) | Beat::Host(fields) if fields.first().is_some_and(|first| first == "fight") => self.fight(number, fields),
@@ -447,6 +478,7 @@ impl<'a> Writer<'a> {
         }
         self.busy.retain(|one| one != actor);
         self.line(&format!("WaitExecuteLives({actor});"));
+        self.wait_along(actor);
     }
 
     /// The game's actor for someone of the film: the hero and the partner
@@ -678,6 +710,7 @@ impl<'a> Writer<'a> {
         let verb = if slide { "SlidePositionMark" } else { "MovePositionMark" };
         self.line(&format!("{verb}<actor {actor}>({pace}, {position});"));
         self.moving(actor);
+        self.carry_along(who, to, pace);
     }
 
     /// Someone shows there: put, and no longer hidden.
@@ -691,6 +724,7 @@ impl<'a> Writer<'a> {
         } else if self.at.get(&who) != Some(&at) {
             let position = self.position(at);
             self.line(&format!("SetPositionMark<actor {actor}>({position});"));
+            self.set_along(who, at);
         }
         self.at.insert(who, at);
         self.line(&format!("ResetOutputAttribute<actor {actor}>({HIDDEN});"));

@@ -250,8 +250,8 @@ impl Writer<'_> {
                 done.insert((*block, actor.clone()), ends);
             }
         }
-        // (Sky's scripts use locks 0 to 19.)
-        if next > 20 {
+        // (Sky's scripts use locks 0 to 19; the items' paths take the last ones.)
+        if next > 20 - self.path_locks {
             self.notes.push(crate::notes::Note::new(
                 self.scene_line,
                 Kind::Timing,
@@ -357,6 +357,9 @@ impl Writer<'_> {
         next.film_names = std::mem::take(&mut self.film_names);
         next.bubble_faces = std::mem::take(&mut self.bubble_faces);
         next.added = std::mem::take(&mut self.added);
+        next.slots = std::mem::take(&mut self.slots);
+        next.drawings = std::mem::take(&mut self.drawings);
+        next.item_lines = std::mem::take(&mut self.item_lines);
         *self = next;
     }
 
@@ -365,6 +368,7 @@ impl Writer<'_> {
         let mut out = String::new();
         let _ = writeln!(out, "// The film “{film}”, exported by `scene_player export-ds` for tools/ds/patch_rom.py.");
         let last = self.block();
+        out.push_str(&self.item_lines_for_patch().0);
         for block in self.blocks.iter().chain([&last]) {
             out.push_str(block);
         }
@@ -568,10 +572,16 @@ impl Writer<'_> {
         }
         // Who comes in later is hidden until then.
         let mut hidden: Vec<String> = self.actors.values().filter(|actor| actor.hidden && actor.layer == 0).map(|actor| actor.name.clone()).collect();
-        let routines = self.routines(&mut hidden);
+        let mut routines = self.routines(&mut hidden);
+        // (The items' paths: their objects' routines, numbered after the actors'.)
+        let count = routines.matches("\ndef ").count();
+        routines.push_str(&self.object_routines(count + 1));
         let mut body = std::mem::take(&mut self.body);
-        if !hidden.is_empty() {
-            let hide: String = hidden.iter().map(|name| format!("    SetOutputAttribute<actor ACTOR_{name}>({HIDDEN});\n")).collect();
+        if !hidden.is_empty() || !self.hidden_objects.is_empty() {
+            let mut hide: String = hidden.iter().map(|name| format!("    SetOutputAttribute<actor ACTOR_{name}>({HIDDEN});\n")).collect();
+            for object in &self.hidden_objects {
+                hide.push_str(&format!("    SetOutputAttribute<object OBJECT_N{object}>({HIDDEN});\n"));
+            }
             let at = body.find("    camera_SetMyself").map_or(0, |at| body[at..].find('\n').map_or(at, |end| at + end + 1));
             body.insert_str(at, &hide);
         }

@@ -103,7 +103,8 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
     }
     // The decors the scenes are in, each as a map beside the export; the
     // Pokémon SpriteCollab adds, each as its sheets.
-    let maps = decor_maps(&game, film.tables, &text, out, tell)? + &added_monsters(&game, &writer.added, out, tell)?;
+    let maps =
+        decor_maps(&game, film.tables, &text, out, tell)? + &added_monsters(&game, &writer.added, out, tell)? + &item_pictures(film, &writer, out, tell)?;
     if !maps.is_empty() {
         let at = text.find('\n').map_or(0, |end| end + 1);
         text.insert_str(at, &maps);
@@ -143,6 +144,7 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
         writer.fights = writer::fights_played(written, art, game);
     }
     let defined = defined(film.text);
+    let mut engine_words = Vec::new();
     for (number, read) in written.read_as.iter().filter(|(_, read)| !defined.contains(&read.word.as_str())) {
         let line = *number as i32;
         let on_ds = ::film::ds::on_ds(&read.word);
@@ -154,8 +156,9 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
                 let why = on_ds.map_or("Sky has nothing for it", |ds| ds.how);
                 writer.problem(line, Kind::Word, Fate::Impossible, format!("“{}”: {why}", read.word), instead);
             }
-            // (An engine's command outside the vocabulary: trackpath, shadow, gone...)
-            None => writer.problem(line, Kind::Engine, Fate::Impossible, format!("“{}”: an engine's command, with no DS operation", read.word), instead),
+            // (An engine's command outside the vocabulary: trackpath, shadow, gone...;
+            // told after the beats, unless it was on an item the export shows.)
+            None => engine_words.push((line, read.word.clone(), instead)),
         }
     }
     for (number, read) in &written.read_as {
@@ -186,6 +189,11 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
                 eprintln!("{number:>4} {:<10} {beat:?}", word.unwrap_or(""));
             }
             writer.beat(number, word, beat);
+        }
+    }
+    for (line, word, instead) in engine_words {
+        if !writer.item_lines.contains(&line) {
+            writer.problem(line, Kind::Engine, Fate::Impossible, format!("“{word}”: an engine's command, with no DS operation"), instead);
         }
     }
     if options.partial {
@@ -309,6 +317,30 @@ fn added_monsters(game: &Game, added: &BTreeMap<u16, u16>, out: &Path, tell: &mu
         };
         tell(format!("  {name} (species {species}): put in the ROM from SpriteCollab's sheets ({written}); drawn as {} where that fails", game.name(*instead)));
         let _ = writeln!(lines, "// ds-export monster {species} {instead} {folder} {name}");
+    }
+    Ok(lines)
+}
+
+/// Each picture of the film's own it shows as an item (a letter, a parcel
+/// drawn by hand), copied beside `out` (`<out>.item<slot>.png`) for
+/// `tools/ds/add_items.py` to make its object's sprite of: its line,
+/// `// ds-export item OBJECT_N<slot> picture <file>`. Without the project's
+/// art (or the file), told and left as the slot's own sprite.
+fn item_pictures(film: &Film, writer: &Writer, out: &Path, tell: &mut dyn FnMut(String)) -> Result<String, String> {
+    let mut lines = String::new();
+    for (slot, file) in writer.item_lines_for_patch().1 {
+        let Some(art) = film.art else {
+            tell(format!("  the picture {file}: not found without the project's art, not shown on DS"));
+            continue;
+        };
+        let from = shell::art::ours(&art.folder, &art.project, &file);
+        let name = format!("{}.item{slot}.png", out.file_name().and_then(|name| name.to_str()).unwrap_or("film"));
+        match std::fs::copy(&from, out.with_file_name(&name)) {
+            Ok(_) => {
+                let _ = writeln!(lines, "// ds-export item OBJECT_N{slot} picture {name}");
+            }
+            Err(error) => tell(format!("  the picture {file} ({}): {error}, not shown on DS", from.display())),
+        }
     }
     Ok(lines)
 }

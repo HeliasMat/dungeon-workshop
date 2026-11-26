@@ -69,7 +69,7 @@ pub const ALL: &[(&str, &str)] = &[
     (DS_HERO, "in a film for ds: the hero or the partner, before the player chose them"),
     (DS_ZOOM, "in a film for ds: a zoom, or a frame wider than the screen: Sky has no zoom"),
     (DS_SPECIES, "in a film for ds: a Pokémon or form SpriteCollab adds with no sheets in the data to put in the ROM: drawn as its base species or a stand-in"),
-    (DS_LEFT, "in a film for ds: what the export leaves out: an item (not drawn yet), an engine's command with no DS operation"),
+    (DS_LEFT, "in a film for ds: what the export leaves out: an engine's command with no DS operation (not on an item, which is shown)"),
 ];
 
 #[cfg(test)]

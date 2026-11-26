@@ -18,6 +18,8 @@ game = { path = "../game" }
 preview = { path = "../preview" }
 rules = { path = "../rules" }
 scenes = { path = "../scenes" }
+# Where a picture of the film's own is (`shell::art::ours`), shown on DS as an item.
+shell = { path = "../shell" }
 # The sheets of the Pokémon SpriteCollab adds, in SpriteBot's layout, for the ROM.
 spritecollab = { path = "../spritecollab" }
 serde_json.workspace = true

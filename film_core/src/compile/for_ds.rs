@@ -5,7 +5,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use engine::{Beat, BodyBeat, Course, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Play, Point, Role, Scene, ScreenBeat, SpeechBeat, Spot, ViewBeat, Who};
+use engine::{Beat, BodyBeat, Course, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Play, Point, Scene, ScreenBeat, SpeechBeat, Spot, ViewBeat, Who};
 
 use crate::codes;
 use crate::ds::{AT_ONCE, DECOR_LOSS, Drawn, Export, Mode, drawn_on_ds, group_name, pose_on_ds};
@@ -25,7 +25,6 @@ pub(crate) fn tell(film: &mut Film, mode: Mode, scenes: &[Scene]) {
         place(film, scene, &lines);
         at_once(film, scene);
         view(film, scene, &lines);
-        items(film, scene, &lines);
         poses(film, scene, &mut poses_told);
     }
     for ((who, asked, shown), numbers) in poses_told {
@@ -114,6 +113,8 @@ fn words(film: &mut Film, lines: &[(usize, &str)]) {
             Some(Export::Close) => losses.entry(word).or_default().push(number),
             // (A recipe of the film's own: checked by its words.)
             None if defined.contains(&word.as_str()) => {}
+            // (An engine's command on an item, `trackpath i109 ...`: its object's on DS.)
+            None if on_an_item(trimmed) => {}
             // (Not a word of the vocabulary: an engine's command, which the export leaves out.)
             None => {
                 let what = if crate::words::engine_word(&word) { "an engine's command" } else { "not a word of the vocabulary" };
@@ -135,6 +136,16 @@ fn words(film: &mut Film, lines: &[(usize, &str)]) {
             if word == BUBBLE_LINE { word_at(lines, numbers[0], "bubble").or(word_at(lines, numbers[0], "top")) } else { word_at(lines, numbers[0], &word) };
         film.problems.push(Diagnostic::at(numbers[0], message).as_remark().on(bytes).coded(codes::DS_LOSS));
     }
+}
+
+/// Whether an engine's command is on an item or a picture of the film's
+/// own (`trackpath i109 ...`, `gone i109.2`): the DS export makes it an
+/// object of the scene's and plays it.
+fn on_an_item(line: &str) -> bool {
+    let mut words = line.split_whitespace();
+    let command = words.next().unwrap_or_default();
+    ["trackpath", "untrack", "waittrack", "gone", "shadow"].contains(&command)
+        && words.next().and_then(Who::parse).is_some_and(|who| matches!(who, Who::Item { .. } | Who::Drawn { .. }))
 }
 
 /// The vocabulary's entry of a line said in a bubble (`film_core::vocabulary::OTHERS`).
@@ -172,43 +183,6 @@ fn species(film: &mut Film, lines: &[(usize, &str)]) {
 fn monster_name(film: &Film, species: u16) -> String {
     let code = species.to_string();
     film.tables.monsters.values().find(|named| named.0 == code).map_or_else(|| format!("species {species}"), |named| named.1.clone())
-}
-
-/// `R-DS-LEFT`: an item (`put object apple`, a held one, one thrown, a
-/// picture of the film's own) on a line: Sky's scenes draw no items, the
-/// export leaves it out. Not where the word itself is told (`hold`, `give`:
-/// `E-DS-WORD`).
-fn items(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
-    let mut names: HashMap<Who, String> = HashMap::new();
-    for beat in &scene.beats {
-        if let Beat::Body(BodyBeat::ThingName { who, name }) = beat {
-            names.insert(*who, name.clone());
-        }
-    }
-    let mut number = 0;
-    let mut told: Vec<usize> = Vec::new();
-    for beat in &scene.beats {
-        if let Beat::Flow(FlowBeat::Line { number: line, .. }) = beat {
-            number = usize::try_from(*line).unwrap_or(0);
-        }
-        if number == 0 || told.contains(&number) {
-            continue;
-        }
-        let named: Vec<Who> = [Role::Comes, Role::Acts, Role::Named].into_iter().flat_map(|role| beat.naming(role)).collect();
-        let Some(item) = named.into_iter().find(|who| matches!(who, Who::Item { .. } | Who::Drawn { .. })) else { continue };
-        let word = film.read_as.get(&number).map(|read| read.word.clone());
-        if word.as_deref().is_some_and(|word| !film.lexicon.export_of(word).is_none_or(Export::exports)) {
-            continue;
-        }
-        told.push(number);
-        let what = names.get(&item).map_or_else(
-            || if matches!(item, Who::Drawn { .. }) { "a picture of the film's own".to_string() } else { "an item".to_string() },
-            |name| format!("“{name}”"),
-        );
-        let message = format!("{what}: Sky's scenes draw no items yet, the DS export leaves it out (and what is done with it)");
-        let bytes = word.as_deref().and_then(|word| word_at(lines, number, word));
-        film.problems.push(Diagnostic::at(number, message).as_remark().on(bytes).coded(codes::DS_LEFT));
-    }
 }
 
 /// `R-DS-LOSS`: a pose a species' Sky sprite lacks (`pikachu pose nod` on

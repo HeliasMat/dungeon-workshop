@@ -37,6 +37,9 @@ Explorers of Sky ROM, and write the patched copy.
 - The place's things (`// ds-export object OBJECT_N<number> x .. y ..`)
   are objects of the game put in the layout; the script names them by
   number and they are renamed here to the game's names.
+- The items it shows (`// ds-export item OBJECT_N<slot> item <id>`): each
+  an object no scene uses, its sprite made Sky's icon of the item
+  (`tools/ds/add_items.py`).
 - `--more-actors`: any number of Pokémon of their own. SkyTemple's
   ActorAndLevelLoader patch (assembled by armips: `SKYTEMPLE_ARMIPS_EXEC`
   names armips.exe) moves the game's actor table to
@@ -79,6 +82,7 @@ from skytemple_files.script.ssa_sse_sss.position import SsaPosition
 from skytemple_files.script.ssb.script_compiler import ScriptCompiler
 
 from bps import apply_bps, bps
+import add_items
 import add_monsters
 import decor_map
 import dungeon
@@ -440,6 +444,9 @@ def main():
                 scene.lines = [re.sub(rf'\b{old}\b', new, line) for line in scene.lines]
                 if scene.level == old:
                     scene.level = new
+        # The items it shows: objects no scene uses, each slot's sprite the item's icon.
+        for path, data in add_items.sprites(rom, config, add_items.items_of(source), os.path.dirname(os.path.abspath(film_path))).items():
+            rom.setFileByName(path, data)
     boss = []
     if dungeon_json:
         dump = dungeon.load(dungeon_json)

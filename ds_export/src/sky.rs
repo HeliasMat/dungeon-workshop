@@ -130,6 +130,17 @@ pub(crate) const LOCALS: [&str; 4] = ["$LOCAL0", "$LOCAL1", "$LOCAL2", "$LOCAL3"
 /// The output attribute that hides an actor (`SetOutputAttribute<actor>(128)`).
 pub(crate) const HIDDEN: u16 = 128;
 
+/// The objects of Sky's table (EU) that no scene's layout places nor any
+/// script names, each with a sprite file of its own: the items' slots, an
+/// item shown on DS one of them, its sprite the item's icon
+/// (`tools/ds/add_items.py`, its `SLOTS`).
+pub(crate) const ITEM_SLOTS: [u16; 28] =
+    [11, 66, 97, 99, 154, 155, 189, 205, 221, 252, 253, 254, 255, 317, 373, 375, 391, 396, 406, 412, 433, 449, 454, 484, 485, 486, 487, 546];
+
+/// The locks a scene's script has (Sky's use 0 to 19): the actors'
+/// routines take them from 1 up, the items' paths from the last down.
+pub(crate) const LAST_LOCK: u16 = 19;
+
 /// The data folder the exporter reads, for the table of the sprites' own
 /// orders (`film::ds::own_group`).
 static DATA: std::sync::OnceLock<String> = std::sync::OnceLock::new();

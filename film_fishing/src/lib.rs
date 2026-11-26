@@ -39,7 +39,10 @@ pub const WORDS: &[Word] = &[
     Word::new("_reel_in", &["who:pokemon [broken]"], "fishline off, the shadow dives, the gauge goes, the bobber taken away (broken: the gauge full first, the bobber stays on the water)").does(line_in),
     Word::new("_haul", &["who:pokemon [heavy] [unhooks]", "who:pokemon catch:word [x:number y:number] [heavy] [unhooks]"], "anim Pull, tremble (him, the bobber, the catch), particles drops, rings and bubbles, put on the bobber, fishline holds, hop of what comes out of the water (up to x y if told), emit drops, pose idle").does(pulled).brings(&["catch"]),
     Word::new("_shadow", &["giant x:number y:number to x2:number y2:number [in d:duration]", "who:pokemon flees|dives", "who:pokemon [big] [x:number y:number]"], "shadow giant x y to x y: the shadow of a very big fish under the sea; the shadow of a fish (a picture): put, layer under, anim, go up to the bobber, circles round; big; flees: go, gone; dives: opacity 0").does(shadow_said),
-    Word::new("throw", &["who:pokemon line [to|on] [target:place]", "who:pokemon water [to] target:place"], "throw a line to x y (or on b), the fisher; throw a water to b, a swimmer: jump, particles drops").family("Objects").ds_none("no thrown item in scripts").ds_fix("write it with “attack” or “effect … from a to b”")
+    Word::new("throw", &["who:pokemon line [to|on] [target:place]", "who:pokemon water [to] target:place"], "throw a line to x y (or on b), the fisher; throw a water to b, a swimmer: jump, particles drops").family("Objects").ds_close(
+        "an item: its object (its icon) up, across to the target, down where it lands; a line or water: the thrower's part only",
+        "an item's arc in three steps, the script waiting for them; a line or water thrown: not drawn",
+    )
         .does(thrown),
     Word::new(
         "jump",

@@ -31,6 +31,8 @@ tools' own text):
   (`monsters/<species>-<hash>.sprite`); a film casting one the base lacks
   makes the base again, with it (a second a Pokémon already made).
 - a decor map, made once from its pictures (`decors/<hash>.bin`).
+- the items' slots' sprites (`add_items.SLOTS`, objects no scene uses), each
+  with room for an item's icon or a picture of the film's own.
 
 A ready savestate is taken on the base on the New Game menu of a new
 game, before the game reads the event (`watch.py`: py-desmume's
@@ -61,7 +63,7 @@ CACHE = os.path.join(ROOT, 'target', 'ds', 'cache')
 
 # What the base is made with: a change of these files (or of VERSION) makes it again.
 VERSION = 1
-TOOLS = ('ds_cache.py', 'patch_rom.py', 'add_monsters.py', 'decor_map.py')
+TOOLS = ('ds_cache.py', 'patch_rom.py', 'add_monsters.py', 'decor_map.py', 'add_items.py')
 SLOTS = 64
 SLOT_LEVEL = 'T00P01'
 SLOT_PREFIX = 'dwscen'
@@ -222,8 +224,14 @@ def slot_offsets(data, config):
 
 def reserved(rom):
     """The files a film writes, and the room each one is given."""
+    import add_items
     import decor_map
+    from skytemple_files.common.util import get_ppmdu_config_for_rom
     room = {ACTOR_LIST: len(rom.getFileByName(ACTOR_LIST)) + ROOM['actors']}
+    # (The items' slots' sprites.)
+    config = get_ppmdu_config_for_rom(rom)
+    for slot in add_items.SLOTS:
+        room[add_items.slot_file(config, slot)] = add_items.ROOM
     for slot in range(1, SLOTS + 1):
         base = f'SCRIPT/{SLOT_LEVEL}/{SLOT_PREFIX}{slot:02d}'
         room[base + '.ssb'] = ROOM['ssb']
@@ -412,6 +420,9 @@ def film_rom(rom_path, film_path, out, scene=None, tell=print):
             one.lines = [re.sub(rf'\b{old}\b', new, line) for line in one.lines]
             if one.level == old:
                 one.level = new
+    # The items shown: each slot's sprite, from Sky's icon or the film's picture.
+    import add_items
+    written.update(add_items.sprites(rom, config, add_items.items_of(source), beside))
     # The Pokémon SpriteCollab adds: the base's.
     given = {int(species): one['number'] for species, one in manifest['monsters'].items()}
     added = relabel_monsters(scenes, monsters, given)

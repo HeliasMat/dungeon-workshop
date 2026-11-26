@@ -21,7 +21,7 @@ pub const WORDS: &[Word] = &[
             "who:pokemon mount:pokemon [h:number] [b:number]",
         ],
         "face, throw onto it, ride: on its back (as high as its middle, by the game's points) or its head; he follows his mount, turns with it as it goes, rises and sinks with it (its back or head on each frame, by the game's points); high, behind: so many pixels up, behind its middle; a heavy rider sinks his mount 1 to 3 pixels (the game's weights), one much heavier is remarked",
-    ).family("Movement").ds_close("a run to the mount (no arc), MoveHeight up to its back: Sky's actors carry no one, the rider stays where he got on", "the rider doesn't follow his mount: he stays up where he got on; the mount doesn't sink under a heavy one")
+    ).family("Movement").ds_close("a run to the mount (no arc), MoveHeight up to its back, drawn in front of it; given each of its moves (the same path and pace, SlidePositionMark), turned as it goes", "no arc onto it; he sits over its middle, not its back's point, and doesn't rise and sink with it; the mount doesn't sink under a heavy one")
     .maybe(rode),
     Word::new(
         "get_off",
@@ -39,7 +39,7 @@ pub const WORDS: &[Word] = &[
         "carry",
         &["who:pokemon what:pokemon"],
         "face, throw onto him, ride over his head (as high as his head, by the game's points): carried wherever he goes, turned with him",
-    ).family("Body").ds_close("a run to the carrier (no arc), MoveHeight up over its head: the one carried stays there when the carrier walks", "the one carried doesn't follow: he stays up where he was lifted")
+    ).family("Body").ds_close("a run to the carrier (no arc), MoveHeight up over its head, drawn in front; given each of the carrier's moves", "no arc onto him; he sits over the carrier's middle, not its head's point")
     .does(carried),
     Word::new(
         "put_down",

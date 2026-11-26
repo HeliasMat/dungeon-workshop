@@ -97,9 +97,9 @@ fn a_bubble_line_is_noted_as_changed_on_its_line() {
     assert!(report.notes.iter().all(|note| !note.message.contains("Bubble {") && !note.message.contains("Speech(")), "no beat dumps: {:?}", report.notes);
 }
 
-/// An item held: the word isn't on DS, said once on its line (not its
-/// item nor the engine's steps again); one eaten: the item isn't shown,
-/// once. The summary counts each line once.
+/// An item held: the word's own loss, once on its line (not its item nor
+/// the engine's steps again); one eaten: its bites, once (the word's own
+/// loss giving way to it). The summary counts each line once.
 #[test]
 fn an_item_is_noted_once_on_its_line() {
     let report = report(
@@ -110,10 +110,10 @@ pikachu (joyous): Yum!
 ",
     );
     let on = |line: usize| -> Vec<(crate::Kind, crate::Fate)> { report.on_line(line).map(|note| (note.kind, note.fate)).collect() };
-    assert_eq!(on(2), [(crate::Kind::Word, crate::Fate::Impossible)], "{:?}", report.notes);
-    assert_eq!(on(3), [(crate::Kind::Item, crate::Fate::LeftOut)], "{:?}", report.notes);
+    assert_eq!(on(2), [(crate::Kind::Word, crate::Fate::Changed)], "{:?}", report.notes);
+    assert_eq!(on(3), [(crate::Kind::Item, crate::Fate::Changed)], "{:?}", report.notes);
     let summary = report.summary();
-    assert_eq!((summary.impossible, summary.left_out, summary.changed), (1, 1, 0), "{summary:?}");
+    assert_eq!((summary.impossible, summary.left_out, summary.changed), (0, 0, 2), "{summary:?}");
     assert!(summary.lines >= 3 && summary.as_written == summary.lines - 2, "{summary:?}");
 }
 
@@ -143,4 +143,86 @@ fn a_pose_the_sprite_lacks_is_noted_on_each_line() {
         assert_eq!(poses[0].fate, crate::Fate::Changed);
         assert!(poses[0].message.contains("Rotate") && poses[0].instead.ends_with("instead"), "{:?}", poses[0]);
     }
+}
+
+/// The lines of the script telling that object something, trimmed.
+fn told(script: &str, target: &str) -> Vec<String> {
+    script.lines().map(str::trim).filter(|line| line.contains(target)).map(str::to_string).collect()
+}
+
+/// An item held is an object of the scene (an item's slot, its icon put in
+/// by `patch_rom.py`), at the holder's hands and drawn in front of him, and
+/// given each of his moves at his pace.
+#[test]
+fn an_item_held_goes_where_its_holder_goes() {
+    let (script, _) = exported("hold", "scene: beach pikachu munchlax\npikachu put 200 150\npikachu hold Apple\npikachu walk to 260 150\n");
+    assert!(script.contains("// ds-export item OBJECT_N11 item 109\n"), "{script}");
+    assert!(script.contains("// ds-export object OBJECT_N11 "), "{script}");
+    let apple = told(&script, "OBJECT_N11>");
+    assert!(apple.iter().any(|line| line.starts_with("MoveHeight<object OBJECT_N11>(16, 10)")), "{apple:?}");
+    let walk = script.lines().map(str::trim).find(|line| line.starts_with("MovePositionMark<actor ")).expect("a walk");
+    let pace = walk.split_once(">(").and_then(|(_, rest)| rest.split_once(',')).map(|(pace, _)| pace).expect("a pace");
+    let carried = apple.iter().find(|line| line.starts_with("MovePositionMark<object OBJECT_N11>(")).expect("the apple goes too");
+    assert!(carried.starts_with(&format!("MovePositionMark<object OBJECT_N11>({pace}, ")), "{walk} / {carried}");
+}
+
+/// An item given goes up, across and down into the other's hands, then
+/// with him.
+#[test]
+fn an_item_given_arcs_to_the_other_and_stays_with_him() {
+    let (script, _) = exported(
+        "give",
+        "scene: beach pikachu munchlax\npikachu put 200 150\nmunchlax put 240 150\npikachu hold Apple\npikachu give Apple to munchlax\nmunchlax walk to 300 150\n",
+    );
+    let apple = told(&script, "OBJECT_N11");
+    let up = apple.iter().position(|line| line.starts_with("MoveHeight<object OBJECT_N11>(") && line.ends_with(", 26);")).expect("up");
+    assert!(apple[up + 1].starts_with("WaitExecuteObject(OBJECT_N11)"), "{apple:?}");
+    assert!(apple[up + 2].starts_with("MovePositionMark<object OBJECT_N11>("), "{apple:?}");
+    assert!(apple[up + 4].ends_with(", 10);"), "down into his hands: {apple:?}");
+    assert!(apple[up + 5..].iter().any(|line| line.starts_with("MovePositionMark<object OBJECT_N11>(")), "goes with him: {apple:?}");
+}
+
+/// An item thrown flies to the one it is thrown at, then lands by him.
+#[test]
+fn an_item_thrown_flies_to_its_target() {
+    let (script, told_) = exported("throw", "scene: beach pikachu munchlax\npikachu put 200 150\nmunchlax put 260 150\npikachu throw Apple to munchlax\n");
+    let apple = told(&script, "OBJECT_N11");
+    assert!(apple.iter().filter(|line| line.starts_with("MovePositionMark<object OBJECT_N11>(")).count() >= 2, "flies, then lands: {apple:?}");
+    assert!(apple.last().is_some_and(|line| line.ends_with(", 0);")), "on the ground at last: {apple:?}");
+    assert!(!told_.iter().any(|said| said.contains("isn't shown")), "{told_:?}");
+}
+
+/// A rider is given each of his mount's moves, at its pace, in front of it;
+/// off, he no longer is.
+#[test]
+fn a_rider_follows_his_mount() {
+    let (script, _) = exported(
+        "ride",
+        "scene: beach pikachu lapras\npikachu put 200 150\nlapras put 240 150\npikachu ride on lapras\nlapras walk to 300 150\npikachu get_off 320 170\nlapras walk to 240 150\n",
+    );
+    let lines: Vec<&str> = script.lines().map(str::trim).collect();
+    let walks: Vec<usize> = lines.iter().enumerate().filter(|(_, line)| line.starts_with("MovePositionMark<actor ")).map(|(at, _)| at).collect();
+    let slides: Vec<usize> = lines.iter().enumerate().filter(|(_, line)| line.starts_with("SlidePositionMark<actor ")).map(|(at, _)| at).collect();
+    assert_eq!(slides.len(), 1, "once, with the first walk: {script}");
+    let walk = walks.iter().copied().filter(|at| *at < slides[0]).last().expect("the mount's walk first");
+    let pace = |line: &str| line.split_once(">(").and_then(|(_, rest)| rest.split_once(',')).map(|(pace, _)| pace.to_string());
+    assert_eq!(pace(lines[walk]), pace(lines[slides[0]]), "{script}");
+    assert!(lines[slides[0] - 1].starts_with("SetDirection<actor "), "turned as his mount: {script}");
+}
+
+/// An item on a path loops in its object's routine, started by the script;
+/// another path of it is another object (an order ends a routine).
+#[test]
+fn an_item_on_a_path_is_its_objects_routine() {
+    let (script, told_) = exported(
+        "path",
+        "scene: town pikachu\npikachu put 300 242\nput object Apple 286 234\nwait 1s\ntrackpath i109 54 catmull linear loop / 286 234 / 300 188 / 314 234\nwait 2s\nuntrack i109\ntrackpath i109 30 catmull linear / 300 172 / 282 244\nwaittrack i109\n",
+    );
+    assert!(script.contains("def 1 for object OBJECT_N11 {\n    Lock(19);\n    forever {"), "{script}");
+    assert!(script.contains("WaitLockObject(19, OBJECT_N11);\n    Unlock(19);"), "{script}");
+    assert!(script.contains("def 2 for object OBJECT_N66 {\n    SetOutputAttribute(128);\n    Lock(18);\n    SetPositionMark("), "{script}");
+    assert!(script.contains("SetOutputAttribute<object OBJECT_N11>(128);"), "the first one hidden: {script}");
+    assert!(script.contains("WaitLockObject(17, OBJECT_N66);\n    Unlock(17);"), "waited for: {script}");
+    assert!(script.contains("    Lock(17);\n    hold;"), "{script}");
+    assert!(!told_.iter().any(|said| said.contains("engine's command")), "{told_:?}");
 }

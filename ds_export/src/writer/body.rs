@@ -139,7 +139,8 @@ impl Writer<'_> {
     /// Turned to another; to an unseen point (`use Move at x y`), its way
     /// from where he stands.
     fn face(&mut self, number: i32, who: Who, other: Who) {
-        if let Who::Spot(_) = other {
+        // (To an unseen point, or to a thing: turned its way.)
+        if matches!(other, Who::Spot(_)) || other.is_thing() {
             let Some(actor) = self.who(number, who) else { return };
             let (Some(&from), Some(&to)) = (self.at.get(&who), self.at.get(&other)) else { return };
             let way = way_to(from, to);
@@ -186,6 +187,7 @@ impl Writer<'_> {
                 let position = self.position(point);
                 self.line(&format!("SetPositionMark<actor {actor}>({position});"));
                 self.line(&format!("SetDirection<actor {actor}>({facing});"));
+                self.set_along(*who, point);
             }
         }
     }

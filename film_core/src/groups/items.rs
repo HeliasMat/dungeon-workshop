@@ -14,8 +14,10 @@ use crate::words::plain;
 pub const WORDS: &[Word] = &[
     Word::new("give", &["from:pokemon thing... to other:pokemon", "thing... from:pokemon to:pokemon"], "give")
         .family("Objects")
-        .ds_none("no held item on an actor")
-        .ds_fix("say it in a line, with “join” or “emote”")
+        .ds_close(
+            "the item an object of the scene's (its icon): up over the giver's hands, across, down into the other's, kept there",
+            "its arc in three steps, the script waiting for them",
+        )
         .names(Names::NoOne)
         .does(given),
     Word::new(
@@ -24,17 +26,18 @@ pub const WORDS: &[Word] = &[
         "putnear, thing, hold (or approach and hold if it lies on the ground): between his hands, as the game's points have them on each frame",
     )
     .family("Objects")
-    .ds_none("no held item on an actor; an object actor placed by hand")
-    .ds_fix("say it in a line, or show it with “effect”")
+    .ds_close(
+        "the item an object of the scene's (its icon), at the holder's hands, drawn in front, given each of his moves",
+        "held at one point before him, whichever way he faces",
+    )
     .does(held),
     Word::new("drop", &["who:pokemon at what:place", "who:pokemon [thing...]"], "hold off, fall (at a place: set there, a little hop)")
         .family("Objects")
-        .ds_none("no held item on an actor")
-        .ds_fix("say it in a line")
+        .ds_close("the item's object down to the ground (at a place: there, then down)", "no hop: it goes there, then down")
         .does(let_go),
     Word::new("eat", &["who:pokemon [thing...]"], "anim Eat, scale, gone, emote")
         .family("Body")
-        .ds_direct("SetAnimation (eat), SetEffect(EFFECT_EATING); no item shown")
+        .ds_close("SetAnimation (eat), the item's object in his hands, hidden when eaten", "no bites: the item stays whole until it goes")
         .does(eaten),
     Word::new(
         "throw",

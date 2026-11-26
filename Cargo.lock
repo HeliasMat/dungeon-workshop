@@ -814,6 +814,7 @@ dependencies = [
  "rules",
  "scenes",
  "serde_json",
+ "shell",
  "spritecollab",
 ]
 
