@@ -215,19 +215,67 @@ Lost (`R-DS-LOSS` on the scene, `film_core/src/ds.rs` `DECOR_LOSS`):
 | status | **Fake works** (seen) | Effects on the actor: `EFFECT_CONFUSE` (stars), `EFFECT_POISION_BUBBLE` (sic), `EFFECT_GIANT_Z` (asleep), `EFFECT_TRAPPED_IN_ICE` (frozen), `EFFECT_STATS_DOWN_EFFECT`, `EFFECT_STATS_UP_EFFECT` and `EFFECT_YAWN` (not tried); with poses below (asleep: animation 25 or 33; shivering: 27 or 47). |
 | attack | **Fake works** (parts seen) | Wind-up `SetAnimation<actor A>(28)`, strike `SetAnimation<actor A>(48)` (a lunge), then on the target an effect: `EFFECT_PUNCH_ATTACK`, `EFFECT_LIGHTNING_STRIKE` (a bolt from the sky), `EFFECT_FIRE_ATTACK` (a tall flame), `EFFECT_SLASH_ATTACK`, `EFFECT_EXPLOSION_SMALL` (seen; `EFFECT_WATER_EXPLOSION`, `EFFECT_AIR_BLADES` and others of the table not tried); the target's hurt pose `SetAnimation(22)` or `(36)`; a shake `camera_SetEffect(2, 1, 1.0)` ... `camera_SetEffect(0, 0, 0)`; back to standing `SetAnimation(2)`. Real move animations (Thunderbolt as in a dungeon) need code: the dungeon's effect system is not loaded in ground mode. |
 | fight | **Exported** (seen) | Each blow the fights' rules played (a directed fight's as written: `scenes::fight::host::played`, the same battle the engine plays) staged as `attack`: the fighter turns to its target, its wind-up and lunge, the move type's effect on the target, a shake; the target slides back (`SlidePositionMark`, further and the view shaking hard for a critical), its pain once, and back to its place; missed: the target hops. A knock out: its faint. The lines said in the fight's moments play where they come; no bars, no log, no "Missed!". Below, "Routines, floating, fights". |
-| hold | **Partly** | No generic held-item sprite in ground mode. `EFFECT_APPLE_ON_HEAD` shows an apple above the actor (seen); `EFFECT_EATING` for eating (seen). Any other item needs a sprite (below). |
-| give | **Partly** | Walk to the other (`MovePositionLives`), the apple effect passes from one to the other, the jingle (`me_Play`) and a line. |
-| drop | **Needs a sprite** | Objects (`<object>` in a layout) are the only free-standing sprites, and Sky's are place-specific props (`OBJECT_D01P11B2_12`...). |
-| throw | **Needs a sprite** | Same; once an item object exists: `MoveHeight` and `SlidePositionOffset<object>` make the arc. |
+| hold | **Exported** (seen) | The item an object of the scene's, its sprite the item's icon, at the holder's hands and given his moves (below, "Items and riders"). |
+| give | **Exported** (seen) | The item's object up, across, down into the other's hands, then his. |
+| drop | **Exported** | The item's object down to the ground (at a place: there, then down). |
+| throw | **Exported** | The item's object up, across to the target, down where it lands. |
 
-### Item sprites, without armips
+## Items and riders
 
-An object entry is a sprite file (`.wan`) in `GROUND/`. Repurposing an
-object no scene uses, with its `.wan` replaced by one made from an item
-picture (`skytemple_files.graphics.chara_wan` imports sprite sheets), would
-give "an item" that can be placed, moved and lifted. Not done: it means
-choosing the object, drawing the sheet and checking the game loads it in
-any place.
+**Items** (`hold`, `give`, `drop`, `throw`, `eat`, `put object <item>`,
+`trackpath` on an item; seen: the juggler's three apples in the air, a box
+in Munchlax's hands as he walks). An object of Sky's table is a sprite file
+`GROUND/<name>.wan`; 30 of the table's objects are placed by no layout and
+named by no script, each with a file of its own (found by reading every
+`.ssa/.sse/.sss` of the ROM and every decompiled script). 28 of them are the
+items' slots (`add_items.SLOTS`, `ds_export::sky::ITEM_SLOTS`): the export
+casts each item it shows as one (`// ds-export item OBJECT_N<slot> item
+<id>`, and the object in the layout), and `add_items.py` writes the slot's
+sprite: Sky's own icon of the item (16 x 16, `DUNGEON/dungeon.bin`'s
+`items.itm.img`, its palette by `item_p.bin`) as a still WAN
+(skytemple_rust's `encode_image_to_static_wan_file`, SkyTemple's "import
+image" of an object), 384 bytes; a picture of the film's own (`Who::Drawn`)
+brought to 16 colours, 64 x 64 at most. The fast copy's base keeps 8 KB for
+each slot's file. No ARM code: the script's own operations do it all.
+
+- Placed: before the scene shows, where its layout has it; later,
+  `SetPositionMark<object>`, shown (`ResetOutputAttribute<object>(128)`),
+  hidden until then (`SetOutputAttribute<object>(128)` at the start).
+- Held: at the holder's feet, half a tile in front (drawn over him; behind
+  him when he faces up), `MoveHeight<object>` 10 up (30 over the head for
+  `carry`); each move he is given (`MovePositionMark`, `SlidePositionMark`)
+  is given to it too, at his pace, so they arrive together (and the script
+  waits for both). Held at one point whichever way he faces (the engine's
+  hands move with each frame).
+- Given, thrown: up 16 over the hands, across, down: three steps, the
+  script waiting for each (`WaitExecuteObject`): an order given to an object
+  ends the one before. Kept in the other's hands, then given his moves.
+- Dropped: down to the ground (`MoveHeight` to 0); at a place: there, then down.
+- Eaten: in his hands, hidden when it goes (no bites: it keeps its size).
+- A path (`trackpath` on an item): its object's routine, `def n for object
+  OBJECT_X { Lock(g); forever { MovePositionMark(...)... } }`, started by
+  `WaitLockObject(g, OBJECT_X); Unlock(g);` as Sky's own scenes start theirs;
+  straight legs between its points at one pace (its curve and easing lost),
+  a loop for ever, a ping-pong forth and back. `waittrack`: one more lock at
+  its end (`Lock(d)`, `WaitLockObject(d, …); Unlock(d);`). An order ends a
+  routine, and a routine starts only once: a second path of the same item,
+  or a path of an item the script has told something, is another slot of
+  the same icon, put at the path's start, the first hidden (the juggler's
+  three apples take 9 slots). The paths take Sky's locks from 19 down (14
+  at most in a scene, the actors' routines from 1 up); past them, an item
+  goes to its path's end at once (told).
+- 28 items (and paths) a film: past that, told and not shown. The n-th item
+  of an icon in a scene is the same slot in every scene.
+
+**Riders** (`ride`, `carry`, `lift`, `boost`; `get_off`, `put_down`): the
+rider is put on his mount's feet half a tile in front (drawn over it) and
+lifted (`MoveHeight` to its back's height and the half tile); then each
+move the mount is given, he is given too, at its pace (`SlidePositionMark`,
+turned the way it goes first): Pikachu crosses the sea on Lapras. Off: he
+no longer follows, `MoveHeight` back to 0, a run down to the place. Lost:
+the arcs on and off (runs), his seat over the mount's middle (not the
+game's back or head point), rising and sinking with a swimmer, a mount sunk
+under a heavy rider.
 
 ## Routines, floating, fights (`beside`, `float`, `fight`, recoils)
 
@@ -575,13 +623,13 @@ the table says):
 | Formations | As the engine. |
 | Movement | `jump` to a place: a run (no arc). `follow`/`chase`: catch-ups after each move. |
 | Turning | `face … slowly`: turns at Sky's pace (the engine's slow turn is left out). |
-| Body | `eat`: the eating effect, no apple (items: none). `hurt`: the slide back, its pain. |
+| Body | `eat`: the apple in his hands, hidden when eaten (no bites). `hurt`: the slide back, its pain. `carry`, `lift`: the one carried given each of the carrier's moves. |
 | Emotions | As the engine (Sky's emotes are the engine's numbers). |
 | Camera | As the engine; a frame wider than the screen pans across. |
 | Screen | `flash` of a colour: Sky's FlushOut and FlushIn; `memory`: Sky's sepia. |
 | Sound | A sound played in a loop by name (`chirp`) and faded: left out. |
 | Effects | `effect … from a to b`: the effect on b (no shot flying). `weather sparkles`, sand, fog, sun: nothing. `daytime`: Sky's evening / night tints. |
-| Objects | `hold`, `give`, `drop`, `throw`: no item drawn (no item sprite in ground mode). `open`/`close`: as the engine. |
+| Objects | `hold`, `give`, `drop`, `throw`, `put object`: the item an object of its own, its icon (below, "Items and riders"); arcs in three steps. `open`/`close`: as the engine. |
 | Fights | `fight` by the rules: its blows as attacks (the Wiki's: one Thunder, Piplup faints, as the engine plays it). `dodge`: no "Missed!". `finish`: no slow motion. |
 | Time | `at 2s:` and `at mark + 1s:`: from where the line is written. `together`: at once. |
 | Story | `{value}`: the number as last set ("I have 3 apples."). `seen()`, `keep`: the scene's own variables. Menus as Sky's. |

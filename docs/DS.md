@@ -25,8 +25,8 @@ neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor is a
 `R-DS-LOSS`, below), the hero or the partner before the player
 chose them (`E-DS-HERO`), a zoom or a frame wider than the screen
 (`R-DS-ZOOM`: Sky has no zoom), a Pokémon or form the ROM has no sprite for
-(`R-DS-SPECIES`), what the export leaves out (`R-DS-LEFT`: items, an engine's
-command with no DS operation). In DS Mode the completion offers only what
+(`R-DS-SPECIES`), what the export leaves out (`R-DS-LEFT`: an engine's
+command with no DS operation, not on an item). In DS Mode the completion offers only what
 exports, and the Wiki shows each word's DS badge.
 
 ### The DS Report
@@ -40,10 +40,10 @@ camera, weather, decor, engine command…), with how much is lost:
 
 - **changed** (a yellow diamond): played, with less or otherwise (a bubble
   as a box line, the nearest pose, a pan instead of a zoom);
-- **left out** (an orange triangle): not played (an item, a weather Sky
-  lacks, an engine's step);
+- **left out** (an orange triangle): not played (a weather Sky lacks, an
+  engine's step);
 - **not possible** (a red cross): a word the DS has nothing for (`zoom`,
-  `hold`, `trackpath`), its way round given;
+  `aura`), its way round given;
 - and **added** (a green plus, no loss): a Pokémon SpriteCollab adds, put in
   the ROM.
 
@@ -61,8 +61,8 @@ word's own loss gives way to a note of its own on the line.
   plays counted once, by the worst it loses).
 
 - **DS Preview** (a checkbox over the Scene): the film played as the DS
-  would show it, from the same report: each line it leaves out (an item, a
-  zoom, a word it lacks) not played, each bubble said in the box; the lines
+  would show it, from the same report: each line it leaves out (a zoom, a
+  word it lacks) not played, each bubble said in the box; the lines
   stay where they are, so the Script and the Timeline still agree. Not
   shown (yet): the crowd's trim, the nearest poses, a pan instead of a
   frame wider than the screen, the still decor.
@@ -96,6 +96,33 @@ Nothing is lost in silence, and no Pokémon becomes another:
   then those only acting where they stand, then those moving, never one who
   speaks or is framed among a few; their lines go with them, and the export
   names each one left out.
+
+## Items and riders
+
+**An item the film shows** (`hold`, `give`, `drop`, `throw`, `eat`, `put
+object <item>`, `trackpath` on an item) is an object of the scene's on DS,
+as Sky's cutscenes show things: one of 28 objects of Sky's table no scene
+of the story uses (`ds_export::sky::ITEM_SLOTS`, `tools/ds/add_items.py`),
+its sprite made Sky's own icon of the item (a picture of the film's own:
+that picture, brought to 16 colours). `export-ds` writes a line `//
+ds-export item OBJECT_N<slot> item <id>` (`picture <file>`, the file
+beside the export) and the object in the scene's layout; `patch_rom.py`
+and the fast copy write the slot's sprite.
+
+- held: at the holder's hands, drawn in front of him, given each of his
+  moves at his pace;
+- given, thrown: up, across, down into the other's hands (or where it
+  lands): an arc in three steps, the script waiting for them;
+- dropped: down to the ground; eaten: hidden when it goes (no bites);
+- on a path: its object's routine (`def n for object`), straight legs
+  between its points (the curve lost), looping if it loops; a second path
+  of the same item is another object of the same icon, put where it starts.
+
+**A rider** (`ride`, `carry`, `lift`, `boost`) is put on his mount, drawn in
+front of it, and given each of its moves, the same path at the same pace,
+turned as it goes, until he gets off. How far it goes, and what is lost
+(the arcs, the seat's exact point, a swimmer's rising and sinking):
+`tools/ds/LIMITS.md` ("Items and riders").
 
 ## Pokémon of SpriteCollab's
 
