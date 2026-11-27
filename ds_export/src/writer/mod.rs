@@ -29,6 +29,7 @@ use std::fmt::Write as _;
 
 use engine::{Beat, Cam, Course, Direction, FlowBeat, Formation, Num, Point, SpeechBeat, Spot, Who};
 
+use ::film::ds::room::Room;
 use ::film::ds::{Drawn, STAND_IN, drawn_on_ds};
 
 use crate::notes::{Fate, Kind, Note};
@@ -40,6 +41,7 @@ use things::{Carried, Look, Phase, Shown};
 /// An actor of the scene: its name in the game, the species given to it
 /// (a free test actor), its species, where it stands first, whether it
 /// shows from the start.
+#[derive(Clone)]
 pub(crate) struct Actor {
     name: String,
     species: Option<u16>,
@@ -189,6 +191,12 @@ pub(crate) struct Writer<'a> {
     path_locks: u16,
     /// The lines that played a thing as an object.
     pub(crate) item_lines: BTreeSet<i32>,
+    /// The room the scene's sprites have (`film::ds::room`), and whether
+    /// those past it are kept as magenta squares (`--squares`), not left out.
+    pub(crate) room: Room,
+    pub(crate) squares: bool,
+    /// A scene split for its sprites: the species its first part keeps.
+    keep_kinds: Option<Vec<u16>>,
 }
 
 /// A frame of so many at most is of a few: they are never left out.
@@ -354,6 +362,9 @@ impl<'a> Writer<'a> {
             phases: Vec::new(),
             path_locks: 0,
             item_lines: BTreeSet::new(),
+            room: Room::current(),
+            squares: false,
+            keep_kinds: None,
         }
     }
 

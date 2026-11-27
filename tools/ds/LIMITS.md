@@ -613,6 +613,34 @@ The three reference films: their 120 shots identical to the mega patch's
 group 4. Sheets (not committed): the brawl, the far shore, legends21 and
 the reference films in the session's scratchpad `cot_hook/`.
 
+**What the export counts** (`film_core/src/ds/room.rs`, 2026-11-27): the
+arenas filled in turn as the game does, each sprite at the first with room:
+arena 2's 0xAFCE4 bytes and 31 blocks, then (the hook on in patches.toml,
+as `DW_PATCHES` changes it) arena 1's 0x63B04 less its effects' 0xB300 and
+the 0x20000 kept: 0x38804, so 0xE84E8 (930 KB) in all, 704 KB without the
+hook. Filled in turn, not summed: the far shore's 10th sprite left 0xD3F4
+of arena 2 that no later one fits in. The measured cases come out as seen
+(a unit test holds the far shore's 15 sizes: 10, then 13 with the hook).
+Each species' cost is its ground sprite as loaded: Sky's from the ROM
+(`tools/ds/ground_sizes.py` -> `data/extra/ds_ground_sizes.txt`: a PKDPX's
+decompressed size, 0xB3F0 for Bulbasaur as LoadWanTableEntryFromPack
+allocated it), SpriteCollab's as `add_monsters.py` makes them (the WAN's
+scenes' part, uncompressed: the far shore's 15 at 57-78 KB), else guesses
+on the safe side (Sky's 56 KB; SpriteCollab's their sheets' cells' pixels
+over 48, the fewest a byte took of those 15, plus 4 KB, else 80 KB);
+objects 4 KB each.
+
+Over the room the export splits the scene at a moment (two DS scenes, a
+fade between) when each part fits, else leaves out the least needed
+species with their lines; `--squares` keeps the squares. Seen on the
+sheets (`watch.py --headless`, the session's scratchpad `species_room/`,
+not committed): the far shore (15 of SpriteCollab's, its last moment
+naming 14 of them: no split fits; 1002 KB) plays with 13 (861 KB),
+Chespin and Fennekin left out, no square in any shot; the brawl (20 of
+Sky's) whole, all 20 drawn, no square. A copy of the far shore whose last
+moment names three splits at "the far side" into 8 species (527 KB) and
+11 (751 KB).
+
 ## Dungeons and boss fights (`patch_rom.py --dungeon`, seen 2026-11-22)
 
 Seen from a cold boot (`tests/games/test_rescue`'s Test Woods): the film,

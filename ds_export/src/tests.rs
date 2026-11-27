@@ -15,6 +15,11 @@ fn tables() -> Arc<Tables> {
 
 /// The film exported (`--partial`): its script, and what was told.
 fn exported(name: &str, text: &str) -> (String, Vec<String>) {
+    exported_with(name, text, Options { partial: true, ..Options::default() })
+}
+
+/// The same, with those options.
+fn exported_with(name: &str, text: &str, options: Options) -> (String, Vec<String>) {
     let tables = tables();
     let written = ::film::compile_with(text, tables.clone());
     let wrong: Vec<String> =
@@ -23,7 +28,7 @@ fn exported(name: &str, text: &str) -> (String, Vec<String>) {
     let out: PathBuf = std::env::temp_dir().join(format!("ds_export_tests_{}", std::process::id())).join(format!("{name}.exps"));
     let film = Film { name, text, written: &written, tables: &tables, art: None };
     let mut told = Vec::new();
-    crate::film(&film, Options { partial: true, tall: false }, &out, &mut |said| told.push(said)).expect("exported");
+    crate::film(&film, options, &out, &mut |said| told.push(said)).expect("exported");
     (std::fs::read_to_string(&out).expect("written"), told)
 }
 
@@ -337,4 +342,85 @@ fn one_light_turns_to_another_through_its_halves() {
     let night = from(&script, "screen_FlushIn(1, 60, 4, 224, 176, 136);");
     assert_eq!(night[1..3], ["Wait(60);", "screen_FlushOut(1, 60, 4, 80, 112, 144);"], "{script}");
     assert!(!script.contains("screen_FlushIn(1, 0, 4, 224, 176, 136);"), "{script}");
+}
+
+/// Pikachu and 20 of Sky's largest sprites: over the room the DS has for a
+/// scene's sprites, with GroundSpriteRoom or not, with the game's sizes or
+/// the guesses (`film::ds::room`).
+const LEGENDS: [&str; 21] = [
+    "pikachu",
+    "groudon",
+    "kyogre",
+    "rayquaza",
+    "dialga",
+    "palkia",
+    "giratina",
+    "lugia",
+    "snorlax",
+    "wailord",
+    "steelix",
+    "gyarados",
+    "dragonite",
+    "tyranitar",
+    "metagross",
+    "salamence",
+    "garchomp",
+    "mewtwo",
+    "regigigas",
+    "heatran",
+    "lapras",
+];
+
+/// The legends put in a row, then each moment's own say a line.
+fn legends(moments: &[&[&str]]) -> String {
+    let mut film = format!("scene: town {}\n", LEGENDS.join(" "));
+    for (at, one) in LEGENDS.iter().enumerate() {
+        film += &format!("{one} put {} 170 facing down\n", 40 + 24 * at);
+    }
+    for (at, moment) in moments.iter().enumerate() {
+        film += &format!("\nmoment: part {}\n", at + 1);
+        for one in *moment {
+            film += &format!("{one}: I am here.\n");
+        }
+    }
+    film
+}
+
+/// The actors of each DS scene the export wrote.
+fn scenes_actors(script: &str) -> Vec<usize> {
+    script.split("// ds-export level ").skip(1).map(|block| block.lines().filter(|line| line.starts_with("// ds-export actor ")).count()).collect()
+}
+
+/// A scene over the room, each moment's species fitting: split at the
+/// moment into two DS scenes, each with its own, told; nothing left out.
+#[test]
+fn a_scene_over_the_sprites_room_splits_at_a_moment() {
+    let (script, told) = exported("legends_split", &legends(&[&LEGENDS[..10], &LEGENDS[10..]]));
+    assert_eq!(scenes_actors(&script), vec![10, 11], "{script}");
+    let said = told.iter().find(|line| line.contains("split into two DS scenes")).expect("told");
+    assert!(said.contains("“part 2”") && said.contains("21 species"), "{said}");
+    assert!(!told.iter().any(|line| line.contains("magenta") || line.contains("left out, the least needed")), "{told:?}");
+    // The second opens on the same place, its Pokémon where they were, faded in.
+    let second = script.split("// ds-export level ").nth(2).expect("a second scene");
+    assert!(second.starts_with("LEVEL_") && second.contains("supervision_Acting(0);") && second.contains("screen_FadeIn(1, 30);"), "{second}");
+    assert!(!second.contains("back_SetTitleBanner"), "{second}");
+}
+
+/// A scene over the room that no moment splits (all of them speak in one):
+/// the least needed left out, told with their sizes. `--squares` keeps
+/// them all, neither split nor left out, told as squares.
+#[test]
+fn a_scene_no_moment_splits_leaves_out_the_least_needed() {
+    let film = legends(&[&LEGENDS[..2], &LEGENDS]);
+    let (script, told) = exported("legends_trim", &film);
+    let actors = scenes_actors(&script);
+    assert!(actors.len() == 1 && actors[0] < 21, "{script}");
+    let said = told.iter().find(|line| line.contains("left out, the least needed first")).expect("told");
+    assert!(said.contains("KB") && said.contains("split the scene"), "{said}");
+    let (script, told) = exported_with("legends_squares", &film, Options { partial: true, squares: true, ..Options::default() });
+    assert_eq!(scenes_actors(&script), vec![21], "{script}");
+    assert!(told.iter().any(|line| line.contains("drawn as magenta squares")), "{told:?}");
+    let (script, _) =
+        exported_with("legends_kept", &legends(&[&LEGENDS[..10], &LEGENDS[10..]]), Options { partial: true, squares: true, ..Options::default() });
+    assert_eq!(scenes_actors(&script), vec![21], "not split either: {script}");
 }

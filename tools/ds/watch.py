@@ -45,6 +45,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import ds_cache  # noqa: E402
+import ground_sizes  # noqa: E402
 
 ROOT = ds_cache.ROOT
 EXE = '.exe' if os.name == 'nt' else ''
@@ -269,6 +270,9 @@ def main():
         # (A script of one's own, as patch_rom.py reads it: played as it is.)
         exps = film
     else:
+        # (The species' sprite sizes the export counts a scene's room with, read once from the ROM.)
+        if not os.path.isfile(ground_sizes.table_path()):
+            subprocess.run([sys.executable, os.path.join(HERE, 'ground_sizes.py'), rom], check=True)
         export(film, exps)
     times.append(('export', time.time() - started))
     lap = time.time()

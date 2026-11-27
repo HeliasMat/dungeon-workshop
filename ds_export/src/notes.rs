@@ -49,6 +49,8 @@ pub enum Kind {
     Added,
     /// More Pokémon at once than Sky shows.
     Crowd,
+    /// More kinds of Pokémon in a scene than their sprites have room for.
+    Sprites,
     /// The camera: a zoom, a frame wider than the screen.
     Camera,
     /// The top screen, the screen's effects.
@@ -81,6 +83,7 @@ impl Kind {
             Kind::Species => "Pokémon drawn as another",
             Kind::Added => "Pokémon added to the ROM",
             Kind::Crowd => "Crowds",
+            Kind::Sprites => "Sprites' room",
             Kind::Camera => "Camera",
             Kind::Screen => "Screen",
             Kind::Weather => "Weather",

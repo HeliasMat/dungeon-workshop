@@ -5,8 +5,10 @@
 //! and completion.
 //! A film `for ds` is told what the DS can't play of it as it is compiled
 //! (`compile/for_ds.rs`). Sky's sprites, which species it has and which
-//! pose each one's sprite shows: `sprites`.
+//! pose each one's sprite shows: `sprites`; the room a scene's sprites
+//! have: `room`.
 
+pub mod room;
 mod sprites;
 
 pub use sprites::{Drawn, OWN_ORDER, PoseOnDs, SKY_SPECIES, STAND_IN, animation, drawn_on_ds, group_name, own_group, own_named, pose_on_ds, without_sheets};

@@ -20,7 +20,8 @@ the DS can't play is told as you write, from the same table `scene_player
 export-ds --table` prints (`film_core/src/ds.rs`): a word the DS has nothing for
 (`E-DS-WORD`, with how to write it: a `fight` as blows of `attack`), a word
 that exports with a loss (`R-DS-LOSS`: what is lost), more than 21 Pokémon at
-once in a scene (`E-DS-ACTORS`: who the export leaves out), a place that is
+once in a scene (`E-DS-ACTORS`: who the export leaves out), more species in
+a scene than their sprites have room for (`R-DS-SPRITES`, below), a place that is
 neither a map of Sky's nor a decor of yours (`E-DS-PLACE`; a decor is a
 `R-DS-LOSS`, below), the hero or the partner before the player
 chose them (`E-DS-HERO`), a zoom or a frame wider than the screen
@@ -96,6 +97,38 @@ Nothing is lost in silence, and no Pokémon becomes another:
   then those only acting where they stand, then those moving, never one who
   speaks or is framed among a few; their lines go with them, and the export
   names each one left out.
+
+### Species in a scene
+
+Sky loads each species a scene shows once, its whole ground sprite, as the
+scene starts: about 930 KB of them with GroundSpriteRoom (below, on by
+default), 704 KB without (tools/ds/LIMITS.md, "Species in a scene"). Sky's
+own species take 3-80 KB (about 40 on average, so about 21 of them); those
+SpriteCollab adds 57-77 KB (about 13). Past the room a sprite is drawn as a
+magenta square; the export never lets that happen in silence
+(`film_core/src/ds/room.rs`, `ds_export/src/writer/scene.rs`):
+
+- **a scene split**: when a moment splits the scene so that the species
+  before it and those from it each fit, it becomes two DS scenes there (the
+  most even such split), a fade between, the second on the same place and
+  view, who goes on put where they stood (standing), the hero and the
+  partner in both;
+- **else the least needed left out**: the species no line names first,
+  then those only acting, moving, speaking, the fewest lines first (never
+  the hero nor the partner), each Pokémon of them with its lines;
+- **`--squares`** (`scene_player export-ds --squares`) keeps them all,
+  those past the room as squares.
+
+Each is a note of the DS Report ("Sprites' room": the species, their KB and
+the room's, what was done). As you write, `R-DS-SPRITES` says it on the
+scene's line, with how to keep them all: split the scene yourself, have some
+leave in one scene and the others arrive in the next, or use fewer new
+species. Each species' size is your ROM's (`data/extra/ds_ground_sizes.txt`,
+written by `python tools/ds/ground_sizes.py <rom>`, which `watch.py` runs
+once; SpriteCollab's added as `add_monsters.py` makes their sprites),
+else a guess on the safe side (Sky's 56 KB; SpriteCollab's from their
+sheets' cells, else 80 KB). `DW_PATCHES=-GroundSpriteRoom` counts Sky's
+room alone.
 
 ## Items and riders
 
@@ -318,7 +351,8 @@ is on, and whether the reference films still played with it;
   Handler (an abort or fatal error is shown on screen, melonDS) and our
   GroundSpriteRoom (`tools/ds/cot/ground_sprite_room`, GPL-3): when Sky's
   own room for a scene's sprites is full, the next ones go to ground
-  arena 1, about 250 KB more (LIMITS.md, "Species in a scene").
+  arena 1, about 226 KB more (LIMITS.md, "Species in a scene"); the
+  export counts it in a scene's room ("Species in a scene", above).
 
 The special processes' ids are told when the base is made (and kept in
 `base.json`): a script calls one with `ProcessSpecial(id, a, b)`. With

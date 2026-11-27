@@ -294,7 +294,7 @@ scene_player check-game my_game",
 Nothing of data/: a picture or a sound from the game's data is refused. Whoever plays it reads their own: scene_player play <game>.dwpack.",
     ),
     Command {
-        flags: &["--table", "--partial", "--tall"],
+        flags: &["--table", "--partial", "--tall", "--squares"],
         values: &["--out"],
         ..command(
             "export-ds",
@@ -305,6 +305,7 @@ Nothing of data/: a picture or a sound from the game's data is refused. Whoever 
 --table: each core word and the game's operations it becomes, direct, close (what is lost) or impossible (why).
 --partial: what doesn't export is left out, and told, instead of an error.
 --tall: both screens show the place, the top one a screen above the bottom one (the actors show on the bottom one only).
+--squares: a scene whose species' sprites are past the room the DS has for them keeps them all, those past it drawn as magenta squares (else it is split at a moment, or the least needed are left out, and told).
 A .dungeon file instead of a film: the dungeon and its boss fight as the rules read them, in JSON, for patch_rom.py --dungeon.
 scene_player export-ds my_film --out target/ds/my_film.exps",
         )

@@ -157,3 +157,38 @@ fn a_pose_the_sprite_lacks_is_told_with_the_one_instead() {
     let lost = told(film, codes::DS_LOSS);
     assert!(lost.iter().any(|said| said.contains("has no Rotate: Hop instead") && said.contains("1 more line")), "{:?}", coded(film));
 }
+
+/// Pikachu and 20 of Sky's largest sprites in a scene: over the room the DS
+/// has for its sprites (with the game's sizes or the guesses), told once
+/// on the scene with the species, the bytes and the room, what the export
+/// does (splits it at a moment where both parts fit, else leaves out the
+/// least needed) and how to keep them all; nothing told when they fit.
+#[test]
+fn species_past_the_sprites_room_are_told_with_what_the_export_does() {
+    let legends = "pikachu groudon kyogre rayquaza dialga palkia giratina lugia snorlax wailord steelix gyarados dragonite tyranitar metagross salamence garchomp mewtwo regigigas heatran lapras";
+    let all: Vec<&str> = legends.split(' ').collect();
+    let film = |moments: &[&[&str]]| -> String {
+        let mut film = format!("for ds\nscene: town {legends}\n");
+        for (at, one) in all.iter().enumerate() {
+            film += &format!("{one} put {} 170\n", 40 + 24 * at);
+        }
+        for (at, moment) in moments.iter().enumerate() {
+            film += &format!("moment: part {}\n", at + 1);
+            for one in *moment {
+                film += &format!("{one}: Here.\n");
+            }
+        }
+        film
+    };
+    let split = told(&film(&[&all[..10], &all[10..]]), codes::DS_SPRITES);
+    assert_eq!(split.len(), 1, "{split:?}");
+    assert!(split[0].starts_with("21 species in this scene") && split[0].contains("KB") && split[0].contains("magenta squares"), "{split:?}");
+    assert!(split[0].contains("splits it into two DS scenes at the moment “part 2”") && split[0].contains("split the scene"), "{split:?}");
+    let problems = crate::tests::compile(&film(&[&all[..10], &all[10..]])).problems;
+    assert!(problems.iter().filter(|problem| problem.code == Some(codes::DS_SPRITES)).all(|problem| problem.is_remark() && problem.line() == 2));
+    let trimmed = told(&film(&[&all[..2], &all]), codes::DS_SPRITES);
+    assert!(trimmed.len() == 1 && trimmed[0].contains("the export leaves out the least needed"), "{trimmed:?}");
+    // (A few species fit; not written for the DS, nothing said.)
+    assert!(told("for ds\nscene: town pikachu groudon kyogre\npikachu: Hi.\ngroudon: Hi.\n", codes::DS_SPRITES).is_empty());
+    assert!(told(&film(&[&all[..10], &all[10..]]).replacen("for ds\n", "", 1), codes::DS_SPRITES).is_empty());
+}

@@ -23,7 +23,9 @@ How, with SkyTemple's own code (skytemple_files, GPL-3):
   import does (`FileType.WAN.CHARA.import_sheets`, then `split_wan`), the
   three parts added to `MONSTER/monster.bin`, `m_ground.bin` (the scenes')
   and `m_attack.bin`, its sizes in the game's table
-  (`check_and_correct_monster_sprite_size`);
+  (`check_and_correct_monster_sprite_size`); its scenes' part's size told
+  to `data/extra/ds_ground_sizes.txt` (`ground_sizes.record`), for the
+  export to count it in a scene's room;
 - its portraits: each face, 40x40, in `FONT/kaomado.kao` (brought to 16
   colours as SkyTemple does).
 
@@ -39,6 +41,8 @@ import os
 import sys
 
 from PIL import Image
+
+import ground_sizes
 
 from skytemple_files.common.sprite_util import check_and_correct_monster_sprite_size
 from skytemple_files.common.types.file_types import FileType
@@ -155,6 +159,8 @@ def add(rom, config, monsters, tell=print, made=made_sprite):
             if not os.path.isdir(os.path.join(one.folder, 'sprite')):
                 raise RuntimeError(f'no sheets at {one.folder}')
             parts = made(one.folder)
+            # (Its scenes' sprite as the game loads it: what the export counts in a scene's room.)
+            ground_sizes.record(one.species, len(parts[1]))
             number = free.pop(0)
             # (Packs of unequal lengths, as SkyTemple mends them: empty sprites.)
             sprite = max(len(pack) for pack in packs.values())

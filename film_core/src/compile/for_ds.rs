@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, HashMap};
 use engine::{Beat, BodyBeat, Course, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Play, Point, Scene, ScreenBeat, SpeechBeat, Spot, ViewBeat, Who};
 
 use crate::codes;
-use crate::ds::{AT_ONCE, DECOR_LOSS, Drawn, Export, Mode, drawn_on_ds, group_name, pose_on_ds};
+use crate::ds::{AT_ONCE, DECOR_LOSS, Drawn, Export, Mode, drawn_on_ds, group_name, pose_on_ds, room};
 use crate::film::Film;
 
 /// What the DS can't play of the film, added to its problems.
@@ -24,6 +24,7 @@ pub(crate) fn tell(film: &mut Film, mode: Mode, scenes: &[Scene]) {
     for scene in scenes {
         place(film, scene, &lines);
         at_once(film, scene);
+        sprites(film, scene, &lines);
         view(film, scene, &lines);
         poses(film, scene, &mut poses_told);
     }
@@ -291,6 +292,70 @@ fn place(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
         "this place is no map of Explorers of Sky's nor a decor of yours (level {level}): the DS has nothing to show; choose a place of the game's or a decor"
     );
     film.problems.push(Diagnostic::at(header_line(scene, lines), message).coded(codes::DS_PLACE));
+}
+
+/// `R-DS-SPRITES`: more species in a scene than their sprites have room
+/// for on DS (`room`: each species' sprite loaded once as the scene starts,
+/// in Sky's arena and, GroundSpriteRoom on, the hook's; past it a magenta
+/// square). Told with the species, their bytes and the room's, what the
+/// export does (it splits the scene at a moment when both parts fit, else
+/// leaves out the least needed) and how to keep them all.
+fn sprites(film: &mut Film, scene: &Scene, lines: &[(usize, &str)]) {
+    let codes_of = pokemon(film);
+    let data = film.tables.data.clone();
+    let moments: Vec<usize> = lines.iter().enumerate().filter(|(_, (_, line))| line.trim_start().starts_with("moment:")).map(|(at, _)| at + 1).collect();
+    // Each species as the DS shows it, and the film's names of its Pokémon.
+    let mut names: BTreeMap<u16, Vec<String>> = BTreeMap::new();
+    let usage = room::usage_of(&scene.beats, &moments, |field| {
+        let name = codes_of.get(field)?;
+        let (Who::Monster(species) | Who::Another { species, .. }) = Who::parse(field)? else { return None };
+        let shown = drawn_on_ds(&data, species).species(species);
+        let named = names.entry(shown).or_default();
+        if !named.contains(name) {
+            named.push(name.clone());
+        }
+        Some(shown)
+    });
+    let all = usage.all();
+    let room = room::Room::current();
+    if room::fits(&data, &room, &all, 0) {
+        return;
+    }
+    let named = |kinds: &[u16]| -> String {
+        kinds.iter().map(|kind| names.get(kind).map_or_else(|| kind.to_string(), |names| names.join(", "))).collect::<Vec<_>>().join(", ")
+    };
+    let what = match room::split_at(&data, &room, &usage, &[], 0) {
+        Some(at) => {
+            let line = usage.lines[at];
+            let moment = lines.get(line.wrapping_sub(1)).and_then(|(_, text)| text.trim_start().strip_prefix("moment:")).unwrap_or("").trim();
+            let (first, second) = (usage.part(0..at), usage.part(at..usage.moments.len()));
+            format!(
+                "the export splits it into two DS scenes at the moment “{moment}” (line {line}): {} species, about {} KB, then {}, about {} KB",
+                first.len(),
+                room::kb(room::scene_bytes(&data, &first, 0)),
+                second.len(),
+                room::kb(room::scene_bytes(&data, &second, 0))
+            )
+        }
+        None => {
+            let mut least: Vec<u16> = all.clone();
+            least.sort_by_key(|kind| usage.uses.get(kind).copied().unwrap_or(0));
+            let left = room::leave_out(&data, &room, &all, &least, 0);
+            format!(
+                "no moment splits it so that both parts fit: the export leaves out the least needed, about {} ({} KB)",
+                named(&left),
+                room::kb(room::scene_bytes(&data, &left, 0))
+            )
+        }
+    };
+    let message = format!(
+        "{} species in this scene ({}): their sprites take about {} KB, {}; past it they are drawn as magenta squares. {what}. To keep them all as they are: split the scene, have some leave in one scene and the others arrive in the next, or use fewer new species (Sky's own take about 40 KB each, SpriteCollab's 60-77 KB)",
+        all.len(),
+        named(&all),
+        room::kb(room::scene_bytes(&data, &all, 0)),
+        room.said(),
+    );
+    film.problems.push(Diagnostic::at(header_line(scene, lines), message).as_remark().coded(codes::DS_SPRITES));
 }
 
 /// The film's Pokémon by their codes (`m25`, `m25.1`): those the game

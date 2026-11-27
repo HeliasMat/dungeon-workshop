@@ -130,7 +130,7 @@ impl Writer<'_> {
 
     /// The screen faded in; the first time, the top screen too, and the
     /// light the scene opens with.
-    fn fade_in(&mut self, white: bool, frames: Frames) {
+    pub(super) fn fade_in(&mut self, white: bool, frames: Frames) {
         let first = !self.started;
         self.started = true;
         self.faded_out = false;

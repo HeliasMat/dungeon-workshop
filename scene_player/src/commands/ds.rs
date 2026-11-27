@@ -9,8 +9,9 @@ use film::Context;
 /// `export-ds <film> --out <file.exps>`; `export-ds <file.dungeon> --out
 /// <file.json>`; `export-ds --table`: the table. `--partial`: what doesn't
 /// export is left out (and told), not an error. `--tall`: the top screen
-/// shows the place above the bottom one.
-pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, partial: bool, tall: bool) -> Result<(), String> {
+/// shows the place above the bottom one. `--squares`: sprites past the
+/// room kept as magenta squares (`ds_export::Options::squares`).
+pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, partial: bool, tall: bool, squares: bool) -> Result<(), String> {
     if table || name.is_empty() {
         print!("{}", ds_export::table());
         return Ok(());
@@ -31,7 +32,7 @@ pub fn export(context: &Context, name: &str, out: Option<&String>, table: bool, 
     let art = piece.art().ok();
     let film = ds_export::Film { name: &piece.name, text: &piece.text, written, tables: &piece.tables, art: art.as_ref() };
     let out = out.cloned().unwrap_or_else(|| format!("target/ds/{}.exps", piece.name));
-    let exported = ds_export::film(&film, ds_export::Options { partial, tall }, Path::new(&out), &mut |told| eprintln!("{told}"))?;
+    let exported = ds_export::film(&film, ds_export::Options { partial, tall, squares }, Path::new(&out), &mut |told| eprintln!("{told}"))?;
     println!("{out}: {} actors, place {}", exported.actors, exported.place.as_deref().unwrap_or("?"));
     Ok(())
 }

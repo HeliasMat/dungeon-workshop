@@ -7,9 +7,21 @@ use std::fmt::Write as _;
 
 use engine::Who;
 
+use ::film::ds::room;
+
 use super::{AT_ONCE, Actor, Writer, names};
 use crate::notes::{Fate, Kind};
-use crate::sky::{HIDDEN, quoted, tiles};
+use crate::sky::{HIDDEN, direction, quoted, tiles};
+
+/// What one left out did, said after its size.
+fn speaking(rank: u8) -> &'static str {
+    match rank {
+        3 => ", speaking",
+        2 => ", moving",
+        1 => ", acting",
+        _ => "",
+    }
+}
 
 /// An actor's part of a block played beside the script.
 #[derive(Clone, Debug, Default)]
@@ -360,6 +372,8 @@ impl Writer<'_> {
         next.slots = std::mem::take(&mut self.slots);
         next.drawings = std::mem::take(&mut self.drawings);
         next.item_lines = std::mem::take(&mut self.item_lines);
+        next.room = self.room.clone();
+        next.squares = self.squares;
         *self = next;
     }
 
@@ -542,8 +556,195 @@ impl Writer<'_> {
         self.body = lines.into_iter().map(|line| line + "\n").collect();
     }
 
+    /// Those of the scene left out, their lines with them (no order to one
+    /// the game hasn't loaded).
+    fn drop_actors(&mut self, gone: &[Who]) {
+        let mut lines: Vec<String> = self.body.lines().map(str::to_string).collect();
+        for who in gone {
+            if let Some(actor) = self.actors.remove(who) {
+                let token = format!("ACTOR_{}", actor.name);
+                lines.retain(|line| !names(line, &token));
+                for parts in &mut self.besides {
+                    parts.retain(|part| part.actor != token);
+                }
+            }
+        }
+        self.body = lines.into_iter().map(|line| line + "\n").collect();
+    }
+
+    /// The film's name of one of that species in the scene, else the game's.
+    fn kind_name(&self, kind: u16) -> String {
+        let film_name = self.actors.iter().find(|(_, actor)| actor.kind == kind).and_then(|(who, _)| self.film_names.get(who).cloned());
+        film_name.unwrap_or_else(|| self.game.name(kind))
+    }
+
+    /// The species of the scene's actors, in the order their sprites load
+    /// (the layout's), each once.
+    fn load_order(&self) -> Vec<u16> {
+        room::once(&self.actors.values().map(|actor| actor.kind).collect::<Vec<u16>>())
+    }
+
+    /// Room for the scene's sprites (`film::ds::room`): each species loads
+    /// its sprite once as the scene starts, in Sky's arena then the hook's,
+    /// the objects' after them; past the room a sprite is a magenta square.
+    /// Over it (a scene no moment could split), the species least needed
+    /// leave the scene, never the hero nor the partner, each of its Pokémon
+    /// with its lines: first those no line names, then those only acting,
+    /// then moving, then speaking; among them the fewest lines first. Told,
+    /// with the bytes. `--squares`: kept, told as squares.
+    pub(super) fn fit_sprites(&mut self) {
+        let data = self.game.data.clone();
+        let objects = self.objects.len();
+        let order = self.load_order();
+        if room::fits(&data, &self.room, &order, objects) {
+            return;
+        }
+        let level = self.level.clone().unwrap_or_default();
+        let before = room::scene_bytes(&data, &order, objects);
+        let said = format!("{level}: {} species, their sprites about {} KB; {}", order.len(), room::kb(before), self.room.said());
+        if self.squares {
+            let placed = self.room.place(&room::costs(&data, &order, objects));
+            let squares: Vec<String> = order.iter().zip(&placed).filter(|(_, at)| at.is_none()).map(|(kind, _)| self.kind_name(*kind)).collect();
+            self.note(
+                self.scene_line,
+                Kind::Sprites,
+                Fate::Changed,
+                said,
+                format!("kept as asked (--squares): {} drawn as magenta squares", squares.join(", ")),
+            );
+            return;
+        }
+        let lines: Vec<String> = self.body.lines().map(str::to_string).collect();
+        // Each species' need: what its Pokémon do at most, then how many lines name them.
+        let mut need: BTreeMap<u16, (u8, usize)> = BTreeMap::new();
+        for (who, actor) in &self.actors {
+            let token = format!("ACTOR_{}", actor.name);
+            let named: Vec<&String> = lines.iter().filter(|line| names(line, &token)).collect();
+            let speaks = named.iter().any(|line| line.contains("message_SetFace(") || line.contains("message_SetActor("));
+            let moves =
+                named.iter().any(|line| ["MovePosition", "SlidePosition", "Turn2Direction", "ExecuteCommon", "MoveHeight"].iter().any(|op| line.contains(op)));
+            let rank = if actor.name.starts_with("PLAYER") || actor.name.starts_with("ATTENDANT") {
+                5
+            } else if speaks || self.framed.contains(who) {
+                3
+            } else if moves {
+                2
+            } else {
+                u8::from(!named.is_empty())
+            };
+            let one = need.entry(actor.kind).or_insert((0, 0));
+            *one = (one.0.max(rank), one.1 + named.len());
+        }
+        // (The hero's and the partner's never leave.)
+        let mut ranked: Vec<(u8, usize, u16)> = need.iter().filter(|(_, (rank, _))| *rank < 5).map(|(kind, (rank, count))| (*rank, *count, *kind)).collect();
+        ranked.sort();
+        let least: Vec<u16> = ranked.iter().map(|(.., kind)| *kind).collect();
+        let left = room::leave_out(&data, &self.room, &order, &least, objects);
+        let kept: Vec<u16> = order.iter().copied().filter(|kind| !left.contains(kind)).collect();
+        let names_left: Vec<String> = left
+            .iter()
+            .map(|kind| format!("{} ({} KB{})", self.kind_name(*kind), room::kb(room::sprite_bytes(&data, *kind)), speaking(need[kind].0)))
+            .collect();
+        let still = if room::fits(&data, &self.room, &kept, objects) { String::new() } else { "; still over it: the last ones magenta squares".to_string() };
+        self.note(
+            self.scene_line,
+            Kind::Sprites,
+            Fate::LeftOut,
+            said,
+            format!(
+                "no moment splits the scene so that both parts fit: left out, the least needed first, their lines with them: {} (now {} KB{still}); split the scene, have some leave in one scene and the others arrive in the next, or use fewer new species",
+                names_left.join(", "),
+                room::kb(room::scene_bytes(&data, &kept, objects))
+            ),
+        );
+        let gone: Vec<Who> = self.actors.iter().filter(|(_, actor)| left.contains(&actor.kind)).map(|(who, _)| *who).collect();
+        self.drop_actors(&gone);
+    }
+
+    /// The scene over the room split here, at the start of a moment (`lib`
+    /// chose it: `film::ds::room::split_at`): this part keeps the species
+    /// of `first` (those that only come later leave its layout), ends with
+    /// its fade, and the next DS scene opens on the same place and view,
+    /// those of `second`'s species there now put where they are, facing
+    /// as they do (hidden if they are), the others coming in as they do.
+    /// Told. False (not split, trimmed with the block): in a block played
+    /// beside the script, or no place yet.
+    pub(crate) fn split_scene(&mut self, first: &[u16], second: &[u16], moment: &str, line: i32) -> bool {
+        if self.capture.is_some() || self.level.is_none() || !self.started {
+            return false;
+        }
+        let data = self.game.data.clone();
+        let lines: Vec<String> = self.body.lines().map(str::to_string).collect();
+        let middle = self.middle.unwrap_or((128.0, 96.0));
+        let going_on: Vec<(Who, Actor)> = self
+            .actors
+            .iter()
+            .filter(|(_, actor)| second.contains(&actor.kind))
+            .map(|(who, actor)| {
+                let token = format!("ACTOR_{}", actor.name);
+                let hidden = match lines.iter().rev().find(|line| names(line, &token)) {
+                    Some(last) => last.contains(&format!("SetOutputAttribute<actor {token}>({HIDDEN});")),
+                    None => actor.hidden && actor.first.is_none(),
+                };
+                let (x, y) = self.at.get(who).copied().unwrap_or(actor.first.map_or(middle, |(x, y, _)| (x, y)));
+                let facing = self.facing.get(who).map_or(actor.first.map_or("DIR_DOWN", |(.., facing)| facing), |way| direction(*way));
+                (*who, Actor { first: Some((x, y, facing)), hidden, seen: false, layer: 0, ..actor.clone() })
+            })
+            .collect();
+        let level = self.level.clone().unwrap_or_default();
+        let (first_bytes, second_bytes) = (room::scene_bytes(&data, first, 0), room::scene_bytes(&data, second, 0));
+        self.note(
+            self.scene_line,
+            Kind::Sprites,
+            Fate::Changed,
+            format!("{level}: {} species, their sprites about {} KB; {}", room::once(&[first, second].concat()).len(), room::kb(room::scene_bytes(&data, &[first, second].concat(), 0)), self.room.said()),
+            format!(
+                "split into two DS scenes at the moment “{moment}” (line {line}), a fade between: {} species ({} KB), then {} ({} KB); who goes on stands where they were, back to standing",
+                first.len(),
+                room::kb(first_bytes),
+                second.len(),
+                room::kb(second_bytes)
+            ),
+        );
+        self.keep_kinds = Some(first.to_vec());
+        // (What the next part goes on with: the place, the view, where each one is.)
+        let (top, tall, size, middle, camera) = (self.top, self.tall, self.size, self.middle, self.camera);
+        let (places, at, facing, tint, weather) = (self.places.clone(), self.at.clone(), self.facing.clone(), self.tint, self.weather);
+        let (followers, scene_line) = (self.followers.clone(), self.scene_line);
+        self.next_scene();
+        (self.top, self.tall, self.size, self.middle, self.camera) = (top, tall, size, middle, camera);
+        (self.places, self.at, self.facing, self.tint, self.weather) = (places, at, facing, tint, weather);
+        (self.followers, self.scene_line) = (followers, scene_line);
+        let bare = level.trim_start_matches("LEVEL_").to_string();
+        if self.tall {
+            self.line("back2_SetMode(4);");
+            self.line(&format!("back2_SetGround(LEVEL_{bare});"));
+        } else if let Some(top) = self.top {
+            self.line("back2_SetMode(4);");
+            self.line(&format!("back2_SetGround(LEVEL_{top});"));
+        }
+        self.line(&format!("back_SetGround({level});"));
+        self.line("supervision_Acting(0);");
+        self.level = Some(level);
+        self.line("camera_SetMyself<performer 0>();");
+        let position = self.position(self.camera);
+        self.line(&format!("SetPositionMark<performer 0>({position});"));
+        for (who, actor) in going_on {
+            self.actors.insert(who, actor);
+        }
+        self.fade_in(false, engine::Frames(30.0));
+        self.line("WaitScreenFade();");
+        true
+    }
+
     /// One scene: its level, actors and performers, then its `def 0`.
     pub(super) fn block(&mut self) -> String {
+        // (A scene split for its sprites: who only comes in its next part leaves this one.)
+        if let Some(keep) = self.keep_kinds.take() {
+            let gone: Vec<Who> = self.actors.iter().filter(|(_, actor)| !keep.contains(&actor.kind)).map(|(who, _)| *who).collect();
+            self.drop_actors(&gone);
+        }
+        self.fit_sprites();
         self.fit();
         let mut out = String::new();
         let _ = writeln!(out, "// ds-export level {}", self.level.as_deref().unwrap_or("?"));

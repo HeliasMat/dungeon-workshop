@@ -706,6 +706,7 @@ Every problem has its code, a stable one: `E-…` an error (the film does not pl
 | `E-DS-WORD` | in a film for ds: a word the DS has nothing for, with how to write it another way |
 | `R-DS-LOSS` | in a film for ds: a word that exports with less than the film shows, what it loses |
 | `E-DS-ACTORS` | in a film for ds: more than 21 Pokémon at once in a scene, who would be left out |
+| `R-DS-SPRITES` | in a film for ds: more species in a scene than their sprites have room for (about 930 KB): the scene split at a moment, else the least needed left out |
 | `E-DS-PLACE` | in a film for ds: a place that is neither a map of Explorers of Sky's nor a decor of yours |
 | `E-DS-HERO` | in a film for ds: the hero or the partner, before the player chose them |
 | `R-DS-ZOOM` | in a film for ds: a zoom, or a frame wider than the screen: Sky has no zoom |

@@ -30,6 +30,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::Path;
 
+use ::film::ds::room::{self, Room};
 use ::film::ds::{Export, export_of};
 use ::film::tables::{Tables, game_file};
 use ::film::{Written, vocabulary};
@@ -68,6 +69,9 @@ pub struct Options {
     pub partial: bool,
     /// The top screen shows the place above the bottom one, where it is tall enough.
     pub tall: bool,
+    /// A scene's sprites past the room (`film::ds::room`) kept, drawn as
+    /// magenta squares, not split nor left out.
+    pub squares: bool,
 }
 
 /// What an export wrote: how many actors, the first scene's place, what it
@@ -117,7 +121,7 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
 /// nothing written: the Workshop's DS Report and the Script's DS marks.
 pub fn report(film: &Film) -> Report {
     let game = game_of(film);
-    let mut writer = write(film, &game, Options { partial: true, tall: false });
+    let mut writer = write(film, &game, Options { partial: true, ..Options::default() });
     let _ = writer.finish(film.name);
     report_of(film, &writer)
 }
@@ -141,6 +145,7 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
     let written = film.written;
     let mut writer = Writer::new(game);
     writer.tall_asked = options.tall;
+    writer.squares = options.squares;
     if let Some(art) = film.art {
         writer.fights = writer::fights_played(written, art, game);
     }
@@ -177,12 +182,17 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
             writer.bubble_faces.insert(at as i32 + 1, face);
         }
     }
-    // The typed beats the engine plays, each after the line it is of.
+    // The typed beats the engine plays, each after the line it is of; a
+    // scene over the sprites' room split at a moment where both parts fit.
     let mut number = 0;
     for scene in written.events.iter().flat_map(|event| &event.scenes) {
+        let mut split = if options.squares { None } else { split_of(film, game, &writer.room, scene) };
         for beat in &scene.beats {
             if let Beat::Flow(FlowBeat::Line { number: line, .. }) = beat {
                 number = *line;
+                if let Some(plan) = split.take_if(|plan| *line > plan.line) {
+                    writer.split_scene(&plan.first, &plan.second, &plan.moment, plan.line);
+                }
             }
             let word = usize::try_from(number).ok().and_then(|line| written.read_as.get(&line)).map(|read| read.word.as_str());
             // (`DS_BEATS=1`: each beat as the export reads it.)
@@ -202,6 +212,53 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
         writer.notes.extend(problems);
     }
     writer
+}
+
+/// Where a scene over the sprites' room splits into two DS scenes: the
+/// moment's line and name, the species of each part (`film::ds::room`).
+struct Split {
+    line: i32,
+    moment: String,
+    first: Vec<u16>,
+    second: Vec<u16>,
+}
+
+/// A scene's split, if its species are over the room and a moment splits
+/// it so that both parts fit (the hero and the partner in both).
+fn split_of(film: &Film, game: &Game, room: &Room, scene: &engine::Scene) -> Option<Split> {
+    let moments: Vec<usize> = film.text.lines().enumerate().filter(|(_, line)| line.trim_start().starts_with("moment:")).map(|(at, _)| at + 1).collect();
+    let mut always = Vec::new();
+    let acting: Vec<&str> = film
+        .written
+        .names
+        .iter()
+        .filter(|(code, name)| {
+            code.parse::<u32>().is_ok()
+                && film.text.lines().any(|line| line.trim_start().strip_prefix(name.as_str()).is_some_and(|rest| rest.starts_with([' ', ':', '('])))
+        })
+        .map(|(code, _)| code.as_str())
+        .collect();
+    let usage = room::usage_of(&scene.beats, &moments, |field| {
+        match Who::parse(field)? {
+            Who::Monster(species) | Who::Another { species, .. } => Some(::film::ds::drawn_on_ds(&game.data, species).species(species)),
+            // (A plain number is a character's code, and a place's too: the hero
+            // or the partner only where a line of the film starts with their name.)
+            Who::Character(number) if acting.contains(&field) => {
+                always.extend(game.actors.get(usize::from(number)).map(|(_, kind)| *kind));
+                None
+            }
+            _ => None,
+        }
+    });
+    let always = room::once(&always);
+    if room::fits(&game.data, room, &[always.clone(), usage.all()].concat(), 0) {
+        return None;
+    }
+    let at = room::split_at(&game.data, room, &usage, &always, 0)?;
+    let line = usage.lines[at];
+    let moment = film.text.lines().nth(line - 1).and_then(|text| text.trim_start().strip_prefix("moment:")).unwrap_or("").trim().to_string();
+    let part = |range| room::once(&[always.clone(), usage.part(range)].concat());
+    Some(Split { line: line as i32, moment, first: part(0..at), second: part(at..usage.moments.len()) })
 }
 
 /// The words the film defines (`define greet`): their lines are written out already.
