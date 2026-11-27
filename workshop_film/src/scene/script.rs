@@ -163,7 +163,7 @@ pub(super) fn way_of(dx: f32, dy: f32) -> &'static str {
 pub(super) fn faced(text: &str, playing: usize, name: &str, way: &str) -> (String, usize) {
     let lines: Vec<&str> = text.split('\n').collect();
     let upto = playing.clamp(1, lines.len().max(1));
-    let scene = (1..=upto).rev().find(|number| film::lines::scene_head(&lines[number - 1]).is_some()).unwrap_or(1);
+    let scene = (1..=upto).rev().find(|number| film::lines::scene_head(lines[number - 1]).is_some()).unwrap_or(1);
     let theirs = (scene..=upto).rev().find(|number| lines[number - 1].split_whitespace().next() == Some(name));
     if let Some(line) = theirs {
         let words: Vec<&str> = lines[line - 1].split_whitespace().collect();
@@ -214,7 +214,7 @@ fn pairs(words: &[&str], from: usize) -> Vec<(usize, [f32; 2])> {
 pub(super) fn moves_of(text: &str, playing: usize, name: &str) -> (Option<[f32; 2]>, Vec<Move>) {
     let lines: Vec<&str> = text.split('\n').collect();
     let (start, end) = moment_of(text, playing);
-    let scene = (1..=start.min(lines.len())).rev().find(|number| film::lines::scene_head(&lines[number - 1]).is_some()).unwrap_or(1);
+    let scene = (1..=start.min(lines.len())).rev().find(|number| film::lines::scene_head(lines[number - 1]).is_some()).unwrap_or(1);
     const MOVERS: [&str; 6] = ["put", "walk", "run", "enter", "appear", "go"];
     let before = (scene..start).rev().find_map(|number| {
         let words: Vec<&str> = lines[number - 1].split_whitespace().collect();
