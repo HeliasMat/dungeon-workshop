@@ -512,7 +512,8 @@ pub fn hover(text: &str, at: Spot, project: &assets::project::Project) -> Option
 fn word_help(name: &str, text: &str, project: &assets::project::Project) -> Option<String> {
     if let Some(recipe) = crate::recipes_for(project, text).into_iter().find(|recipe| recipe.name == name) {
         let from = if recipe.from.is_empty() { format!("line {}", recipe.line) } else { recipe.from.clone() };
-        return Some(format!("{} — {} ({from})", recipe.shape, recipe.doc));
+        let uses = if recipe.not_used { format!("\nA word of your library: write “uses {}” at the top of the film.", recipe.from) } else { String::new() };
+        return Some(format!("{} — {} ({from}){uses}", recipe.shape, recipe.doc));
     }
     let word = film_core::words::plain(name);
     let shown = |known: &str, forms: &[&str], writes: &str, family: &str| {
@@ -523,6 +524,14 @@ fn word_help(name: &str, text: &str, project: &assets::project::Project) -> Opti
         return Some(shown(known, forms, writes, family));
     }
     crate::LEXICON.command_words().find(|(known, ..)| *known == word).map(|(known, forms, writes)| shown(known, forms, writes, "engine"))
+}
+
+/// A recipe offered: its form, what it does, the file of the library it
+/// is in (and the `uses` line it needs).
+fn with_doc(shape: String, recipe: &film_core::Told) -> String {
+    let doc = if recipe.doc.is_empty() { String::new() } else { format!(" — {}", recipe.doc) };
+    let uses = if recipe.not_used { format!(" (your library: uses {})", recipe.from) } else { String::new() };
+    format!("{shape}{doc}{uses}")
 }
 
 /// What a word's line wants at one of its places, by the word's first form.
@@ -735,8 +744,8 @@ pub fn completions(text: &str, at: Spot, project: &assets::project::Project) -> 
         }
     } else if let Some(who) = who_then_word(&before, text) {
         // (Who first, `pikachu `: the words said of someone, as he would do them.)
-        for recipe in crate::recipes_for(project, text).into_iter().filter(|recipe| crate::LEXICON.takes_someone_first(&recipe.name, text)) {
-            offered.push((recipe.name.clone(), format!("{who} {}", recipe.shape)));
+        for recipe in crate::recipes_for(project, text).into_iter().filter(|recipe| recipe.of_someone || crate::LEXICON.takes_someone_first(&recipe.name, text)) {
+            offered.push((recipe.name.clone(), with_doc(format!("{who} {}", recipe.shape), &recipe)));
         }
         for (word, forms) in
             crate::LEXICON.every_word().map(|(_, word, forms, _)| (word, forms)).chain(crate::LEXICON.shown_commands().map(|(word, forms, _)| (word, forms)))
@@ -749,7 +758,7 @@ pub fn completions(text: &str, at: Spot, project: &assets::project::Project) -> 
     } else if first {
         offered.extend(OPENINGS.iter().map(|(word, told)| (word.to_string(), told.to_string())));
         for recipe in crate::recipes_for(project, text) {
-            offered.push((recipe.name.clone(), recipe.shape.clone()));
+            offered.push((recipe.name.clone(), with_doc(recipe.shape.clone(), &recipe)));
         }
         for (_, word, forms, writes) in crate::LEXICON.every_word() {
             offered.push((word.to_string(), forms.first().map_or_else(|| writes.to_string(), |form| crate::shown_form(word, form))));

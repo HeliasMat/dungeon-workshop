@@ -115,6 +115,22 @@ pub(crate) fn told_replaced(film: &mut crate::film::Film, number: usize, written
     true
 }
 
+/// A word of a recipe file of the user's library (`library/recipes/`) said
+/// in a film that does not use it: told, the `uses` line its fix. Whether
+/// it was one.
+pub(crate) fn asks_own_recipe(film: &mut crate::film::Film, line: &crate::verbs::Line) -> bool {
+    let project = film.tables.project.clone();
+    let said = std::iter::once(line.verb.as_str()).chain(line.rest.first().map(String::as_str));
+    let Some((word, file)) = said.map(crate::words::plain).find_map(|word| crate::text::recipes::own_recipe_file_of(&project, &word).map(|(file, _)| (word, file)))
+    else {
+        return false;
+    };
+    let message = format!("“{word}” is a word of your library ({file}): “uses {file}” before the first scene");
+    let problem = engine::Diagnostic::at(line.number, message).fix(format!("write “uses {file}”"), language::Span::new(0, 0), format!("uses {file}\n"));
+    film.problems.push(problem);
+    true
+}
+
 /// A word of an optional family said in a film that does not take its
 /// library in (`bite` with no `uses fishing`): told, with the line that
 /// takes it in as its fix (written first in the film).

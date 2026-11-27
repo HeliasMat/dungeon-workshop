@@ -267,6 +267,14 @@ impl Body<'_> {
                     let user = completion.user.clone().unwrap_or_else(|| "pikachu".to_string());
                     examples.show(ui, &workshop_base::example::film_of_move(&user, name), 336.0);
                 }
+                // (A word of the user's library chosen: its recipe file played, its example.)
+                if let Some((word, _)) = completion.choices.get(completion.chosen)
+                    && let Some((_, recipe)) = film::own_recipe_file_of(scripts.session.library(), word)
+                {
+                    ui.add_space(4.0);
+                    ui.separator();
+                    examples.show(ui, &recipe, 300.0);
+                }
                 // (What the one chosen is, all of it.)
                 if let Some((_, about)) = completion.choices.get(completion.chosen)
                     && about.chars().count() > 48

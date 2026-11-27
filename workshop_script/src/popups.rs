@@ -284,6 +284,10 @@ impl Body<'_> {
                             }
                             ui.label(RichText::new(said.as_str()).size(theme::SMALL + 1.0));
                         }
+                        // (A word of the user's library: its example played.)
+                        if let Some((_, recipe)) = word_at(&open.text, index).and_then(|word| film::own_recipe_file_of(scripts.session.library(), &word)) {
+                            scripts.examples.show(ui, &recipe, 240.0);
+                        }
                     });
                 } else {
                     ui.ctx().request_repaint_after(Duration::from_millis(100));

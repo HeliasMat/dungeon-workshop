@@ -86,6 +86,9 @@ fn command_here(film: &mut Film, item: &Instr) {
         return;
     }
     if !engine_word(&first) && !engine_word(&line.verb) {
+        if crate::text::written::asks_own_recipe(film, &line) {
+            return;
+        }
         film.unknown(line.number, "unknown word", &first, film.lexicon.every_word().map(|(_, word, ..)| word), "film/FILMS.md");
     } else if line.verb == "else" && line.rest.is_empty() {
         film.beat(crate::emit::otherwise());

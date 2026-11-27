@@ -213,6 +213,14 @@ fn every_offer(session: &Session, text: &str, cursor: usize, asked: bool) -> Opt
             .filter(|entry| entry.family != workshop_wiki::catalogue::ADVANCED || plain.len() >= 3)
             .map(|entry| (entry.word.clone(), format!("{} · {}", workshop_wiki::catalogue::family_shown(entry.family), entry.shown())))
             .collect();
+        // (The recipes said of someone: the film's, those of the files it uses, the user's library's.)
+        for recipe in film::recipes_for(session.library(), text).into_iter().filter(|recipe| recipe.of_someone && recipe.name.starts_with(&plain)) {
+            let uses = if recipe.not_used { format!(" (your library: uses {})", recipe.from) } else { String::new() };
+            let doc = if recipe.doc.is_empty() { String::new() } else { format!(" — {}", recipe.doc) };
+            if !doing.iter().any(|(word, _)| *word == recipe.name) {
+                doing.push((recipe.name.clone(), format!("Recipe · {}{doc}{uses}", recipe.shape)));
+            }
+        }
         // (The most used first, then the shortest.)
         const USUAL: [&str; 16] =
             ["walk", "run", "look", "jump", "emote", "move", "enter", "exit", "put", "hold", "give", "throw", "joy", "fear", "shift", "turn"];

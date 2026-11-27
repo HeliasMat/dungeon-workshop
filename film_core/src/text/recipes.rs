@@ -203,10 +203,16 @@ pub struct Told {
     pub doc: String,
     pub from: String,
     pub line: usize,
+    /// Said of someone first (`who:pokemon`): `pikachu bow_twice`.
+    pub of_someone: bool,
+    /// A recipe file of the user's library the film does not use yet: it
+    /// needs `uses <from>` to be called.
+    pub not_used: bool,
 }
 
 /// The recipes a film has to call: its own (`define`, from its text),
-/// those of the files it uses (`uses`), then the library's.
+/// those of the files it uses (`uses`), the library's, then those of the
+/// user's recipe files it does not use yet (`not_used`).
 pub fn recipes_for(lexicon: &'static Lexicon, project: &Project, text: &str) -> Vec<Told> {
     let told = |recipe: &Recipe, from: &str| Told {
         name: recipe.name.clone(),
@@ -214,17 +220,47 @@ pub fn recipes_for(lexicon: &'static Lexicon, project: &Project, text: &str) -> 
         doc: recipe.doc.clone(),
         from: from.to_string(),
         line: recipe.text.number,
+        of_someone: recipe.said_of_someone(),
+        not_used: false,
     };
     let mut all: Vec<Told> = recipes_of(lexicon, text, "film").iter().map(|recipe| told(recipe, "")).collect();
+    let mut used = Vec::new();
     for line in text.lines() {
         if let ["uses" | "include", name] = line.split_whitespace().collect::<Vec<_>>().as_slice()
             && let Ok(shared) = shared_text(lexicon, project, name)
         {
+            used.push(name.trim_end_matches(".film").to_string());
             all.extend(recipes_of(lexicon, &shared, name).iter().map(|recipe| told(recipe, name)));
         }
     }
     all.extend(lexicon.library().iter().filter(|recipe| !crate::verbs::internal(&recipe.name)).map(|recipe| told(recipe, &recipe.from)));
+    for (name, shared) in own_recipe_files(project) {
+        if used.contains(&name) || all.iter().any(|known| known.from.is_empty() && recipes_of(lexicon, &shared, &name).iter().any(|recipe| recipe.name == known.name)) {
+            continue;
+        }
+        all.extend(recipes_of(lexicon, &shared, &name).iter().map(|recipe| Told { not_used: true, ..told(recipe, &name) }));
+    }
     all
+}
+
+/// The user's recipe file that defines that word, if one does: its name, its text.
+pub fn own_recipe_file_of(project: &Project, word: &str) -> Option<(String, String)> {
+    let defined = |text: &str| text.lines().any(|line| line.split_whitespace().take(2).eq(["define", word]));
+    own_recipe_files(project).into_iter().find(|(_, text)| defined(text))
+}
+
+/// The user's recipe files (`library/recipes/`), by name, with their text.
+pub fn own_recipe_files(project: &Project) -> Vec<(String, String)> {
+    let Ok(files) = std::fs::read_dir(user_recipes(project)) else { return Vec::new() };
+    let mut found: Vec<(String, String)> = files
+        .flatten()
+        .filter_map(|file| {
+            let name = file.file_name().to_str()?.strip_suffix(".film")?.to_string();
+            Some((name, std::fs::read_to_string(file.path()).ok()?))
+        })
+        .collect();
+    found.sort();
+    found
 }
 
 /// A line with `there` and `team` put for what they stand for, and noted
