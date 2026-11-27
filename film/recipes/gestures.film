@@ -51,7 +51,7 @@ end
 # rainbow strands wind round him, his body turns white in three steps, as
 # the game's palettes do. No slowing, no veil.
 define _mega who:word
-  sound aura
+  playsound aura as mega_aura
   particles zap who 10 gold
   wait 10f
   prop who flash white flash_amount 0
@@ -66,11 +66,12 @@ define _mega who:word
   wait 8f
   particles strands who 180
   prop who flash_amount 100%
+  fadesound mega_aura 0 10f stop
   wait 14f
 end
 
 # It ends: a flash of four frames, a burst of the rainbow, the new form's
-# colours back in three steps, its cry.
+# colours back in three steps. No cry.
 define _mega_done who:word
   flash white 4f
   sound flash
@@ -84,8 +85,7 @@ define _mega_done who:word
   prop who flash_amount 34%
   wait 6f
   prop who flash none
-  sound roar
-  wait 24f
+  wait 8f
 end
 
 # Back from a mega evolution (`who mega_evolve back`): a few strands, white.
