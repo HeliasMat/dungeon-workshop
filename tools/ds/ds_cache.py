@@ -193,12 +193,14 @@ def made_sprite_kept(folder):
 
 def slot_lines():
     """The new game's event, before the quiz: a jump to the film's first
-    slot, then every slot in turn."""
+    slot, then every slot in turn, then back to the title screen."""
     lines = ['    jump @dw_slot_end;\n']
     for slot in range(1, SLOTS + 1):
         lines.append(f'    §dw_slot_{slot:02d};\n')
         lines.append(f"    supervision_ExecuteActingSub(LEVEL_{SLOT_LEVEL}, '{SLOT_PREFIX.upper()}{slot:02d}', 0);\n")
     lines.append('    §dw_slot_end;\n')
+    import patch_rom
+    lines += patch_rom.FILM_END
     return ''.join(lines)
 
 

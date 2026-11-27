@@ -5,12 +5,13 @@ Explorers of Sky ROM, and write the patched copy.
     python tools/ds/patch_rom.py <rom> <film.exps> <MAP/scene> <out.nds> [--more-actors] [--patch out.bps]
 
 - `--boot`: the film plays as soon as a new game starts (after the title,
-  before the personality quiz), and the game then goes on as usual. Each
+  before the personality quiz), then the game goes back to the title. Each
   scene of the film becomes an acting scene of its own, added to the ROM
   (`SCRIPT/<place>/dwscen01.ssa/.ssb`, ...), and the new game's first
   event (`EVENT_M00A_01` of `SCRIPT/COMMON/unionall.ssb`) plays them in
   turn with `supervision_ExecuteActingSub`, the way the story chains its
-  scenes. No savestate needed: `tools/ds/boot_and_watch.py` shows it.
+  scenes, then goes back to the title screen. No savestate needed:
+  `tools/ds/boot_and_watch.py` shows it.
 - `<MAP/scene>`: the film's first scene replaces that story scene, like
   `G01P01B/m02a0101` (the first scene of chapter 2); further scenes are
   added after it, in the same event.
@@ -114,6 +115,10 @@ STAND_IN = 228
 # The new game's first event: the personality quiz, played right after the
 # title. --boot plays the film before it.
 BOOT_EVENT = 'coro EVENT_M00A_01 {\n    bgm_Stop();\n'
+# After a film played as a new game starts: back to the title screen (Sky's
+# own special process, as at the end of a dungeon of the Workshop), not on
+# into the personality quiz's opening.
+FILM_END = ['    switch ( ProcessSpecial(PROCESS_SPECIAL_RETURN_TO_TITLE_SCREEN, 60, 0) ) { }\n', '    hold;\n']
 
 
 class Scene:
@@ -474,6 +479,8 @@ def main():
             fight = [line.strip() for line in add_scenes(rom, config, boss, 'dungeon.py', 'dwboss')]
             before, after = (fight[:1], fight[1:]) if fight else ([], [])
             plays += dungeon.team_lines() + dungeon.enter_lines(dungeon.BOSS_OF if boss_first else dungeon.FLOORS_OF)
+        else:
+            plays += FILM_END
 
         def edit(source):
             if BOOT_EVENT not in source:
