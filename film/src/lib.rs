@@ -20,7 +20,7 @@ use engine::{Diagnostic, Lines, StoryEvent};
 /// The sprites' animations by clear names (`pikachu pose sit`), and the animation each one is.
 pub use film_acting::POSES;
 pub use film_core::{
-    Context, Film, Lexicon, ReadAs, Told, Written, check, codes, coloured, context, doc, emit, formatted, grammar, internal, ir, lines, locate,
+    Context, Film, Lexicon, OwnRecipe, ReadAs, Told, Written, check, codes, coloured, context, doc, emit, formatted, grammar, internal, ir, lines, locate,
     own_recipe_file_of, own_recipe_files, performer_first, plot, scene_line, screen, shared_path, tables, time, user_recipes, words,
 };
 
@@ -200,6 +200,12 @@ pub fn line_of(word: &str, given: &[(&str, &str)]) -> Result<String, String> {
 /// The recipes a film has to call: its own, those of the files it uses, then the library's.
 pub fn recipes_for(project: &assets::project::Project, text: &str) -> Vec<film_core::Told> {
     film_core::text::recipes::recipes_for(&LEXICON, project, text)
+}
+
+/// The user's recipe files (`library/recipes/`): each its name, its path,
+/// the recipes it defines (how a film calls them, their doc).
+pub fn own_recipe_list(project: &assets::project::Project) -> Vec<(String, std::path::PathBuf, Vec<OwnRecipe>)> {
+    film_core::text::recipes::own_recipe_list(&LEXICON, project)
 }
 
 /// What the engine plays of a film or of the game's story (`story.txt`): its events, each

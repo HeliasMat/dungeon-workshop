@@ -112,6 +112,37 @@ pub struct Project {
     pub decors: Vec<Entry>,
     pub shared: Vec<Entry>,
     pub binned: Vec<Entry>,
+    /// The user's recipe files (`library/recipes/`): each its name, its
+    /// path, the recipes it defines.
+    pub recipes: Vec<(String, PathBuf, Vec<film::OwnRecipe>)>,
+}
+
+/// A new recipe file's text: a ready recipe of that name, its doc, and an
+/// example that shows it.
+pub fn recipe_template(name: &str) -> String {
+    format!(
+        "# Bows twice, politely. (What your word does, in one line: shown in the help.)\n\
+         define {name} who:pokemon\n  who bow\n  wait 0.3s\n  who bow\nend\n\n\
+         # A small scene that shows it, played in the Scene as you write.\n\
+         example: town pikachu eevee\npikachu {name}\neevee {name}\n"
+    )
+}
+
+/// `library/recipes/<name>.film` made from the template (one of that name:
+/// kept as it is); its path, or what went wrong.
+pub fn new_recipe_file(library: &assets::project::Project, name: &str) -> Result<PathBuf, String> {
+    let named = film::words::plain(&name.trim().replace(' ', "_"));
+    if named.is_empty() {
+        return Err("a recipe file needs a name".to_string());
+    }
+    let path = film::user_recipes(library).join(format!("{named}.film"));
+    if !path.exists() {
+        path.parent()
+            .map_or(Ok(()), std::fs::create_dir_all)
+            .and_then(|()| crate::safe::write(&path, recipe_template(&named)))
+            .map_err(|error| format!("{}: {error}", path.display()))?;
+    }
+    Ok(path)
 }
 
 /// The Workshop's bin: what is put away there, to be taken back.
@@ -137,7 +168,13 @@ impl Project {
             .map(|path| Entry::binned(&path))
             .collect();
         binned.sort_by_key(|entry| std::cmp::Reverse(entry.changed));
-        Project { films: entries(&library.films(), "film", Kind::Film), decors: entries(&library.decors(), "decor", Kind::Decor), shared, binned }
+        Project {
+            films: entries(&library.films(), "film", Kind::Film),
+            decors: entries(&library.decors(), "decor", Kind::Decor),
+            shared,
+            binned,
+            recipes: film::own_recipe_list(library),
+        }
     }
 
     /// Any of its files, by its path.

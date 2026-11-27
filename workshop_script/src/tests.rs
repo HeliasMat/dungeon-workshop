@@ -285,5 +285,14 @@ fn lines_go_to_a_recipe_file_of_the_library() {
     let (film, recipe) = super::edits::library_recipe(text, (2, 3), "greet", "hello");
     assert_eq!(film, "title: Hello\nuses greet\nscene: town pikachu eevee # the square\ngreet\npikachu: Hi!");
     assert_eq!(recipe, "# Lines 3 to 4 of hello.\ndefine greet\n  pikachu bow\n    eevee bow\nend\n\nexample: town pikachu eevee\ngreet\n");
-    assert!(super::edits::recipe_template("bow_twice").contains("example: town pikachu eevee\npikachu bow_twice"));
+    assert!(workshop_base::project::recipe_template("bow_twice").contains("example: town pikachu eevee\npikachu bow_twice"));
+}
+
+#[test]
+fn a_recipe_file_is_used_before_the_first_scene_once() {
+    let text = "title: Hello\nscene: town pikachu eevee\npikachu bow";
+    let (made, at, long) = super::edits::with_uses(text, "bow_twice").expect("no uses yet");
+    assert_eq!(made, "title: Hello\nuses bow_twice\nscene: town pikachu eevee\npikachu bow");
+    assert_eq!((at, long), ("title: Hello\n".chars().count(), "uses bow_twice\n".chars().count()));
+    assert!(super::edits::with_uses(&made, "bow_twice").is_none());
 }

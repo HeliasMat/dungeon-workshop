@@ -134,7 +134,18 @@ impl Body<'_> {
         {
             scripts.wiki_shown = !scripts.wiki_shown;
         }
-        ui.menu_button("…", |ui| self.more_menu(ui)).response.on_hover_text("the project's films, Format, DS Mode, Dialogue, the Layout");
+        let more = ui.menu_button("…", |ui| self.more_menu(ui)).response.on_hover_text("the project's films, Format, DS Mode, Dialogue, the Layout");
+        // (For a picture of it: `WORKSHOP_PROJECT=my_recipes`, "…" › My Recipes shown open.)
+        if self.scripts.session.launch.project.as_deref() == Some("my_recipes") {
+            egui::Area::new(egui::Id::new("my recipes shown"))
+                .order(egui::Order::Foreground)
+                .pivot(egui::Align2::RIGHT_TOP)
+                .fixed_pos(more.rect.right_bottom())
+                .show(ui.ctx(), |ui| {
+                    let Body { scripts, open, path, .. } = self;
+                    egui::Frame::menu(ui.style()).show(ui, |ui| my_recipes(ui, scripts, open, path));
+                });
+        }
         ui.menu_button("View", |ui| self.view_menu(ui));
         let Body { scripts, path, .. } = self;
         egui::ComboBox::from_id_salt(("story view", *path))
@@ -179,7 +190,7 @@ impl Body<'_> {
 
     /// The Project menu: all the films searched, a film opened by its name or beside, the versions, a note.
     fn project_menu(&mut self, ui: &mut egui::Ui) {
-        let Body { scripts, open, .. } = self;
+        let Body { scripts, open, path, .. } = self;
         if ui.button("Search All the Films…  Ctrl+Shift+F").clicked() {
             scripts.project_search.get_or_insert_with(|| project_search(String::new()));
             ui.close();
@@ -192,6 +203,7 @@ impl Body<'_> {
             scripts.new_recipe = Some(String::new());
             ui.close();
         }
+        ui.menu_button("My Recipes", |ui| my_recipes(ui, scripts, open, path));
         if ui.button("Another Film Beside…").on_hover_text("read beside this one (a double-click on one of its lines: open it there)").clicked() {
             scripts.quick_open = Some((String::new(), true));
             ui.close();
@@ -272,5 +284,59 @@ impl Body<'_> {
             None => {}
         }
         ui.allocate_rect(room, Sense::hover());
+    }
+}
+
+/// "…" › My Recipes: the user's recipe files (`library/recipes/`), each
+/// its recipes (how a film calls them, what they do). A click opens the
+/// file on the recipe; Insert writes its call under the cursor, and
+/// `uses <file>` if the film has none.
+fn my_recipes(ui: &mut egui::Ui, scripts: &mut super::Scripts, open: &mut super::Script, path: &std::path::Path) {
+    let files = film::own_recipe_list(scripts.session.library());
+    if files.is_empty() {
+        ui.label(theme::weak("No recipe files yet: use New Recipe…"));
+        return;
+    }
+    ui.set_max_width(420.0);
+    for (at, (name, file, recipes)) in files.iter().enumerate() {
+        if at > 0 {
+            ui.separator();
+        }
+        if ui.button(RichText::new(format!("{name}.film")).strong()).on_hover_text("open this recipe file").clicked() {
+            scripts.session.ask(workshop_base::ask::Ask::Film { path: file.clone(), line: 1 });
+            ui.close();
+        }
+        if recipes.is_empty() {
+            ui.label(theme::weak("  no recipe defined yet"));
+        }
+        for recipe in recipes {
+            ui.horizontal(|ui| {
+                ui.add_space(8.0);
+                let doc = if recipe.doc.is_empty() { "no doc comment".to_string() } else { recipe.doc.clone() };
+                if ui.button(RichText::new(&recipe.call).monospace()).on_hover_text(format!("{doc}\nClick: open {name}.film at this recipe")).clicked() {
+                    scripts.session.ask(workshop_base::ask::Ask::Film { path: file.clone(), line: recipe.line });
+                    ui.close();
+                }
+                let in_itself = path == file.as_path();
+                if ui
+                    .small_button("Insert")
+                    .on_hover_text(if in_itself {
+                        format!("write “{}” under the cursor", recipe.call)
+                    } else {
+                        format!("write “{}” under the cursor, and “uses {name}” before the first scene if it is missing", recipe.call)
+                    })
+                    .clicked()
+                {
+                    open.add_line_using(&recipe.call, (!in_itself).then_some(name.as_str()));
+                    ui.close();
+                }
+            });
+            if !recipe.doc.is_empty() {
+                ui.horizontal(|ui| {
+                    ui.add_space(14.0);
+                    ui.label(theme::text(&recipe.doc, theme::SMALL, theme::WEAK));
+                });
+            }
+        }
     }
 }

@@ -56,6 +56,8 @@ pub struct LaunchOptions {
     pub game: Option<String>,
     /// `WORKSHOP_FILE=…`: that file chosen in the Home.
     pub home_file: Option<String>,
+    /// `WORKSHOP_HOME=recipes`: the Home on that shelf (`recent`, `favourites`, `films`, `decors`, `recipes`, `shared`, `bin`).
+    pub home_shelf: Option<String>,
     /// `WORKSHOP_MUSIC=1:instrument`: that track, that view of the song.
     pub music: Option<String>,
     /// `WORKSHOP_TILEQUANT=<file.png>`: the image converter open on that picture.
@@ -143,6 +145,7 @@ impl LaunchOptions {
             scene: var("WORKSHOP_SCENE"),
             game: var("WORKSHOP_GAME"),
             home_file: var("WORKSHOP_FILE"),
+            home_shelf: var("WORKSHOP_HOME"),
             music: var("WORKSHOP_MUSIC"),
             tilequant: var("WORKSHOP_TILEQUANT"),
             resource: var("WORKSHOP_RESOURCE"),

@@ -639,7 +639,7 @@ eevee bow_twice
 - Each name says what it wants: `who:pokemon`, `what:thing`, `time:duration`, `count:number`, `where:place` (`x y`, someone, `front_of b`…). A call that gives something else is told on the film's line that calls it.
 - A film that calls a word of your library without its `uses` line is told so, the line its fix. A recipe named as a word of the language (it hides it) or as a recipe of another file of your library is remarked.
 - When a recipe file is written in the Workshop, the films of `library/films` that use it are checked again; those that no longer play are named in a remark on the file's first line.
-- In the Workshop, the Script's menu has **New Recipe…**, and **Make a Recipe of Them…** can put the selected lines in your library. Your words show in the completion and in the help, with their doc. The folder is yours: it is never committed.
+- In the Workshop, the Script's menu has **New Recipe…**, and **Make a Recipe of Them…** can put the selected lines in your library. Your words show in the completion and in the help, with their doc; taking one in the completion adds its `uses` line if the film lacks it. **My Recipes**, in the Home and in the Script's "…" menu, lists your files and their recipes (`who bow_twice`, its doc): a click opens the file, its example playing; **Insert** (in the Script) writes the call and its `uses` line. The folder is yours: it is never committed.
 
 ## For agents
 

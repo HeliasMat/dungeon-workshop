@@ -235,7 +235,9 @@ pub fn recipes_for(lexicon: &'static Lexicon, project: &Project, text: &str) -> 
     }
     all.extend(lexicon.library().iter().filter(|recipe| !crate::verbs::internal(&recipe.name)).map(|recipe| told(recipe, &recipe.from)));
     for (name, shared) in own_recipe_files(project) {
-        if used.contains(&name) || all.iter().any(|known| known.from.is_empty() && recipes_of(lexicon, &shared, &name).iter().any(|recipe| recipe.name == known.name)) {
+        if used.contains(&name)
+            || all.iter().any(|known| known.from.is_empty() && recipes_of(lexicon, &shared, &name).iter().any(|recipe| recipe.name == known.name))
+        {
             continue;
         }
         all.extend(recipes_of(lexicon, &shared, &name).iter().map(|recipe| Told { not_used: true, ..told(recipe, &name) }));
@@ -261,6 +263,58 @@ pub fn own_recipe_files(project: &Project) -> Vec<(String, String)> {
         .collect();
     found.sort();
     found
+}
+
+/// A recipe of one of the user's files, as listed (the Home's My Recipes,
+/// the Script's menu): its name, how a film calls it (`who bow_twice`), what
+/// it does, its line in the file (from 1).
+#[derive(Clone, Debug, PartialEq)]
+pub struct OwnRecipe {
+    pub name: String,
+    pub call: String,
+    pub doc: String,
+    pub line: usize,
+}
+
+/// The user's recipe files (`library/recipes/`), each with its path and
+/// the recipes it defines, by name.
+pub fn own_recipe_list(lexicon: &'static Lexicon, project: &Project) -> Vec<(String, std::path::PathBuf, Vec<OwnRecipe>)> {
+    let folder = user_recipes(project);
+    own_recipe_files(project)
+        .into_iter()
+        .map(|(name, text)| {
+            let recipes = recipes_of(lexicon, &text, &name)
+                .iter()
+                .map(|recipe| OwnRecipe {
+                    name: recipe.name.clone(),
+                    call: call_form(&recipe.name, &recipe.form),
+                    doc: recipe.doc.clone(),
+                    line: recipe.text.number,
+                })
+                .collect();
+            let path = folder.join(format!("{name}.film"));
+            (name, path, recipes)
+        })
+        .collect()
+}
+
+/// How a film calls a recipe, its names in place: `who bow_twice`,
+/// `who1 combat_enerve who2`, `[turns]` one that may be left out.
+pub fn call_form(name: &str, form: &[Piece]) -> String {
+    fn said(piece: &Piece) -> String {
+        match piece {
+            Piece::One { name, default: None, .. } => name.clone(),
+            Piece::One { name, .. } | Piece::Words { name, default: Some(_), .. } => format!("[{name}]"),
+            Piece::Team(name) => format!("*{name}"),
+            Piece::Words { name, .. } => format!("{name}..."),
+            Piece::Choice(words) => words.join("|"),
+            Piece::Maybe(inner) => format!("[{}]", inner.iter().map(said).collect::<Vec<_>>().join(" ")),
+        }
+    }
+    let mut words: Vec<String> = form.iter().map(said).collect();
+    let at = usize::from(grammar::performer_first(form) && !words.is_empty());
+    words.insert(at, name.to_string());
+    words.join(" ")
 }
 
 /// A line with `there` and `team` put for what they stand for, and noted
@@ -763,4 +817,19 @@ pub fn unfold(text: &str, film: &mut Film) -> Vec<Instr> {
 fn beside_block(number: usize, name: &Option<String>, lines: Vec<Instr>) -> Instr {
     let named: Vec<String> = name.iter().cloned().collect();
     Instr { inner: Some(lines), ..Instr::word(number, "beside", &named, true) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_recipe_is_listed_as_a_film_calls_it() {
+        let call = |name: &str, form: &str| call_form(name, &grammar::read_recipe(form));
+        assert_eq!(call("bow_twice", "who:pokemon"), "who bow_twice");
+        assert_eq!(call("combat_enerve", "who1:pokemon who2:pokemon"), "who1 combat_enerve who2");
+        assert_eq!(call("storm", "turns=4"), "storm [turns]");
+        assert_eq!(call("cheer", "*all"), "*all cheer");
+        assert_eq!(call("intro", ""), "intro");
+    }
 }

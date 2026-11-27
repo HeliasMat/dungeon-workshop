@@ -10,7 +10,7 @@ use eframe::egui::{self, Color32, Key, Rect, RichText, Sense, pos2, vec2};
 use super::body::{Body, RULER, Written};
 use super::cast::scene_cast;
 use super::completion::LineMade;
-use super::edits::{each_line, library_recipe, lines_of, made_recipe, recipe_template, replaced, wrapped_in};
+use super::edits::{each_line, library_recipe, lines_of, made_recipe, replaced, wrapped_in};
 use super::knowledge::{Pictured, picture_of, portrait};
 use super::text::{index_of, spot_of, word_at};
 use super::wiki::wiki_said_of;
@@ -217,15 +217,9 @@ impl Body<'_> {
         let named = film::words::plain(&name.trim().replace(' ', "_"));
         match done {
             Some(true) if !named.is_empty() => {
-                let path = film::user_recipes(scripts.session.library()).join(format!("{named}.film"));
-                let written = if path.exists() {
-                    Ok(())
-                } else {
-                    path.parent().map_or(Ok(()), std::fs::create_dir_all).and_then(|()| workshop_base::safe::write(&path, recipe_template(&named)))
-                };
-                match written {
-                    Ok(()) => scripts.session.ask(workshop_base::ask::Ask::Film { path, line: 3 }),
-                    Err(error) => scripts.said = Some(format!("{}: {error}", path.display())),
+                match workshop_base::project::new_recipe_file(scripts.session.library(), &named) {
+                    Ok(path) => scripts.session.ask(workshop_base::ask::Ask::Film { path, line: 3 }),
+                    Err(error) => scripts.said = Some(error),
                 }
                 scripts.new_recipe = None;
             }

@@ -71,7 +71,7 @@ fn names_taken(film: &mut Film, defined: &[Defined]) {
         }
         let defines = |text: &str| text.lines().any(|line| line.split_whitespace().take(2).eq(["define", name.as_str()]));
         for (file, _) in own_files.iter().filter(|(_, text)| **text != *source && defines(text)) {
-            film.remark(number, format!("“{name}” is already a recipe of your library ({file}); give it another name"));
+            film.remark(number, format!("“{name}” is already defined in your recipe file {file}.film; give it another name or remove one of them"));
         }
     }
 }

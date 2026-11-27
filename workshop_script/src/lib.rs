@@ -236,6 +236,12 @@ impl Script {
 
     /// A line added under the cursor's, as far in, the cursor at its end.
     pub fn add_line(&mut self, line: &str) {
+        self.add_line_using(line, None);
+    }
+
+    /// A line added under the cursor's (`add_line`), and `uses <file>`
+    /// before the first scene if the film has none: one change to undo.
+    pub fn add_line_using(&mut self, line: &str, file: Option<&str>) {
         let (_, start, current) = line_at(&self.text, self.cursor);
         let lead: String = current.chars().take_while(|letter| letter.is_whitespace()).collect();
         let end = start + current.chars().count();
@@ -243,6 +249,10 @@ impl Script {
             replaced(&self.text, start..end, &format!("{lead}{line}"))
         } else {
             replaced(&self.text, end..end, &format!("\n{lead}{line}"))
+        };
+        let (made, at) = match file.and_then(|file| edits::with_uses(&made, file)) {
+            Some((with, put, long)) => (with, if put <= at { at + long } else { at }),
+            None => (made, at),
         };
         self.change(made);
         self.cursor = at;

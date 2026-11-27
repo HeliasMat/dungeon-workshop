@@ -9,7 +9,7 @@ use workshop_base::session::Session;
 use super::body::{Body, Written};
 use super::cast::someone_here;
 use super::completion::{after_space, chained, line_word, no_forms_here, offered, taken, word_first};
-use super::edits::replaced;
+use super::edits::{replaced, with_uses};
 use super::knowledge::{face_portrait, species_of};
 use super::text::{letter_of_word, line_at, spot_of};
 use super::{Completion, KEYWORD, OFFERED, PLAIN};
@@ -40,6 +40,18 @@ pub(super) fn family_word_written(session: &Session, text: &str, cursor: usize, 
     }
 }
 
+/// A word offered taken (`taken`); a recipe of the user's library the film
+/// does not use yet (said `(your library: uses <file>)`), its `uses` line too.
+pub(super) fn taken_with_uses(text: &str, completion: &Completion, word: &str, said: &str) -> (String, (usize, usize)) {
+    let (changed, chosen) = taken(text, completion, word);
+    let file = said.rsplit_once("(your library: uses ").map(|(_, rest)| rest.trim_end_matches(')'));
+    match file.and_then(|file| with_uses(&changed, file)) {
+        Some((made, at, long)) if at <= chosen.0 => (made, (chosen.0 + long, chosen.1 + long)),
+        Some((made, ..)) => (made, chosen),
+        None => (changed, chosen),
+    }
+}
+
 impl Body<'_> {
     /// A word offered taken (by the keys), in the place of the letters typed;
     /// a word taken from the words by family, written. What follows, offered.
@@ -47,9 +59,9 @@ impl Body<'_> {
         let Body { scripts, open, .. } = self;
         if let Some(chosen) = accept
             && let Some(completion) = scripts.completion.take()
-            && let Some((word, _)) = completion.choices.get(chosen)
+            && let Some((word, said)) = completion.choices.get(chosen)
         {
-            let (changed, chosen) = taken(&open.text, &completion, word);
+            let (changed, chosen) = taken_with_uses(&open.text, &completion, word, said);
             open.change(changed);
             open.jump = Some(chosen);
             if chosen.0 == chosen.1 {
@@ -287,8 +299,8 @@ impl Body<'_> {
         });
         let Some(index) = clicked else { return };
         completion.chosen = index;
-        if let Some((word, _)) = completion.choices.get(index).cloned() {
-            let (changed, chosen) = taken(&open.text, completion, &word);
+        if let Some((word, said)) = completion.choices.get(index).cloned() {
+            let (changed, chosen) = taken_with_uses(&open.text, completion, &word, &said);
             open.change(changed);
             open.jump = Some(chosen);
             scripts.completion = if chosen.0 == chosen.1 { chained(&scripts.session, &open.text, chosen.0) } else { None };

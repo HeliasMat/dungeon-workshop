@@ -1,7 +1,8 @@
 //! The Home: the project at a glance.
 //! - the Project (left): the recent files, the favourites, the films, the
-//!   decors, the things drawn (in the Resources), the recipes the films
-//!   share, the Workshop's bin; how many of each;
+//!   decors, the user's recipe files (My Recipes: each recipe, its form, its
+//!   doc), the things drawn (in the Resources), the recipes the films share,
+//!   the Workshop's bin; how many of each;
 //! - the files (middle): new film, new decor, open, sought in all the
 //!   project (their titles, places, those in them, their words); a table or
 //!   a grid, each with a picture of its place, sorted by a click on a column;
@@ -37,6 +38,7 @@ enum Shelf {
     Favourites,
     Films,
     Decors,
+    Recipes,
     Shared,
     Bin,
 }
@@ -48,6 +50,7 @@ impl Shelf {
             Shelf::Favourites => "Favourites",
             Shelf::Films => "Films",
             Shelf::Decors => "Decors",
+            Shelf::Recipes => "My Recipes",
             Shelf::Shared => "Shared Recipes",
             Shelf::Bin => "Bin",
         }
@@ -79,6 +82,10 @@ pub struct Home {
     /// What the language says of a film (when it was read: its errors, its remarks).
     problems: HashMap<PathBuf, (Option<SystemTime>, usize, usize)>,
     renaming: Option<(String, bool)>,
+    /// A new recipe file being named (My Recipes › New Recipe…).
+    new_recipe: Option<String>,
+    /// When the recipe files were last read (they change in the Film space).
+    recipes_read: Option<std::time::Instant>,
     trashing: bool,
     erasing: bool,
     pub said: Option<String>,
@@ -93,7 +100,15 @@ impl Home {
             .unwrap_or_default();
         Home {
             session: session.clone(),
-            shelf: Shelf::Recent,
+            shelf: match session.launch.home_shelf.as_deref() {
+                Some("favourites") => Shelf::Favourites,
+                Some("films") => Shelf::Films,
+                Some("decors") => Shelf::Decors,
+                Some("recipes") => Shelf::Recipes,
+                Some("shared") => Shelf::Shared,
+                Some("bin") => Shelf::Bin,
+                _ => Shelf::Recent,
+            },
             sought: String::new(),
             sort: (Column::Changed, true),
             grid: false,
@@ -103,6 +118,8 @@ impl Home {
             backdrops: HashMap::new(),
             problems: HashMap::new(),
             renaming: None,
+            new_recipe: None,
+            recipes_read: None,
             trashing: false,
             erasing: false,
             said: None,
@@ -273,6 +290,7 @@ pub fn project(ui: &mut egui::Ui, home: &mut Home, project: &mut Project) {
         (Shelf::Favourites, None, desk.home.favourites.len(), theme::FILM),
         (Shelf::Films, Some(theme::FILM), desk.project.films.len(), theme::TEXT),
         (Shelf::Decors, Some(theme::DECOR), desk.project.decors.len(), theme::TEXT),
+        (Shelf::Recipes, Some(theme::FILM), desk.project.recipes.len(), theme::TEXT),
     ];
     let row = |ui: &mut egui::Ui, said: &str, dot: Option<Color32>, count: usize, chosen: bool, colour: Color32| -> egui::Response {
         let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::click());
@@ -370,6 +388,7 @@ fn shown(desk: &Desk) -> Vec<Entry> {
             Shelf::Films => desk.project.films.clone(),
             Shelf::Decors => desk.project.decors.clone(),
             Shelf::Shared => desk.project.shared.clone(),
+            Shelf::Recipes => Vec::new(),
             Shelf::Bin => desk.project.binned.clone(),
         }
     };
@@ -397,6 +416,10 @@ pub fn list(ui: &mut egui::Ui, home: &mut Home, project: &mut Project) {
     let desk = &mut Desk { home, project };
     let context = ui.ctx().clone();
     tools(ui, desk);
+    if desk.home.shelf == Shelf::Recipes && desk.home.sought.trim().is_empty() {
+        recipes(ui, desk);
+        return;
+    }
     // --- Where one is, how it is seen ---
     let entries = shown(desk);
     if desk.home.chosen.is_none()
@@ -435,6 +458,120 @@ pub fn list(ui: &mut egui::Ui, home: &mut Home, project: &mut Project) {
         }
     }
     keys(ui, desk, &entries, chosen_at);
+}
+
+/// My Recipes: the user's recipe files (`library/recipes/`), each the
+/// recipes it defines, how a film calls them and what they do; a click
+/// opens the file in the Film space (on that recipe), where its example
+/// plays; New Recipe… makes one.
+fn recipes(ui: &mut egui::Ui, desk: &mut Desk) {
+    // (Read again now and then: they are written in the Film space.)
+    if desk.home.recipes_read.is_none_or(|read| read.elapsed().as_secs() >= 2) {
+        desk.project.recipes = film::own_recipe_list(desk.home.session.library());
+        desk.home.recipes_read = Some(std::time::Instant::now());
+    }
+    let head = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width(), 30.0));
+    ui.painter().rect_filled(head, 0.0, theme::TABS);
+    ui.painter().text(head.left_center() + vec2(10.0, 0.0), egui::Align2::LEFT_CENTER, "My Recipes", FontId::proportional(theme::BODY), theme::STRONG);
+    let mut head_ui = ui.new_child(egui::UiBuilder::new().max_rect(head.shrink2(vec2(8.0, 3.0))).layout(egui::Layout::right_to_left(egui::Align::Center)));
+    if head_ui
+        .add(egui::Button::new(RichText::new("+ New Recipe…").color(theme::GROUND).strong()).fill(theme::FILM).corner_radius(3))
+        .on_hover_text("a word of your own: library/recipes/<name>.film, its recipe and a small scene that shows it")
+        .clicked()
+    {
+        desk.home.new_recipe = Some(String::new());
+    }
+    let count = desk.project.recipes.len();
+    head_ui.label(theme::text(format!("{count} file{}", if count == 1 { "" } else { "s" }), theme::SMALL, theme::WEAK));
+    if let Some(said) = &desk.home.said {
+        head_ui.label(theme::text(said, theme::SMALL, theme::FAINT));
+    }
+    ui.advance_cursor_after_rect(head);
+    new_recipe(ui, desk);
+    if desk.project.recipes.is_empty() {
+        ui.add_space(8.0);
+        ui.label(theme::weak("  No recipe files yet. A recipe is a word of your own, made of other words: + New Recipe… makes one."));
+        return;
+    }
+    let session = desk.home.session.clone();
+    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+        ui.add_space(6.0);
+        for (name, path, recipes) in &desk.project.recipes {
+            let open = |line: usize| session.ask(Ask::Film { path: path.clone(), line });
+            ui.horizontal(|ui| {
+                ui.add_space(10.0);
+                let file = ui.add(egui::Label::new(RichText::new(format!("{name}.film")).strong().color(theme::STRONG)).sense(Sense::click()));
+                if file.on_hover_text("open it in the Film space, its example playing").clicked() {
+                    open(1);
+                }
+                ui.label(theme::text(format!("{} recipe{}", recipes.len(), if recipes.len() == 1 { "" } else { "s" }), theme::SMALL, theme::FAINT));
+            });
+            if recipes.is_empty() {
+                ui.horizontal(|ui| {
+                    ui.add_space(24.0);
+                    ui.label(theme::weak("no recipe defined yet"));
+                });
+            }
+            for recipe in recipes {
+                let tall = if recipe.doc.is_empty() { 22.0 } else { 38.0 };
+                let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), tall), Sense::click());
+                if response.hovered() {
+                    ui.painter().rect_filled(rect, 0.0, theme::HOVERED);
+                }
+                let painter = ui.painter();
+                painter.text(pos2(rect.left() + 24.0, rect.top() + 11.0), egui::Align2::LEFT_CENTER, &recipe.call, FontId::monospace(theme::BODY), theme::FILM);
+                if !recipe.doc.is_empty() {
+                    painter.text(
+                        pos2(rect.left() + 24.0, rect.top() + 28.0),
+                        egui::Align2::LEFT_CENTER,
+                        &recipe.doc,
+                        FontId::proportional(theme::SMALL),
+                        theme::WEAK,
+                    );
+                }
+                if response.on_hover_text(format!("open {name}.film at “{}”", recipe.name)).clicked() {
+                    open(recipe.line);
+                }
+            }
+            ui.add_space(10.0);
+        }
+    });
+}
+
+/// The New Recipe window: its name typed, the file made from a ready
+/// recipe and its example, then opened (one of that name: opened).
+fn new_recipe(ui: &egui::Ui, desk: &mut Desk) {
+    let Some(name) = &mut desk.home.new_recipe else { return };
+    let mut done: Option<bool> = None;
+    egui::Window::new("New Recipe").collapsible(false).resizable(false).show(ui.ctx(), |ui| {
+        ui.label(theme::text("a word of your own, in library/recipes/, with a small scene that shows it", theme::SMALL, theme::WEAK));
+        let field = ui.add(egui::TextEdit::singleline(name).hint_text("its name: bow_twice").desired_width(240.0));
+        if !field.has_focus() && !field.lost_focus() {
+            field.request_focus();
+        }
+        ui.horizontal(|ui| {
+            if ui.button("Make It").clicked() || (field.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter))) {
+                done = Some(true);
+            }
+            if ui.button("Cancel").clicked() || ui.input(|input| input.key_pressed(egui::Key::Escape)) {
+                done = Some(false);
+            }
+        });
+    });
+    match done {
+        Some(true) => {
+            match workshop_base::project::new_recipe_file(desk.home.session.library(), name) {
+                Ok(path) => {
+                    desk.home.session.ask(Ask::Film { path, line: 3 });
+                    desk.home.recipes_read = None;
+                }
+                Err(error) => desk.home.said = Some(error),
+            }
+            desk.home.new_recipe = None;
+        }
+        Some(false) => desk.home.new_recipe = None,
+        None => {}
+    }
 }
 
 /// The tools: open (any file of the project); sought in all the project.
