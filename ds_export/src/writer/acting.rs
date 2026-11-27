@@ -12,6 +12,12 @@ use crate::sky::{EFFECTS, animation, move_effect, own_named, pose_on_ds, speed};
 /// its pain is left looped.
 const SHIVERS: u32 = 8;
 
+/// The frames the view jolts as a move strikes.
+const JOLT: i32 = 8;
+
+/// The frames of a step back from a blow.
+const RECOIL: f32 = 10.0;
+
 impl Writer<'_> {
     /// A body beat of what someone does: an animation, an effect, a jump, a move.
     pub(super) fn acting(&mut self, number: i32, word: Option<&str>, beat: &BodyBeat) {
@@ -296,8 +302,10 @@ impl Writer<'_> {
             None => ahead(self.facing.get(&who).copied().unwrap_or(Direction::Down)),
         };
         let to = (at.0 + away.0 * distance, at.1 + away.1 * distance);
-        self.go(who, &actor, to, &speed(distance, 10.0), true);
+        self.go(who, &actor, to, &speed(distance, RECOIL), true);
         self.wait_for(&actor);
+        // (The film's next waits count the slide, as they count the shiver.)
+        self.ahead += RECOIL;
         // (Shaken by it a moment, as the engine's 14 frames of trembling.)
         self.shake(&actor, 3);
     }
@@ -350,26 +358,25 @@ impl Writer<'_> {
         self.ahead += 16.0;
     }
 
-    /// A move, as LIMITS staged it: a wind-up, a lunge, the effect of its type on the target, a small shake.
+    /// A move, as Sky's own scripts strike (`m17a0302`): the user's attack
+    /// at once (no wind-up), what it throws flown to the target, the
+    /// move's effect there and a jolt of the view. Not waited for: the
+    /// effect plays on as the film goes on (its own waits count the jolt),
+    /// put away with the emotes once the line is over; the user stands
+    /// again at the next line.
     fn attack(&mut self, number: i32, who: &Who, id: &MoveId, target: &Option<Who>) {
         let Some(actor) = self.who(number, *who) else { return };
-        // Its pain once, crouched, then its own attack (group 1, which every sprite has).
-        let crouch = self.set(*who, 19, false).unwrap_or(11);
-        self.line(&format!("SetAnimation<actor {actor}>({crouch});"));
-        self.line("Wait(12);");
         self.line(&format!("SetAnimation<actor {actor}>(13);"));
+        if !self.stand_after.contains(&actor) {
+            self.stand_after.push(actor.clone());
+        }
         // (Aimed at an unseen point, where one dodged from, or at a place:
         // on no one; the move's own effect as it strikes, on its user, if it has one.)
         if let Some(Who::Spot(_)) = target {
-            match self.game.move_effects.get(usize::from(id.0)).and_then(|effects| [effects[1], effects[0]].into_iter().find(|effect| *effect != 0)) {
-                Some(effect) => {
-                    self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
-                    self.line(&format!("WaitEffect<actor {actor}>();"));
-                    self.line(&format!("SetEffect<actor {actor}>(EFFECT_NONE, 3);"));
-                }
-                None => self.line("Wait(20);"),
+            if let Some(effect) = self.game.move_effects.get(usize::from(id.0)).and_then(|effects| [effects[1], effects[0]].into_iter().find(|effect| *effect != 0)) {
+                self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
+                self.lasting(actor);
             }
-            self.line(&format!("SetAnimation<actor {actor}>(2);"));
             return;
         }
         let on = match target.and_then(|target| self.who(number, target)) {
@@ -383,10 +390,19 @@ impl Writer<'_> {
         let effect = self.shown(id);
         self.line(&format!("SetEffect<actor {on}>({effect}, 3);"));
         self.line("camera_SetEffect(2, 1, 1.0);");
-        self.line(&format!("WaitEffect<actor {on}>();"));
+        self.line(&format!("Wait({JOLT});"));
         self.line("camera_SetEffect(0, 0, 0);");
-        self.line(&format!("SetEffect<actor {on}>(EFFECT_NONE, 3);"));
-        self.line(&format!("SetAnimation<actor {actor}>(2);"));
+        self.ahead += JOLT as f32;
+        self.lasting(on);
+    }
+
+    /// A move's effect left playing on someone: put away with the emotes,
+    /// once its line is over.
+    fn lasting(&mut self, actor: String) {
+        self.shown_for = 0.0;
+        if !self.showing.contains(&actor) {
+            self.showing.push(actor);
+        }
     }
 
     /// What a move throws (the game's fourth effect of it: Ember's flame,

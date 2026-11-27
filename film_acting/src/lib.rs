@@ -769,17 +769,17 @@ fn hurt(film: &mut Film, line: &Line) {
     let who = film_core::verbs::who_said(line);
     let hard = line.args.has("hard");
     let back = line.args.number("n").unwrap_or(if hard { 20.0 } else { 8.0 });
+    // (His pain first, played as he is knocked back: the DS plays its beats one after the other.)
+    match emit::anim_of("Pain") {
+        Some(group) => film.on(&who, |one| emit::anim_times(one, group, 1)),
+        None => film.not_a("Pain", "an animation of the game"),
+    }
     film.on(&who, |one| emit::recoil(one, one, back));
     if hard {
         film.beat(emit::quake(3.0, 16.0));
         film.sound("jolt");
     }
-    film.wait(2);
-    match emit::anim_of("Pain") {
-        Some(group) => film.on(&who, |one| emit::anim_times(one, group, 1)),
-        None => film.not_a("Pain", "an animation of the game"),
-    }
-    film.wait_frames(if hard { 40 } else { 30 }, line.wait);
+    film.wait_frames(if hard { 32 } else { 24 }, line.wait);
 }
 
 /// So long as a line's tremble lasts, until told off.

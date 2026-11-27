@@ -40,7 +40,7 @@ pub const WORDS: &[Word] = &[
         "attack",
         &["who:pokemon move:thing... at target:pokemon", "who:pokemon move:thing..."],
         "face, move (the move's own animation and effects, its sound), recoil and the Hurt pose of the target on the frame his sprite marks for the blow (else after 24 frames)",
-    ).family("Fights").ds_close("its pain once (a crouch), its own attack (group 1), the move's own effect on the target as a dungeon shows it (SetEffect plays the game's effects by the same ids; Thunderbolt's bolt, Ember's flame; its type's without the game's tables), what the move throws flying to it first, a small shake", "a crouch and the attack, what the move throws flying to the target and its own effect there: no effect before it, no move's own motion, the shot straight and drawn one way")
+    ).family("Fights").ds_close("its own attack at once (group 1), as Sky strikes, standing again at the next line; the move's own effect on the target as a dungeon shows it (SetEffect plays the game's effects by the same ids; Thunderbolt's bolt, Ember's flame; its type's without the game's tables), what the move throws flying to it first, a small jolt of the view; the effect not waited for", "the attack, what the move throws flying to the target and its own effect there: no effect before it, no move's own motion, the shot straight and drawn one way")
     .does(attacked),
     Word::new(
         "use",
@@ -53,7 +53,7 @@ pub const WORDS: &[Word] = &[
             "who:pokemon",
         ],
         "a move out of a fight: face, move (his own animation, the move's effects and sound, on him, at the point or on no one; they leave on the frame his sprite marks for the blow); no knock back, no hurt; no move, or `its move`: one his kind learns by his level, of his type if it can",
-    ).family("Fights").ds_close("as attack (a move chosen by the kind's learnset the same), the one it is used on neither knocked back nor hurt: its pain once (a crouch), its own attack (group 1), the move's own effect on the target (at a place or on no one: its own as it strikes, on its user; its type's without the game's tables), what the move throws flying to it first, a small shake", "a crouch and the attack, what the move throws flying to the target and its own effect there: no move's own motion, the shot straight and drawn one way")
+    ).family("Fights").ds_close("as attack (a move chosen by the kind's learnset the same), the one it is used on neither knocked back nor hurt: its own attack at once (group 1), the move's own effect on the target (at a place or on no one: its own as it strikes, on its user; its type's without the game's tables), what the move throws flying to it first, a small jolt of the view; the effect not waited for", "the attack, what the move throws flying to the target and its own effect there: no move's own motion, the shot straight and drawn one way")
     .does(used),
     Word::new(
         "evolve",
@@ -205,10 +205,12 @@ fn attacked(film: &mut Film, line: &Line) {
             blows::missed(film, target, strike);
         } else {
             let start = film.written.len();
-            film.on(target, |struck| emit::after(strike, 0.0, emit::recoil(struck, user, if strong { 20.0 } else { 12.0 })));
+            // (Hurt once, then standing again, as he is knocked back: the DS
+            // plays its beats one after the other, the pain first.)
             if let Some(hurt) = emit::anim_of("Hurt") {
-                film.on(target, |struck| emit::after(strike, 0.0, emit::anim(struck, hurt, false, false)));
+                film.on(target, |struck| emit::after(strike, 0.0, emit::anim_times(struck, hurt, 1)));
             }
+            film.on(target, |struck| emit::after(strike, 0.0, emit::recoil(struck, user, if strong { 20.0 } else { 12.0 })));
             if strong {
                 blows::strong(film, strike);
             }

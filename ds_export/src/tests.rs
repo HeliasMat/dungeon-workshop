@@ -267,7 +267,8 @@ fn hurt_knocks_back_and_shakes() {
     assert_eq!(knock[1], "WaitExecuteLives(ACTOR_NPC_TEST001);", "{script}");
     assert_eq!(knock[2], "SlidePositionOffset<actor ACTOR_NPC_TEST001>(1, 1, 0);", "{script}");
     assert_eq!(script.matches("SlidePositionOffset<actor ACTOR_NPC_TEST001>(1, -1, 0);").count(), 3, "{script}");
-    assert!(knock.iter().any(|line| line.starts_with("SetAnimation<actor ACTOR_NPC_TEST001>(") && !line.ends_with("(2);")), "his pain: {script}");
+    // (His pain set before the slide, played as he is knocked back.)
+    assert!(script.lines().map(str::trim).any(|line| line.starts_with("SetAnimation<actor ACTOR_NPC_TEST001>(") && !line.ends_with("(2);")), "his pain: {script}");
 }
 
 /// A jump to a place is an arc in three: up, across in the air, down; a

@@ -205,7 +205,7 @@ fn what_a_move_throws_flies_to_its_target() {
         let flies = body.find(&format!("MovePositionMark<performer {SHOT}>(3, ")).expect(&body);
         assert!(set < flies && flies < lands, "{body}");
         assert!(body.contains(&format!("WaitExecutePerformer({SHOT});")), "{body}");
-        assert!(writer.shots && (writer.ahead - 40.0).abs() < 0.5, "120 pixels at 3 a frame: {}", writer.ahead);
+        assert!(writer.shots && (writer.ahead - 48.0).abs() < 0.5, "120 pixels at 3 a frame, the 8 frames of the jolt: {}", writer.ahead);
     }
 }
 
