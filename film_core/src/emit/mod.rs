@@ -34,7 +34,7 @@ mod speech;
 mod view;
 
 pub use body::{
-    among, anim, anim_times, below, blink, bounce, carry, drawing, emote, face, fall, fidget, fishline, flip, float, give, gone, held_step, hop, hop_point,
+    among, anim, anim_times, below, blink, bounce, carry, disguise, drawing, emote, face, fall, fidget, fishline, flip, float, give, gone, held_step, hop, hop_point,
     in_front, jump, large, look_at, look_at_point, mimic, move_effect, move_shot, on_top, opacity, popup, pose, put, put_near, put_point, recoil, recolour,
     reset, ride, rise, scale, shadow, shine, sink, spin, status, status_icon, stop, takeable, thing_name, throw, tremble, turn, uses_move, views,
 };

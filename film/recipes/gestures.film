@@ -1,7 +1,8 @@
 # The gestures of the library: what each one does, in the words of the
 # language. `_evolution` is the library's own (`who evolve species`), never
 # written in a film; `_change` and `_changed` too (`who transform into
-# other`: the evolution's light, his look changed between them).
+# other`: the evolution's light, his look changed between them), and
+# `_mega`, `_mega_done`, `_unmega`, `_unmega_done` (`who mega_evolve`).
 
 # He evolves: slowed, a silhouette growing and shrinking, a flash, then what he becomes.
 define _evolution who:word form:word
@@ -44,6 +45,70 @@ define _changed who:word
   wait who
   tempo 1
   sound alert
+end
+
+# A mega evolution begins (`who mega_evolve`): his stone glints, two
+# rainbow strands wind round him, his body turns white in three steps, as
+# the game's palettes do. No slowing, no veil.
+define _mega who:word
+  sound aura
+  particles zap who 10 gold
+  wait 10f
+  prop who flash white flash_amount 0
+  particles strands who 180
+  wait 16f
+  particles strands who 180
+  wait 16f
+  particles strands who 180
+  prop who flash_amount 34%
+  wait 8f
+  prop who flash_amount 67%
+  wait 8f
+  particles strands who 180
+  prop who flash_amount 100%
+  wait 14f
+end
+
+# It ends: a flash of four frames, a burst of the rainbow, the new form's
+# colours back in three steps, its cry.
+define _mega_done who:word
+  flash white 4f
+  sound flash
+  particles zap who 14 red
+  particles zap who 14 yellow
+  particles zap who 14 cyan
+  particles zap who 14 purple
+  wait 6f
+  prop who flash_amount 67%
+  wait 6f
+  prop who flash_amount 34%
+  wait 6f
+  prop who flash none
+  sound roar
+  wait 24f
+end
+
+# Back from a mega evolution (`who mega_evolve back`): a few strands, white.
+define _unmega who:word
+  prop who flash white flash_amount 0
+  particles strands who 120
+  prop who flash_amount 34%
+  wait 5f
+  prop who flash_amount 67%
+  wait 5f
+  prop who flash_amount 100%
+  wait 6f
+end
+
+# Back: a flash of three frames, his colours.
+define _unmega_done who:word
+  flash white 3f
+  particles zap who 10 white
+  wait 5f
+  prop who flash_amount 50%
+  wait 5f
+  prop who flash none
+  wait 10f
 end
 
 define hug who:pokemon other:pokemon

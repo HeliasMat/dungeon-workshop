@@ -195,7 +195,7 @@ pub(in crate::beat) const FORMS: &[Form] = &[
     Form::new(
         "particles",
         &["kind:word who:code [number:word] [colour:word]", "kind:word @ x:coordinate y:coordinate [number:word] [colour:word]"],
-        "`firework` (bursts into colours and falls back), `sparks` (spurt out), `fireflies` (float and blink around), `embers` (rise), `smoke`, `bubbles`, `dust` (falls), `drops` (thrown out), `healing` (a glow that rises); in sharp pixels, `cinders` (about the body), `zap` (a spark, gone at once), `drip` (a drop off the head), `leaves` (falling from over the head); 40 by default",
+        "`firework` (bursts into colours and falls back), `sparks` (spurt out), `fireflies` (float and blink around), `embers` (rise), `smoke`, `bubbles`, `dust` (falls), `drops` (thrown out), `healing` (a glow that rises); in sharp pixels, `cinders` (about the body), `zap` (a spark, gone at once), `drip` (a drop off the head), `leaves` (falling from over the head), `strands` (two rainbow strands winding up round the body, its colour none); 40 by default",
     ),
     Form::new(
         "tint",

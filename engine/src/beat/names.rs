@@ -121,8 +121,9 @@ pub fn note_named(name: &str) -> Option<i32> {
 /// fireworks bursting and falling, sparks thrown up, fireflies drifting
 /// and blinking, embers rising, smoke, bubbles, dust coming down, drops
 /// flung about, a healing glow, rings widening on water; in sharp pixels,
-/// cinders rising about a body, a zap of a spark, a drip, leaves falling.
-pub(crate) const PARTICLES: [(&str, ParticleKind); 14] = [
+/// cinders rising about a body, a zap of a spark, a drip, leaves falling,
+/// rainbow strands winding round a body.
+pub(crate) const PARTICLES: [(&str, ParticleKind); 15] = [
     ("firework", ParticleKind::Fireworks),
     ("sparks", ParticleKind::Sparks),
     ("fireflies", ParticleKind::Fireflies),
@@ -137,6 +138,7 @@ pub(crate) const PARTICLES: [(&str, ParticleKind); 14] = [
     ("zap", ParticleKind::Zap),
     ("drip", ParticleKind::Drip),
     ("leaves", ParticleKind::Leaves),
+    ("strands", ParticleKind::Strands),
 ];
 
 /// A kind of particles by its name (`dust`, `sparks`, `bubbles`…).

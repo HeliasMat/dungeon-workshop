@@ -43,16 +43,20 @@ impl Stage {
     pub(super) fn direct_screen(&mut self, beat: ScreenBeat, _focus: Vec2) -> Option<ScreenBeat> {
         match beat {
             ScreenBeat::Particles { kind, on, count, colour } => {
+                let body = match &on {
+                    Cam::Who(who) => self.girth(*who),
+                    _ => Vec2::new(12.0, 30.0),
+                };
                 let at = match on {
                     Cam::At(at) => Some(at.vec2()),
                     Cam::Who(who) => self.cast.get(&who).map(|actor| match kind {
-                        ParticleKind::Rings => actor.position,
+                        ParticleKind::Rings | ParticleKind::Strands => actor.position,
                         ParticleKind::Cinders | ParticleKind::Zap | ParticleKind::Drip | ParticleKind::Leaves => Stage::source(kind, actor),
                         _ => actor.position - Vec2::new(0.0, 16.0),
                     }),
                 };
                 for _ in 0..at.map_or(0, |_| count.min(300)) {
-                    let particle = self.particle(kind, at.unwrap_or_default(), colour);
+                    let particle = self.particle(kind, at.unwrap_or_default(), body, colour);
                     self.light.particles.push(particle);
                 }
             }

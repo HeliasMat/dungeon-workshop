@@ -126,12 +126,14 @@ fn draw_ripples(canvas: &mut Canvas, stage: &Stage, below: i32, seconds: f32) {
 fn draw_particles(canvas: &mut Canvas, stage: &Stage, close: f32, on_screen: &dyn Fn(Vec2) -> (i32, i32)) {
     let size = (1.5 * close).round().max(1.0) as usize;
     for particle in stage.light.particles.iter().filter(|particle| particle.sharp) {
-        let (x, y) = on_screen(particle.at);
+        let (shown, behind) = engine::Stage::swirled(particle);
+        let (x, y) = on_screen(shown);
         let mut alpha = (particle.left / particle.life).clamp(0.0, 1.0);
         if particle.blinks {
             alpha *= 0.5 + 0.5 * (particle.left * 0.15).sin();
         }
-        let [red, green, blue] = particle.colour;
+        // (A strand behind the body: darker, a step of the palette down.)
+        let [red, green, blue] = if behind { particle.colour.map(|part| part / 2) } else { particle.colour };
         let colour = [red, green, blue, (alpha * 255.0) as u8];
         if particle.ring > 0.0 {
             // (Seen from above at a slant: wide, and flat.)

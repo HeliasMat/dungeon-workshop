@@ -185,6 +185,7 @@ impl Light {
         for particle in &mut self.particles {
             particle.at += particle.speed * frames;
             particle.speed.y += particle.fall * frames;
+            particle.angle += particle.spin * frames;
             particle.left -= frames;
         }
         self.particles.retain(|particle| particle.left > 0.0);
@@ -219,7 +220,7 @@ impl Stage {
             };
             while self.light.emitters[at].wait <= 0.0 {
                 self.light.emitters[at].wait += between;
-                let particle = self.particle(kind, there, colour);
+                let particle = self.particle(kind, there, self.girth(who), colour);
                 self.light.particles.push(Particle { sharp: true, ..particle });
             }
         }

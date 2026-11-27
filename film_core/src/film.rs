@@ -125,6 +125,9 @@ pub struct Staging {
     /// Who hides (`hide`), and who is under the ground (`burrow`).
     pub hidden: BTreeSet<String>,
     pub buried: BTreeSet<String>,
+    /// Who is mega evolved (`mega_evolve`): his mega form's picture and
+    /// portraits, his own name in what he says.
+    pub megas: BTreeSet<String>,
     /// Who rides on whose back (`ride`); how many pixels each mount has
     /// sunk under its riders (by weight).
     pub mounts: BTreeMap<String, String>,

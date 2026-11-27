@@ -80,6 +80,8 @@ impl Film {
             Some(code) => code.clone(),
             None => speaker.to_string(),
         };
+        // (Mega evolved: his mega form's portrait, his own name.)
+        let shown = shown.or_else(|| self.staging.megas.contains(speaker).then(|| format!("{{name:{code}}}")));
         let face = face.parse::<u16>().ok().or_else(|| POKEMON.face(face));
         let text = self.names_in(text).replace("\\n", "\n");
         self.beat(say(engine::speaker(Some(&code)), face, text, shown, Some(frames as f32)));

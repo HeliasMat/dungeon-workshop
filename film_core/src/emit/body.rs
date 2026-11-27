@@ -83,6 +83,12 @@ pub fn mimic(who: Who, like: Option<Who>) -> Beat {
     Beat::Body(BodyBeat::Mimic { who, like })
 }
 
+/// Someone shown as another: its picture, its name and its face (none: its
+/// own again).
+pub fn disguise(who: Who, like: Option<Who>) -> Beat {
+    Beat::Body(BodyBeat::Disguise { who, like })
+}
+
 /// Someone trembles for that many frames, that many pixels to and fro.
 pub fn tremble(who: Who, frames: f32, strength: f32) -> Beat {
     Beat::Body(BodyBeat::Tremble { who, frames: Frames(frames), strength })

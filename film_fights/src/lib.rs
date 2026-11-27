@@ -18,6 +18,7 @@ pub use state::Combat;
 mod blows;
 mod directed;
 mod lines;
+mod mega;
 
 use directed::directed;
 use lines::*;
@@ -67,6 +68,12 @@ pub const WORDS: &[Word] = &[
         "_change, mimic, _changed (the evolution's light, no sentence): he looks like the other, his name and his lines his own; its next form: the next of his family; back: as he was",
     ).family("Fights").ds_close("a stats-up shine, the screen white and back; with the mega patch's dynamic_actor (your own base only: no licence to share it) he is a special actor, taken away under the white and loaded again as the other species (ProcessSpecial(67, species, 2n), supervision_Acting), his lines his own name and face (set-portrait-monster); else he keeps his look", "under a white screen, not the evolution's light; four at most in a film; in a base for sharing he keeps his look")
     .does(transformed),
+    Word::new(
+        "mega_evolve",
+        &["who:pokemon back", "who:pokemon x", "who:pokemon y", "who:pokemon"],
+        "_mega, disguise, _mega_done (no slowing, about two seconds): his stone glints, two rainbow strands wind round him, he goes white, a flash of four frames, a burst of the rainbow, his mega form (x or y: Charizard's, Mewtwo's) with its portraits, its cry; his name and his lines his own; back: white, a flash, himself again; a kind with no mega form, remarked",
+    ).family("Fights").ds_none("impossible: Sky's scripts have no particles of their own, and no portraits of another kind under one's own name (`transform into` comes closest)")
+    .does(mega::mega_evolved),
     Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise").family("Fights").ds_direct("as Sky's bosses: se_Play(6930), camera_SetEffect(2, 1, 1.0) (hard: 2, 2, 3.0) a while, then 0, 0, 0; SetAnimation of the sprite's own Roar group once, else its Charge looped (9), as Groudon's")
         .does(blows::roared),
     Word::new(

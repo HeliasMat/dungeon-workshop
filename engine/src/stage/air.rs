@@ -19,6 +19,11 @@ pub struct Particle {
     pub sharp: bool,
     /// A ring on water instead, widening to that radius (0: a spark).
     pub ring: f32,
+    /// Shown so far round its point, at that angle (radians), turning so
+    /// much a frame (0: on its point): a strand winding round a body.
+    pub swirl: f32,
+    pub angle: f32,
+    pub spin: f32,
 }
 
 /// What gives off particles (see `ScreenBeat::Emitter`): what, off whom, the
@@ -35,13 +40,15 @@ pub struct Emitter {
 }
 
 impl Stage {
-    /// One of the particles of a kind (see `ScreenBeat::Particles`), from a point.
-    pub fn particle(&mut self, kind: ParticleKind, at: Vec2, colour: Option<[u8; 3]>) -> Particle {
+    /// One of the particles of a kind (see `ScreenBeat::Particles`), from a
+    /// point, off a body of that size (see `Stage::girth`: strands wind
+    /// round it).
+    pub fn particle(&mut self, kind: ParticleKind, at: Vec2, body: Vec2, colour: Option<[u8; 3]>) -> Particle {
         pub(super) const FIREWORKS: [[u8; 3]; 6] = [[255, 90, 90], [255, 220, 80], [120, 200, 255], [140, 255, 140], [255, 140, 230], [255, 255, 255]];
         let mut drawn = || self.chance(1000) as f32 / 1000.0;
         let (way, far) = (drawn(), drawn());
         let (spread, life) = (drawn(), drawn());
-        let mut particle = Particle { at, speed: Vec2::ZERO, fall: 0.0, left: 0.0, life: 0.0, colour: [255, 255, 255], blinks: false, sharp: false, ring: 0.0 };
+        let mut particle = Particle { at, speed: Vec2::ZERO, fall: 0.0, left: 0.0, life: 0.0, colour: [255, 255, 255], blinks: false, sharp: false, ring: 0.0, swirl: 0.0, angle: 0.0, spin: 0.0 };
         match kind {
             // (Fireworks: every way at once, then falling.)
             ParticleKind::Fireworks => {
@@ -133,6 +140,22 @@ impl Stage {
                 (particle.life, particle.sharp) = (50.0 + life * 30.0, true);
                 particle.colour = colour.unwrap_or(if spread < 0.5 { [96, 200, 72] } else { [56, 152, 56] });
             }
+            // (Strands: two, winding up round the body from its feet to
+            // its head, in bands of the rainbow; sharp pixels.)
+            ParticleKind::Strands => {
+                const RAINBOW: [[u8; 3]; 6] = [[248, 56, 56], [248, 152, 40], [248, 232, 64], [72, 216, 72], [64, 144, 248], [184, 88, 248]];
+                // (From its feet to a little over its head, a turn and a
+                // half, a band of colour every few pixels.)
+                let tall = body.y;
+                let high = (way * tall).round();
+                particle.at += Vec2::new(0.0, -high);
+                particle.speed = Vec2::new(0.0, -0.15);
+                particle.swirl = body.x;
+                particle.angle = high / tall * 1.25 * std::f32::consts::TAU + if far < 0.5 { 0.0 } else { std::f32::consts::PI };
+                particle.spin = 0.16;
+                (particle.life, particle.sharp) = (26.0 + life * 10.0, true);
+                particle.colour = colour.unwrap_or(RAINBOW[(high / 4.0) as usize % RAINBOW.len()]);
+            }
             // (Embers: rising slowly, swaying.)
             ParticleKind::Embers => {
                 particle.at += Vec2::new((way - 0.5) * 20.0, 0.0);
@@ -150,11 +173,31 @@ impl Stage {
     /// just over its head.
     pub(super) fn source(kind: ParticleKind, actor: &Actor) -> Vec2 {
         match kind {
-            ParticleKind::Rings => actor.position,
+            ParticleKind::Rings | ParticleKind::Strands => actor.position,
             ParticleKind::Cinders | ParticleKind::Zap => actor.over_head(12.0),
             ParticleKind::Leaves | ParticleKind::Drip => actor.over_head(30.0),
             _ => actor.over_head(16.0),
         }
+    }
+
+    /// How far round and how high strands wind about someone: from its
+    /// feet to near the top of its body (as the view knows it), a little
+    /// wider than it.
+    pub(super) fn girth(&self, who: Who) -> Vec2 {
+        let body = self.view.body(who);
+        Vec2::new((body.x * 0.5 + 2.0).clamp(8.0, 26.0), (body.y * 0.85).clamp(14.0, 64.0))
+    }
+
+    /// Where a swirling particle is shown (see `Particle::swirl`): round its
+    /// point, seen from above at a slant, its round closing as it dies;
+    /// whether it is behind the body.
+    pub fn swirled(particle: &Particle) -> (Vec2, bool) {
+        if particle.swirl <= 0.0 {
+            return (particle.at, false);
+        }
+        let wide = particle.swirl * (0.55 + 0.45 * (particle.left / particle.life).clamp(0.0, 1.0));
+        let (sin, cos) = particle.angle.sin_cos();
+        (particle.at + Vec2::new((cos * wide).round(), (sin * wide * 0.45).round()), sin < 0.0)
     }
 
     /// A number below `below`, drawn by chance.

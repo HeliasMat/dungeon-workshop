@@ -31,6 +31,9 @@ pub enum ParticleKind {
     Zap,
     Drip,
     Leaves,
+    /// Sharp: two rainbow strands winding up round a body, as a mega
+    /// evolution wraps it.
+    Strands,
 }
 
 /// What is in the air over a scene (see `ScreenBeat::Weather`).

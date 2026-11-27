@@ -263,6 +263,9 @@ fn who_is_there_or_gone_at_once_is_told() {
         blinks: false,
         sharp: false,
         ring: 0.0,
+        swirl: 0.0,
+        angle: 0.0,
+        spin: 0.0,
     });
     stage.put(b, Vec2::new(120.0, 100.0), 1);
     watch.look(&director, &stage, Vec2::new(100.0, 100.0), None);
