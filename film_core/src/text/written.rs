@@ -121,7 +121,8 @@ pub(crate) fn told_replaced(film: &mut crate::film::Film, number: usize, written
 pub(crate) fn asks_own_recipe(film: &mut crate::film::Film, line: &crate::verbs::Line) -> bool {
     let project = film.tables.project.clone();
     let said = std::iter::once(line.verb.as_str()).chain(line.rest.first().map(String::as_str));
-    let Some((word, file)) = said.map(crate::words::plain).find_map(|word| crate::text::recipes::own_recipe_file_of(&project, &word).map(|(file, _)| (word, file)))
+    let Some((word, file)) =
+        said.map(crate::words::plain).find_map(|word| crate::text::recipes::own_recipe_file_of(&project, &word).map(|(file, _)| (word, file)))
     else {
         return false;
     };

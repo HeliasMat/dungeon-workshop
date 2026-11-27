@@ -744,7 +744,8 @@ pub fn completions(text: &str, at: Spot, project: &assets::project::Project) -> 
         }
     } else if let Some(who) = who_then_word(&before, text) {
         // (Who first, `pikachu `: the words said of someone, as he would do them.)
-        for recipe in crate::recipes_for(project, text).into_iter().filter(|recipe| recipe.of_someone || crate::LEXICON.takes_someone_first(&recipe.name, text)) {
+        for recipe in crate::recipes_for(project, text).into_iter().filter(|recipe| recipe.of_someone || crate::LEXICON.takes_someone_first(&recipe.name, text))
+        {
             offered.push((recipe.name.clone(), with_doc(format!("{who} {}", recipe.shape), &recipe)));
         }
         for (word, forms) in

@@ -79,7 +79,7 @@ pub fn cast_of(scene: &str) -> Vec<String> {
 
 /// The `scene:` line of that line (from 1), if any: its number.
 pub fn scene_of(lines: &[&str], line: usize) -> Option<usize> {
-    (1..=line.min(lines.len())).rev().find(|number| film::lines::scene_head(&lines[number - 1]).is_some())
+    (1..=line.min(lines.len())).rev().find(|number| film::lines::scene_head(lines[number - 1]).is_some())
 }
 
 /// Who a line is of: the speaker of a spoken line, or the first word of a line of someone.

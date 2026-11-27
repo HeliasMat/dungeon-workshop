@@ -673,9 +673,11 @@ impl Scripts {
             return;
         }
         let recipes = film::user_recipes(self.session.library());
-        let in_recipes = open.path.parent().zip(std::fs::canonicalize(&recipes).ok()).is_some_and(|(folder, recipes)| {
-            std::fs::canonicalize(folder).is_ok_and(|folder| folder == recipes)
-        });
+        let in_recipes = open
+            .path
+            .parent()
+            .zip(std::fs::canonicalize(&recipes).ok())
+            .is_some_and(|(folder, recipes)| std::fs::canonicalize(folder).is_ok_and(|folder| folder == recipes));
         if !in_recipes {
             self.users_checked = Some((open.path.clone(), open.text.clone(), channel().1));
             return;
@@ -688,9 +690,7 @@ impl Scripts {
             let uses = format!("uses {name}");
             for path in std::fs::read_dir(films).into_iter().flatten().flatten().map(|file| file.path()) {
                 let Some(text) = path.extension().filter(|end| *end == "film").and_then(|_| std::fs::read_to_string(&path).ok()) else { continue };
-                if text.lines().any(|line| line.trim() == uses)
-                    && film::service::diagnostics(&text, tables.clone()).iter().any(Diagnostic::is_error)
-                {
+                if text.lines().any(|line| line.trim() == uses) && film::service::diagnostics(&text, tables.clone()).iter().any(Diagnostic::is_error) {
                     broken.push(path.file_stem().map_or_else(String::new, |stem| stem.to_string_lossy().into_owned()));
                 }
             }

@@ -20,6 +20,15 @@ pichu: Wow!
 pichu evolve
 pikachu: Me too!
 
+== mega_evolve
+> Someone mega evolves: their stone glints, rainbow strands wind round them, they turn white, a short flash, and they stand in their mega form, its portraits with it. Their name and lines stay their own. x or y for the kinds with two; mega_evolve back: themselves again. A kind with no mega form is remarked.
+scene: beach lucario gengar
+lucario put center
+gengar put right
+lucario mega_evolve
+gengar: Show-off.
+lucario mega_evolve back
+
 == transform
 > Someone transforms into another, of the scene or a species not there: the evolution's light, without its sentence, and they look like the other while staying themselves: their name, portrait and lines are their own. transform into its next form: the next of their family. transform back: themselves again.
 scene: beach ditto pikachu

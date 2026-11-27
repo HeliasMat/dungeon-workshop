@@ -93,7 +93,8 @@ pub(crate) fn speaker(line: &str) -> Option<(&str, usize)> {
         after
     };
     at = line.len() - after.len();
-    (after.starts_with(':') && !["title", "scene", "example", "moment", "transition"].contains(&word.as_str())).then(|| (&line[lead..lead + word.len()], at + 1))
+    (after.starts_with(':') && !["title", "scene", "example", "moment", "transition"].contains(&word.as_str()))
+        .then(|| (&line[lead..lead + word.len()], at + 1))
 }
 
 /// A line cut into its pieces (byte ranges), each what it is.

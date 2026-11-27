@@ -71,7 +71,8 @@ pub fn catalogue(session: &Session) -> Arc<Vec<Entry>> {
                 entries.push(entry);
             }
         };
-        for recipe in film::recipes_for(session.library(), "") {
+        // (The user's own recipe files are theirs, not the language's: no page.)
+        for recipe in film::recipes_for(session.library(), "").into_iter().filter(|recipe| !recipe.not_used) {
             let form = recipe.shape.strip_prefix(recipe.name.as_str()).unwrap_or_default().trim().to_string();
             let subject = film::takes_someone_first(&recipe.name, "");
             put(Entry {

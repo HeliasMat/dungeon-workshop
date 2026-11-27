@@ -125,7 +125,11 @@ impl Body<'_> {
                     }
                 });
             }
-            if ui.button("Make a Recipe of Them…").on_hover_text("define … end at the top of the film, or in a recipe file of your library; called in their place").clicked() {
+            if ui
+                .button("Make a Recipe of Them…")
+                .on_hover_text("define … end at the top of the film, or in a recipe file of your library; called in their place")
+                .clicked()
+            {
                 scripts.extracting = Some((first_chosen, last_chosen, String::new(), false));
                 ui.close();
             }
@@ -158,13 +162,16 @@ impl Body<'_> {
             }
             ui.horizontal(|ui| {
                 ui.radio_value(in_library, false, "in this film").on_hover_text("define … end at the top of the film");
-                ui.radio_value(in_library, true, "in my library").on_hover_text("a recipe file of its own, library/recipes/<name>.film, these lines its example; the film uses it");
+                ui.radio_value(in_library, true, "in my library")
+                    .on_hover_text("a recipe file of its own, library/recipes/<name>.film, these lines its example; the film uses it");
             });
             if taken {
                 ui.label(theme::text("a recipe file of that name is already in your library", theme::SMALL, theme::WEAK));
             }
             ui.horizontal(|ui| {
-                if ui.add_enabled(!taken, egui::Button::new("Make the Recipe")).clicked() || (!taken && field.lost_focus() && ui.input(|input| input.key_pressed(Key::Enter))) {
+                if ui.add_enabled(!taken, egui::Button::new("Make the Recipe")).clicked()
+                    || (!taken && field.lost_focus() && ui.input(|input| input.key_pressed(Key::Enter)))
+                {
                     done = Some(true);
                 }
                 if ui.button("Cancel").clicked() || ui.input(|input| input.key_pressed(Key::Escape)) {

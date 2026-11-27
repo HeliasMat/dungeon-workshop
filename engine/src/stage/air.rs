@@ -48,7 +48,20 @@ impl Stage {
         let mut drawn = || self.chance(1000) as f32 / 1000.0;
         let (way, far) = (drawn(), drawn());
         let (spread, life) = (drawn(), drawn());
-        let mut particle = Particle { at, speed: Vec2::ZERO, fall: 0.0, left: 0.0, life: 0.0, colour: [255, 255, 255], blinks: false, sharp: false, ring: 0.0, swirl: 0.0, angle: 0.0, spin: 0.0 };
+        let mut particle = Particle {
+            at,
+            speed: Vec2::ZERO,
+            fall: 0.0,
+            left: 0.0,
+            life: 0.0,
+            colour: [255, 255, 255],
+            blinks: false,
+            sharp: false,
+            ring: 0.0,
+            swirl: 0.0,
+            angle: 0.0,
+            spin: 0.0,
+        };
         match kind {
             // (Fireworks: every way at once, then falling.)
             ParticleKind::Fireworks => {

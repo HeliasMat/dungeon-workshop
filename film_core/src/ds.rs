@@ -8,9 +8,9 @@
 //! pose each one's sprite shows: `sprites`; the room a scene's sprites
 //! have: `room`.
 
+mod community;
 pub mod patches;
 pub mod room;
-mod community;
 mod sprites;
 
 pub use community::{COMMUNITY, Community, community_clone, community_sheets};
