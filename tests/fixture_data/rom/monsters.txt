@@ -93,3 +93,16 @@
 488	Munchlax
 489	Riolu
 525	Dialga
+414	Kyogre
+526	Palkia
+529	Giratina
+276	Lugia
+349	Wailord
+235	Steelix
+149	Dragonite
+275	Tyranitar
+408	Metagross
+405	Salamence
+487	Garchomp
+528	Regigigas
+527	Heatran
