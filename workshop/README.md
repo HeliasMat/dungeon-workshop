@@ -540,7 +540,7 @@ The root (`library/`, `games/`, `film/recipes/`) is the first folder up from whe
 | `WORKSHOP_PANELS=layout,wiki,ds_preview` | the Layout, the Wiki open beside the Script; `ds_preview`: the Scene's DS Preview on |
 | `WORKSHOP_WIKI=walk\|walk:play\|joy:source\|search:rain\|all` | the Script's Wiki open on that page (its example played, its recipe's source shown), searching that, or on all the words (`all:ds`: DS only, in DS Mode); in a picture it shows over the window |
 | `WORKSHOP_COMPLETE=1` | with `WORKSHOP_LINE=n`: the cursor at the end of that line, what may be typed there offered |
-| `WORKSHOP_PROJECT=search:word\|beside:film\|versions\|open` | the Script with the search in the project, a film beside, the versions or "Open" |
+| `WORKSHOP_PROJECT=search:word\|beside:film\|versions\|open\|recipe:name` | the Script with the search in the project, a film beside, the versions, "Open", or "New Recipe" with that name typed |
 | `WORKSHOP_FOCUS=1` | the Script in focus |
 | `WORKSHOP_RESOURCE=drawing:torch` (`…:body`: a Pokémon's body; `pokemon:eevee:faces`: that part of its page, `animations`, `faces`, `forms`, `credits`; `pokemon?eevee`: that sought) | the Resources shelf (`pokemon`, `portrait`, `drawing`, `prop`, `item`, `song`, `sound`, `attack`, `status`, `weather`, `effect`, `backdrop`, `tileset`, `piece`, `dungeon`, `boss`) and the one chosen |
 | `WORKSHOP_SPRITECOLLAB=25` | the SpriteCollab window open on that number |

@@ -14,7 +14,7 @@ pub(super) fn scene_pair(text: &str, at: usize) -> (String, String) {
 /// others of its `scene:` line.
 pub(super) fn voices_near(text: &str, line: usize) -> Vec<String> {
     let lines: Vec<&str> = text.split('\n').collect();
-    let opens = |at: usize| lines.get(at).is_some_and(|line| line.trim_start().starts_with("scene:"));
+    let opens = |at: usize| lines.get(at).is_some_and(|line| film::lines::scene_head(line).is_some());
     let first = (0..=line.min(lines.len().saturating_sub(1))).rev().find(|at| opens(*at)).unwrap_or(0);
     let last = (line + 1..lines.len()).find(|at| opens(*at)).unwrap_or(lines.len());
     let mut voices: Vec<String> = Vec::new();
@@ -37,7 +37,7 @@ pub(super) fn voices_near(text: &str, line: usize) -> Vec<String> {
 pub(super) fn other_voice(text: &str, line: usize, who: &str, voices: &[String]) -> String {
     let lines: Vec<&str> = text.split('\n').collect();
     for said in lines[..line.min(lines.len())].iter().rev() {
-        if said.trim_start().starts_with("scene:") {
+        if film::lines::scene_head(said).is_some() {
             break;
         }
         if let Some((other, _)) = speaker(said)
@@ -54,7 +54,7 @@ pub(super) fn other_voice(text: &str, line: usize, who: &str, voices: &[String])
 pub(super) fn scene_cast(text: &str, line: usize) -> Vec<String> {
     text.split('\n')
         .take(line)
-        .filter_map(|words| words.trim_start().strip_prefix("scene:"))
+        .filter_map(|words| film::lines::scene_head(words))
         .last()
         .map(|cast| cast.split_whitespace().skip(1).map(str::to_string).collect())
         .unwrap_or_default()
@@ -80,7 +80,7 @@ pub(super) fn someone_here(text: &str, cursor: usize) -> String {
     let line = spot_of(text, cursor).line;
     text.split('\n')
         .take(line)
-        .filter_map(|words| words.trim_start().strip_prefix("scene:"))
+        .filter_map(|words| film::lines::scene_head(words))
         .last()
         .and_then(|cast| cast.split_whitespace().nth(1))
         .unwrap_or("who")

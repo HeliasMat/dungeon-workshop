@@ -348,8 +348,10 @@ pub struct Scripts {
     marks_text: String,
     /// The line the film plays, last followed in sight.
     followed: Option<usize>,
-    /// A recipe being named (its lines, from 0; its name).
-    extracting: Option<(usize, usize, String)>,
+    /// A recipe being named (its lines, from 0; its name; whether it goes in a recipe file of the library).
+    extracting: Option<(usize, usize, String, bool)>,
+    /// A new recipe file being named (Script › … › New Recipe…).
+    new_recipe: Option<String>,
     line_asked: Option<usize>,
     /// The portraits of those pointed at, by species (and face: `species:face`).
     portraits: HashMap<String, Option<egui::TextureHandle>>,
@@ -504,6 +506,7 @@ impl Scripts {
             marks_text: String::new(),
             followed: None,
             extracting: None,
+            new_recipe: session.launch.project.as_deref().and_then(|asked| asked.strip_prefix("recipe:")).map(str::to_string),
             line_asked: None,
             portraits: HashMap::new(),
             dialogue: false,

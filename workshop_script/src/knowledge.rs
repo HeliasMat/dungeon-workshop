@@ -51,7 +51,7 @@ pub(super) fn defined(session: &Session, text: &str, cursor: usize) -> Defined {
 pub(super) fn known_here(session: &Session, text: &str, head: &str, plain: &str) -> Option<Vec<(String, String)>> {
     let trimmed = head.trim_start();
     let keep = |word: &str| film::words::plain(word).starts_with(plain);
-    if let Some(rest) = trimmed.strip_prefix("scene:") {
+    if let Some(rest) = film::lines::scene_head(trimmed) {
         if !rest.trim().is_empty() {
             return None;
         }

@@ -188,6 +188,10 @@ impl Body<'_> {
             scripts.quick_open = Some((String::new(), false));
             ui.close();
         }
+        if ui.button("New Recipe…").on_hover_text("a word of your own: library/recipes/<name>.film, its recipe and a small scene that shows it").clicked() {
+            scripts.new_recipe = Some(String::new());
+            ui.close();
+        }
         if ui.button("Another Film Beside…").on_hover_text("read beside this one (a double-click on one of its lines: open it there)").clicked() {
             scripts.quick_open = Some((String::new(), true));
             ui.close();

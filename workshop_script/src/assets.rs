@@ -68,18 +68,18 @@ const HEADERS: [&str; 5] = ["title", "scene", "moment", "let", "recipe"];
 /// Whether a line opens a scene or a moment.
 fn opens(line: &str) -> bool {
     let line = line.trim_start();
-    line.starts_with("scene:") || line.starts_with("moment:") || line.starts_with("title:")
+    film::lines::scene_head(line).is_some() || line.starts_with("moment:") || line.starts_with("title:")
 }
 
 /// The words of a `scene:` line after its place: its cast (a remark after `#` left out).
 pub fn cast_of(scene: &str) -> Vec<String> {
     let said = scene.split('#').next().unwrap_or_default();
-    said.trim_start().strip_prefix("scene:").map_or_else(Vec::new, |rest| rest.split_whitespace().skip(1).map(str::to_string).collect())
+    film::lines::scene_head(said).map_or_else(Vec::new, |rest| rest.split_whitespace().skip(1).map(str::to_string).collect())
 }
 
 /// The `scene:` line of that line (from 1), if any: its number.
 pub fn scene_of(lines: &[&str], line: usize) -> Option<usize> {
-    (1..=line.min(lines.len())).rev().find(|number| lines[number - 1].trim_start().starts_with("scene:"))
+    (1..=line.min(lines.len())).rev().find(|number| film::lines::scene_head(&lines[number - 1]).is_some())
 }
 
 /// Who a line is of: the speaker of a spoken line, or the first word of a line of someone.

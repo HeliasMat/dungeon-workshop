@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// The films and recipes of the project, by their paths.
 pub fn project_files(library: &assets::project::Project) -> Vec<PathBuf> {
     let mut found = Vec::new();
-    for folder in [library.films(), library.recipes(), library.root().join("film/recipes")] {
+    for folder in [library.films(), library.recipes(), library.own_recipes(), library.root().join("film/recipes")] {
         walk(&folder, &mut found);
     }
     found.sort();

@@ -185,6 +185,7 @@ impl Body<'_> {
         self.clicked_in_text(ui, &written, room.editor, selection);
         self.lines_menu(&written);
         self.recipe_naming(ui);
+        self.new_recipe(ui);
         // (Put somewhere by a key, the plan, a problem: brought into sight.)
         if let Some((a, _)) = self.open.jump.take() {
             let at = written.at(a);

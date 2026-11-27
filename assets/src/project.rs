@@ -131,6 +131,12 @@ impl Project {
         self.films().join("recipes")
     }
 
+    /// The user's own recipe files, the shared library's
+    /// (`library/recipes/<name>.film`): never committed.
+    pub fn own_recipes(&self) -> PathBuf {
+        self.shared().join("recipes")
+    }
+
     /// Where the files of that kind (`images`, `sounds`…) are looked for, in
     /// turn: the project's, then the shared library's (if it is another).
     pub fn folders(&self, kind: &str) -> Vec<PathBuf> {

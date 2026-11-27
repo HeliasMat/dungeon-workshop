@@ -130,7 +130,7 @@ fn shared_folders(project: &Project) -> Vec<std::path::PathBuf> {
 /// Where the user's own recipes are: `library/recipes/<name>.film`, each
 /// its recipes, then its `example:`.
 pub fn user_recipes(project: &Project) -> std::path::PathBuf {
-    project.root().join(assets::project::LIBRARY).join("recipes")
+    project.own_recipes()
 }
 
 /// The files a film may use or take in (`uses`, `include`), by the names

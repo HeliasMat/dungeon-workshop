@@ -28,7 +28,7 @@ pub(super) fn fixes_together(told: &[Diagnostic]) -> Vec<film::service::Edit> {
 /// The status said: where the cursor is, how many lines and scenes, how long the film is.
 pub(super) fn status_said(text: &str, here: Spot, end: Option<f64>) -> String {
     let lines = text.split('\n').count();
-    let scenes = text.split('\n').filter(|line| line.trim_start().starts_with("scene:")).count();
+    let scenes = text.split('\n').filter(|line| film::lines::scene_head(line).is_some()).count();
     let mut said = format!("Line {}, column {}   ·   {lines} lines · {scenes} scene{}", here.line, here.column, if scenes > 1 { "s" } else { "" });
     if let Some(end) = end {
         said.push_str(&format!("   ·   length {}", clock(end)));

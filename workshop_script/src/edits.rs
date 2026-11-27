@@ -80,9 +80,48 @@ pub(super) fn made_recipe(text: &str, (first, last): (usize, usize), name: &str)
     block.extend(body.iter().map(|line| if line.trim().is_empty() { String::new() } else { format!("  {}", &line[common..]) }));
     block.push("end".to_string());
     block.push(String::new());
-    let at = lines.iter().position(|line| line.trim_start().starts_with("scene:")).unwrap_or(0);
+    let at = lines.iter().position(|line| film::lines::scene_head(line).is_some()).unwrap_or(0);
     lines.splice(at..at, block);
     lines.join("\n")
+}
+
+/// A new recipe file's text, ready to change: a recipe of that name, its
+/// doc above it, a small example scene that calls it.
+pub(super) fn recipe_template(name: &str) -> String {
+    format!(
+        "# Bows twice, politely. (What your word does, in one line: shown in the help.)\n\
+         define {name} who:pokemon\n  who bow\n  wait 0.3s\n  who bow\nend\n\n\
+         # A small scene that shows it, played in the Scene as you write.\n\
+         example: town pikachu eevee\npikachu {name}\neevee {name}\n"
+    )
+}
+
+/// The lines moved to a recipe file of the library: the film with them
+/// called where they were and `uses name` at its head; the recipe file's
+/// text, its example the scene they were in, calling it.
+pub(super) fn library_recipe(text: &str, (first, last): (usize, usize), name: &str, film_name: &str) -> (String, String) {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let last = last.min(lines.len() - 1);
+    let body = &lines[first..=last];
+    let common = body.iter().filter(|line| !line.trim().is_empty()).map(|line| line.len() - line.trim_start().len()).min().unwrap_or(0);
+    let scene = lines[..=first].iter().rev().find_map(|line| film::lines::scene_head(line)).map(|rest| rest.split('#').next().unwrap_or_default().trim()).filter(|rest| !rest.is_empty()).unwrap_or("town");
+    let mut recipe = format!("# Lines {} to {} of {film_name}.\ndefine {name}\n", first + 1, last + 1);
+    for line in body {
+        recipe.push_str(&if line.trim().is_empty() { String::new() } else { format!("  {}", &line[common..]) });
+        recipe.push('\n');
+    }
+    recipe.push_str(&format!("end\n\nexample: {scene}\n{name}\n"));
+    // (The film: the lines called by the recipe's name, the file used before the first scene.)
+    let mut film: Vec<String> = lines.iter().map(|line| line.to_string()).collect();
+    let lead: String = lines[first].chars().take_while(|letter| letter.is_whitespace()).collect();
+    film.splice(first..=last, [format!("{lead}{name}")]);
+    let uses = format!("uses {name}");
+    if !film.iter().any(|line| line.trim() == uses) {
+        let first_scene = film.iter().position(|line| film::lines::scene_head(line).is_some()).unwrap_or(0);
+        let after_head = film[..first_scene].iter().rposition(|line| line.trim_start().starts_with("uses ") || line.trim_start().starts_with("title")).map_or(0, |at| at + 1);
+        film.insert(after_head, uses);
+    }
+    (film.join("\n"), recipe)
 }
 
 /// What is typed at each cursor: words (a letter, what is pasted, a new line), or a letter taken back.

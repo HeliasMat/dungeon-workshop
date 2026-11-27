@@ -63,7 +63,7 @@ pub(super) fn names_of(text: &str) -> HashSet<String> {
     let mut names: HashSet<String> = ["hero", "partner", "narrator", "all", "there", "team"].iter().map(|word| word.to_string()).collect();
     for line in text.lines() {
         let line = line.split('#').next().unwrap_or_default().trim();
-        if let Some(rest) = line.strip_prefix("scene:") {
+        if let Some(rest) = film::lines::scene_head(line) {
             names.extend(rest.split_whitespace().skip(1).map(str::to_string));
         } else if let Some((left, _)) = line.split_once(" = ") {
             names.insert(left.trim().to_string());
@@ -93,7 +93,7 @@ pub(crate) fn speaker(line: &str) -> Option<(&str, usize)> {
         after
     };
     at = line.len() - after.len();
-    (after.starts_with(':') && !["title", "scene", "moment", "transition"].contains(&word.as_str())).then(|| (&line[lead..lead + word.len()], at + 1))
+    (after.starts_with(':') && !["title", "scene", "example", "moment", "transition"].contains(&word.as_str())).then(|| (&line[lead..lead + word.len()], at + 1))
 }
 
 /// A line cut into its pieces (byte ranges), each what it is.
@@ -136,7 +136,7 @@ fn pieces(line: &str, text: &str, names: &HashSet<String>) -> Vec<(Range<usize>,
         }
     };
     let trimmed = code.trim_start();
-    if let Some(label) = ["title:", "scene:", "moment:", "transition:"].iter().find(|label| trimmed.starts_with(*label)) {
+    if let Some(label) = ["title:", "scene:", "example:", "moment:", "transition:"].iter().find(|label| trimmed.starts_with(*label)) {
         out.push((lead..lead + label.len(), Piece::Label));
         if label == &"title:" || label == &"moment:" {
             out.push((lead + label.len()..code_end, Piece::Said));

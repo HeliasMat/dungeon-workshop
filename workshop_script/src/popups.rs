@@ -10,7 +10,7 @@ use eframe::egui::{self, Color32, Key, Rect, RichText, Sense, pos2, vec2};
 use super::body::{Body, RULER, Written};
 use super::cast::scene_cast;
 use super::completion::LineMade;
-use super::edits::{each_line, lines_of, made_recipe, replaced, wrapped_in};
+use super::edits::{each_line, library_recipe, lines_of, made_recipe, recipe_template, replaced, wrapped_in};
 use super::knowledge::{Pictured, picture_of, portrait};
 use super::text::{index_of, spot_of, word_at};
 use super::wiki::wiki_said_of;
@@ -125,8 +125,8 @@ impl Body<'_> {
                     }
                 });
             }
-            if ui.button("Make a Recipe of Them…").on_hover_text("define … end at the top of the film, called in their place").clicked() {
-                scripts.extracting = Some((first_chosen, last_chosen, String::new()));
+            if ui.button("Make a Recipe of Them…").on_hover_text("define … end at the top of the film, or in a recipe file of your library; called in their place").clicked() {
+                scripts.extracting = Some((first_chosen, last_chosen, String::new(), false));
                 ui.close();
             }
             for (said, about, made) in line_changes(text, (first_chosen, last_chosen)) {
@@ -144,21 +144,27 @@ impl Body<'_> {
     /// A recipe being named: its lines under that name, before the first scene, called where they were.
     pub(super) fn recipe_naming(&mut self, ui: &egui::Ui) {
         let Body { scripts, open, .. } = self;
-        let Some((first, last, name)) = &mut scripts.extracting else { return };
+        let Some((first, last, name, in_library)) = &mut scripts.extracting else { return };
         let (first, last) = (*first, *last);
         let mut done: Option<bool> = None;
+        let named = film::words::plain(&name.trim().replace(' ', "_"));
+        let file = film::user_recipes(scripts.session.library()).join(format!("{named}.film"));
+        let taken = *in_library && !named.is_empty() && file.exists();
         egui::Window::new("Make a Recipe of Them").collapsible(false).resizable(false).show(ui.ctx(), |ui| {
-            ui.label(theme::text(
-                format!("lines {} to {}, under this name, at the top of the film; called where they were", first + 1, last + 1),
-                theme::SMALL,
-                theme::WEAK,
-            ));
+            ui.label(theme::text(format!("lines {} to {}, under this name; called where they were", first + 1, last + 1), theme::SMALL, theme::WEAK));
             let field = ui.add(egui::TextEdit::singleline(name).hint_text("its name: hop_around").desired_width(240.0));
             if !field.has_focus() && !field.lost_focus() {
                 field.request_focus();
             }
             ui.horizontal(|ui| {
-                if ui.button("Make the Recipe").clicked() || (field.lost_focus() && ui.input(|input| input.key_pressed(Key::Enter))) {
+                ui.radio_value(in_library, false, "in this film").on_hover_text("define … end at the top of the film");
+                ui.radio_value(in_library, true, "in my library").on_hover_text("a recipe file of its own, library/recipes/<name>.film, these lines its example; the film uses it");
+            });
+            if taken {
+                ui.label(theme::text("a recipe file of that name is already in your library", theme::SMALL, theme::WEAK));
+            }
+            ui.horizontal(|ui| {
+                if ui.add_enabled(!taken, egui::Button::new("Make the Recipe")).clicked() || (!taken && field.lost_focus() && ui.input(|input| input.key_pressed(Key::Enter))) {
                     done = Some(true);
                 }
                 if ui.button("Cancel").clicked() || ui.input(|input| input.key_pressed(Key::Escape)) {
@@ -168,14 +174,62 @@ impl Body<'_> {
         });
         match done {
             Some(true) => {
-                let named = film::words::plain(&name.trim().replace(' ', "_"));
-                if !named.is_empty() {
+                if !named.is_empty() && *in_library {
+                    let film_name = open.path.file_stem().map_or_else(String::new, |stem| stem.to_string_lossy().into_owned());
+                    let (made, recipe) = library_recipe(&open.text, (first, last), &named, &film_name);
+                    let written = file.parent().map_or(Ok(()), std::fs::create_dir_all).and_then(|()| workshop_base::safe::write(&file, recipe));
+                    match written {
+                        Ok(()) => open.change(made),
+                        Err(error) => scripts.said = Some(format!("{}: {error}", file.display())),
+                    }
+                } else if !named.is_empty() {
                     let made = made_recipe(&open.text, (first, last), &named);
                     open.change(made);
                 }
                 scripts.extracting = None;
             }
             Some(false) => scripts.extracting = None,
+            None => {}
+        }
+    }
+
+    /// A new recipe file being named: `library/recipes/<name>.film` made from
+    /// a ready recipe and its example, then opened (one of that name: opened).
+    pub(super) fn new_recipe(&mut self, ui: &egui::Ui) {
+        let Body { scripts, .. } = self;
+        let Some(name) = &mut scripts.new_recipe else { return };
+        let mut done: Option<bool> = None;
+        egui::Window::new("New Recipe").collapsible(false).resizable(false).show(ui.ctx(), |ui| {
+            ui.label(theme::text("a word of your own, in library/recipes/, with a small scene that shows it", theme::SMALL, theme::WEAK));
+            let field = ui.add(egui::TextEdit::singleline(name).hint_text("its name: bow_twice").desired_width(240.0));
+            if !field.has_focus() && !field.lost_focus() {
+                field.request_focus();
+            }
+            ui.horizontal(|ui| {
+                if ui.button("Make It").clicked() || (field.lost_focus() && ui.input(|input| input.key_pressed(Key::Enter))) {
+                    done = Some(true);
+                }
+                if ui.button("Cancel").clicked() || ui.input(|input| input.key_pressed(Key::Escape)) {
+                    done = Some(false);
+                }
+            });
+        });
+        let named = film::words::plain(&name.trim().replace(' ', "_"));
+        match done {
+            Some(true) if !named.is_empty() => {
+                let path = film::user_recipes(scripts.session.library()).join(format!("{named}.film"));
+                let written = if path.exists() {
+                    Ok(())
+                } else {
+                    path.parent().map_or(Ok(()), std::fs::create_dir_all).and_then(|()| workshop_base::safe::write(&path, recipe_template(&named)))
+                };
+                match written {
+                    Ok(()) => scripts.session.ask(workshop_base::ask::Ask::Film { path, line: 3 }),
+                    Err(error) => scripts.said = Some(format!("{}: {error}", path.display())),
+                }
+                scripts.new_recipe = None;
+            }
+            Some(_) => scripts.new_recipe = None,
             None => {}
         }
     }

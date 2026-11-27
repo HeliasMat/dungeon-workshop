@@ -69,7 +69,7 @@ pub struct LaunchOptions {
     /// `WORKSHOP_TIMELINE=all[,insert:<track>:<seconds>][,fold:<track>]`: the Film's Timeline
     /// showing the whole film, its window to write a line open on that track at that time, a track folded.
     pub timeline: Option<String>,
-    /// `WORKSHOP_PROJECT=open|versions|search:<word>|beside:<film>`: that window of the Script open.
+    /// `WORKSHOP_PROJECT=open|versions|search:<word>|beside:<film>|recipe:<name>`: that window of the Script open.
     pub project: Option<String>,
     /// `WORKSHOP_FOCUS`: the Script in concentration.
     pub focus: bool,

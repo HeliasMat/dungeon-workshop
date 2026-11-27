@@ -59,7 +59,7 @@ pub use film::{Film, ReadAs};
 pub use grammar::{performer_first, shown_form};
 pub use lines::formatted;
 pub use screen::coloured;
-pub use text::recipes::{Told, shared_files, shared_path};
+pub use text::recipes::{Told, shared_files, shared_path, user_recipes};
 pub use verbs::{Group, Lexicon, Word, internal, scene_line};
 
 /// A film by a path, or a name of the project's films (the shared

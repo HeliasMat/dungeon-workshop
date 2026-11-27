@@ -278,3 +278,12 @@ fn the_ds_preview_leaves_out_what_the_ds_does() {
         "scene: beach pikachu piplup\n# (DS Preview: left out) pikachu hold Apple\npiplup (joyous): Yum!\ntogether:\n  # (DS Preview: left out) zoom 2 30f\npikachu: Hi."
     );
 }
+
+#[test]
+fn lines_go_to_a_recipe_file_of_the_library() {
+    let text = "title: Hello\nscene: town pikachu eevee # the square\npikachu bow\n  eevee bow\npikachu: Hi!";
+    let (film, recipe) = super::edits::library_recipe(text, (2, 3), "greet", "hello");
+    assert_eq!(film, "title: Hello\nuses greet\nscene: town pikachu eevee # the square\ngreet\npikachu: Hi!");
+    assert_eq!(recipe, "# Lines 3 to 4 of hello.\ndefine greet\n  pikachu bow\n    eevee bow\nend\n\nexample: town pikachu eevee\ngreet\n");
+    assert!(super::edits::recipe_template("bow_twice").contains("example: town pikachu eevee\npikachu bow_twice"));
+}

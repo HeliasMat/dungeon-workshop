@@ -21,7 +21,7 @@ use engine::{Diagnostic, Lines, StoryEvent};
 pub use film_acting::POSES;
 pub use film_core::{
     Context, Film, Lexicon, ReadAs, Told, Written, check, codes, coloured, context, doc, emit, formatted, grammar, internal, ir, lines, locate,
-    performer_first, plot, scene_line, screen, shared_path, tables, time, words,
+    performer_first, plot, scene_line, screen, shared_path, tables, time, user_recipes, words,
 };
 
 /// The vocabulary of the language's words (`film_core::vocabulary`), each
