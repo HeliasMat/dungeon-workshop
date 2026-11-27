@@ -3,8 +3,8 @@
 
 use engine::{AnimId, Beat, BodyBeat, Direction, EmoteId, MoveId, Play, Pose, ScreenBeat, SoundBeat, Who};
 
-use super::Writer;
 use super::scene::Part;
+use super::{SHOT, Writer};
 use crate::notes::{Fate, Kind};
 use crate::sky::{EFFECTS, animation, move_effect, own_named, pose_on_ds, speed};
 
@@ -18,8 +18,11 @@ impl Writer<'_> {
         match beat {
             BodyBeat::Effect { who, id, .. } => self.effect(number, *who, *id),
             BodyBeat::MoveEffect { who, id } => self.move_effect(number, *who, *id),
-            // A move's shot from one to another: Sky's effect of its type on the one it reaches.
-            BodyBeat::MoveShot { to, id, .. } => self.plain(number, word, &Beat::Body(BodyBeat::MoveEffect { who: *to, id: *id })),
+            // A move's shot from one to another: what it throws flies, then its effect on the one it reaches.
+            BodyBeat::MoveShot { from, to, id, frames } => {
+                self.throw_shot(*from, *to, id, frames.map(|frames| frames.0));
+                self.plain(number, word, &Beat::Body(BodyBeat::MoveEffect { who: *to, id: *id }));
+            }
             // Hops: Sky's own jumps (`CORO_JUMP_…`), happy, surprised or angry.
             BodyBeat::Anim { who, anim, play } if anim.0 == 10 => self.hops(number, *who, play),
             BodyBeat::Anim { who, anim, play } => {
@@ -373,6 +376,10 @@ impl Writer<'_> {
             Some(target) => target,
             None => actor.clone(),
         };
+        // (What it throws flies from its user to the one it reaches first.)
+        if let Some(target) = target.filter(|target| target != who) {
+            self.throw_shot(*who, target, id, None);
+        }
         let effect = self.shown(id);
         self.line(&format!("SetEffect<actor {on}>({effect}, 3);"));
         self.line("camera_SetEffect(2, 1, 1.0);");
@@ -380,6 +387,34 @@ impl Writer<'_> {
         self.line("camera_SetEffect(0, 0, 0);");
         self.line(&format!("SetEffect<actor {on}>(EFFECT_NONE, 3);"));
         self.line(&format!("SetAnimation<actor {actor}>(2);"));
+    }
+
+    /// What a move throws (the game's fourth effect of it: Ember's flame,
+    /// Water Gun's jet, Razor Leaf's leaves) flown from one to the other,
+    /// at the move's own speed unless told how long: Sky's `SetEffect` on a
+    /// performer of its own (`SHOT`) moved with `MovePositionMark`, as
+    /// m12a1201 sends Lapras's wake; the film's next waits count its
+    /// flight. In a straight line, drawn as the effect's first way (a lob's
+    /// arc and the dungeons' turning it to its way are not Sky's scripts').
+    /// Nothing when the move throws nothing or they stand together.
+    pub(super) fn throw_shot(&mut self, from: Who, to: Who, id: &MoveId, frames: Option<f32>) {
+        let Some(thrown) = self.game.move_effects.get(usize::from(id.0)).map(|effects| effects[3]).filter(|effect| *effect != 0) else { return };
+        let (Some(start), Some(end)) = (self.at.get(&from).copied(), self.at.get(&to).copied()) else { return };
+        let distance = ((end.0 - start.0).powi(2) + (end.1 - start.1).powi(2)).sqrt();
+        if distance < 8.0 {
+            return;
+        }
+        // (The game's 2, 3 or 6 pixels a frame; 3 without its tables.)
+        let pace = f32::from(self.game.move_flights.get(usize::from(id.0)).copied().filter(|pace| *pace > 0).unwrap_or(3));
+        let frames = frames.unwrap_or(distance / pace).max(1.0);
+        self.shots = true;
+        let (from_mark, to_mark) = (self.position(start), self.position(end));
+        self.line(&format!("SetPositionMark<performer {SHOT}>({from_mark});"));
+        self.line(&format!("SetEffect<performer {SHOT}>({thrown}, 3);"));
+        self.line(&format!("MovePositionMark<performer {SHOT}>({}, {to_mark});", speed(distance, frames)));
+        self.line(&format!("WaitExecutePerformer({SHOT});"));
+        self.line(&format!("SetEffect<performer {SHOT}>(EFFECT_NONE, 3);"));
+        self.ahead += frames;
     }
 
     /// What a move shows on the one it reaches: the move's own effect, as

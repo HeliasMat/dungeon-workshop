@@ -11,7 +11,7 @@ use ::film::ds::patches::{DYNAMIC_ACTOR, PORTRAIT_ALONE};
 use ::film::ds::room;
 
 use super::talk::capitalised;
-use super::{AT_ONCE, Actor, SHIFT, SHIFTERS, Writer, names};
+use super::{AT_ONCE, Actor, SHIFT, SHIFTERS, SHOT, Writer, names};
 use crate::notes::{Fate, Kind};
 use crate::sky::{FACES, HIDDEN, direction, quoted, tiles};
 
@@ -825,6 +825,10 @@ impl Writer<'_> {
         let _ = writeln!(out, "// ds-export performer 0 type 0 x {} y {}", tiles(middle.0), tiles(middle.1));
         if self.weather {
             let _ = writeln!(out, "// ds-export performer 3 type 3 x {} y {}", tiles(middle.0), tiles(middle.1));
+        }
+        // (What a move throws rides a performer of its own, as Lapras's wake in m12a1201.)
+        if self.shots {
+            let _ = writeln!(out, "// ds-export performer {SHOT} type {SHOT} x {} y {}", tiles(middle.0), tiles(middle.1));
         }
         let _ = writeln!(out, "def 0 {{");
         // The title, as Sky shows its story's: alone on black, before the first scene.

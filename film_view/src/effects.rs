@@ -17,7 +17,7 @@ pub const WORDS: &[Word] = &[
             "who:pokemon [n:number]",
         ],
         "moveeffect, bolt (on a); moveshot (from a to b)",
-    ).family("Effects").ds_close("SetEffect<actor>(n), WaitEffect: a script effect of the move's type (fire, water, lightning…), not the move's own", "a script effect of the move's type, not the move's own").word_first()
+    ).family("Effects").ds_close("SetEffect<actor>(n), WaitEffect: the move's own effect (its type's without the game's tables); from a to b, what the move throws flies first on a performer (SetEffect<performer 4>, MovePositionMark)", "the move's effect; a shot flies straight, drawn one way").word_first()
     .maybe(effect_line),
     Word::new("flash", &["colour:word at after:duration", "colour:word [d:duration]", ""], "flash; after (at 12); alone, white with the game's shock").family("Screen").ds_direct("white: screen_WhiteOut(1, 2), screen_FadeIn; a colour: screen_FlushOut / FlushIn(1, n, 2, r, g, b)")
         .maybe(flash_said),

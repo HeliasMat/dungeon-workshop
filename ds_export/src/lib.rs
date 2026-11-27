@@ -132,6 +132,7 @@ fn game_of(film: &Film) -> Game {
     let move_types = film.art.map(|art| art.tables.move_slots.iter().map(|slot| slot.type_id).collect()).unwrap_or_default();
     let mut game = Game::read(&film.tables.data, move_types);
     game.move_effects = film.art.map(|art| art.tables.move_effects.clone()).unwrap_or_default();
+    game.move_flights = film.art.map(|art| art.tables.move_motions.iter().map(|motion| motion.flight).collect()).unwrap_or_default();
     // (Two decors built on one level: the first by name.)
     for (name, (level, ..)) in &film.tables.decors {
         game.decors.entry(*level).or_insert_with(|| name.clone());

@@ -89,6 +89,8 @@ pub(crate) struct Writer<'a> {
     kept: Vec<String>,
     memory: bool,
     weather: bool,
+    /// What a move throws flew in the scene: its carrier (`SHOT`) is in the layout.
+    shots: bool,
     box_top: bool,
     /// Where the last line's box closed (to ask in it).
     closed: Option<usize>,
@@ -296,6 +298,10 @@ const BESIDE: f32 = 24.0;
 /// Where the layer reloading one who transforms goes, its number known as the
 /// scene is put together (`Writer::block`).
 const SHIFT: &str = "@SHIFT:";
+/// The performer that carries what a move throws (`SetEffect<performer>`
+/// moved with `MovePositionMark`, as Sky's m12a1201 sends Lapras's wake);
+/// 3 is the weather's.
+const SHOT: u8 = 4;
 const SHIFTERS: [(&str, u16); 4] = [("EVENT_NPC01", 2), ("EVENT_NPC02", 0), ("EVENT_NPC03", 8), ("EVENT_NPC04", 6)];
 
 /// How far from the camera an actor is out of sight (half the screen and more).
@@ -327,6 +333,7 @@ impl<'a> Writer<'a> {
             kept: Vec::new(),
             memory: false,
             weather: false,
+            shots: false,
             box_top: false,
             closed: None,
             vars: Vec::new(),

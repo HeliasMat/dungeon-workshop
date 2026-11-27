@@ -7,7 +7,7 @@ use engine::{AnimId, Beat, BodyBeat, Frames, MoveId, Play, SpeechBeat, Voice, Wh
 
 use ::film::ds::patches::{PATCHES, Patches};
 
-use super::{Actor, Writer};
+use super::{Actor, SHOT, Writer};
 use crate::notes::{Fate, Kind, Note};
 use crate::sky::Game;
 
@@ -24,7 +24,16 @@ fn data() -> String {
 
 fn game(data: &str) -> Game {
     let names = [(172, "Pichu"), (228, "Unown"), (25, "Pikachu"), (143, "Snorlax")].into_iter().map(|(at, name)| (at, name.to_string())).collect();
-    Game { levels: HashMap::new(), actors: Vec::new(), data: data.to_string(), move_types: Vec::new(), move_effects: Vec::new(), names, decors: HashMap::new() }
+    Game {
+        levels: HashMap::new(),
+        actors: Vec::new(),
+        data: data.to_string(),
+        move_types: Vec::new(),
+        move_effects: Vec::new(),
+        move_flights: Vec::new(),
+        names,
+        decors: HashMap::new(),
+    }
 }
 
 /// A form SpriteCollab adds is its base species on DS, a Pokémon Sky
@@ -163,6 +172,41 @@ fn a_move_shows_its_own_effect() {
     writer.beat(3, Some("attack"), &Beat::Body(BodyBeat::Move { who: pikachu, id: MoveId(262), target: Some(pichu) }));
     let target = writer.actors[&pichu].name.clone();
     assert!(writer.body.contains(&format!("SetEffect<actor ACTOR_{target}>(6, 3);")), "{}", writer.body);
+}
+
+/// What a move throws flies from its user to its target on the shot's
+/// performer, at the move's speed, before the effect on the target; the
+/// film's next waits count its flight; a move that throws nothing, none.
+#[test]
+fn what_a_move_throws_flies_to_its_target() {
+    let data = data();
+    let mut tables = game(&data);
+    tables.move_effects = vec![[0; 4]; 263];
+    tables.move_effects[262] = [0, 144, 317, 137];
+    tables.move_effects[129] = [22, 0, 236, 0];
+    tables.move_flights = vec![6; 263];
+    tables.move_flights[262] = 3;
+    let (pikachu, pichu) = (Who::Monster(25), Who::Monster(172));
+    for (id, effect) in [(262, "317"), (129, "236")] {
+        let mut writer = Writer::new(&tables);
+        writer.started = true;
+        writer.at.insert(pikachu, (100.0, 100.0));
+        writer.at.insert(pichu, (220.0, 100.0));
+        writer.beat(3, Some("use"), &Beat::Body(BodyBeat::Move { who: pikachu, id: MoveId(id), target: Some(pichu) }));
+        let target = writer.actors[&pichu].name.clone();
+        let body = writer.body.clone();
+        let lands = body.find(&format!("SetEffect<actor ACTOR_{target}>({effect}, 3);")).expect(&body);
+        if id == 129 {
+            // (Thunderbolt throws nothing: its bolt on the target alone.)
+            assert!(!body.contains("performer") && !writer.shots, "{body}");
+            continue;
+        }
+        let set = body.find(&format!("SetEffect<performer {SHOT}>(137, 3);")).expect(&body);
+        let flies = body.find(&format!("MovePositionMark<performer {SHOT}>(3, ")).expect(&body);
+        assert!(set < flies && flies < lands, "{body}");
+        assert!(body.contains(&format!("WaitExecutePerformer({SHOT});")), "{body}");
+        assert!(writer.shots && (writer.ahead - 40.0).abs() < 0.5, "120 pixels at 3 a frame: {}", writer.ahead);
+    }
 }
 
 /// A data folder with Pikachu's, Ditto's and Munchlax's portraits (normal,

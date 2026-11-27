@@ -213,7 +213,7 @@ Lost (`R-DS-LOSS` on the scene, `film_core/src/ds.rs` `DECOR_LOSS`):
 | wander | **Fake works** (seen) | `ExecuteCommon<actor X>(CORO_MOVE_RANDOM, 0)`: Sky's own random stroll (turn, step, wait 48 frames, for ever, until the scene ends or another action is given). |
 | daytime | **Fake works** (seen) | Sky's scripts never tint for dusk: they switch to the place's evening or night level (`G01P01B`, `G01P01C`; `LEVEL_D01P11B` is the beach at sunset), and dim a room at bedtime with `screen_FadeChange(1, 60, 0, 192)`. Their only warm tint, `screen_FlushOut(1, 4, 4, 128, 96, 64)`, shows mode 4 multiplies the screen by the colour (seen: 255, 128, 64 turned the sand orange and the sea green: far too strong). So mid-scene: evening `screen_FlushOut(1, 30, 4, 224, 176, 136)`, night `screen_FlushOut(1, 30, 4, 80, 112, 144)`, the factors measured between the guild's crossroads by day and its evening and night levels (**seen** side by side: `target/ds/lab/tint2_grid.png`); back to day: `screen_FlushIn` with the same numbers. The tint stays until then. A `FlushOut` over another tint changes at once, and a `FlushIn` at once flashes the day: one light to another goes in half the time, the new one comes in the other half (seen). Mode 3 fills the screen with the colour and `FlushIn` did not undo it: avoid. Sky also has evening variants of some places as levels of their own (`LEVEL_D01P11B` is the beach at sunset): the exporter can pick the level when the film's light says evening. |
 | status | **Fake works** (seen) | Effects on the actor: `EFFECT_CONFUSE` (stars), `EFFECT_POISION_BUBBLE` (sic), `EFFECT_GIANT_Z` (asleep), `EFFECT_TRAPPED_IN_ICE` (frozen), `EFFECT_STATS_DOWN_EFFECT`, `EFFECT_STATS_UP_EFFECT` and `EFFECT_YAWN` (not tried); with poses below (asleep: animation 25 or 33; shivering: 27 or 47). |
-| attack | **Exported** (seen) | Wind-up `SetAnimation<actor A>(28)`, strike `SetAnimation<actor A>(48)` (a lunge), then on the target an effect: `EFFECT_PUNCH_ATTACK`, `EFFECT_LIGHTNING_STRIKE` (a bolt from the sky), `EFFECT_FIRE_ATTACK` (a tall flame), `EFFECT_SLASH_ATTACK`, `EFFECT_EXPLOSION_SMALL` (seen; `EFFECT_WATER_EXPLOSION`, `EFFECT_AIR_BLADES` and others of the table not tried); the target's hurt pose `SetAnimation(22)` or `(36)`; a shake `camera_SetEffect(2, 1, 1.0)` ... `camera_SetEffect(0, 0, 0)`; back to standing `SetAnimation(2)`. The move's own effect on the target, seen (2026-11-26): `SetEffect` plays the game's effects by the numbers the dungeons' move table gives (`rules::tables::Tables::move_effects`, the same ids as `data/rom/effects/`), Thunderbolt's bolt (236), Ember's flame (317), Leaf Storm's leaves (612) and swirl (610); what flies from the user and the move's own motion of its sprite still need code (below, "Motion"). |
+| attack | **Exported** (seen) | Wind-up `SetAnimation<actor A>(28)`, strike `SetAnimation<actor A>(48)` (a lunge), then on the target an effect: `EFFECT_PUNCH_ATTACK`, `EFFECT_LIGHTNING_STRIKE` (a bolt from the sky), `EFFECT_FIRE_ATTACK` (a tall flame), `EFFECT_SLASH_ATTACK`, `EFFECT_EXPLOSION_SMALL` (seen; `EFFECT_WATER_EXPLOSION`, `EFFECT_AIR_BLADES` and others of the table not tried); the target's hurt pose `SetAnimation(22)` or `(36)`; a shake `camera_SetEffect(2, 1, 1.0)` ... `camera_SetEffect(0, 0, 0)`; back to standing `SetAnimation(2)`. The move's own effect on the target, seen (2026-11-26): `SetEffect` plays the game's effects by the numbers the dungeons' move table gives (`rules::tables::Tables::move_effects`, the same ids as `data/rom/effects/`), Thunderbolt's bolt (236), Ember's flame (317), Leaf Storm's leaves (612) and swirl (610); what flies from the user flies on a performer (2026-11-27, below, "Motion"); the move's own motion of its sprite still needs code. |
 | fight | **Exported** (seen) | Each blow the fights' rules played (a directed fight's as written: `scenes::fight::host::played`, the same battle the engine plays) staged as `attack`: the fighter turns to its target, its wind-up and lunge, the move type's effect on the target, a shake; the target slides back (`SlidePositionMark`, further and the view shaking hard for a critical), its pain once, and back to its place; missed: the target hops. A knock out: its faint. The lines said in the fight's moments play where they come; no bars, no log, no "Missed!". Below, "Routines, floating, fights". |
 | hold | **Exported** (seen) | The item an object of the scene's, its sprite the item's icon, at the holder's hands and given his moves (below, "Items and riders"). |
 | give | **Exported** (seen) | The item's object up, across, down into the other's hands, then his. |
@@ -357,6 +357,26 @@ Measured on headless shots a frame apart (melonDS, `watch.py <lab>.exps
   1-2 exactly; with `SetOutputAttribute(128)` after it, a fade out, and
   `ResetOutputAttribute` then 1-2, 1-1, 2-1, a fade in. Sky's actors have
   no see-through (`ghost`: none).
+- **What a move throws** (seen 2026-11-27, `target/ds/fx/lab_shot.exps`
+  and a trial film, melonDS every 2 frames): the move table's fourth
+  effect (Ember 137, Water Gun 333, Razor Leaf 288) put on a performer of
+  its own (type 4; `<performer n>` names the layout's performer of type
+  n, as m12a1201's 3 and 4) with `SetPositionMark` at the user,
+  `SetEffect<performer 4>(id, 3)`, `MovePositionMark<performer 4>(speed,
+  target)` then `WaitExecutePerformer(4)`: the effect rides it, as
+  m12a1201 sends Lapras's wake (`EFFECT_LAPRAS_WATER_SHADOW` with
+  `MovePositionOffset`). Seen flying from user to target: Ember's flame,
+  Water Gun's drop, Razor Leaf's leaves; then the effect on the target as
+  before. The speed is the dungeons' (`MoveMotion::flight`, 2, 3 or 6
+  pixels a frame), the flight taken off the next waits. Not as a dungeon:
+  the effect keeps its first way (Water Gun's drop points down whichever
+  way it goes; the dungeons pick the animation by direction), a lob's arc
+  flies straight, and parallel (`&`) moves still fly one after the other
+  (the export serializes moves). No ARM code: the memory measured during
+  the brawl (py-desmume, hooks on LoadWanTableEntryFromPack and
+  MemLocateSet) shows no effect short of room: each move's effect file
+  loads in arena 1 (3-10 KB, 0x2C320 used at most, 0x377E4 free in one
+  block with 3 sprites there), no "no room" after the sprites.
 - **Move effects**: the ids of the dungeons' move table play with
   `SetEffect<actor>` in a scene (above, `attack`); on `performer 0` (the
   camera) Leaf Storm's 612 did not show: at a place, the export plays the
@@ -802,7 +822,7 @@ the table says):
 | Camera | As the engine; a frame wider than the screen pans across. |
 | Screen | `flash` of a colour: Sky's FlushOut and FlushIn; `memory`: Sky's sepia. |
 | Sound | A sound played in a loop by name (`chirp`) and faded: left out. |
-| Effects | `effect … from a to b`: the effect on b (no shot flying). `weather sparkles`, sand, fog, sun: nothing. `daytime`: Sky's evening / night tints, one to another through the day's. |
+| Effects | `effect … from a to b`: the effect on b (`moveshot`: what the move throws flies first). `weather sparkles`, sand, fog, sun: nothing. `daytime`: Sky's evening / night tints, one to another through the day's. |
 | Objects | `hold`, `give`, `drop`, `throw`, `put object`: the item an object of its own, its icon (below, "Items and riders"); arcs in three steps. `open`/`close`: as the engine. |
 | Fights | `fight` by the rules: its blows as attacks (the Wiki's: one Thunder, Piplup faints, as the engine plays it). `dodge`: no "Missed!". `finish`: no slow motion. |
 | Time | `at 2s:` and `at mark + 1s:`: from where the line is written. `together`: at once. |

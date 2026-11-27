@@ -23,6 +23,9 @@ pub(crate) struct Game {
     /// target, what flies): ids of the game's effects, the same Sky's
     /// scripts play with `SetEffect` (`rules::tables::Tables::move_effects`).
     pub(crate) move_effects: Vec<[u16; 4]>,
+    /// How fast what each move throws flies, in pixels a frame
+    /// (`rules::tables::MoveMotion::flight`), by move.
+    pub(crate) move_flights: Vec<u8>,
     /// The species' names, to tell who is left out.
     pub(crate) names: HashMap<u16, String>,
     /// The Workshop's own places (decors), by level: each exports as a map
@@ -54,7 +57,7 @@ impl Game {
             })
             .collect();
         _ = DATA.set(data.to_string());
-        Game { levels, actors, data: data.to_string(), move_types, move_effects: Vec::new(), names, decors: HashMap::new() }
+        Game { levels, actors, data: data.to_string(), move_types, move_effects: Vec::new(), move_flights: Vec::new(), names, decors: HashMap::new() }
     }
 
     /// A level's size in pixels (its picture's, as the extraction or the

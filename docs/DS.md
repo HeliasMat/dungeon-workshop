@@ -188,14 +188,20 @@ it, seen):
 - `use`, `attack`: the move's own effect on the target, as a dungeon shows
   it (Thunderbolt's bolt, Ember's flame, Leaf Storm's leaves; at a place,
   its own as it strikes, on its user): Sky's scripts play the game's
-  effects by the same numbers. Without the game's tables, its type's;
+  effects by the same numbers. Without the game's tables, its type's.
+  What the move throws (Ember's flame, Water Gun's jet, Razor Leaf's
+  leaves, Bubble's bubbles) first flies from the user to the target at the
+  move's own speed (2, 3 or 6 pixels a frame), as in a dungeon; `moveshot`
+  too. Approximated: a straight line (a lob's arc flies flat) and the
+  effect drawn its first way (a dungeon turns it to where it goes);
+  `&` moves still play one after another;
 - `daytime`: Sky's tints (the screen multiplied by the evening's or the
   night's colour), one light to another through the day's, half the time
   each;
 - `transition wipe` and `iris`: a fade (Sky's scenes go only to black or
   white, and its boss wipe).
 
-A shake's or a blink's time is taken off the film's next waits, so the
+A shake's, a blink's or a shot's flight time is taken off the film's next waits, so the
 film keeps its length. How each was found: `tools/ds/LIMITS.md` ("Motion").
 
 ## Pokémon of SpriteCollab's
