@@ -637,6 +637,8 @@ eevee bow_twice
 - A film takes the file's words with `uses bow_twice` and calls them as the language's own (`pikachu bow_twice`); it never plays the file's `example:`.
 - `scene_player check library/recipes/bow_twice.film` checks the recipes and plays the example; `scene_player try` makes its sheet.
 - Each name says what it wants: `who:pokemon`, `what:thing`, `time:duration`, `count:number`, `where:place` (`x y`, someone, `front_of b`…). A call that gives something else is told on the film's line that calls it.
+- A film that calls a word of your library without its `uses` line is told so, the line its fix. A recipe named as a word of the language (it hides it) or as a recipe of another file of your library is remarked.
+- When a recipe file is written in the Workshop, the films of `library/films` that use it are checked again; those that no longer play are named in a remark on the file's first line.
 - In the Workshop, the Script's menu has **New Recipe…**, and **Make a Recipe of Them…** can put the selected lines in your library. Your words show in the completion and in the help, with their doc. The folder is yours: it is never committed.
 
 ## For agents

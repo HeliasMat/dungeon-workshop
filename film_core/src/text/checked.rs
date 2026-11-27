@@ -45,6 +45,7 @@ pub fn check(film: &mut Film) {
     for recipe in defined.iter().map(|one| &one.recipe).chain(film.lexicon.library()) {
         known.entry(recipe.name.clone()).or_default().push(recipe.clone());
     }
+    names_taken(film, &defined);
     for one in &defined {
         // (Those the film names, its groups: known as the recipe is read.)
         let mut alone = Film::with(film.lexicon, film.tables.clone());
@@ -55,6 +56,24 @@ pub fn check(film: &mut Film) {
         }
     }
     film.defined = defined;
+}
+
+/// The film's own recipes (`define` in its text) whose name is already
+/// taken: by a word of the language (the recipe hides it), or by a recipe
+/// file of the user's library other than this one. Remarked on `define`.
+fn names_taken(film: &mut Film, defined: &[Defined]) {
+    let own_files = super::recipes::own_recipe_files(&film.tables.project);
+    let source = film.source.clone();
+    for one in defined.iter().filter(|one| one.uses.is_none() && one.recipe.file.is_empty()) {
+        let (name, number) = (&one.recipe.name, one.recipe.text.number);
+        if film.lexicon.is_word(name, "") {
+            film.remark(number, format!("“{name}” is already a word of the language: this recipe hides it in this film; give it another name"));
+        }
+        let defines = |text: &str| text.lines().any(|line| line.split_whitespace().take(2).eq(["define", name.as_str()]));
+        for (file, _) in own_files.iter().filter(|(_, text)| **text != *source && defines(text)) {
+            film.remark(number, format!("“{name}” is already a recipe of your library ({file}); give it another name"));
+        }
+    }
 }
 
 /// What is wrong in a recipe read alone, each on its own line in its text.

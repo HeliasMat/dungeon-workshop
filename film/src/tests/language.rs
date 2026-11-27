@@ -129,7 +129,7 @@ fn every_command_of_the_engine_is_written_in_a_film() {
 /// A recipe's calculation binds as the language's do: `x + 2 * 3` is 7.
 #[test]
 fn a_recipe_reckons_each_sign_as_tight_as_it_binds() {
-    let (lines, problems) = super::engine_lines("define lift x:number\n  rise pikachu {x+2*3} 1s\nend\nscene: beach pikachu\nlift 1\n");
+    let (lines, problems) = super::engine_lines("define go_up_by x:number\n  rise pikachu {x+2*3} 1s\nend\nscene: beach pikachu\ngo_up_by 1\n");
     assert!(problems.is_empty(), "{problems:?}");
     assert!(lines.iter().any(|fields| super::starts(fields, &["rise", "pikachu", "7"])), "{lines:?}");
 }

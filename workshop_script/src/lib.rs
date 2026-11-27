@@ -352,6 +352,12 @@ pub struct Scripts {
     extracting: Option<(usize, usize, String, bool)>,
     /// A new recipe file being named (Script › … › New Recipe…).
     new_recipe: Option<String>,
+    /// A recipe file of the library, as last written: the text the films that use it were checked with, their
+    /// answer to come; those that no longer play (shown as a remark of the file).
+    users_checked: Option<(PathBuf, String, Receiver<Vec<String>>)>,
+    users_broken: Option<(PathBuf, Vec<String>)>,
+    /// What wakes the window when a thread has an answer.
+    waker: egui::Context,
     line_asked: Option<usize>,
     /// The portraits of those pointed at, by species (and face: `species:face`).
     portraits: HashMap<String, Option<egui::TextureHandle>>,
@@ -506,6 +512,9 @@ impl Scripts {
             marks_text: String::new(),
             followed: None,
             extracting: None,
+            users_checked: None,
+            users_broken: None,
+            waker: context.clone(),
             new_recipe: session.launch.project.as_deref().and_then(|asked| asked.strip_prefix("recipe:")).map(str::to_string),
             line_asked: None,
             portraits: HashMap::new(),
@@ -605,8 +614,12 @@ impl Scripts {
                 && revision >= open.told_for
             {
                 (open.told, open.told_for) = (told, revision);
+                if let Some(note) = self.users_broken.as_ref().and_then(|(path, broken)| users_note(path, broken, &open.path)) {
+                    open.told.push(note);
+                }
             }
         }
+        self.recipe_users();
         let Some(open) = &mut self.open else { return };
         let quiet = open.changed.map_or(Duration::MAX, |when| when.elapsed());
         let wanted = self.ds_docked || self.ds_preview || film::ds::written_for_ds(&open.text);
@@ -627,6 +640,55 @@ impl Scripts {
         if open.changed.is_some() || open.asked != open.told_for {
             context.request_repaint_after(Duration::from_millis(120));
         }
+    }
+
+    /// A recipe file of the library written: the films of the library that use it checked again, on a thread;
+    /// those that no longer play told as a remark of the file, once known.
+    fn recipe_users(&mut self) {
+        if let Some((path, _, answer)) = &self.users_checked
+            && let Ok(broken) = answer.try_recv()
+        {
+            let path = path.clone();
+            if let Some(open) = &mut self.open
+                && let Some(note) = users_note(&path, &broken, &open.path)
+            {
+                open.told.retain(|told| !told.message.starts_with(USERS_BROKEN));
+                open.told.push(note);
+            }
+            self.users_broken = Some((path, broken));
+        }
+        let Some(open) = &self.open else { return };
+        let checked = self.users_checked.as_ref().is_some_and(|(path, text, _)| *path == open.path && *text == open.text);
+        if checked || !open.saved() {
+            return;
+        }
+        let recipes = film::user_recipes(self.session.library());
+        let in_recipes = open.path.parent().zip(std::fs::canonicalize(&recipes).ok()).is_some_and(|(folder, recipes)| {
+            std::fs::canonicalize(folder).is_ok_and(|folder| folder == recipes)
+        });
+        if !in_recipes {
+            self.users_checked = Some((open.path.clone(), open.text.clone(), channel().1));
+            return;
+        }
+        let (tell, answer) = channel();
+        let name = open.path.file_stem().map_or_else(String::new, |stem| stem.to_string_lossy().into_owned());
+        let (films, tables, waker) = (self.session.library().films(), self.session.tables(), self.waker.clone());
+        std::thread::spawn(move || {
+            let mut broken = Vec::new();
+            let uses = format!("uses {name}");
+            for path in std::fs::read_dir(films).into_iter().flatten().flatten().map(|file| file.path()) {
+                let Some(text) = path.extension().filter(|end| *end == "film").and_then(|_| std::fs::read_to_string(&path).ok()) else { continue };
+                if text.lines().any(|line| line.trim() == uses)
+                    && film::service::diagnostics(&text, tables.clone()).iter().any(Diagnostic::is_error)
+                {
+                    broken.push(path.file_stem().map_or_else(String::new, |stem| stem.to_string_lossy().into_owned()));
+                }
+            }
+            broken.sort();
+            _ = tell.send(broken);
+            waker.request_repaint();
+        });
+        self.users_checked = Some((open.path.clone(), open.text.clone(), answer));
     }
 
     /// How many are wrong, how many remarked upon (of the last look).
@@ -677,6 +739,17 @@ impl Scripts {
 /// The Wiki as a panel of its own (docked in the Film space).
 pub fn wiki(ui: &mut egui::Ui, scripts: &mut Scripts) {
     wiki::wiki_panel(ui, scripts);
+}
+
+/// How the remark on a recipe file whose users break begins.
+const USERS_BROKEN: &str = "Films of the library that use this recipe";
+
+/// The remark on a recipe file of the library: the films that use it and no longer play (none: no remark).
+fn users_note(checked: &std::path::Path, broken: &[String], open: &std::path::Path) -> Option<Diagnostic> {
+    (checked == open && !broken.is_empty()).then(|| Diagnostic {
+        severity: film::service::Severity::Remark,
+        ..Diagnostic::at(1, format!("{USERS_BROKEN} and no longer play: {} (open them to see why)", broken.join(", ")))
+    })
 }
 
 /// A revision no file has had (two films opened one after the other never share one).
