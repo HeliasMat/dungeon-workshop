@@ -26,14 +26,12 @@ pub const PANELS: &str = "panels_";
 
 impl Settings {
     /// Whether the game-making spaces (Game, Dungeon, Emulator) show. Said
-    /// (`game_spaces`): as said. Not said: shown to one who already used
-    /// them (any setting written, all of them the game spaces': the
-    /// emulator's paths and keys; `has_games`: a game made), hidden from one
-    /// who comes new, the Workshop then opening on films and decors.
-    pub fn game_spaces(&self, has_games: bool) -> bool {
+    /// (`game_spaces`): as said. Not said: shown, to everyone (Settings ›
+    /// Show the Game-Making Spaces hides them).
+    pub fn game_spaces(&self, _has_games: bool) -> bool {
         match self.get(GAME_SPACES) {
             Some(said) => matches!(said.to_lowercase().as_str(), "on" | "yes" | "true" | "1"),
-            None => has_games || self.lines.iter().any(|(key, _)| !key.starts_with(PANELS)),
+            None => true,
         }
     }
 
@@ -128,18 +126,18 @@ mod tests {
         _ = std::fs::remove_file(file);
     }
 
-    /// The game spaces: as said; not said, shown to one who used them already, hidden from one new.
+    /// The game spaces: as said; not said, shown to everyone, someone new too.
     #[test]
-    fn the_game_spaces_show_for_those_who_used_them() {
+    fn the_game_spaces_show_unless_hidden() {
         let read = |text: &str| Settings { file: None, lines: parse(text) };
-        assert!(!read("").game_spaces(false), "someone new: hidden");
-        assert!(read("").game_spaces(true), "a game made: shown");
-        assert!(read("ds_rom = C:/sky.nds\n").game_spaces(false), "the emulator set: shown");
+        assert!(read("").game_spaces(false), "someone new: shown");
+        assert!(read("panels_film = Script,Scene\n").game_spaces(false), "the panels laid out: shown");
         assert!(!read("ds_rom = C:/sky.nds\ngame_spaces = off\n").game_spaces(true), "said: as said");
         let mut settings = read("");
+        settings.set_game_spaces(false).unwrap();
+        assert!(!settings.game_spaces(true));
         settings.set_game_spaces(true).unwrap();
         assert!(settings.game_spaces(false));
-        assert!(!read("panels_film = Script,Scene\n").game_spaces(false), "the panels laid out: still someone new");
     }
 
     /// The panels of a space, as they were left.

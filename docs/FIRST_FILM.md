@@ -94,4 +94,4 @@ It writes `target/films/the_big_day/the_big_day.mp4`.
 **What next?** All the words, family by family: [film/FILMS.md](../film/FILMS.md) and the Wiki in
 the Script. A place of your own: **+ New Decor**, from one of the game's places (each house and tree
 an element to move) or an empty page ([decor/DECORS.md](../decor/DECORS.md)). A game of your films:
-Settings › **Show the Game-Making Spaces**, then [Your first game in 30 minutes](TUTORIAL.md).
+the **Game** space, then [Your first game in 30 minutes](TUTORIAL.md).

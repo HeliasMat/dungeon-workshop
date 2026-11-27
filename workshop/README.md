@@ -6,7 +6,7 @@ cargo run --offline -p workshop [file.film | file.decor]
 
 One window, seven spaces (Home, Game, Film, Decor, Dungeon, Resources, Emulator), each with its panels docked as in a studio (the Game's columns and the Dungeon's editors take the whole window).
 
-**Made for films and decors first.** The Workshop opens on the Home (after the first launch, with a welcome panel: **+ New Film**, **+ New Decor**, the last files opened, the first film's steps, [docs/FIRST_FILM.md](../docs/FIRST_FILM.md)). The game-making spaces (Game, Dungeon, Emulator) show only when **Settings › Show the Game-Making Spaces** is on (`game_spaces = on` in the settings file): off for someone new, on by default for whoever already used them (a game in `games/`, or any setting already written: the emulator's paths or keys). The space looked at always shows.
+**Made for films and decors first.** The Workshop opens on the Home (after the first launch, with a welcome panel: **+ New Film**, **+ New Decor**, the last files opened, the first film's steps, [docs/FIRST_FILM.md](../docs/FIRST_FILM.md)). The game-making spaces (Game, Dungeon, Emulator) show by default; **Settings › Show the Game-Making Spaces** unticked hides them (`game_spaces = off` in the settings file), for films and decors only. The space looked at always shows.
 
 ## The whole window
 
