@@ -37,8 +37,6 @@ pub const ARENA_1_BLOCKS: usize = 43;
 
 /// The hook giving arena 1, as tools/ds/patches.toml names it.
 pub const HOOK: &str = "GroundSpriteRoom";
-/// The patches the DS export's base is made with (whether the hook is on).
-const PATCHES: &str = include_str!("../../../tools/ds/patches.toml");
 
 /// Each species' ground sprite size, decompressed: Sky's read from one's
 /// own ROM by `tools/ds/ground_sizes.py`, SpriteCollab's added as
@@ -76,7 +74,7 @@ impl Room {
     /// The room the export's base gives: the hook's when patches.toml has
     /// it on, as `DW_PATCHES` changes the choice.
     pub fn current() -> Room {
-        if hook_on(PATCHES, &std::env::var("DW_PATCHES").unwrap_or_default()) { Room::with_hook() } else { Room::sky() }
+        if super::patches::Patches::current().has(HOOK) { Room::with_hook() } else { Room::sky() }
     }
 
     /// Its bytes in all.
@@ -122,31 +120,7 @@ impl Room {
 /// Whether the hook is on: patches.toml's `default`, then `DW_PATCHES`
 /// (`+Name` on, `-Name` off, `only:A,B` those alone), as megapatch.py reads them.
 pub fn hook_on(patches: &str, choice: &str) -> bool {
-    let mut on = false;
-    let mut name = "";
-    for line in patches.lines().map(str::trim) {
-        if line == "[[patch]]" {
-            name = "";
-        } else if let Some(value) = line.strip_prefix("name = ") {
-            name = value.trim_matches('"');
-        } else if let Some(value) = line.strip_prefix("default = ")
-            && name == HOOK
-        {
-            on = value.trim_matches('"') == "on";
-        }
-    }
-    let choice = choice.trim();
-    if let Some(only) = choice.strip_prefix("only:") {
-        return only.split(',').any(|one| one.trim() == HOOK);
-    }
-    for one in choice.split(',').map(str::trim) {
-        if one.strip_prefix('+') == Some(HOOK) {
-            on = true;
-        } else if one.strip_prefix('-') == Some(HOOK) {
-            on = false;
-        }
-    }
-    on
+    super::patches::Patches::read(patches, choice, false).has(HOOK)
 }
 
 /// The sizes of `GROUND_SIZES`, by species, read once a data folder.
@@ -368,7 +342,7 @@ mod tests {
         assert!(hook_on(&off, "+GroundSpriteRoom"));
         assert!(!hook_on(&off, ""));
         // (The repository's own patches: the hook on.)
-        assert!(hook_on(PATCHES, ""));
+        assert!(hook_on(crate::ds::patches::PATCHES, ""));
     }
 
     #[test]

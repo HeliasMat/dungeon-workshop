@@ -77,7 +77,9 @@ Nothing is lost in silence, and no Pokémon becomes another:
 - **A line said in a bubble** (`who (bubble[, face]): …`, `bubble`, `think`,
   `shout`) is a line of Sky's box, its face as the brackets say, closing by
   itself after the bubble's time (`message_SetWaitMode(frames, 0)`, as Sky's
-  endings time theirs). One at a time: no two bubbles side by side.
+  endings time theirs). One at a time: no two bubbles side by side. With
+  the mega patch the box is see-through while it shows (below, "What the
+  mega patch gives a film"), lighter than a line said.
   `chatter`: Sky's emotes over the crowd (!, ?, laughing, joy, sweat).
 - **A Pokémon or form SpriteCollab adds** (numbered past Sky's 1,155: 2000 +
   its Pokédex number, variants from 5000) **is put in the ROM** when the data
@@ -95,7 +97,9 @@ Nothing is lost in silence, and no Pokémon becomes another:
   attack), told once a species and pose.
 - **More than 21 at once** from a scene's start: the idle are left out first,
   then those only acting where they stand, then those moving, never one who
-  speaks or is framed among a few; their lines go with them, and the export
+  speaks or is framed among a few; every order to them goes, but their
+  lines are still said, without an actor (their name in the words, their
+  portrait by set-portrait-monster with the mega patch), and the export
   names each one left out.
 
 ### Species in a scene
@@ -115,7 +119,8 @@ magenta square; the export never lets that happen in silence
   partner in both;
 - **else the least needed left out**: the species no line names first,
   then those only acting, moving, speaking, the fewest lines first (never
-  the hero nor the partner), each Pokémon of them with its lines;
+  the hero nor the partner), each Pokémon of them out of the scene, its
+  lines said without it (its portrait alone, as above);
 - **`--squares`** (`scene_player export-ds --squares`) keeps them all,
   those past the room as squares.
 
@@ -374,6 +379,43 @@ reads their source from GitHub (text files, through `gh api`) into
 holds only those that may be shared:
 
     python tools/ds/megapatch.py <rom> --out target/ds/megapatch/shared.nds --share --bps target/ds/megapatch/shared.bps
+
+### What the mega patch gives a film
+
+The export reads the same list and `DW_PATCHES` (`film_core/src/ds/patches.rs`)
+and uses what the base has; without a patch, the film exports as before it.
+Export for a base made with `--share` with `DW_SHARE=1`: what has no
+licence is then left out, and told.
+
+- **A face changing in a line**: a face between brackets in the words,
+  `pikachu (happy): We won! [sad] But at what cost...`, changes there, in
+  the same box (ChangePortraitMidText's `[FACE:n]`; a face the species
+  lacks: its nearest, as for a line's). Without it: a box for each face,
+  one after the other (told). Our engine changes the portrait there too.
+- **Bold words**: `*words*` (the engine shows them in colour) are bold
+  (BoldText's `[BS]...[BR]`); without it, as written.
+- **A portrait without an actor**: one left out of a scene for Sky's room
+  says his lines still, `message_EmptyActor` and his name in the words,
+  his face shown by set-portrait-monster (`ProcessSpecial(64, species,
+  face)`); without it, his name alone. (The narrator and a stand-in's lines
+  are `message_EmptyActor` too: `message_ResetActor` put the hero's empty
+  name, a glyph, before them.)
+- **A line in a bubble**: the box see-through as it opens
+  (`ProcessSpecial(66, 1, 0)`), solid again after (`66, 0, 0`).
+- **`transform into` / `transform back`**: with dynamic_actor (your own
+  base only: no licence to share it), one who transforms is cast as one of
+  Sky's special actors (`EVENT_NPC01`-`04`, whose species Sky reads from
+  `SPECIAL_ACTORS` as it loads them; four in a film at most), his species
+  set before the scene loads him (`ProcessSpecial(67, species, 2n)`, `n`
+  his field: 1 for `EVENT_NPC01`); under the white screen he is taken away
+  (`Destroy`), his species set to the other's and loaded again in a layer
+  of his own (`supervision_Acting`), where he stood, facing as he did.
+  Back: his own species the same way. While transformed his lines are his
+  own name and face (Sky would name and show him as the other), as the
+  film has them. In a base for sharing he keeps his look, told.
+- **The film's end**: a film played as a new game starts goes back to the
+  title screen after its last scene (`PROCESS_SPECIAL_RETURN_TO_TITLE_SCREEN`,
+  as a Workshop dungeon's end), no longer on into the quiz's opening words.
 
 ## A film that leads into its dungeon (a trial)
 

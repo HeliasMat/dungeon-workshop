@@ -907,7 +907,7 @@ impl Game {
             }
             self.face = Some((face, rgba));
         }
-        self.face.as_ref().map(|(_, rgba)| stage_view::ui::message::Portrait { rgba: rgba.clone(), x: 2 })
+        self.face.as_ref().map(|(_, rgba)| stage_view::ui::message::Portrait { rgba: rgba.clone(), x: 2, faces: Vec::new() })
     }
 
     /// The team as the tests read it (`rank`, `money`, `recruits`, `day`,

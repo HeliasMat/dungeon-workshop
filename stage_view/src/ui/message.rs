@@ -40,6 +40,8 @@ pub struct Said {
 pub struct Portrait {
     pub rgba: Vec<u8>,
     pub x: usize,
+    /// The faces the text changes to (`[FACE:n]`), by their number.
+    pub faces: Vec<(u16, Vec<u8>)>,
 }
 
 /// What the box shows.
@@ -65,11 +67,24 @@ pub struct Words {
     ticked: u32,
 }
 
+/// The faces a text changes to, in turn (`[FACE:n]`, as the game's text writes it).
+fn faces_in(text: &str) -> Vec<u16> {
+    text.match_indices("[FACE:").filter_map(|(at, tag)| text[at + tag.len()..].split(']').next()?.parse().ok()).collect()
+}
+
 impl Words {
     pub fn said(said: Said, art: &Art) -> Self {
         let portrait = said.portrait.and_then(|(monster, shown, right)| {
             let rgba = art.portrait(monster, shown)?;
-            Some(Portrait { rgba, x: if right { PORTRAIT_RIGHT } else { 2 } })
+            let mut faces: Vec<(u16, Vec<u8>)> = Vec::new();
+            for face in said.pages.iter().flat_map(|page| faces_in(page)) {
+                if !faces.iter().any(|(had, _)| *had == face)
+                    && let Some(rgba) = art.portrait(monster, face)
+                {
+                    faces.push((face, rgba));
+                }
+            }
+            Some(Portrait { rgba, x: if right { PORTRAIT_RIGHT } else { 2 }, faces })
         });
         Words { pages: said.pages, options: said.options, portrait, voice: said.voice, pace: said.pace, timed: said.timed, ..Words::default() }
     }
@@ -173,12 +188,14 @@ impl Words {
         let Some(page) = self.page() else {
             return;
         };
+        let written = if self.menu { page } else { reveal(page, self.revealed as usize) };
         if let Some(portrait) = &self.portrait {
+            // (The face the text has changed to so far, `[FACE:n]`.)
+            let now = faces_in(written).last().copied().and_then(|face| portrait.faces.iter().find(|(had, _)| *had == face)).map_or(&portrait.rgba, |(_, rgba)| rgba);
             canvas.portrait_frame(art, portrait.x, BOTTOM + face);
-            canvas.blit((portrait.x * TILE) as i32, below + (face * TILE) as i32, 40, 40, &portrait.rgba);
+            canvas.blit((portrait.x * TILE) as i32, below + (face * TILE) as i32, 40, 40, now);
         }
         canvas.dialogue_window(art, 2, BOTTOM + window, 28, 5);
-        let written = if self.menu { page } else { reveal(page, self.revealed as usize) };
         let top_of = below + (window * TILE) as i32;
         let end = canvas.markup_end(art, left + 4, top_of + 2, width, written);
         // (What shows that the text waits for a key: inside the text (`[K]`),

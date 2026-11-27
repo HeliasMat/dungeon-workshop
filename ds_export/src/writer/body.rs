@@ -4,7 +4,10 @@
 
 use engine::{BodyBeat, Direction, Play, Point, Who};
 
-use super::{BESIDE, Writer, names, way_to};
+use ::film::ds::patches::DYNAMIC_ACTOR;
+use ::film::ds::{Drawn, drawn_on_ds};
+
+use super::{BESIDE, SHIFT, SHIFTERS, Writer, names, way_to};
 use crate::notes::{Fate, Kind};
 use crate::sky::{HIDDEN, direction};
 
@@ -31,7 +34,7 @@ impl Writer<'_> {
             // Evolving: a shine, the screen white, the evolved one (an actor of its
             // own) put where the other stood, the other hidden, the screen back.
             BodyBeat::Disguise { who, like: Some(like) } if word == Some("evolve") => self.evolve(number, who, like),
-            BodyBeat::Mimic { who, .. } => self.mimic(number, *who),
+            BodyBeat::Mimic { who, like } => self.mimic(number, *who, *like),
             // An unseen point (where a dodger stood): only its place, kept.
             BodyBeat::Put { who: who @ Who::Spot(_), at, .. } => {
                 if let Some(point) = self.point(at) {
@@ -98,15 +101,61 @@ impl Writer<'_> {
         self.line(&format!("SetAnimation<object OBJECT_N{object}>({set});"));
     }
 
-    /// Transformed: a shine, the screen white and back; Sky's actors keep
-    /// their look (R-DS-LOSS).
-    fn mimic(&mut self, number: i32, who: Who) {
+    /// Which special actor one who transforms is cast as (`SHIFTERS`), the
+    /// base having dynamic_actor: none past the four.
+    pub(super) fn shift_slot(&self, who: Who) -> Option<usize> {
+        self.patches.process(DYNAMIC_ACTOR)?;
+        self.shifters.iter().position(|one| *one == who).filter(|slot| *slot < SHIFTERS.len())
+    }
+
+    /// Transformed: a shine, the screen white and back. With dynamic_actor
+    /// (one cast as a special actor): under the white, the actor taken away,
+    /// its species set to the other's (`ProcessSpecial(67, species, 2n)`)
+    /// and loaded again (a layer of its own, `supervision_Acting`) where it
+    /// stood; back: its own species. Else he keeps his look (R-DS-LOSS).
+    fn mimic(&mut self, number: i32, who: Who, like: Option<Who>) {
         let Some(old) = self.who(number, who) else { return };
         self.line(&format!("SetEffect<actor {old}>(691, 3);"));
         self.line("Wait(40);");
         self.line("screen_WhiteOut(1, 30);");
         self.line("WaitScreenFade();");
         self.line(&format!("SetEffect<actor {old}>(EFFECT_NONE, 3);"));
+        let own = self.actors.get(&who).map_or(0, |actor| actor.kind);
+        let looks = match like {
+            Some(like) => self.actors.get(&like).map(|actor| actor.kind).or(match like {
+                Who::Monster(species) | Who::Another { species, .. } => Some(species),
+                _ => None,
+            }),
+            None => Some(own),
+        };
+        let slot = self.shift_slot(who).filter(|slot| self.actors.get(&who).is_some_and(|actor| actor.name == SHIFTERS[*slot].0));
+        match (slot, self.patches.process(DYNAMIC_ACTOR), looks) {
+            (Some(slot), Some(id), Some(looks)) if looks > 0 && drawn_on_ds(&self.game.data, looks) == Drawn::Own => {
+                let field = SHIFTERS[slot].1;
+                self.line(&format!("Destroy<actor {old}>();"));
+                self.line(&format!("ProcessSpecial({id}, {looks}, {field}); // {old}"));
+                self.line(&format!("supervision_Acting({SHIFT}{old}@);"));
+                if let Some(&at) = self.at.get(&who) {
+                    let position = self.position(at);
+                    self.line(&format!("SetPositionMark<actor {old}>({position});"));
+                }
+                let facing = direction(self.facing.get(&who).copied().unwrap_or(Direction::Down));
+                self.line(&format!("SetDirection<actor {old}>({facing});"));
+                if looks == own {
+                    self.mimicking.remove(&who);
+                } else {
+                    self.mimicking.insert(who);
+                }
+            }
+            _ if self.patches.unshared(DYNAMIC_ACTOR) => self.note(
+                number,
+                Kind::Word,
+                Fate::Changed,
+                "transform: dynamic_actor is not in a base for sharing (no licence stated)",
+                "he keeps his look: only the shine and the white screen",
+            ),
+            _ => {}
+        }
         self.line("screen_FadeIn(1, 30);");
         self.line("WaitScreenFade();");
     }

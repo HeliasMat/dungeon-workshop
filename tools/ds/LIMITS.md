@@ -556,8 +556,33 @@ played headless after each group, compared shot by shot with the first:
 - Making the base takes about 15 s more (SkyTemple's patches through
   armips, c-of-time's build kept once made); a film's copy is unchanged.
 - Not seen: a sound (the sheets are silent), the Kabuto screen (no crash
-  to show; melonDS only), dynamic_actor called, ChooseStarter's menu after
-  a film.
+  to show; melonDS only), ChooseStarter's menu after a film.
+
+**What the export uses of it** (seen 2026-11-27, melonDS headless; sheets
+in the session's scratchpad, not committed):
+
+- `[FACE:5]` in a line: Pikachu's happy face turned sad mid-box, the words
+  going on; `[BS]Oran Berry[BR]` bold (voices: the trial film).
+- `ProcessSpecial(66, 1, 0)` before a bubble's box: the scene seen through
+  it, solid again after `66, 0, 0` (the next line's box solid).
+- `message_EmptyActor` then `ProcessSpecial(64, 132, 0)`: Ditto's portrait
+  in a box with no actor, its name written in the words, nothing before it.
+  `message_ResetActor` (what the narrator's lines had) shows the hero's
+  name, empty before the quiz: a speech glyph and a colon before the words.
+- dynamic_actor: `ProcessSpecial(67, 132, 2)` before `supervision_Acting(0)`
+  makes `ACTOR_EVENT_NPC01` a Ditto; `Destroy`, `ProcessSpecial(67, 488, 2)`
+  and `supervision_Acting(1)` (a layer holding `EVENT_NPC01` again) bring
+  him back as a Munchlax where he stood, then a Ditto, then a Pikachu
+  (copycat_short). `SPECIAL_ACTORS` (EU 0x20B144C) is 2 bytes a field:
+  event_npc02, event_npc01, demo_partner, event_npc04, event_npc03, ...;
+  the second argument is the field's byte offset. A special actor's own
+  name and portrait follow his species: `message_SetFace` on him named him
+  Pikachu once he looked like one.
+- After the last scene, `PROCESS_SPECIAL_RETURN_TO_TITLE_SCREEN` (the slot
+  event's end, `ds_cache.py`, `patch_rom.py --boot`): a fade to black, the
+  title screen and its New Game menu about 4 s later. Before, the quiz's
+  opening words ("Welcome!") followed the film: SkipQuiz skips its
+  questions, not its opening.
 
 ## Species in a scene (GroundSpriteRoom, measured 2026-11-27)
 

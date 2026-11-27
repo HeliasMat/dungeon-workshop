@@ -21,7 +21,7 @@ pub const WORDS: &[Word] = &[
         "narrate",
         &["text..."],
         "narrate: words of no one's in the box; narrate screen: words on the screen, centred; narrate sign: a sign read, centred in the box",
-    ).family("Speech").ds_direct("box: message_ResetActor, message_Talk; screen: message_Narration; sign: message_Explanation")
+    ).family("Speech").ds_direct("box: message_EmptyActor, message_Talk; screen: message_Narration; sign: message_Explanation")
     .names(Names::NoOne)
     .maybe(narrated),
     Word::new(

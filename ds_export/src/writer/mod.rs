@@ -29,6 +29,7 @@ use std::fmt::Write as _;
 
 use engine::{Beat, Cam, Course, Direction, FlowBeat, Formation, Num, Point, SpeechBeat, Spot, Who};
 
+use ::film::ds::patches::Patches;
 use ::film::ds::room::Room;
 use ::film::ds::{Drawn, STAND_IN, drawn_on_ds};
 
@@ -195,6 +196,13 @@ pub(crate) struct Writer<'a> {
     /// those past it are kept as magenta squares (`--squares`), not left out.
     pub(crate) room: Room,
     pub(crate) squares: bool,
+    /// The community's patches the base has (`film::ds::patches`): the text
+    /// tags and special processes the script may use.
+    pub(crate) patches: Patches,
+    /// Who transforms in the film (`transform`), in turn: cast as special
+    /// actors with dynamic_actor; who looks like another now.
+    pub(crate) shifters: Vec<Who>,
+    mimicking: BTreeSet<Who>,
     /// A scene split for its sprites: the species its first part keeps.
     keep_kinds: Option<Vec<u16>>,
 }
@@ -282,6 +290,14 @@ const OPENING: [&str; 12] = ["put", "dive", "vanish", "hide", "sink", "face", "t
 /// Beside someone, so far (the engine's own distance between two at rest).
 const BESIDE: f32 = 24.0;
 
+/// The special actors whose species Sky reads from `SPECIAL_ACTORS` as it
+/// loads them (pmdsky-debug; `ov11`'s species lookup): each one's field,
+/// dynamic_actor's `2 * n`. One who transforms is cast as one of them.
+/// Where the layer reloading one who transforms goes, its number known as the
+/// scene is put together (`Writer::block`).
+const SHIFT: &str = "@SHIFT:";
+const SHIFTERS: [(&str, u16); 4] = [("EVENT_NPC01", 2), ("EVENT_NPC02", 0), ("EVENT_NPC03", 8), ("EVENT_NPC04", 6)];
+
 /// How far from the camera an actor is out of sight (half the screen and more).
 const OFF_SCREEN: f32 = 150.0;
 
@@ -364,6 +380,9 @@ impl<'a> Writer<'a> {
             item_lines: BTreeSet::new(),
             room: Room::current(),
             squares: false,
+            patches: Patches::current(),
+            shifters: Vec::new(),
+            mimicking: BTreeSet::new(),
             keep_kinds: None,
         }
     }
@@ -529,6 +548,10 @@ impl<'a> Writer<'a> {
         };
         let (name, species, kind) = match who {
             _ if self.cast.contains_key(&who) => self.cast[&who].clone(),
+            // (One who transforms: a special actor, its species set as the script runs, dynamic_actor.)
+            Who::Monster(species) | Who::Another { species, .. } if self.shift_slot(who).is_some() && self.drawn(who, species) == Drawn::Own => {
+                (SHIFTERS[self.shift_slot(who)?].0.to_string(), None, species)
+            }
             Who::Character(number) => {
                 let (name, kind) = self.game.actors.get(usize::from(number))?.clone();
                 (name, None, kind)

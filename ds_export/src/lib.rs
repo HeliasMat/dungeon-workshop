@@ -182,6 +182,14 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
             writer.bubble_faces.insert(at as i32 + 1, face);
         }
     }
+    // (Who transforms: a special actor each, its species changed as the script runs.)
+    for beat in written.events.iter().flat_map(|event| &event.scenes).flat_map(|scene| &scene.beats) {
+        if let Beat::Body(engine::BodyBeat::Mimic { who, .. }) = beat
+            && !writer.shifters.contains(who)
+        {
+            writer.shifters.push(*who);
+        }
+    }
     // The typed beats the engine plays, each after the line it is of; a
     // scene over the sprites' room split at a moment where both parts fit.
     let mut number = 0;

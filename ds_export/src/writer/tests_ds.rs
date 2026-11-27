@@ -3,7 +3,9 @@
 
 use std::collections::HashMap;
 
-use engine::{AnimId, Beat, BodyBeat, MoveId, Play, Who};
+use engine::{AnimId, Beat, BodyBeat, Frames, MoveId, Play, SpeechBeat, Voice, Who};
+
+use ::film::ds::patches::{PATCHES, Patches};
 
 use super::{Actor, Writer};
 use crate::notes::{Fate, Kind, Note};
@@ -48,7 +50,7 @@ fn a_species_the_rom_lacks_is_its_base_or_the_stand_in_told() {
     assert_eq!(species.len(), 2, "each told once: {species:?}");
     // (The stand-in has no portrait: its own name said in its line.)
     writer.say(4, None, Some(Who::Monster(2570)), Some(1), "Hi.");
-    assert!(writer.body.contains("message_ResetActor();\n") && writer.body.contains("message_Talk(\" Zorua: Hi.\");"), "{}", writer.body);
+    assert!(writer.body.contains("message_EmptyActor();\n") && writer.body.contains("message_Talk(\"Zorua: Hi.\");"), "{}", writer.body);
     assert!(!zorua.is_empty());
 }
 
@@ -161,4 +163,129 @@ fn a_move_shows_its_own_effect() {
     writer.beat(3, Some("attack"), &Beat::Body(BodyBeat::Move { who: pikachu, id: MoveId(262), target: Some(pichu) }));
     let target = writer.actors[&pichu].name.clone();
     assert!(writer.body.contains(&format!("SetEffect<actor ACTOR_{target}>(6, 3);")), "{}", writer.body);
+}
+
+/// A data folder with Pikachu's, Ditto's and Munchlax's portraits (normal,
+/// happy, sad), for the lines said with a face.
+fn faces_data(name: &str) -> String {
+    let folder = std::env::temp_dir().join(format!("ds_export_{name}_{}", std::process::id()));
+    std::fs::create_dir_all(folder.join("rom").join("portraits")).expect("a folder");
+    std::fs::write(folder.join("rom").join("monsters.txt"), "25\tPikachu\n132\tDitto\n488\tMunchlax\n").expect("written");
+    for species in [25, 132, 488] {
+        for face in [0, 1, 5] {
+            std::fs::write(folder.join("rom").join("portraits").join(format!("{species}_{face}.png")), b"").expect("written");
+        }
+    }
+    folder.to_string_lossy().into_owned()
+}
+
+/// A face changing in a line (`[FACE:n]`, from `[sad]`) changes in the box
+/// with ChangePortraitMidText, `*words*` bold with BoldText; without the
+/// mega patch, a box for each face, told, and the stars as written.
+#[test]
+fn a_face_changes_in_the_box_and_stars_are_bold_with_the_mega_patch() {
+    let data = faces_data("faces");
+    let game = game(&data);
+    let pikachu = Who::Monster(25);
+    let mut writer = Writer::new(&game);
+    writer.patches = Patches::read(PATCHES, "", false);
+    let actor = writer.actor(pikachu).expect("an actor");
+    writer.say(4, None, Some(pikachu), Some(1), "We won the *cup*! [FACE:5]But...");
+    assert!(writer.body.contains(&format!("message_SetFace({actor}, FACE_HAPPY, FACE_POS_STANDARD);")), "{}", writer.body);
+    assert!(writer.body.contains("message_Talk(\" We won the [BS]cup[BR]! [FACE:5]But...\");"), "{}", writer.body);
+    assert!(writer.notes.is_empty(), "{:?}", writer.notes);
+    let mut writer = Writer::new(&game);
+    writer.patches = Patches::none();
+    let actor = writer.actor(pikachu).expect("an actor");
+    writer.say(4, None, Some(pikachu), Some(1), "We won the *cup*! [FACE:5]But...");
+    let said: Vec<&str> = writer.body.lines().map(str::trim).collect();
+    assert_eq!(
+        said,
+        [
+            format!("message_SetFace({actor}, FACE_HAPPY, FACE_POS_STANDARD);").as_str(),
+            "message_Talk(\" We won the *cup*!\");",
+            format!("message_SetFace({actor}, FACE_SAD, FACE_POS_STANDARD);").as_str(),
+            "message_Talk(\" But...\");",
+        ]
+    );
+    assert!(writer.notes.iter().any(|note| note.message == "a face changed in the middle of a line"), "{:?}", writer.notes);
+}
+
+/// A line said in a bubble: the box see-through while it shows
+/// (set_textbox_transparency), solid again after.
+#[test]
+fn a_bubble_line_is_see_through_with_the_mega_patch() {
+    let data = faces_data("bubble");
+    let game = game(&data);
+    let mut writer = Writer::new(&game);
+    writer.patches = Patches::read(PATCHES, "", false);
+    writer.beat(3, Some("bubble"), &Beat::Speech(SpeechBeat::Bubble { who: Who::Monster(25), frames: Frames(60.0), text: "Hm.".into(), voice: Voice::Said }));
+    let said: Vec<&str> = writer.body.lines().map(str::trim).collect();
+    let opened = said.iter().position(|line| *line == "ProcessSpecial(66, 1, 0);").expect("see-through");
+    assert_eq!(said[opened + 1], "message_SetWaitMode(60, 0);");
+    let closed = said.iter().position(|line| *line == "ProcessSpecial(66, 0, 0);").expect("solid again");
+    assert_eq!(said[closed - 2..closed], ["message_Close();", "message_SetWaitMode(-1, -1);"]);
+}
+
+/// One left out of the scene (Sky's room) still says his lines, without an
+/// actor: his name in them, his portrait by set-portrait-monster; every
+/// other order to him left out.
+#[test]
+fn one_left_out_says_his_lines_with_a_portrait_alone() {
+    let data = faces_data("alone");
+    let game = game(&data);
+    let mut writer = Writer::new(&game);
+    writer.patches = Patches::read(PATCHES, "", false);
+    let ditto = Who::Monster(132);
+    writer.film_names.insert(ditto, "ditto".to_string());
+    let actor = writer.actor(ditto).expect("an actor");
+    writer.say(4, None, Some(ditto), Some(1), "Hi.");
+    writer.body.push_str(&format!("    SetAnimation<actor {actor}>(2);\n"));
+    writer.drop_actors(&[ditto]);
+    let said: Vec<&str> = writer.body.lines().map(str::trim).collect();
+    assert_eq!(said, ["message_EmptyActor();", "ProcessSpecial(64, 132, 1);", "message_Talk(\"[CS:N]Ditto[CR]: Hi.\");"]);
+}
+
+/// One who transforms is a special actor: his species set as the scene
+/// loads him, then, under the white, taken away and loaded again as the
+/// other (dynamic_actor) in a layer of his own; his lines then his own
+/// name and face. Without dynamic_actor (a base for sharing), he keeps his
+/// look, told.
+#[test]
+fn a_transform_changes_the_species_with_dynamic_actor() {
+    let data = faces_data("transform");
+    let game = game(&data);
+    let (ditto, munchlax) = (Who::Monster(132), Who::Monster(488));
+    let mut writer = Writer::new(&game);
+    writer.patches = Patches::read(PATCHES, "", false);
+    writer.shifters.push(ditto);
+    writer.film_names.insert(ditto, "ditto".to_string());
+    writer.body.push_str("    supervision_Acting(0);\n");
+    let actor = writer.actor(ditto).expect("an actor");
+    assert_eq!(actor, "ACTOR_EVENT_NPC01");
+    writer.actor(munchlax).expect("an actor");
+    writer.started = true;
+    writer.beat(5, Some("transform"), &Beat::Body(BodyBeat::Mimic { who: ditto, like: Some(munchlax) }));
+    writer.say(6, None, Some(ditto), Some(1), "Hi.");
+    writer.beat(7, Some("transform"), &Beat::Body(BodyBeat::Mimic { who: ditto, like: None }));
+    let block = writer.block();
+    assert!(block.contains("// ds-export actor ACTOR_EVENT_NPC01 x") && block.contains(" layer 1\n"), "{block}");
+    let script: Vec<&str> = block.lines().map(str::trim).collect();
+    let set = script.iter().position(|line| *line == "ProcessSpecial(67, 132, 2); // ACTOR_EVENT_NPC01").expect("his species first");
+    assert_eq!(script[set + 1], "supervision_Acting(0);");
+    let into = script.iter().position(|line| *line == "ProcessSpecial(67, 488, 2); // ACTOR_EVENT_NPC01").expect("into munchlax");
+    assert_eq!(
+        script[into - 1..into + 2],
+        ["Destroy<actor ACTOR_EVENT_NPC01>();", "ProcessSpecial(67, 488, 2); // ACTOR_EVENT_NPC01", "supervision_Acting(1);"]
+    );
+    assert!(block.contains("ProcessSpecial(64, 132, 1);\n    message_Talk(\"[CS:N]Ditto[CR]: Hi.\");"), "{block}");
+    assert!(script.iter().filter(|line| **line == "ProcessSpecial(67, 132, 2); // ACTOR_EVENT_NPC01").count() == 2, "back: {block}");
+    // (A base for sharing has no dynamic_actor: his look kept, told.)
+    let mut writer = Writer::new(&game);
+    writer.patches = Patches::read(PATCHES, "", true);
+    writer.shifters.push(ditto);
+    assert_ne!(writer.actor(ditto).expect("an actor"), "ACTOR_EVENT_NPC01");
+    writer.beat(5, Some("transform"), &Beat::Body(BodyBeat::Mimic { who: ditto, like: Some(munchlax) }));
+    assert!(!writer.body.contains("Destroy"), "{}", writer.body);
+    assert!(writer.notes.iter().any(|note| note.message.contains("not in a base for sharing")), "{:?}", writer.notes);
 }

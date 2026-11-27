@@ -65,7 +65,7 @@ pub const WORDS: &[Word] = &[
         "transform",
         &["who:pokemon back", "who:pokemon into its next form", "who:pokemon into form:pokemon"],
         "_change, mimic, _changed (the evolution's light, no sentence): he looks like the other, his name and his lines his own; its next form: the next of his family; back: as he was",
-    ).family("Fights").ds_close("a stats-up shine, the screen white and back; he keeps his look (Sky's actors change no sprite)", "he keeps his look: only the shine and the white screen")
+    ).family("Fights").ds_close("a stats-up shine, the screen white and back; with the mega patch's dynamic_actor (your own base only: no licence to share it) he is a special actor, taken away under the white and loaded again as the other species (ProcessSpecial(67, species, 2n), supervision_Acting), his lines his own name and face (set-portrait-monster); else he keeps his look", "under a white screen, not the evolution's light; four at most in a film; in a base for sharing he keeps his look")
     .does(transformed),
     Word::new("roar", &["who:pokemon [hard]"], "the game's roar, the view shaking (hard: harder), the sprite's own Roar animation, else its Charge and a rise").family("Fights").ds_direct("as Sky's bosses: se_Play(6930), camera_SetEffect(2, 1, 1.0) (hard: 2, 2, 3.0) a while, then 0, 0, 0; SetAnimation of the sprite's own Roar group once, else its Charge looped (9), as Groudon's")
         .does(blows::roared),

@@ -7,11 +7,13 @@ use std::fmt::Write as _;
 
 use engine::Who;
 
+use ::film::ds::patches::{DYNAMIC_ACTOR, PORTRAIT_ALONE};
 use ::film::ds::room;
 
-use super::{AT_ONCE, Actor, Writer, names};
+use super::talk::capitalised;
+use super::{AT_ONCE, Actor, SHIFT, SHIFTERS, Writer, names};
 use crate::notes::{Fate, Kind};
-use crate::sky::{HIDDEN, direction, quoted, tiles};
+use crate::sky::{FACES, HIDDEN, direction, quoted, tiles};
 
 /// What one left out did, said after its size.
 fn speaking(rank: u8) -> &'static str {
@@ -479,7 +481,7 @@ impl Writer<'_> {
                 if parts.is_empty() {
                     "no one left out".to_string()
                 } else {
-                    format!("left out, the farthest from the crowd's middle first, their lines with them: {}", parts.join("; "))
+                    format!("left out, the farthest from the crowd's middle first, their lines said without them: {}", parts.join("; "))
                 },
             );
             if start.len() - dropped.len() > AT_ONCE {
@@ -543,32 +545,67 @@ impl Writer<'_> {
                 lines.insert(line + n, format!("{indent}{text}"));
             }
         }
-        // (Those left out, their lines with them: no order to one the game hasn't loaded.)
-        for who in dropped.iter().chain(&left_out) {
-            if let Some(actor) = self.actors.remove(who) {
-                let token = format!("ACTOR_{}", actor.name);
-                lines.retain(|line| !names(line, &token));
-                for parts in &mut self.besides {
-                    parts.retain(|part| part.actor != token);
-                }
-            }
-        }
+        // (Those left out: no order to one the game hasn't loaded; their lines said without them.)
+        let gone: Vec<Who> = dropped.iter().chain(&left_out).copied().collect();
+        lines = self.without_actors(lines, &gone);
         self.body = lines.into_iter().map(|line| line + "\n").collect();
     }
 
-    /// Those of the scene left out, their lines with them (no order to one
-    /// the game hasn't loaded).
-    fn drop_actors(&mut self, gone: &[Who]) {
-        let mut lines: Vec<String> = self.body.lines().map(str::to_string).collect();
+    /// The script's lines without those actors: every order to them left
+    /// out, but their lines said, without them (`message_EmptyActor`, their
+    /// name in the words), their portrait shown by set-portrait-monster
+    /// (`ProcessSpecial(64, species, face)`) where the base has it.
+    fn without_actors(&mut self, lines: Vec<String>, gone: &[Who]) -> Vec<String> {
+        let mut lines = lines;
         for who in gone {
-            if let Some(actor) = self.actors.remove(who) {
-                let token = format!("ACTOR_{}", actor.name);
-                lines.retain(|line| !names(line, &token));
-                for parts in &mut self.besides {
-                    parts.retain(|part| part.actor != token);
+            let Some(actor) = self.actors.remove(who) else { continue };
+            let token = format!("ACTOR_{}", actor.name);
+            let name = self.film_names.get(who).map_or_else(|| self.game.name(actor.kind), |name| capitalised(name));
+            // (A species SpriteCollab adds has its number from patch_rom.py: no portrait of its own here.)
+            let portrait = self.patches.process(PORTRAIT_ALONE).filter(|_| !self.added.contains_key(&actor.kind) && actor.kind > 0);
+            let mut out = Vec::with_capacity(lines.len());
+            let mut named = false;
+            for line in lines {
+                let trimmed = line.trim_start();
+                let indent = &line[..line.len() - trimmed.len()];
+                let talk = ["message_Talk(\"", "message_Monologue(\""].into_iter().find(|talk| trimmed.starts_with(talk));
+                if named && let Some(talk) = talk {
+                    let words = &trimmed[talk.len()..];
+                    let words = if words.starts_with(' ') { words.to_string() } else { format!(" {words}") };
+                    out.push(format!("{indent}{talk}[CS:N]{name}[CR]:{words}"));
+                    named = false;
+                    continue;
+                }
+                if !names(&line, &token) {
+                    out.push(line);
+                    continue;
+                }
+                let face = trimmed
+                    .strip_prefix(&format!("message_SetFace({token}, "))
+                    .and_then(|rest| rest.split(',').next())
+                    .map(|face| face.trim().trim_start_matches("FACE_"));
+                if face.is_some() || trimmed.starts_with(&format!("message_SetActor({token})")) {
+                    out.push(format!("{indent}message_EmptyActor();"));
+                    let number = face.map_or(Some(0), |face| FACES.iter().position(|one| *one == face).and_then(|at| u16::try_from(at).ok()));
+                    if let (Some(id), Some(face)) = (portrait, number.filter(|face| self.game.has_face(actor.kind, *face))) {
+                        out.push(format!("{indent}ProcessSpecial({id}, {}, {face});", actor.kind));
+                    }
+                    named = true;
                 }
             }
+            lines = out;
+            for parts in &mut self.besides {
+                parts.retain(|part| part.actor != token);
+            }
         }
+        lines
+    }
+
+    /// Those of the scene left out, their lines said without them (no order to one
+    /// the game hasn't loaded).
+    pub(super) fn drop_actors(&mut self, gone: &[Who]) {
+        let lines: Vec<String> = self.body.lines().map(str::to_string).collect();
+        let lines = self.without_actors(lines, gone);
         self.body = lines.into_iter().map(|line| line + "\n").collect();
     }
 
@@ -652,7 +689,7 @@ impl Writer<'_> {
             Fate::LeftOut,
             said,
             format!(
-                "no moment splits the scene so that both parts fit: left out, the least needed first, their lines with them: {} (now {} KB{still}); split the scene, have some leave in one scene and the others arrive in the next, or use fewer new species",
+                "no moment splits the scene so that both parts fit: left out, the least needed first, their lines said without them (a portrait alone): {} (now {} KB{still}); split the scene, have some leave in one scene and the others arrive in the next, or use fewer new species",
                 names_left.join(", "),
                 room::kb(room::scene_bytes(&data, &kept, objects))
             ),
@@ -755,6 +792,31 @@ impl Writer<'_> {
             let layer = if actor.layer > 0 { format!(" layer {}", actor.layer) } else { String::new() };
             let _ = writeln!(out, "// ds-export actor ACTOR_{}{species} x {} y {} facing {facing}{layer}", actor.name, tiles(x), tiles(y));
         }
+        // Who transforms (dynamic_actor): his species set before the scene
+        // loads him, and a layer of his own to load him again as another.
+        let mut layer = self.actors.values().map(|actor| actor.layer).max().unwrap_or(0);
+        let shifting: Vec<(String, u16, u16, (f32, f32, &str))> = self
+            .actors
+            .values()
+            .filter_map(|actor| {
+                let (_, field) = SHIFTERS.iter().find(|(name, _)| *name == actor.name)?;
+                Some((actor.name.clone(), actor.kind, *field, actor.first.unwrap_or((middle.0, middle.1, "DIR_DOWN"))))
+            })
+            .collect();
+        if let Some(id) = self.patches.process(DYNAMIC_ACTOR) {
+            for (name, kind, field, (x, y, facing)) in shifting {
+                let placeholder = format!("{SHIFT}ACTOR_{name}@");
+                if self.body.contains(&placeholder) {
+                    layer += 1;
+                    self.body = self.body.replace(&placeholder, &layer.to_string());
+                    let _ = writeln!(out, "// ds-export actor ACTOR_{name} x {} y {} facing {facing} layer {layer}", tiles(x), tiles(y));
+                }
+                let set = format!("    ProcessSpecial({id}, {kind}, {field}); // ACTOR_{name}\n");
+                let at = self.body.find("    supervision_Acting(0);").unwrap_or(0);
+                self.body.insert_str(at, &set);
+            }
+        }
+        self.mimicking.clear();
         for (object, (x, y)) in &self.objects {
             let _ = writeln!(out, "// ds-export object OBJECT_N{object} x {} y {}", tiles(*x), tiles(*y));
         }

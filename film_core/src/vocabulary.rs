@@ -121,9 +121,9 @@ impl Other {
 /// author writes it, its DS status. (A word with a `Word` is declared on it.)
 pub const OTHERS: &[Other] = &[
     syntax("Structure", "if", "if test ... else ... end").ds_direct("if ( $LOCALn … ) { }: a film's variables are the scene's four local ones"),
-    syntax("Speech", "(line)", "who (face): text").ds_direct("message_SetFace(ACTOR, FACE_…, FACE_POS_STANDARD) (a face the species lacks: its normal one; none: message_SetActor, its name alone), message_Talk, message_Close"),
+    syntax("Speech", "(line)", "who (face): text").ds_direct("message_SetFace(ACTOR, FACE_…, FACE_POS_STANDARD) (a face the species lacks: its normal one; none: message_SetActor, its name alone), message_Talk, message_Close; with the mega patch a face in it (`[sad]`) changes in the box (ChangePortraitMidText's [FACE:n]; without it, a box for each face), `*words*` bold (BoldText's [BS]…[BR]), one left out of the scene says it without an actor, his portrait by set-portrait-monster"),
     syntax("Speech", "(bubble)", "who (bubble[, face]): text").ds_close(
-        "a line of Sky's box, its face as the brackets say, closing by itself after the bubble's time (message_SetWaitMode)",
+        "a line of Sky's box, its face as the brackets say, closing by itself after the bubble's time (message_SetWaitMode); see-through with the mega patch (set_textbox_transparency, ProcessSpecial(66, 1, 0) as it opens)",
         "a box, not a bubble: one at a time, at the bottom of the screen, never two side by side",
     ),
     recipe("Speech", "explain", "who explain").ds_direct("ExecuteCommon(CORO_EXPLANATION_FUNC_SERIES), Sky's own"),

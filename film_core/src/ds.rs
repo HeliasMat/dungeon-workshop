@@ -8,6 +8,7 @@
 //! pose each one's sprite shows: `sprites`; the room a scene's sprites
 //! have: `room`.
 
+pub mod patches;
 pub mod room;
 mod sprites;
 

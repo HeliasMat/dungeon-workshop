@@ -110,6 +110,34 @@ fn paused(text: &str, speed: f32) -> (String, i32, String) {
     (out, frames as i32, bare)
 }
 
+/// A face in a line between brackets (`We won! [sad] But…`): the face
+/// changes there, as the game's text writes it (`[FACE:n]`, `face` giving
+/// each one's number; none: the mark taken out, with a space after it).
+/// Other brackets are left as they are.
+fn faces_in(text: &str, mut face: impl FnMut(&str) -> Option<u16>) -> String {
+    let (mut out, mut rest) = (String::new(), text);
+    while let Some(open) = rest.find('[') {
+        let Some(close) = rest[open..].find(']').map(|close| open + close) else { break };
+        out.push_str(&rest[..open]);
+        let Some(found) = of(&FACES, &plain(&rest[open + 1..close])) else {
+            out.push_str(&rest[open..=close]);
+            rest = &rest[close + 1..];
+            continue;
+        };
+        // (One space between the words either side.)
+        let spaced = out.ends_with(' ');
+        if let Some(number) = face(found) {
+            out.push_str(&format!("[FACE:{number}]"));
+        }
+        rest = &rest[close + 1..];
+        if spaced {
+            rest = rest.trim_start_matches(' ');
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
 /// `???: words`, `umbreon?: words`: whether who says it is one not known yet
 /// (`???`, or someone written with a `?`).
 pub(super) fn unknown_speaker(film: &mut Film, who: &str) -> bool {
@@ -133,6 +161,7 @@ impl Film {
         let told = told(name);
         let text = text.trim();
         let (written, rests, bare) = paused(text, speed);
+        let bare = faces_in(&bare, |_| None);
         // (Over the line on screen: a bubble, the box being taken.)
         if over && !told {
             self.bubble(&plain(name), &in_a_bubble(&bare), if face == "shouting" { Voice::Shouted } else { Voice::Said });
@@ -175,6 +204,19 @@ impl Film {
         let frames =
             self.timing.line_time.unwrap_or(((line_frames(shown_name, &bare, face == "shouting") as f32 / speed).floor().max(SHORTEST_LINE)) as i32 + rests);
         let said = coloured(&self.tables, &lines.join(BREAK));
+        // (`[sad]` in the line: the face changes there, one the species has.)
+        let said = if told {
+            faces_in(&said, |_| None)
+        } else {
+            let mut marked = Vec::new();
+            faces_in(&said, |face| {
+                marked.push(face.to_string());
+                Some(0)
+            });
+            let numbers: Vec<u16> = marked.into_iter().map(|face| scenes::vocabulary::POKEMON.face(&face_had(self, &who, face, number)).unwrap_or(0)).collect();
+            let mut next = numbers.into_iter();
+            faces_in(&said, |_| next.next())
+        };
         self.line_said(&who, if told { "-" } else { &face }, &format!(" {said}"), frames);
         if speed != 1.0 {
             self.beat(emit::text_speed(None));

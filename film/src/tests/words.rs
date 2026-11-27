@@ -114,6 +114,17 @@ fn a_line_said_fast_slowly_with_a_pause() {
     assert!(said(&clean(&scene(&["krabby: *Never* again."])))[2].contains("*Never*"));
 }
 
+/// A face between brackets in a line changes there (`[FACE:n]`, as the
+/// game's text writes it), one the species has; the narrator's has none.
+#[test]
+fn a_face_changes_in_the_middle_of_a_line() {
+    let said = |lines: &[Vec<String>]| said_lines(lines).into_iter().next().expect("a line");
+    let line = said(&clean("scene: town pikachu\npikachu (happy): We won! [sad] But at what cost...\n"));
+    assert!(line[2].contains("We won! [FACE:") && line[2].contains("]But at what cost"), "{line:?}");
+    let told = said(&clean("scene: town pikachu\nnarrator: Night fell. [sad] Cold.\n"));
+    assert!(told[2].contains("Night fell. Cold.") && !told[2].contains("FACE"), "{told:?}");
+}
+
 #[test]
 fn the_box_on_top() {
     let film = format!("{}scene: beach\nnarrator: Down below.\n", scene(&["box top", "krabby: Oh!"]));
