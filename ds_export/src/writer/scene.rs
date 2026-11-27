@@ -795,7 +795,8 @@ impl Writer<'_> {
         // Who transforms (dynamic_actor): his species set before the scene
         // loads him, and a layer of his own to load him again as another.
         let mut layer = self.actors.values().map(|actor| actor.layer).max().unwrap_or(0);
-        let shifting: Vec<(String, u16, u16, (f32, f32, &str))> = self
+        type Shifting<'a> = Vec<(String, u16, u16, (f32, f32, &'a str))>;
+        let shifting: Shifting<'_> = self
             .actors
             .values()
             .filter_map(|actor| {

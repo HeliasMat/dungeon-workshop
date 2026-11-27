@@ -125,7 +125,13 @@ fn in_ds_mode_only_what_exports_is_offered() {
     let ds = format!("for ds\n{text}");
     let exported = super::completion::offered(&session, &ds, ds.chars().count(), true).expect("what Pikachu may do on DS");
     assert!(all.choices.iter().any(|(word, _)| word == "drop"), "{:?}", all.choices);
-    assert!(!exported.choices.iter().any(|(word, _)| word == "drop"), "no held item on DS: {:?}", exported.choices);
+    assert!(
+        exported.choices.iter().any(|(word, description)| word == "drop" && description.contains("DS with loss")),
+        "a held item exports now: {:?}",
+        exported.choices
+    );
+    assert!(all.choices.iter().any(|(word, _)| word == "dinner"), "{:?}", all.choices);
+    assert!(!exported.choices.iter().any(|(word, _)| word == "dinner"), "no guild dinner on DS: {:?}", exported.choices);
     let dodge = exported.choices.iter().find(|(word, _)| word == "dodge").expect("dodge exports");
     assert!(dodge.1.contains("DS with loss"), "{dodge:?}");
     let models =

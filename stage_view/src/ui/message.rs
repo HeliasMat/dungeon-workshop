@@ -191,7 +191,8 @@ impl Words {
         let written = if self.menu { page } else { reveal(page, self.revealed as usize) };
         if let Some(portrait) = &self.portrait {
             // (The face the text has changed to so far, `[FACE:n]`.)
-            let now = faces_in(written).last().copied().and_then(|face| portrait.faces.iter().find(|(had, _)| *had == face)).map_or(&portrait.rgba, |(_, rgba)| rgba);
+            let now =
+                faces_in(written).last().copied().and_then(|face| portrait.faces.iter().find(|(had, _)| *had == face)).map_or(&portrait.rgba, |(_, rgba)| rgba);
             canvas.portrait_frame(art, portrait.x, BOTTOM + face);
             canvas.blit((portrait.x * TILE) as i32, below + (face * TILE) as i32, 40, 40, now);
         }

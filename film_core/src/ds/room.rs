@@ -15,7 +15,7 @@
 //! ([`leave_out`]); the film's DS remarks say so first (`R-DS-SPRITES`).
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, OnceLock};
 
 use engine::{Beat, BodyBeat, FlowBeat, PlaceBeat, ViewBeat};
 
@@ -125,7 +125,7 @@ pub fn hook_on(patches: &str, choice: &str) -> bool {
 
 /// The sizes of `GROUND_SIZES`, by species, read once a data folder.
 fn sizes(data: &str) -> Arc<HashMap<u16, u32>> {
-    static CACHE: OnceLock<Mutex<HashMap<String, Arc<HashMap<u16, u32>>>>> = OnceLock::new();
+    static CACHE: super::sprites::PerData<HashMap<u16, u32>> = OnceLock::new();
     let mut kept = CACHE.get_or_init(Default::default).lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     kept.entry(data.to_string())
         .or_insert_with(|| {

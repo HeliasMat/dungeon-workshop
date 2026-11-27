@@ -213,7 +213,7 @@ fn a_rider_follows_his_mount() {
     for leap in [slides[0], slides[2]] {
         assert!(lines[leap - 2].starts_with("MoveHeight<actor "), "{script}");
     }
-    let walk = walks.iter().copied().filter(|at| *at < slides[1]).last().expect("the mount's walk first");
+    let walk = walks.iter().copied().rfind(|at| *at < slides[1]).expect("the mount's walk first");
     let pace = |line: &str| line.split_once(">(").and_then(|(_, rest)| rest.split_once(',')).map(|(pace, _)| pace.to_string());
     assert_eq!(pace(lines[walk]), pace(lines[slides[1]]), "{script}");
     assert!(lines[slides[1] - 1].starts_with("SetDirection<actor "), "turned as his mount: {script}");

@@ -46,15 +46,18 @@ impl Drawn {
     }
 }
 
+/// A cache of tables, one a data folder.
+pub(super) type PerData<T> = OnceLock<Mutex<HashMap<String, Arc<T>>>>;
+
 /// A table of the data's, read once a data folder.
-fn kept<T: Send + Sync + 'static>(cache: &'static OnceLock<Mutex<HashMap<String, Arc<T>>>>, data: &str, read: impl FnOnce() -> T) -> Arc<T> {
+fn kept<T: Send + Sync + 'static>(cache: &'static PerData<T>, data: &str, read: impl FnOnce() -> T) -> Arc<T> {
     let mut kept = cache.get_or_init(Default::default).lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     kept.entry(data.to_string()).or_insert_with(|| Arc::new(read())).clone()
 }
 
 /// The variants' bases (`variants.txt`: number, whose it is), by number.
 fn bases(data: &str) -> Arc<HashMap<u16, u16>> {
-    static CACHE: OnceLock<Mutex<HashMap<String, Arc<HashMap<u16, u16>>>>> = OnceLock::new();
+    static CACHE: PerData<HashMap<u16, u16>> = OnceLock::new();
     kept(&CACHE, data, || assets::tables::variants(data).into_iter().map(|variant| (variant.number, variant.of)).collect())
 }
 

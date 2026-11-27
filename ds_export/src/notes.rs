@@ -156,7 +156,7 @@ pub struct Summary {
 impl Summary {
     /// The lines as written, out of a hundred (all of them when none play).
     pub fn percent(&self) -> usize {
-        if self.lines == 0 { 100 } else { self.as_written * 100 / self.lines }
+        (self.as_written * 100).checked_div(self.lines).unwrap_or(100)
     }
 
     /// One line: "on DS: 92% as written, 12 changed, 3 left out, 4 new Pokémon added".
