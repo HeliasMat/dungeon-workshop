@@ -1,150 +1,114 @@
 # Dungeon Workshop
 
-**A workshop for making your own dungeon-crawling games**, in the spirit of the "Mystery Dungeon" games: cutscenes written like a screenplay, villages to wander around, turn-based dungeons, boss fights, a game that saves. All in Rust, with a complete editor.
+**Make cutscenes in the style of *Pokémon Mystery Dungeon*, by writing them like a screenplay.**
 
-**New here? [Your first film in 5 minutes](docs/FIRST_FILM.md)**: New Film, a place, a cast, two lines, played, someone moved on the stage, a video. Then, to make a whole game of your films, [your first game in 30 minutes](docs/TUTORIAL.md): from the first launch to a game sent to a friend, step by step.
+You write who does what, line by line. The Workshop plays it at once, points out mistakes as you type, and can even put your cutscene back into the original game on a Nintendo DS.
 
-> **No game assets in this repository.** Dungeon Workshop contains no pictures, sounds, music, dialogue or scripts from any published game, only the names that refer to them (see [CREDITS.md](CREDITS.md#what-is-not-here)). On first launch, it extracts them from **your own copy** of the *Pokémon Mystery Dungeon: Explorers of Sky* cartridge (a `.nds` file you dumped yourself). They stay on your computer. Use only a cartridge you own and dumped yourself; whether making such a copy is allowed depends on the laws of your country, and it is up to you to check them. This project does not provide, and will not help you find, any game file.
+```
+scene: beach_evening pikachu piplup
+pikachu (happy): Shall we go?
+piplup walk to pikachu
+piplup hop happy
+piplup (determined): Let's go!
+```
+
+That's a whole film: the two of them take their places, look at each other, talk, walk and hop, with the game's own sprites, portraits, music and sounds.
+
+**New here?** Get it running ([Install](#install), 10 minutes, once), then follow **[Your first film in 5 minutes](docs/FIRST_FILM.md)**.
+
+> **No game files in this repository.** Dungeon Workshop contains no pictures, sounds, music, dialogue or scripts from any published game, only names that refer to them (see [CREDITS.md](CREDITS.md#what-is-not-here)). On first launch it reads them from **your own copy** of *Pokémon Mystery Dungeon: Explorers of Sky* (a `.nds` file you dumped yourself from a cartridge you own); they stay on your computer. Whether making such a copy is allowed depends on the laws of your country: check them. This project does not provide, and will not help you find, any game file.
 >
 > A fan project, **not affiliated with** or endorsed by Nintendo, The Pokémon Company, Game Freak, Creatures or Spike Chunsoft. *Pokémon* is a trademark of its respective owners.
 
-## What you can do
+## What you can make
 
-- **Write films** in a simple, plain-English language, where who acts comes first:
-  ```
-  scene: beach_evening pikachu piplup
-  pikachu (happy): Shall we go?
-  piplup walk to pikachu
-  piplup hop happy
-  piplup (determined): Let's go!
-  ```
-  Characters take their places, look at each other, talk and move around. About a hundred words in families (Speech, Movement, Emotions, Camera, Sound, Fights, Story...; Dungeon, Guild and Fishing when a film asks for them with `uses`), each with a page in the Workshop's **Wiki** and a playable example.
-- **Errors that come with their fix**: a mistake is underlined as you type, said in plain words, and most come with a one-click fix (a word written in the old order, a name misspelt and its nearest, a word of the old vocabulary and the one that says it now).
-- **Turn it into a game**:
-  - the player steers their hero, talks to the locals and goes from one place to another;
-  - the shop, the bank, the storage, the job board, the recruits;
-  - a map to choose where to go;
-  - a title screen, saving.
-- **Create dungeons** (floors, the Pokémon you meet, items) and **boss fights**: an arena painted tile by tile, phases, guards, allies, staging. Try them out right away in the editor.
-- **Draw decors**, paint pixel-art pictures, compose sounds and music, all inside the Workshop.
-- **An experiment: a film back on the DS.** `scene_player export-ds <film>` writes a film as a cutscene of the original game (ExplorerScript, in `target/ds/<film>.exps`), and `tools/ds/patch_rom.py` puts it in place of one of the game's scenes in a copy of *your own* ROM, or writes a patch of it (`--patch out.bps`) to share instead of the game. It is a trial: only part of the language goes across, and the script needs Python with `ndspy` and `skytemple-files`.
+- **Films** in a plain-English language where who acts comes first: talking with faces, walking, running, flying, swimming, gestures, emotes, moves and their effects, mega evolutions, weather, the camera, music and sounds. Characters place themselves, look at whoever speaks, and step around each other on their own.
+- **Your own words.** Turn a few lines you like into a word of your own (a *recipe*), with a little example scene, and use it in every film.
+- **Places (decors)**: start from a place of the game, its ground, or a blank page, and paint it tile by tile.
+- **Films on a real DS.** Export a film as a cutscene of the original game, played in a copy of *your* ROM, or shared as a patch.
+- **Many more Pokémon** than the game has: the [PMDCollab community's](https://github.com/PMDCollab/SpriteCollab) sprites and portraits, imported in one click.
+- And if you want to go further: chain films into a small **game**, with villages to walk around, dungeons and boss fights ([the tutorial](docs/TUTORIAL.md)).
 
-The workshop starts empty: no game, no film, no place, only the tools and their pictures, sounds and music. What you make is yours; [the tutorial](docs/TUTORIAL.md) walks you through your first game.
+## Why it's pleasant to use
 
-## Screenshots
+- **Mistakes come with their fix.** A mistake is underlined as you type, said in plain words, and most have a one-click fix:
 
-*These screenshots only show the Workshop itself. The Pokémon and place graphics come from your copy of the game: they are not in this repository, so they do not appear here.*
+  ![A film's Script, a mistake and its fix](docs/images/script.png)
 
-**A film is written like a screenplay**, who acts first, with syntax colours and words suggested while you write. A mistake is underlined at once and said in plain words; here a line in the old order, its fix one click away (the bulb in the margin, or **Fix All**):
+- **Every word has a page** in the built-in Wiki (**F1** on a word): what it does, how to write it, and an example you can play and insert:
 
-![A film's Script, a mistake and its fix](docs/images/script.png)
+  ![The Wiki's page for hop](docs/images/wiki.png)
 
-**The Wiki**, in a window of its own (**F1** on a word): what the word does, how it is written, part by part, and an example, coloured as in the Script, that plays on the right (empty here, as the screenshots hold nothing of the game), with **Insert at Cursor**:
+- **You see it while you write.** The Scene view plays the film next to the Script; drag a character, a camera frame or a path on the stage and the line rewrites itself. A Timeline shows who does what, and when.
 
-![The Wiki's page for hop](docs/images/wiki.png)
+*The screenshots show only the Workshop itself: the Pokémon and places come from your copy of the game, so they are not in this repository.*
 
-**The Dungeon space** gathers every dungeon and every boss fight; a click opens one in its editor:
+## Install
 
-![The Dungeon space](docs/images/dungeons.png)
+### 1. Get the programs
 
-**A dungeon**: its rules on the left, its floors as a grid in the middle (who you meet, which items, on which floor), the trial run and its file on the right:
+**The easy way:** download the zip for your system (Windows, Linux or macOS) from the [latest release](https://github.com/HeliasMat/dungeon-workshop/releases/latest) and unzip it anywhere.
 
-![The dungeon editor](docs/images/dungeon.png)
-
-**A boss fight**: the arena painted tile by tile, where you place the team, the boss, its guards, the items and the traps; on the right, its entrance and its phases on its health gauge:
-
-![The boss fight editor](docs/images/boss_fight.png)
-
-**A piece of music**, composed in the Workshop with its own synthesizer: tracks, step-by-step drums, instruments, mixing:
-
-![The music workshop](docs/images/music.png)
-
-## Getting started
-
-**Ready to use**: a release zip (`dungeon-workshop-<version>-<target>.zip`, for Windows, Linux or macOS) holds the programs and the shared library (its pictures, sounds and music), nothing of any game. Unzip it anywhere and read `START_HERE.txt`: open `workshop`, drop your own `.nds` on it, **Extract the Resources**; they go into `data/` beside the programs (or wherever the `DUNGEON_DATA` environment variable says). Then make your first game ([the tutorial](docs/TUTORIAL.md)). The programs find their files beside themselves, wherever they are run from. `sh tools/release.sh` makes that zip from the sources (`dist/`); `.github/workflows/release.yml` makes one for each system on a `v*` tag.
-
-**From the sources**:
-
-1. **Build** (stable [Rust](https://rustup.rs)):
-   ```sh
-   cargo build --release
-   ```
-2. **Open the Workshop**:
-   ```sh
-   target/release/workshop
-   ```
-   On first launch, it asks for your copy of the cartridge: **Choose Your .nds File…** (or drop it onto the window), it checks it is *Explorers of Sky* (North America or Europe), then **Extract the Resources** shows each step as it goes. It takes a few minutes, only once: everything goes into `data/`, which git ignores; then the Workshop opens, empty, with what to try first. (`cargo run -p workshop` builds the Workshop alone: the first launch says to `cargo build -p extractor` if it is missing.) Without a window, it is:
-   ```sh
-   target/release/extractor my_copy.nds
-   target/release/scene_player dungeons
-   target/release/decor inventory
-   target/release/decor all
-   ```
-   To have many more Pokémon, animations and portraits, those of the [PMDCollab community](https://github.com/PMDCollab/SpriteCollab) (CC BY-NC 4.0: non-commercial use, credits written to `data/extra/spritecollab_credits.txt`), tick **Also add the community's sprites** on the first launch, or later (git and a few GB from GitHub; run again, it goes on where it stopped):
-   ```sh
-   target/release/scene_player spritecollab all       # everything; then: spritecollab update
-   ```
-3. **Make a game** ([the tutorial](docs/TUTORIAL.md)), then **play it**:
-   ```sh
-   target/release/scene_player play my_game
-   ```
-   Arrow keys: walk, Enter: talk, Shift: run, M: the menu.
-   Check the whole game without a window (its films, places, dungeons, the names and flags they share, what it never reaches):
-   ```sh
-   target/release/scene_player check-game my_game
-   ```
-
-## Make a game
-
-A game is a folder of its own, `games/<name>/` ([games/README.md](games/README.md)); copied whole, it is shared whole:
-
-- **the `.game` file**: its title, its team, where the team comes back to, and its story by chapters (`chapter 1 "…"` … `end`), with what each chapter plays and its rules (`on talk kecleon` … `end`);
-- **the places are decors** (`decors/*.decor`): their `[life]` part says who lives there, what they say, their ways out to other places and what happens there;
-- **the films are its cutscenes** (`films/*.film`), played by `play <film>`;
-- its dungeons, boss fights, music, sounds, pictures and tilesets (`dungeons/`, `fights/`, `music/`, `sounds/`, `images/`, `tilesets/`).
-
-A name is looked for in the game's folder first, then in the shared library, `library/` (its places, films, pictures, sounds, tilesets): a game can use them as they are.
+**From the sources:** install [Rust](https://rustup.rs), then:
 
 ```sh
-scene_player play my_game                        # play it (--headless: without a window)
-scene_player pack-game my_game                   # share it: dist/my_game.dwpack
-scene_player play my_game.dwpack                 # play a game someone shared
+git clone https://github.com/HeliasMat/dungeon-workshop
+cd dungeon-workshop
+cargo build --release
 ```
 
-In the Workshop, the **Game** space lists the games, makes a new one (**+ New Game**: its folder and its file), shows a game's card, its chapters as boxes (a click opens a film, a place, a dungeon), what the check finds, and plays it from any chapter (`scene_player play <game>.game --chapter 2`) or exports it; the places' life is written in the Decor space.
+The programs are then in `target/release/`.
 
-A `.dwpack` holds the game's own files (and those of the library it uses), never anything of `data/`: whoever plays it reads the resources from their own cartridge. See [the game section of FILMS.md](film/FILMS.md#a-game-chapters-places-cutscenes).
+### 2. Read your copy of the game (once)
 
-## The tools
+Open the **Workshop** (`workshop`, or `workshop.exe` on Windows). On first launch:
+
+1. click **Choose Your .nds File…** (or drop the file onto the window). It checks it is *Explorers of Sky* (North America or Europe);
+2. click **Extract the Resources**. It takes a few minutes, only once. Everything goes into a `data/` folder next to the programs.
+
+Optional: tick **Also add the community's sprites** to get hundreds more Pokémon, animations and portraits from PMDCollab (a few GB, downloaded from GitHub; CC BY-NC 4.0, credits kept).
+
+### 3. Make your first film
+
+The Workshop opens on **Home**. Click **+ New Film**, pick a place, a cast and a start, and it plays. **[Your first film in 5 minutes](docs/FIRST_FILM.md)** walks you through it.
+
+## Where to go next
+
+| I want to… | Read |
+|---|---|
+| make my first film | [docs/FIRST_FILM.md](docs/FIRST_FILM.md) |
+| know every word of the language | the Workshop's Wiki (F1), or [film/FILMS.md](film/FILMS.md) |
+| make my own words | [film/FILMS.md, "Your own words: recipe files"](film/FILMS.md) |
+| find my way around the Workshop | [workshop/README.md](workshop/README.md) |
+| draw places | [decor/DECORS.md](decor/DECORS.md) |
+| play my film on a DS | [docs/DS.md](docs/DS.md) |
+| make a whole game | [docs/TUTORIAL.md](docs/TUTORIAL.md) |
+| write films in VS Code, Neovim or Helix | [dungeon_lsp/README.md](dungeon_lsp/README.md) |
+| contribute | [CONTRIBUTING.md](CONTRIBUTING.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+
+## From the command line
+
+Everything the Workshop does can also be done without a window:
+
+```sh
+scene_player play my_film.film      # watch a film in a window
+scene_player check my_film.film     # what's wrong, and how to fix it
+scene_player try my_film.film 5s    # a picture of a moment
+scene_player video my_film.film     # a video, picture and sound (needs ffmpeg)
+scene_player export-ds my_film.film # the film as a DS cutscene
+scene_player help                   # every command
+```
 
 | Program | What it does |
 |---|---|
-| `workshop` | the editor: films, decors, dungeons, boss fights, pictures, sounds, music |
-| `scene_player` | plays a film (`play`), checks it without a window (`check`; a whole game: `check-game`), makes pictures of it (`view`), a video; `scene_player help` lists every command |
-| `decor` | builds the places and dungeon rooms described in `library/decors` |
-| `extractor` | extracts the resources from your copy of the cartridge into `data/` |
-
-## Documentation
-
-- [docs/FIRST_FILM.md](docs/FIRST_FILM.md): your first film in 5 minutes; [docs/TUTORIAL.md](docs/TUTORIAL.md): your first game in 30 minutes.
-- [film/FILMS.md](film/FILMS.md): the film language, all its words, films you can play, dungeons and boss fights.
-- [workshop/README.md](workshop/README.md): the Workshop, panel by panel.
-- [decor/DECORS.md](decor/DECORS.md): the decor language.
-- [dungeon_lsp/README.md](dungeon_lsp/README.md): `dungeon_lsp`, a language server to write films, games and decors in any editor (VS Code, Neovim, Helix).
-- [engine/docs/COMMANDS.md](engine/docs/COMMANDS.md): the scene engine's commands.
-- [ARCHITECTURE.md](ARCHITECTURE.md): how the project is built.
-- [CONTRIBUTING.md](CONTRIBUTING.md): building, checking, committing; the how-to guides [Add a film word](docs/ADD_A_FILM_WORD.md) and [Add a Workshop panel or part](docs/ADD_A_WORKSHOP_PANEL.md).
-
-## Checking
-
-```sh
-sh tools/verify.sh
-```
-
-This script checks the rule of the crates, builds everything, runs the tests, clippy, the formatting check and the documentation build. Tests that need the resources are marked ignored, and reported so, as long as `data/` is not there; with it, the script runs them too (`cargo test -- --ignored` in the packages that have them).
+| `workshop` | the studio: films, decors, recipes, and more |
+| `scene_player` | plays, checks, pictures, records and exports films |
+| `decor` | builds the places described in `library/decors` |
+| `extractor` | reads your copy of the game into `data/` |
+| `dungeon_lsp` | a language server, to write films in any editor |
 
 ## License
 
-[GPL-3.0 or later](LICENSE). Part of the code is adapted from open community projects (SkyTemple, dungeon-eos, pmdsky-debug): see [CREDITS.md](CREDITS.md).
+[GPL-3.0 or later](LICENSE). Part of the code is adapted from open community projects (SkyTemple, dungeon-eos, pmdsky-debug, and the community's DS patches, each with its licence): see [CREDITS.md](CREDITS.md).
 
 **Rights holders**: if something in this repository should not be here, please [open an issue](https://github.com/HeliasMat/dungeon-workshop/issues); it will be looked at promptly and removed where the request is founded.
