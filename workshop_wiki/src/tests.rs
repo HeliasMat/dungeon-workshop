@@ -40,7 +40,8 @@ fn every_word_has_its_page() {
 fn problems(session: &Session, film: &str) -> Vec<String> {
     film::service::diagnostics(film, session.tables())
         .into_iter()
-        .filter(|told| told.is_error() || told.is_remark() && !told.message.contains("it is only drawn on"))
+        // (Nor that a mega form is missing: they come from one's own import of the community's sprites.)
+        .filter(|told| told.is_error() || told.is_remark() && !told.message.contains("it is only drawn on") && !told.message.contains("has no mega form"))
         .map(|told| format!("line {}: {}", told.span.start.line, told.message))
         .collect()
 }
