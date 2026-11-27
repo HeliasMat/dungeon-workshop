@@ -149,7 +149,7 @@ dependencies = [
 
 [[package]]
 name = "assets"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "async-broadcast"
@@ -718,7 +718,7 @@ checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
 
 [[package]]
 name = "decor"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "diagnostics",
@@ -728,7 +728,7 @@ dependencies = [
 
 [[package]]
 name = "diagnostics"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "dispatch"
@@ -761,7 +761,7 @@ dependencies = [
 
 [[package]]
 name = "dive"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "glam",
  "rules",
@@ -802,7 +802,7 @@ checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
 
 [[package]]
 name = "ds_export"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "engine",
@@ -820,7 +820,7 @@ dependencies = [
 
 [[package]]
 name = "dungeon_lsp"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -989,7 +989,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "image",
  "libloading",
@@ -1003,7 +1003,7 @@ checksum = "66b7e2430c6dff6a955451e2cfc438f09cea1965a9d6f87f7e3b90decc014099"
 
 [[package]]
 name = "engine"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "diagnostics",
  "glam",
@@ -1098,7 +1098,7 @@ dependencies = [
 
 [[package]]
 name = "extractor"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bincode",
  "engine",
@@ -1133,7 +1133,7 @@ dependencies = [
 
 [[package]]
 name = "film"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "engine",
@@ -1153,7 +1153,7 @@ dependencies = [
 
 [[package]]
 name = "film_acting"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "film_core",
@@ -1163,7 +1163,7 @@ dependencies = [
 
 [[package]]
 name = "film_core"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "bincode",
@@ -1177,7 +1177,7 @@ dependencies = [
 
 [[package]]
 name = "film_dungeon"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "film_core",
@@ -1189,7 +1189,7 @@ dependencies = [
 
 [[package]]
 name = "film_fights"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "engine",
@@ -1203,7 +1203,7 @@ dependencies = [
 
 [[package]]
 name = "film_fishing"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "film_core",
@@ -1214,7 +1214,7 @@ dependencies = [
 
 [[package]]
 name = "film_moving"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "film_acting",
@@ -1224,7 +1224,7 @@ dependencies = [
 
 [[package]]
 name = "film_speech"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "film_core",
@@ -1233,7 +1233,7 @@ dependencies = [
 
 [[package]]
 name = "film_view"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "film_core",
@@ -1403,7 +1403,7 @@ dependencies = [
 
 [[package]]
 name = "game"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "bincode",
@@ -1864,7 +1864,7 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "language"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "diagnostics",
 ]
@@ -1959,7 +1959,7 @@ dependencies = [
 
 [[package]]
 name = "media"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "bincode",
@@ -2693,7 +2693,7 @@ dependencies = [
 
 [[package]]
 name = "preview"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "bincode",
@@ -2917,7 +2917,7 @@ dependencies = [
 
 [[package]]
 name = "rom_formats"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "media",
  "rules",
@@ -2925,7 +2925,7 @@ dependencies = [
 
 [[package]]
 name = "rules"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bincode",
  "diagnostics",
@@ -2996,7 +2996,7 @@ dependencies = [
 
 [[package]]
 name = "scene_player"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "ds_export",
  "engine",
@@ -3016,7 +3016,7 @@ dependencies = [
 
 [[package]]
 name = "scenes"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "bincode",
@@ -3122,7 +3122,7 @@ dependencies = [
 
 [[package]]
 name = "shell"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "bincode",
@@ -3272,7 +3272,7 @@ dependencies = [
 
 [[package]]
 name = "spritecollab"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "diagnostics",
@@ -3288,7 +3288,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "stage_view"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "engine",
@@ -3308,7 +3308,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "story"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "scenes",
@@ -4342,7 +4342,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
 name = "workshop"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4365,7 +4365,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_base"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4381,7 +4381,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_decor"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4395,7 +4395,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_dungeon"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4413,7 +4413,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_emulator"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "eframe",
  "emulator",
@@ -4424,7 +4424,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_film"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "eframe",
@@ -4442,7 +4442,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_first"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4454,7 +4454,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_game"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4467,7 +4467,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_home"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4482,7 +4482,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_music"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "eframe",
  "film",
@@ -4494,7 +4494,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_picture"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "eframe",
  "film",
@@ -4504,7 +4504,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_resources"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "eframe",
@@ -4526,7 +4526,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_script"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4543,7 +4543,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_sound"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "eframe",
  "film",
@@ -4554,7 +4554,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_tools"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assets",
  "decor",
@@ -4568,7 +4568,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_wiki"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "engine",
  "film",
