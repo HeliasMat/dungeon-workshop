@@ -107,8 +107,9 @@ pub fn film(film: &Film, options: Options, out: &Path, tell: &mut dyn FnMut(Stri
     }
     // The decors the scenes are in, each as a map beside the export; the
     // Pokémon SpriteCollab adds, each as its sheets.
-    let maps =
-        decor_maps(&game, film.tables, &text, out, tell)? + &added_monsters(&game, &writer.added, out, tell)? + &item_pictures(film, &writer, out, tell)?;
+    let maps = decor_maps(&game, film.tables, &text, out, tell)?
+        + &added_monsters(&game, &writer.added, &writer.community, out, tell)?
+        + &item_pictures(film, &writer, out, tell)?;
     if !maps.is_empty() {
         let at = text.find('\n').map_or(0, |end| end + 1);
         text.insert_str(at, &maps);
@@ -183,6 +184,8 @@ fn write<'a>(film: &Film, game: &'a Game, options: Options) -> Writer<'a> {
             writer.bubble_faces.insert(at as i32 + 1, face);
         }
     }
+    // (The species of Sky's drawn from the community's sheet, for a pose their Sky sprite can't play.)
+    writer.community = ::film::ds::community_sheets(&game.data, written.events.iter().flat_map(|event| &event.scenes));
     // (Who transforms: a special actor each, its species changed as the script runs.)
     for beat in written.events.iter().flat_map(|event| &event.scenes).flat_map(|scene| &scene.beats) {
         if let Beat::Body(engine::BodyBeat::Mimic { who, .. }) = beat
@@ -368,14 +371,29 @@ fn decor_maps(game: &Game, tables: &Tables, text: &str, out: &Path, tell: &mut d
 /// `spritecollab::export`), for `tools/ds/add_monsters.py` to make a
 /// monster of the ROM's of: its line, `// ds-export monster <species>
 /// <instead> <folder> <name>`.
-fn added_monsters(game: &Game, added: &BTreeMap<u16, u16>, out: &Path, tell: &mut dyn FnMut(String)) -> Result<String, String> {
+fn added_monsters(
+    game: &Game,
+    added: &BTreeMap<u16, u16>,
+    community: &BTreeMap<u16, ::film::ds::Community>,
+    out: &Path,
+    tell: &mut dyn FnMut(String),
+) -> Result<String, String> {
     let mut lines = String::new();
-    let places = spritecollab::Places::new(&game.data, Path::new(""));
+    let places = spritecollab::Places::new(&game.data, &::film::ds::community_clone(&game.data));
     for (species, instead) in added {
         let folder = format!("{}.monster{species}", out.file_name().and_then(|name| name.to_str()).unwrap_or("film"));
         let at = out.with_file_name(&folder);
         // (Of an export before: what this one writes only.)
         let _ = std::fs::remove_dir_all(&at);
+        // (A species of Sky's from the community's sheet: the animations the film needs, Sky's faces.)
+        if let Some(sheet) = community.values().find(|sheet| sheet.number == *species) {
+            let written = spritecollab::export_sheet(&places, u32::from(sheet.dex), &sheet.groups, u32::from(sheet.species), &at)?;
+            let name = game.name(sheet.species);
+            let kept: Vec<String> = sheet.groups.iter().map(|(at, name)| format!("{name} {at}")).collect();
+            tell(format!("  {name} (species {}): drawn from the community's sheet ({written}; groups {})", sheet.species, kept.join(", ")));
+            let _ = writeln!(lines, "// ds-export monster {species} {instead} {folder} {name}");
+            continue;
+        }
         let written = spritecollab::export(&places, u32::from(*species), &at)?;
         // (A form is named as its base species; a Pokémon of its own by its name.)
         let name = match ::film::ds::without_sheets(&game.data, *species) {

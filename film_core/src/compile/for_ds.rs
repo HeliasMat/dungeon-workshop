@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, HashMap};
 use engine::{Beat, BodyBeat, Course, Diagnostic, FlowBeat, MotionBeat, Num, PlaceBeat, Play, Point, Scene, ScreenBeat, SpeechBeat, Spot, ViewBeat, Who};
 
 use crate::codes;
-use crate::ds::{AT_ONCE, DECOR_LOSS, Drawn, Export, Mode, drawn_on_ds, group_name, pose_on_ds, room};
+use crate::ds::{AT_ONCE, Community, DECOR_LOSS, Drawn, Export, Mode, community_sheets, drawn_on_ds, group_name, pose_on_ds, room};
 use crate::film::Film;
 
 /// What the DS can't play of the film, added to its problems.
@@ -21,12 +21,13 @@ pub(crate) fn tell(film: &mut Film, mode: Mode, scenes: &[Scene]) {
     }
     species(film, &lines);
     let mut poses_told = BTreeMap::new();
+    let community = community_sheets(&film.tables.data, scenes);
     for scene in scenes {
         place(film, scene, &lines);
         at_once(film, scene);
         sprites(film, scene, &lines);
         view(film, scene, &lines);
-        poses(film, scene, &mut poses_told);
+        poses(film, scene, &community, &mut poses_told);
     }
     for ((who, asked, shown), numbers) in poses_told {
         let message = format!("{who}'s Sky sprite has no {asked}: {shown} instead on DS{}", more_lines(numbers.len()));
@@ -189,7 +190,7 @@ fn monster_name(film: &Film, species: u16) -> String {
 /// `R-DS-LOSS`: a pose a species' Sky sprite lacks (`pikachu pose nod` on
 /// a sprite with no Nod): the nearest every sprite has instead, as the
 /// export plays it; told once a Pokémon and pose.
-fn poses(film: &Film, scene: &Scene, told: &mut BTreeMap<(String, &'static str, &'static str), Vec<usize>>) {
+fn poses(film: &Film, scene: &Scene, community: &BTreeMap<u16, Community>, told: &mut BTreeMap<(String, &'static str, &'static str), Vec<usize>>) {
     let names: HashMap<&String, &String> = film.actors.iter().map(|(name, code)| (code, name)).collect();
     let mut number = 0;
     for beat in &scene.beats {
@@ -207,8 +208,13 @@ fn poses(film: &Film, scene: &Scene, told: &mut BTreeMap<(String, &'static str, 
         ) else {
             continue;
         };
-        let species = drawn_on_ds(&film.tables.data, species).species(species);
-        let Some(shown) = pose_on_ds(&film.tables.data, species, anim.0, matches!(play, Play::Loop)).and_then(|pose| pose.instead) else { continue };
+        // (One drawn from the community's sheet: its own poses.)
+        let looped = matches!(play, Play::Loop);
+        let pose = match community.get(&species) {
+            Some(sheet) => sheet.pose(anim.0, looped),
+            None => pose_on_ds(&film.tables.data, drawn_on_ds(&film.tables.data, species).species(species), anim.0, looped),
+        };
+        let Some(shown) = pose.and_then(|pose| pose.instead) else { continue };
         let Some(name) = names.get(&who.to_string()) else { continue };
         let asked = group_name(anim.0);
         let lines = told.entry(((*name).clone(), asked, shown)).or_default();

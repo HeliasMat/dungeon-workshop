@@ -690,7 +690,13 @@ pub fn export(places: &Places, monster: u32, target: &Path) -> Result<String, St
     xml.push_str("\t</Anims>\n</AnimData>\n");
     let data = sprites.join("AnimData.xml");
     std::fs::write(&data, xml).map_err(|why| said(&data, why))?;
-    // (The faces, one by one and on SpriteBot's sheet: 5 a row, 40x40.)
+    let faces = write_faces(places, monster, target)?;
+    Ok(format!("{made} animations, {faces} faces written to {}", target.display()))
+}
+
+/// A monster's faces in SpriteBot's layout, in `target`: `portrait/<Face>.png`
+/// and `portrait_sheet.png` (5 a row, 40x40). How many.
+fn write_faces(places: &Places, monster: u32, target: &Path) -> Result<usize, String> {
     let portraits = target.join("portrait");
     std::fs::create_dir_all(&portraits).map_err(|why| said(&portraits, why))?;
     let mut sheet = RgbaImage::new(FACE * 5, FACE * 4);
@@ -708,6 +714,82 @@ pub fn export(places: &Places, monster: u32, target: &Path) -> Result<String, St
     if faces > 0 {
         save(&crop(&sheet, 0, 0, used.0, used.1), &target.join("portrait_sheet.png"))?;
     }
+    Ok(faces)
+}
+
+/// The community's sheet of a Pokédex number (the clone's
+/// `sprite/<dex>/`, SpriteBot's layout already) in `target`, only the
+/// animations named, each at the group given (`(13, "Double")`: where
+/// Sky's table plays it), with the data's faces of `monster`: for
+/// `tools/ds/add_monsters.py`, a species of Sky's drawn from it on DS
+/// (`film::ds::community_sheets`). What was written.
+pub fn export_sheet(places: &Places, dex: u32, groups: &[(u16, String)], monster: u32, target: &Path) -> Result<String, String> {
+    let from = places.sprite_folder(dex);
+    let xml = std::fs::read_to_string(from.join("AnimData.xml")).map_err(|why| said(&from.join("AnimData.xml"), why))?;
+    // (Each animation's block, by name: a copy's (`CopyOf`) the one it copies.)
+    let blocks: Vec<(String, &str)> = xml
+        .split("<Anim>")
+        .skip(1)
+        .filter_map(|rest| {
+            let block = rest.split_once("</Anim>")?.0;
+            Some((tag(block, "Name")?, block))
+        })
+        .collect();
+    let block_of = |name: &str| -> Option<(String, &str)> {
+        let (_, block) = blocks.iter().find(|(own, _)| own == name)?;
+        match tag(block, "CopyOf") {
+            Some(source) => blocks.iter().find(|(own, _)| *own == source).map(|(own, block)| (own.clone(), *block)),
+            None => Some((name.to_string(), *block)),
+        }
+    };
+    let sprites = target.join("sprite");
+    std::fs::create_dir_all(&sprites).map_err(|why| said(&sprites, why))?;
+    let shadow = tag(&xml, "ShadowSize").unwrap_or_else(|| "1".to_string());
+    let mut out = format!(
+        "<?xml version='1.0' encoding='utf-8'?>
+<AnimData>
+	<ShadowSize>{shadow}</ShadowSize>
+	<Anims>
+"
+    );
+    let mut made = 0;
+    for (group, name) in groups {
+        let Some((source, block)) = block_of(name) else { continue };
+        for part in ["Anim", "Shadow", "Offsets"] {
+            let file = from.join(format!("{source}-{part}.png"));
+            if file.exists() {
+                let to = sprites.join(format!("{name}-{part}.png"));
+                std::fs::copy(&file, &to).map_err(|why| said(&to, why))?;
+            }
+        }
+        let inner: String = block
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && !line.starts_with("<Name>") && !line.starts_with("<Index>"))
+            .map(|line| {
+                format!(
+                    "			{line}
+"
+                )
+            })
+            .collect();
+        out.push_str(&format!(
+            "		<Anim>
+			<Name>{name}</Name>
+			<Index>{group}</Index>
+{inner}		</Anim>
+"
+        ));
+        made += 1;
+    }
+    out.push_str(
+        "	</Anims>
+</AnimData>
+",
+    );
+    let data = sprites.join("AnimData.xml");
+    std::fs::write(&data, out).map_err(|why| said(&data, why))?;
+    let faces = write_faces(places, monster, target)?;
     Ok(format!("{made} animations, {faces} faces written to {}", target.display()))
 }
 

@@ -178,6 +178,11 @@ pub(crate) struct Writer<'a> {
     /// their sheets (`patch_rom.py`), and who each is drawn as where that
     /// fails (its base, or the stand-in).
     pub(crate) added: BTreeMap<u16, u16>,
+    /// The species of Sky's drawn from the community's sheet, for a pose
+    /// their Sky sprite can't play (`film::ds::community_sheets`), by Sky's
+    /// species: their actors' species is the sheet's number, put in the ROM
+    /// as the added ones are.
+    pub(crate) community: BTreeMap<u16, ::film::ds::Community>,
     /// The things the film shows as objects (`things`): the object showing
     /// each now, how many of each look the scene has, the film's slot of the
     /// n-th of a look, the files of its pictures, the objects hidden from the
@@ -374,6 +379,7 @@ impl<'a> Writer<'a> {
             values: HashMap::new(),
             instead_poses: BTreeMap::new(),
             added: BTreeMap::new(),
+            community: BTreeMap::new(),
             film_names: HashMap::new(),
             bubble_faces: HashMap::new(),
             things: BTreeMap::new(),
@@ -562,6 +568,16 @@ impl<'a> Writer<'a> {
             Who::Character(number) => {
                 let (name, kind) = self.game.actors.get(usize::from(number))?.clone();
                 (name, None, kind)
+            }
+            // (A species of Sky's drawn from the community's sheet: a free actor of the sheet's number.)
+            Who::Monster(species) | Who::Another { species, .. } if self.community.contains_key(&species) => {
+                let number = self.community[&species].number;
+                if self.added.insert(number, species).is_none() {
+                    let name = self.film_names.get(&who).cloned().unwrap_or_else(|| self.game.name(species));
+                    let message = format!("{name} (species {species}): drawn from the community's sheet (SpriteCollab), for a pose its Sky sprite can't play");
+                    self.note(self.at_line, Kind::Added, Fate::Added, message, "put in the ROM from that sheet, its portraits with it");
+                }
+                (free(&self.cast)?, Some(number), species)
             }
             Who::Monster(species) if self.drawn(who, species) == Drawn::Own => {
                 let own = self.game.actors.iter().find(|(name, of)| *of == species && name.starts_with("NPC_") && !name.starts_with("NPC_TEST"));

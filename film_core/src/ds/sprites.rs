@@ -50,7 +50,7 @@ impl Drawn {
 pub(super) type PerData<T> = OnceLock<Mutex<HashMap<String, Arc<T>>>>;
 
 /// A table of the data's, read once a data folder.
-fn kept<T: Send + Sync + 'static>(cache: &'static PerData<T>, data: &str, read: impl FnOnce() -> T) -> Arc<T> {
+pub(super) fn kept<T: Send + Sync + 'static>(cache: &'static PerData<T>, data: &str, read: impl FnOnce() -> T) -> Arc<T> {
     let mut kept = cache.get_or_init(Default::default).lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     kept.entry(data.to_string()).or_insert_with(|| Arc::new(read())).clone()
 }
@@ -148,7 +148,7 @@ fn own_groups(data: &str) -> Arc<Groups> {
 
 /// What shows a pose when a sprite has no group of that name, in turn
 /// (a name of the first thirteen groups, which every sprite has, ends it).
-fn instead(name: &str) -> &'static [&'static str] {
+pub(super) fn instead(name: &str) -> &'static [&'static str] {
     match name {
         "EventSleep" => &["Sleep"],
         "Wake" => &["StandingUp", "Hop"],

@@ -138,10 +138,15 @@ pikachu: Close-up!
 }
 
 /// A pose a sprite lacks: changed on each line it is asked, the nearest
-/// pose said instead.
+/// pose said instead. (With SpriteCollab's clone, whose Pikachu has
+/// Rotate, it is drawn from that sheet instead: told once, no pose lost.)
 #[test]
 fn a_pose_the_sprite_lacks_is_noted_on_each_line() {
     let report = report("scene: beach pikachu piplup\npikachu twirl\npiplup: Again!\npikachu twirl\n");
+    if report.notes.iter().any(|note| note.kind == crate::Kind::Added && note.message.contains("community's sheet")) {
+        assert!(report.notes.iter().all(|note| note.kind != crate::Kind::Pose), "{:?}", report.notes);
+        return;
+    }
     for line in [2, 4] {
         let poses: Vec<&crate::Note> = report.on_line(line).filter(|note| note.kind == crate::Kind::Pose).collect();
         assert_eq!(poses.len(), 1, "line {line}: {:?}", report.notes);
@@ -268,7 +273,10 @@ fn hurt_knocks_back_and_shakes() {
     assert_eq!(knock[2], "SlidePositionOffset<actor ACTOR_NPC_TEST001>(1, 1, 0);", "{script}");
     assert_eq!(script.matches("SlidePositionOffset<actor ACTOR_NPC_TEST001>(1, -1, 0);").count(), 3, "{script}");
     // (His pain set before the slide, played as he is knocked back.)
-    assert!(script.lines().map(str::trim).any(|line| line.starts_with("SetAnimation<actor ACTOR_NPC_TEST001>(") && !line.ends_with("(2);")), "his pain: {script}");
+    assert!(
+        script.lines().map(str::trim).any(|line| line.starts_with("SetAnimation<actor ACTOR_NPC_TEST001>(") && !line.ends_with("(2);")),
+        "his pain: {script}"
+    );
 }
 
 /// A jump to a place is an arc in three: up, across in the air, down; a

@@ -231,6 +231,20 @@ its base species or the stand-in. Only the species the film casts are put
 in, so the ROM stays small. What it costs and how far it goes:
 `tools/ds/LIMITS.md` ("Species the ROM lacks").
 
+**A species of Sky's from the community's sheet.** Sky's `SetAnimation`
+plays no group 8, 9 or 12 (Swing, Double, Rotate) nor the community's own
+past 34, so `pikachu pose double` would play an attack. When a film poses a
+Pokémon of Sky's with such an animation and SpriteCollab's clone
+(`sources/spritecollab/sprite/<dex>/`, `DUNGEON_SPRITECOLLAB`) has it, the
+export draws that Pokémon from the community's sheet in this film, nothing
+to write (`film::ds::community_sheets`): its actors get the number
+4000 + its Pokédex number, put in the ROM as above (`spritecollab::export_sheet`,
+the data's faces of the species). Only what the film needs is kept
+(walking, standing, the seven groups every sprite has, the poses it asks),
+each in a group Sky plays: its own where it can, else a free one of 13 to
+32 (Double in 13). The export's report says so (“drawn from the community's
+sheet”); `check` no longer remarks the pose lost.
+
 
 ## A place of your own
 

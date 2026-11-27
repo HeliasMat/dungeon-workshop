@@ -371,6 +371,7 @@ impl Writer<'_> {
         next.film_names = std::mem::take(&mut self.film_names);
         next.bubble_faces = std::mem::take(&mut self.bubble_faces);
         next.added = std::mem::take(&mut self.added);
+        next.community = std::mem::take(&mut self.community);
         next.slots = std::mem::take(&mut self.slots);
         next.drawings = std::mem::take(&mut self.drawings);
         next.item_lines = std::mem::take(&mut self.item_lines);

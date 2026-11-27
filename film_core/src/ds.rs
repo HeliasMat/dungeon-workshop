@@ -10,8 +10,10 @@
 
 pub mod patches;
 pub mod room;
+mod community;
 mod sprites;
 
+pub use community::{COMMUNITY, Community, community_clone, community_sheets};
 pub use sprites::{Drawn, OWN_ORDER, PoseOnDs, SKY_SPECIES, STAND_IN, animation, drawn_on_ds, group_name, own_group, own_named, pose_on_ds, without_sheets};
 
 /// A film written `for ds`: `boot`, played as a new game starts (`for

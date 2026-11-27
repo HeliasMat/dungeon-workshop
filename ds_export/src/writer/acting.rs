@@ -373,7 +373,9 @@ impl Writer<'_> {
         // (Aimed at an unseen point, where one dodged from, or at a place:
         // on no one; the move's own effect as it strikes, on its user, if it has one.)
         if let Some(Who::Spot(_)) = target {
-            if let Some(effect) = self.game.move_effects.get(usize::from(id.0)).and_then(|effects| [effects[1], effects[0]].into_iter().find(|effect| *effect != 0)) {
+            if let Some(effect) =
+                self.game.move_effects.get(usize::from(id.0)).and_then(|effects| [effects[1], effects[0]].into_iter().find(|effect| *effect != 0))
+            {
                 self.line(&format!("SetEffect<actor {actor}>({effect}, 3);"));
                 self.lasting(actor);
             }
@@ -469,7 +471,12 @@ impl Writer<'_> {
         let looped = matches!(play, Play::Loop);
         // (A pose its sprite lacks: the nearest every sprite has, told by species.)
         let kind = self.actors.get(&self.became.get(who).copied().unwrap_or(*who)).map_or(0, |one| one.kind);
-        let Some(pose) = pose_on_ds(kind, anim.0, looped) else { return };
+        // (One drawn from the community's sheet: its own groups.)
+        let pose = match self.community.get(&kind) {
+            Some(sheet) => sheet.pose(anim.0, looped),
+            None => pose_on_ds(kind, anim.0, looped),
+        };
+        let Some(pose) = pose else { return };
         if let Some(shown) = pose.instead {
             let asked = ::film::ds::group_name(anim.0);
             let asked = if asked.is_empty() { anim.0.to_string() } else { asked.to_string() };
