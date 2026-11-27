@@ -126,7 +126,7 @@ pub fn parse_with(text: &str, holds: &dyn Fn(&crate::ast::Call) -> bool) -> Pars
             Read::Stmt(kind, beside) => builder.push(Stmt { span, kind, beside, comment }),
             Read::Scene(args) => {
                 builder.close_all(span);
-                builder.file.scenes.push(Scene { span, args, comment, body: Vec::new() });
+                builder.file.scenes.push(Scene { span, example: body.trim_start().starts_with("example"), args, comment, body: Vec::new() });
             }
             Read::Opens { opening, named, short, extra } => {
                 let mut block = Block {

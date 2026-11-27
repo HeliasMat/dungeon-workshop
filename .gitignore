@@ -33,3 +33,7 @@
 *.tmp.abandoned
 *.before
 __pycache__/
+
+# The user's own recipes (library/recipes/<name>.film): never committed.
+/library/recipes/*
+!/library/recipes/README.md

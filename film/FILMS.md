@@ -617,6 +617,28 @@ when clock > 600: narrator: Time goes by.
 - **Blocks**: `if` / `else if` / `else`, `while`, `repeat n` (n written out: the lines are copied; a calculation: a loop), `for each x in [..]`, `break`, `next`; `when <test>`, `every`, `after`: running beside the film (`as name`, `cease name`), on one line (`: line`) or as a block until `end`.
 - **Choices**: `choice`, one `option …` line per answer, then `end`.
 
+## Your own words: recipe files
+
+A word of your own is a recipe in a file of its own, `library/recipes/<name>.film`: its recipes first (`define` … `end`, the comment just above each one is what it does), then a small scene that shows it, `example:` (written as `scene:`).
+
+```text
+# Bows twice, politely.
+define bow_twice who:pokemon
+  who bow
+  wait 0.3s
+  who bow
+end
+
+example: town pikachu eevee
+pikachu bow_twice
+eevee bow_twice
+```
+
+- A film takes the file's words with `uses bow_twice` and calls them as the language's own (`pikachu bow_twice`); it never plays the file's `example:`.
+- `scene_player check library/recipes/bow_twice.film` checks the recipes and plays the example; `scene_player try` makes its sheet.
+- Each name says what it wants: `who:pokemon`, `what:thing`, `time:duration`, `count:number`, `where:place` (`x y`, someone, `front_of b`…). A call that gives something else is told on the film's line that calls it.
+- In the Workshop, the Script's menu has **New Recipe…**, and **Make a Recipe of Them…** can put the selected lines in your library. Your words show in the completion and in the help, with their doc. The folder is yours: it is never committed.
+
 ## For agents
 
 An agent does not see the window: it reads numbers. Every command that says something about a film also says it in **JSON**, on **one line**, with `--json`.

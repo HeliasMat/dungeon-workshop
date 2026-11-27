@@ -9,9 +9,9 @@ use crate::span::Span;
 
 /// The words that open, part or close a block, or start a line of their
 /// own: at the start of a line they are never a word to call nor a `who`.
-pub const RESERVED: [&str; 24] = [
+pub const RESERVED: [&str; 25] = [
     "title", "scene", "moment", "end", "if", "else", "repeat", "for", "while", "together", "beside", "when", "every", "after", "choice", "option", "fight",
-    "define", "return", "let", "keep", "break", "next", "uses",
+    "define", "return", "let", "keep", "break", "next", "uses", "example",
 ];
 
 /// What a line is (read once and taken apart at once: its size does not
@@ -143,7 +143,7 @@ fn statement(text: &str, start: usize, before_scenes: bool, diagnostics: &mut Ve
     match header {
         Some("title") => return Some(Read::Stmt(Kind::Title(text[text.find(':')? + 1..].trim().to_string()), None)),
         Some("moment") => return Some(Read::Stmt(Kind::Moment(text[text.find(':')? + 1..].trim().to_string()), None)),
-        Some("scene") => {
+        Some("scene" | "example") => {
             let colon = text.find(':')? + 1;
             let after = &text[colon..];
             let gap = after.len() - after.trim_start().len();
@@ -251,7 +251,7 @@ fn statement(text: &str, start: usize, before_scenes: bool, diagnostics: &mut Ve
                 return Some(Read::Stmt(Kind::Set { name, value: value.ok()? }, None));
             }
             // (`title`, `scene`, `moment` are headers with their `:` only: `scene 11 name` is a word.)
-            if RESERVED.contains(&word) && !matches!(word, "title" | "scene" | "moment") {
+            if RESERVED.contains(&word) && !matches!(word, "title" | "scene" | "moment" | "example") {
                 diagnostics.push(Diagnostic::error(codes::UNREADABLE, span, format!("“{word}” is not written this way")).note("see language/LANGUAGE.md"));
                 return None;
             }

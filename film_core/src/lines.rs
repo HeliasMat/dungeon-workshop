@@ -4,6 +4,26 @@
 
 use crate::doc::{Kind, kind_of};
 
+/// What follows `scene:` on a line that opens a scene, or `example:` (a
+/// recipe file's small scene); none for another line.
+pub fn scene_head(line: &str) -> Option<&str> {
+    let line = line.trim_start();
+    line.strip_prefix("scene:").or_else(|| line.strip_prefix("example:"))
+}
+
+/// A recipe file's text without its `example:` block (what a film that
+/// uses or includes it takes).
+pub fn without_example(text: &str) -> &str {
+    let mut at = 0;
+    for line in text.split_inclusive('\n') {
+        if line.trim_start().starts_with("example:") {
+            return &text[..at];
+        }
+        at += line.len();
+    }
+    text
+}
+
 /// A line said, in its parts: its indent, who says it, what is in its
 /// brackets (a face, how it is said), what is said.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -221,7 +241,7 @@ pub fn wrapped(text: &str, from: usize, to: usize, opening: &str) -> String {
 pub fn beside(text: &str, from: usize, to: usize) -> String {
     let (mut lines, ended) = split_lines(text);
     let (from, to) = (from.max(1), to.min(lines.len()));
-    let playing = |line: &String| !line.trim().is_empty() && !line.trim_start().starts_with('#') && !line.trim_start().starts_with("scene:");
+    let playing = |line: &String| !line.trim().is_empty() && !line.trim_start().starts_with('#') && scene_head(line).is_none();
     let with = |line: &String| line.trim_end().ends_with(" &");
     let all = (from..=to).filter(|at| playing(&lines[at - 1])).all(|at| with(&lines[at - 1]));
     for at in from..=to {
@@ -248,7 +268,7 @@ pub fn extracted(text: &str, from: usize, to: usize, name: &str) -> String {
     let lead: String = lines[from - 1].chars().take_while(|letter| letter.is_whitespace()).collect();
     let taken: Vec<String> = lines.drain(from - 1..to).collect();
     lines.insert(from - 1, format!("{lead}{name}"));
-    let first_scene = lines.iter().position(|line| line.trim_start().starts_with("scene:")).unwrap_or(0);
+    let first_scene = lines.iter().position(|line| scene_head(line).is_some()).unwrap_or(0);
     let mut recipe = vec![format!("define {name}")];
     recipe.extend(taken.iter().map(|line| format!("  {}", line.trim_start())));
     recipe.push("end".to_string());

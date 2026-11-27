@@ -289,7 +289,7 @@ fn laid_out<'a>(films: &Films, timeline: &'a Timeline, text_lines: &[&str]) -> V
 /// The cast of a `scene:` line (the words after its place), none for another line.
 fn scene_cast(line: &str) -> Vec<String> {
     let said = line.split('#').next().unwrap_or_default();
-    said.trim_start().strip_prefix("scene:").map_or_else(Vec::new, |rest| rest.split_whitespace().skip(1).map(str::to_string).collect())
+    film::lines::scene_head(said).map_or_else(Vec::new, |rest| rest.split_whitespace().skip(1).map(str::to_string).collect())
 }
 
 /// What the bands found as they were drawn, for the clicks: the scenes'

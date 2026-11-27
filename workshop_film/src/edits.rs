@@ -83,7 +83,7 @@ pub(super) fn wait_of(line: &str) -> Option<usize> {
 /// Whether a line opens a scene, a moment or the title.
 fn header(line: &str) -> bool {
     let line = line.trim_start();
-    ["scene:", "moment:", "title:"].iter().any(|head| line.starts_with(head))
+    film::lines::scene_head(line).is_some() || ["moment:", "title:"].iter().any(|head| line.starts_with(head))
 }
 
 /// The line written before that one (by index), past blanks and remarks.

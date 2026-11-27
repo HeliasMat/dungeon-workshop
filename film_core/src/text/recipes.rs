@@ -120,11 +120,17 @@ pub fn told_line(included: &[(usize, String)], number: usize) -> (usize, Option<
 /// the shared library's (`library/films/recipes`, `library/films`)
 /// if the project is a game's.
 fn shared_folders(project: &Project) -> Vec<std::path::PathBuf> {
-    let mut folders = vec![project.root().join("film/recipes")];
+    let mut folders = vec![project.root().join("film/recipes"), user_recipes(project)];
     for films in project.folders("films") {
         folders.extend([films.join("recipes"), films]);
     }
     folders
+}
+
+/// Where the user's own recipes are: `library/recipes/<name>.film`, each
+/// its recipes, then its `example:`.
+pub fn user_recipes(project: &Project) -> std::path::PathBuf {
+    project.root().join(assets::project::LIBRARY).join("recipes")
 }
 
 /// The files a film may use or take in (`uses`, `include`), by the names
@@ -172,7 +178,7 @@ pub fn shared_text(lexicon: &'static Lexicon, project: &Project, name: &str) -> 
     let known = shared_files(lexicon, project);
     let near = crate::check::closest(name, known.iter().map(String::as_str), 3, 0.4);
     let near = if near.is_empty() { String::new() } else { format!("; near: {}", near.join(", ")) };
-    Err(format!("no file “{name}” (neither in film/recipes, nor in library/films){near}"))
+    Err(format!("no file “{name}” (neither in film/recipes, library/recipes, nor library/films){near}"))
 }
 
 fn recipe(lexicon: &'static Lexicon, written: &Arc<RecipeText>, from: &str) -> Recipe {
@@ -521,7 +527,7 @@ fn take_in(instr: &Instr, verb: &str, name: &str, depth: usize, recipes: &mut Re
             // is wrong in them is told of the file and its line.)
             film.included.push((number, name.to_string()));
             let base = INCLUDED * film.included.len();
-            let lines = read(film, &text, base);
+            let lines = read(film, crate::lines::without_example(&text), base);
             play(&lines, depth + 1, recipes, film, out);
         }
     }

@@ -102,7 +102,7 @@ pub fn kind_of(line: &str) -> Kind {
     if after_label(trimmed, &lower, &["transition"]).is_some() {
         return Kind::Transition;
     }
-    if let Some(said) = after_label(trimmed, &lower, &["scene"]) {
+    if let Some(said) = after_label(trimmed, &lower, &["scene", "example"]) {
         let mut words = said.split_whitespace().map(|word| word.trim_end_matches(',').to_string());
         let place = words.next().unwrap_or_default();
         return Kind::Scene { place, cast: words.collect() };

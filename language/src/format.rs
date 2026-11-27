@@ -11,7 +11,7 @@ pub fn formatted(file: &File) -> String {
     let mut writer = Writer::default();
     writer.stmts(&file.head, 0);
     for scene in &file.scenes {
-        let mut head = "scene:".to_string();
+        let mut head = if scene.example { "example:" } else { "scene:" }.to_string();
         for arg in &scene.args {
             head.push(' ');
             head.push_str(&arg_text(arg));

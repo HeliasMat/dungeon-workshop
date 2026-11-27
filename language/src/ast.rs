@@ -16,6 +16,8 @@ pub struct File {
 pub struct Scene {
     /// The `scene:` line.
     pub span: Span,
+    /// Written `example:`: a recipe file's small scene, played as any other.
+    pub example: bool,
     pub args: Vec<Arg>,
     pub comment: Option<String>,
     pub body: Vec<Stmt>,
